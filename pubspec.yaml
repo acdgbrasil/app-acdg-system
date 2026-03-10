@@ -1,0 +1,48 @@
+name: conecta_raros_workspace
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.1
+
+workspace:
+  - shell
+  - packages/core
+  - packages/design_system
+
+dev_dependencies:
+  melos: ^7.4.0
+
+melos:
+  name: conecta_raros
+  repository: https://github.com/acdgbrasil/acdg
+
+  command:
+    bootstrap:
+      environment:
+        sdk: ">=3.11.0 <4.0.0"
+        flutter: ">=3.41.0 <4.0.0"
+
+  scripts:
+    analyze:
+      run: melos exec -- "dart analyze --fatal-infos"
+      description: Run dart analyze in all packages.
+
+    test:
+      run: melos exec -- "flutter test"
+      description: Run tests in all packages.
+      packageFilters:
+        flutter: true
+
+    test:dart:
+      run: melos exec -- "dart test"
+      description: Run tests in Dart-only packages.
+      packageFilters:
+        flutter: false
+
+    format:
+      run: melos exec -- "dart format --set-exit-if-changed ."
+      description: Check formatting in all packages.
+
+    format:fix:
+      run: melos exec -- "dart format ."
+      description: Fix formatting in all packages.

@@ -1,0 +1,76 @@
+---
+title: Clean Command
+description: Learn more about the `clean` command in Melos.
+---
+
+# Clean Command
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+This command cleans the current workspace and all its packages of temporary pub
+& generated Melos IDE files.
+
+```bash
+melos clean
+```
+
+These files include;
+
+- `{packageRoot}/.packages`
+- `{packageRoot}/.flutter-plugins`
+- `{packageRoot}/.flutter-plugins-dependencies`
+- `{packageRoot}/.dart_tool/package_config.json`
+- `{packageRoot}/.dart_tool/package_config_subset`
+- `{packageRoot}/.dart_tool/version`
+- `{workspaceRoot}/.idea/runConfigurations/melos_*.xml`
+
+This can be useful to give your workspace a 'fresh start', e.g.;
+
+```bash
+melos clean
+melos bootstrap
+```
+
+## Combining with filters
+
+Clean supports [all package filtering options](/filters), therefore if you
+wanted to you could clean only a specific subset of your packages, for example:
+
+```bash
+# Only clean Flutter packages or apps.
+melos clean --flutter
+```
+
+## Adding a postclean lifecycle script
+
+Melos supports various command lifecycle hooks that can be defined in your
+root `pubspec.yaml`.
+
+For example, if you needed to cleanup any generated files, e.g. from a build
+runner, automatically after `melos clean` is ran, you can add a `post` hook
+script.
+
+```yaml
+# root pubspec.yaml
+# ...
+melos:
+  command:
+    clean:
+      hooks:
+        post: rm packages/foo/lib/src/generated_file.g.dart
+# ...
+```
+
+Another common use case is to run `flutter clean` in all Flutter packages;
+
+```yaml
+# melos.yaml
+# ...
+command:
+  clean:
+    hooks:
+      # Runs "flutter clean" in all Flutter packages (`--flutter`)
+      # with a concurrency of 3 at a time (`--concurrency=3`).
+      post: melos exec --flutter --concurrency=3 -- "flutter clean"
+# ...
+```

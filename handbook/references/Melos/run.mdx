@@ -1,0 +1,51 @@
+---
+title: Run Command
+description: Learn more about the `run` command in Melos.
+---
+
+# Run Command
+
+Run a [script](/configuration/scripts) by name defined in the workspace
+root `pubspec.yaml` config file.
+
+```bash
+melos run <name>
+```
+
+## --no-select
+
+Skips the prompt to select a package (if defined in the script configuration).
+Filters defined in the script's "packageFilters" options will however still be
+applied.
+
+```bash
+melos run <name> --no-select
+```
+
+## --list
+
+Displays all scripts defined in the Melos workspace.
+
+```bash
+melos run --list
+```
+
+Use `--json` to output the list in JSON format.
+
+```bash
+melos run --list --json
+```
+Using `--include-private` ignores the private configuration on scripts.
+The private scripts are shown in prompts, listings and they can be executed directly.
+
+```bash
+melos run --list --json
+```
+
+### --group
+
+Filters scripts to include only those that belong to the specified group.
+
+```bash
+melos run --group <group>
+```

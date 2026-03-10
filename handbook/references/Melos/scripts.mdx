@@ -1,0 +1,222 @@
+---
+title: Defining workspace scripts
+description:
+  Defining workspace scripts in Melos via the `scripts` section in the root `pubspec.yaml`.
+---
+
+# Workspace Scripts
+
+Workspace scripts can be executed with `melos run` or will be executed as
+lifecycle hooks of some specific Melos commands.
+
+Remember, the scripts go in the `scripts` section under the `melos` section in
+the root `pubspec.yaml` file. For readability the `melos` section is omitted in
+all examples below except for the first one.
+
+With the simple syntax, only the name of the script and the command to execute
+needs to be specified:
+
+```yaml
+melos:
+  scripts:
+    hello: echo 'Hello World'
+```
+
+The extends syntax allows for a more complex configuration of a script:
+
+```yaml
+scripts:
+  hello:
+    name: hey
+    description: Greet the world
+    run: echo '$GREETING World'
+    env:
+      GREETING: 'Hey'
+```
+
+Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all
+other platforms it is `sh`.
+
+If multiple commands are being executed in a script and no further commands
+should be executed after a command has failed, connect the commands with `&&`:
+
+```yaml
+scripts:
+  prepare: melos bootstrap && melos run build
+```
+
+## name
+
+A unique identifier for the script.
+
+## description
+
+A short description, shown when using `melos run` with no argument.
+
+## run
+
+The command to execute.
+
+## steps
+
+Steps enables the combination of multiple scripts within a single script
+definition for complex workflows. In the example below, the pre-commit script is
+configured to sequentially invoke a simple command echo 'hello world',
+followed by the Melos command to format your workspace and a command to run
+tests through Dart, each command with their specific arguments.
+
+```yaml
+scripts:
+  pre-commit:
+    description: pre-commit git hook script
+    steps:
+      - echo 'hello world'
+      - format --output none --set-exit-if-changed
+      - dart test --fail-fast .
+```
+
+Note: When utilizing the `steps`, it's important to understand that options 
+related to exec — such as concurrency — or `packageFilters` cannot be directly 
+applied within the steps configuration. Instead, these options should be 
+configured in the individual scripts that are being called as part of the step.
+
+## exec
+
+Execute a script in multiple packages through `melos exec`.
+
+This options must either contain the command to execute in multiple packages or
+the options for the `melos exec` command.
+
+When using the default options for `melos exec`, it's easiest to specify the
+command in the `exec` option:
+
+```yaml
+scripts:
+  hello:
+    exec: echo 'Hello $(dirname $PWD)'
+```
+
+If you need to provide options for the `exec` command, specify them in the
+`exec` option and specify the command in the `run` option:
+
+```yaml
+scripts:
+  hello:
+    run: echo 'Hello $(dirname $PWD)'
+    exec:
+      concurrency: 1
+```
+
+See the [`packageFilters`](/configuration/scripts#packagefilters) option for
+filtering the packages to execute the command in.
+
+### concurrency
+
+Defines the maximum concurrency value, i.e., the maximum number of packages that
+the script will execute in concurrently at any given time. By default, this value
+is set to the number of processors available on the underlying machine.
+
+### failFast
+
+Whether `exec` should fail fast and not execute the script in further packages
+if the script fails in an individual package. Defaults to `false`.
+
+### orderDependents
+
+Whether `exec` should order the execution of the script in multiple packages
+based on the dependency graph of the packages. The script will be executed in
+leaf packages first and then in packages that depend on them and so on. This is
+useful for example, for a script that generates code in multiple packages, which
+depend on each other. Defaults to `false`.
+
+## env
+
+A map of environment variables that will be passed to the executed command.
+
+## packageFilters
+
+The [`melos exec`](/commands/exec) command allows you to execute a command for
+multiple packages. When used in a script, you can declare filter options in the
+`packageFilters` section.
+
+The `hello_flutter` script below is only executed in Flutter packages:
+
+```yaml
+scripts:
+  hello_flutter:
+    exec: echo 'Hello $(dirname $PWD)'
+    packageFilters:
+      flutter: true
+```
+
+See the [global options](/filters) for a list of supported filters.
+
+<Warning>
+  The filter names in `packageFilters` are camel cased. For example, for the
+  equivalent of the command line option `--file-exists` use `fileExists`.
+</Warning>
+
+When running a script that uses `packageFilters`, you will be prompted to select
+the package to execute the script in. If you want to skip this prompt and run
+the script in all packages, use the `--no-select` option.
+
+## private
+
+This option allows you to mark scripts as **private**.
+Private scripts cannot be executed directly and are hidden from the command prompt.
+
+They can only be referenced as `steps` within other scripts.
+
+If you use the `--include-private` flag, this restriction is ignored.
+
+### `groups`
+
+Defines one or more groups for the specified script.
+Scripts can be organized into logical groups, which can later be targeted or filtered
+using the `--group` option when running commands. This is useful for hiding or executing
+only scripts that belong to certain groups.
+
+
+---
+
+## Hooks
+
+Certain Melos commands support running scripts before and after the command is
+executed, as well as at other interesting points in the command's execution.
+
+All commands that support hooks, support at least the `pre` and `post` hook.
+
+Hooks are configured in the `hooks` section of a command's configuration in the
+root `pubspec.yaml` file.
+
+```yaml
+command:
+  bootstrap:
+    hooks:
+      pre: echo `bootstrap command is running...`
+      post: echo `bootstrap command is done`
+```
+
+Currently, the following Melos commands support hooks:
+
+- [`bootstrap`](/commands/bootstrap)
+- [`clean`](/commands/clean)
+- [`version`](/commands/version)
+- [`publish`](/commands/publish)
+
+## Overriding built-in commands
+
+Custom scripts can override Melos built-in commands. When a custom script has
+the same name as a built-in command, the custom script takes precedence. This
+allows you to customize the behavior of built-in commands to match your
+workspace needs.
+
+For example, you can override the built-in `format` command:
+
+```yaml
+scripts:
+  format: dart run custom_formatter
+```
+
+With this configuration, both `melos format` and `melos run format` will execute
+your custom format script instead of the built-in format command.

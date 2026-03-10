@@ -1,0 +1,197 @@
+title: "Fase 1 — Foundation: tokens Figma, atoms, cells, templates + Melos fix"
+date: "2026-03-08T04:05:00"
+author: "Claude Opus 4.6"
+
+resumo: |
+  Conclusao da Fase 1 do IMPLEMENTATION_PLAN.md.
+  - Corrigido Melos 7.x (config migrada para pubspec.yaml raiz, resolution: workspace em cada package).
+  - Tokens do design system extraidos do Figma via MCP (5 cores base + extended palette, 3 font families, spacing, radius, shadows).
+  - 8 atoms criados (AcdgText, AcdgButton, AcdgTextField, AcdgIcon, AcdgCard, AcdgCheckbox, AcdgRadioGroup, AcdgDropdown).
+  - 2 cells criados (AcdgFormField, AcdgInfoCard).
+  - 2 templates criados (FormLayoutTemplate, PageScaffoldTemplate).
+  - 97 testes passando (20 core + 77 design system), 0 erros no analyze.
+  - Shell pages simplificadas para usar tokens reais em vez de widgets inexistentes.
+  - Preparada pasta de pesquisa para Fase 2 (Auth).
+
+branch: "feat/phase1-foundation-design-system"
+
+commit: |
+  feat: complete Phase 1 foundation — Figma tokens, atomic design widgets, Melos fix
+
+  - Fix Melos 7.x config (inline in root pubspec.yaml, resolution: workspace)
+  - Extract design tokens from Figma via MCP (colors, typography, spacing, radius, shadows)
+  - Create 8 atoms: Text, Button, TextField, Icon, Card, Checkbox, RadioGroup, Dropdown
+  - Create 2 cells: FormField, InfoCard
+  - Create 2 templates: FormLayoutTemplate, PageScaffoldTemplate
+  - Add 77 widget tests for design_system package
+  - Fix shell pages to use real tokens instead of nonexistent widgets
+  - Fix core lint issues (library name, unused parameter)
+  - Update IMPLEMENTATION_PLAN.md with Phase 1 progress
+
+  Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+pr_name: "feat: Phase 1 Foundation — Figma tokens + Atomic Design widgets + Melos fix"
+
+pr_description: |
+  ## Summary
+  - Completes Phase 1 (Foundation) of the frontend implementation plan
+  - Fixes Melos 7.x workspace detection (config now inline in root `pubspec.yaml`)
+  - Extracts real design tokens from Figma (5 base colors, 3 font families, spacing/radius/shadow scales)
+  - Creates 12 Atomic Design widgets (8 atoms + 2 cells + 2 templates) with 77 widget tests
+  - All 3 packages pass `dart analyze --fatal-infos` with zero issues
+
+  ## Test plan
+  - [x] `melos bootstrap` resolves 3 packages successfully
+  - [x] `melos run analyze` — 0 errors across all packages
+  - [x] `flutter test` (core) — 20/20 passing
+  - [x] `flutter test` (design_system) — 77/77 passing
+  - [x] Shell app builds without errors
+
+  🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+git_add:
+  # Root config
+  - pubspec.yaml
+  - analysis_options.yaml
+  - .gitignore
+  - IMPLEMENTATION_PLAN.md
+
+  # Shell
+  - shell/pubspec.yaml
+  - shell/lib/main.dart
+  - shell/lib/router/app_router.dart
+  - shell/lib/pages/splash_page.dart
+  - shell/lib/pages/home_page.dart
+
+  # Core
+  - packages/core/pubspec.yaml
+  - packages/core/lib/core.dart
+  - packages/core/lib/src/base/result.dart
+  - packages/core/lib/src/base/base_view_model.dart
+  - packages/core/lib/src/base/base_use_case.dart
+  - packages/core/lib/src/network/dio_client.dart
+  - packages/core/lib/src/platform/platform_resolver.dart
+  - packages/core/lib/src/connectivity/connectivity_service.dart
+  - packages/core/test/base/result_test.dart
+  - packages/core/test/base/base_view_model_test.dart
+
+  # Design System — barrel
+  - packages/design_system/pubspec.yaml
+  - packages/design_system/lib/design_system.dart
+
+  # Design System — tokens
+  - packages/design_system/lib/src/tokens/acdg_colors.dart
+  - packages/design_system/lib/src/tokens/acdg_typography.dart
+  - packages/design_system/lib/src/tokens/acdg_spacing.dart
+  - packages/design_system/lib/src/tokens/acdg_radius.dart
+  - packages/design_system/lib/src/tokens/acdg_shadows.dart
+  - packages/design_system/lib/src/tokens/acdg_theme.dart
+
+  # Design System — atoms
+  - packages/design_system/lib/src/atoms/acdg_text.dart
+  - packages/design_system/lib/src/atoms/acdg_button.dart
+  - packages/design_system/lib/src/atoms/acdg_text_field.dart
+  - packages/design_system/lib/src/atoms/acdg_icon.dart
+  - packages/design_system/lib/src/atoms/acdg_card.dart
+  - packages/design_system/lib/src/atoms/acdg_checkbox.dart
+  - packages/design_system/lib/src/atoms/acdg_radio.dart
+  - packages/design_system/lib/src/atoms/acdg_dropdown.dart
+
+  # Design System — cells
+  - packages/design_system/lib/src/cells/acdg_form_field.dart
+  - packages/design_system/lib/src/cells/acdg_info_card.dart
+
+  # Design System — templates
+  - packages/design_system/lib/src/templates/form_layout_template.dart
+  - packages/design_system/lib/src/templates/page_scaffold_template.dart
+
+  # Design System — tests
+  - packages/design_system/test/atoms/acdg_text_test.dart
+  - packages/design_system/test/atoms/acdg_button_test.dart
+  - packages/design_system/test/atoms/acdg_text_field_test.dart
+  - packages/design_system/test/atoms/acdg_icon_test.dart
+  - packages/design_system/test/atoms/acdg_card_test.dart
+  - packages/design_system/test/atoms/acdg_checkbox_test.dart
+  - packages/design_system/test/atoms/acdg_radio_test.dart
+  - packages/design_system/test/atoms/acdg_dropdown_test.dart
+  - packages/design_system/test/cells/acdg_form_field_test.dart
+  - packages/design_system/test/cells/acdg_info_card_test.dart
+  - packages/design_system/test/templates/form_layout_template_test.dart
+  - packages/design_system/test/templates/page_scaffold_template_test.dart
+
+  # Handbook
+  - handbook/research/phase2/AUTH_RESEARCH.md
+  - handbook/reports/PullRequest-2026-03-08_04-05-00.yaml
+
+arquivos_modificados:
+  - arquivo: pubspec.yaml
+    motivo: "Adicionado melos config inline (Melos 7.x) + dev_dependencies melos"
+
+  - arquivo: shell/pubspec.yaml
+    motivo: "Adicionado resolution: workspace para Melos 7.x"
+
+  - arquivo: shell/lib/main.dart
+    motivo: "Removido import nao utilizado (go_router)"
+
+  - arquivo: shell/lib/pages/home_page.dart
+    motivo: "Substituido widgets inexistentes (AcdgText, PageScaffoldTemplate, AcdgInfoCard) por Material widgets + tokens reais"
+
+  - arquivo: shell/lib/pages/splash_page.dart
+    motivo: "Substituido AcdgText inexistente por Text widget + tokens reais, corrigido const list error"
+
+  - arquivo: packages/core/pubspec.yaml
+    motivo: "Adicionado resolution: workspace para Melos 7.x"
+
+  - arquivo: packages/core/lib/core.dart
+    motivo: "Removido library name deprecated (library core -> library)"
+
+  - arquivo: packages/core/lib/src/network/dio_client.dart
+    motivo: "Corrigido unused_element_parameter: maxRetries de campo para static const"
+
+  - arquivo: packages/design_system/pubspec.yaml
+    motivo: "Adicionado resolution: workspace para Melos 7.x"
+
+  - arquivo: packages/design_system/lib/design_system.dart
+    motivo: "Adicionados exports de shadows, atoms, cells e templates"
+
+  - arquivo: packages/design_system/lib/src/tokens/acdg_colors.dart
+    motivo: "Substituido placeholders por cores reais do Figma (5 base + extended palette)"
+
+  - arquivo: packages/design_system/lib/src/tokens/acdg_typography.dart
+    motivo: "Adicionadas 3 font families (Inter, Space Grotesk, Erode) + estilos input/group/accent do Figma"
+
+  - arquivo: packages/design_system/lib/src/tokens/acdg_spacing.dart
+    motivo: "Atualizada escala com vars do Figma (--spacing/0..4) + extensoes"
+
+  - arquivo: packages/design_system/lib/src/tokens/acdg_radius.dart
+    motivo: "Adicionado pill=100 (botao save Figma), adicionado borderNone/borderPill"
+
+  - arquivo: packages/design_system/lib/src/tokens/acdg_shadows.dart
+    motivo: "Novo arquivo — xs, focusRing, buttonGlow, overlayLight, overlayDark, popup extraidos do Figma"
+
+  - arquivo: packages/design_system/lib/src/tokens/acdg_theme.dart
+    motivo: "Reescrito com tokens reais, adicionado dark theme (navy bg), input underline style, checkbox/radio theme"
+
+  - arquivo: packages/design_system/lib/src/atoms/*.dart
+    motivo: "8 novos atoms: Text, Button, TextField, Icon, Card, Checkbox, RadioGroup, Dropdown"
+
+  - arquivo: packages/design_system/lib/src/cells/*.dart
+    motivo: "2 novos cells: FormField (label+input+error+required), InfoCard (4 tipos semanticos)"
+
+  - arquivo: packages/design_system/lib/src/templates/*.dart
+    motivo: "2 novos templates: FormLayoutTemplate (scrollable form), PageScaffoldTemplate (scaffold+sidebar)"
+
+  - arquivo: packages/design_system/test/**/*_test.dart
+    motivo: "12 arquivos de teste — 77 testes cobrindo todos os widgets"
+
+  - arquivo: IMPLEMENTATION_PLAN.md
+    motivo: "Atualizado progresso: Fase 1 checkboxes marcados, barra de progresso atualizada"
+
+  - arquivo: handbook/research/phase2/AUTH_RESEARCH.md
+    motivo: "Template de pesquisa para Fase 2 — perguntas sobre OIDC, storage, Zitadel config"
+
+comentario: |
+  Fase 1 concluida com sucesso. O design system agora possui tokens reais extraidos
+  do Figma (nao mais placeholders) e 12 widgets Atomic Design testados. O Melos 7.x
+  esta funcional. A base esta solida para iniciar a Fase 2 (Auth com Zitadel OIDC PKCE).
+  Pendente: pesquisa do usuario sobre packages OIDC e configuracao do Zitadel.

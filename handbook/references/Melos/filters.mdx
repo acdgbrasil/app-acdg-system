@@ -1,0 +1,130 @@
+---
+title: Filtering Packages
+description: Learn more about all the package filtering flags in Melos.
+---
+
+# Filtering Packages
+
+Each Melos command can be used alongside the following global filters:
+
+## --no-private
+
+Exclude private packages (`publish_to: none`). They are included by default.
+
+```bash
+melos bootstrap --no-private
+```
+
+## --published
+
+Filter packages where the current local package version exists on pub.dev.
+
+```bash
+melos bootstrap --published
+```
+
+Use `--no-published` to filter packages that have not had their current version
+published yet.
+
+## --scope
+
+Include only packages with names matching the given glob. This option can be
+repeated.
+
+```bash
+# Run `flutter build ios` on all packages with "example" in the package name
+melos exec --scope="*example*" -- flutter build ios
+```
+
+## --ignore
+
+Exclude packages with names matching the given glob. This option can be
+repeated.
+
+```bash
+# Run `flutter build ios` on all packages but ignore those whose packages names contain "internal"
+melos exec --ignore="*internal*" -- flutter build ios
+```
+
+## --category
+
+Filter packages based on categories declared in the root `pubspec.yaml` file.
+
+```bash
+# Run `flutter build ios` on all packages in the "examples" category.
+melos exec --category="examples" -- flutter build ios
+```
+
+## --diff
+
+Filter packages based on whether there were changes between a commit and the
+current HEAD or within a range of commits.
+
+A range of commits can be specified using the git short hand syntax
+`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
+
+```bash
+# Run `flutter build ios` on all packages that are different between current
+# branch and the specified commit hash.
+melos exec --diff=<commit hash> -- flutter build ios
+
+# Run `flutter build ios` on all packages that are different between remote
+# `main` branch and HEAD.
+melos exec --diff=origin/main...HEAD -- flutter build ios
+```
+
+## --dir-exists
+
+Include only packages where a specific directory exists inside the package.
+
+```bash
+# Only bootstrap packages with an example directory
+melos bootstrap --dir-exists="example"
+```
+
+## --file-exists
+
+Include only packages where a specific file exists in the package.
+
+```bash
+# Only bootstrap packages with an README.md file
+melos bootstrap --file-exists="README.md"
+```
+
+## --flutter
+
+Filter packages where the package depends on the Flutter SDK.
+
+```bash
+melos exec --flutter -- flutter test
+```
+
+Use `--no-flutter` to filter packages that do not depend on the Flutter SDK.
+
+## --depends-on
+
+Include only packages that depend on specific dependencies.
+
+```bash
+melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
+```
+
+Use `--no-depends-on` to filter packages that do not depend on the given
+dependencies.
+
+## --include-dependencies
+
+Takes the filtered list of packages, and expands them to include those packages'
+transitive dependencies (ignoring filters).
+
+```bash
+melos list --scope=some_package --include-dependencies
+```
+
+## --include-dependents
+Takes the filtered list of packages, and expands them to include those packages'
+transitive dependents (ignoring filters).
+
+```bash
+melos list --scope=some_package --include-dependents
+```
