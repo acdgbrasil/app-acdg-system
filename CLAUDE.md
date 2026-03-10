@@ -33,7 +33,7 @@ cd shell && flutter build web --wasm --release \
 
 # BFF
 cd bff/social_care_bff && dart run bin/server.dart  # Rodar BFF server (Darto)
-cd bff/social_care_bff && dart test                 # Testes do BFF
+cd bff/social_care_bff && flutter test              # Testes do BFF (usa flutter test por dep transitiva)
 cd bff/social_care_bff && dart compile exe bin/server.dart -o social-care-bff  # Build AOT
 
 # Testes

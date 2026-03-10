@@ -1,0 +1,15 @@
+name: social_care_bff
+description: BFF (Backend for Frontend) for the Social Care domain. Typed proxy to the social-care API.
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  core:
+    path: ../../packages/core
+  dio: ^5.8.0+1
+
+dev_dependencies:
+  test: ^1.25.8

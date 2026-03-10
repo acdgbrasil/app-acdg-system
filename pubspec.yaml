@@ -8,6 +8,7 @@ workspace:
   - shell
   - packages/core
   - packages/design_system
+  - bff/social_care_bff
 
 dev_dependencies:
   melos: ^7.4.0

@@ -40,7 +40,7 @@
 | Item | Status |
 |------|--------|
 | Codigo Flutter | EM ANDAMENTO (shell + core + auth OIDC) |
-| BFF Dart | NAO INICIADO |
+| BFF Dart | COMPLETO (proxy tipado, 48 testes) |
 | Design System (Figma) | EXISTENTE |
 | Design System (codigo) | EM ANDAMENTO (tokens + 8 atoms) |
 | Offline Engine | NAO INICIADO |
@@ -53,12 +53,12 @@
 ```
 FASE 1: Foundation (monorepo + core + design system)      ██████████  100%
 FASE 2: Shell + Auth (Zitadel OIDC PKCE)                  ██████████  100%
-FASE 3: BFF Social Care (EDD + DDD + Darto)               ░░░░░░░░░░
+FASE 3: BFF Social Care (proxy tipado + contract)          ██████████  100%
 FASE 4: Offline Engine (Isar + SyncQueue + CRDT)           ░░░░░░░░░░
 FASE 5: Features Social Care (12 features MVVM)            ░░░░░░░░░░
 FASE 6: Polish + Desktop Build + CI/CD                     ░░░░░░░░░░
                                                            ──────────
-                                                           Progresso: ~28%
+                                                           Progresso: ~45%
 ```
 
 ---
@@ -174,27 +174,54 @@ flutter run -d macos \
 
 ## FASE 3 — BFF Social Care
 
-Backend for Frontend com EDD + DDD em Dart.
+Proxy tipado ao social-care API. Conforme handbook secao 4: o backend (Swift/Vapor) ja contem todo o DDD, o BFF NAO duplica — apenas traduz chamadas Flutter em requests HTTP e retorna domain models Dart puros.
 
 ### Entregaveis
 
-- [ ] `bff/social_care_bff/` — package Dart
-- [ ] Domain Layer (DDD)
-  - [ ] Models imutaveis espelhando a API (Patient, FamilyMember, etc.)
-  - [ ] Value Objects (CPF, NIS, CEP — validacao no construtor)
-  - [ ] Domain Events (EDD)
-- [ ] Application Layer
-  - [ ] Commands: RegisterPatient, AddFamilyMember, UpdateHousing, etc.
-  - [ ] Queries: GetPatient, GetLookups, GetAuditTrail
-  - [ ] SyncManager: reconciliacao de queue offline
-- [ ] Infrastructure Layer
-  - [ ] `ApiClient` (Dio -> API social-care com Bearer token)
-  - [ ] `LocalCache` (Isar para cache de lookups e dados recentes)
-- [ ] Interface Layer
-  - [ ] `SocialCareBffContract` (interface abstrata)
-  - [ ] `InProcessBff` (implementacao para desktop — chamadas Dart diretas)
-  - [ ] `DartoServer` (implementacao para web — servidor HTTP)
-- [ ] Testes unitarios do domain e application
+- [x] `bff/social_care_bff/` — package Dart (workspace resolution)
+- [x] Contract Layer
+  - [x] `SocialCareContract` — interface abstrata com 21 metodos (Registry 7, Audit 1, Assessment 7, Care 2, Protection 3, Lookup 1)
+  - [x] Request DTOs com `toJson()` — 4 arquivos (registry, assessment, care, protection)
+  - [x] Response barrels — 5 arquivos re-exportando domain models por bounded context
+- [x] Domain Models (imutaveis, puros, sem JSON)
+  - [x] `Patient` agregado (personId, version, personalData, civilDocuments, address, socialIdentity)
+  - [x] `FamilyMember`, `Diagnosis`, `PersonalData`, `CivilDocuments`, `RgDocument`, `Address`, `SocialIdentity`
+  - [x] Assessment: `HousingCondition`, `SocioEconomicSituation`, `WorkAndIncome`, `EducationalStatus`, `HealthStatus`, `CommunitySupportNetwork`, `SocialHealthSummary`
+  - [x] Care: `Appointment`, `IntakeInfo`, `ProgramLink`
+  - [x] Protection: `Referral`, `ViolationReport`, `PlacementHistory`, `PlacementRegistry`
+  - [x] Common: `LookupItem`, `AuditEvent`, `ComputedAnalytics` (+ Housing/Financial/AgeProfile/EducationalVulnerabilities)
+- [x] Value Objects
+  - [x] `Cpf` — 11 digitos, `isValid`, `formatted` (XXX.XXX.XXX-XX)
+  - [x] `Nis` — 11 digitos, `isValid`, `formatted` (XXX.XXXXX.XX-X)
+  - [x] `Cep` — 8 digitos, `isValid`, `formatted` (XXXXX-XXX)
+  - [x] Integrados em `CivilDocuments` (Cpf, Nis) e `Address` (Cep)
+- [x] API Client
+  - [x] `SocialCareApiClient` — Dio HTTP wrapper para todas as 21 operacoes
+  - [x] `api_models/` — 5 mapper classes separados (PatientMapper, AssessmentMappers, CareMappers, ProtectionMappers, CommonMappers + ComputedAnalyticsMapper)
+  - [x] Parsing JSON → domain models totalmente encapsulado nos mappers
+- [x] Implementacoes
+  - [x] `InProcessBff` — desktop (in-process via api_client, sem HTTP intermediario)
+  - [ ] `DartoServer` — web (servidor HTTP, futuro)
+- [x] Testing
+  - [x] `FakeSocialCareBff` — in-memory fake com patients map, lookupTables, shouldFail, registerCallCount
+  - [x] Barrel export via `package:social_care_bff/testing.dart`
+- [x] Testes — **48 testes passando**
+  - [x] Contract: 8 testes (register, get, lookup, failure mode, mutations)
+  - [x] Models: 10 testes (equality, toString, fullName, LookupItem)
+  - [x] Value Objects: 15 testes (CPF, NIS, CEP — validity, formatting, equality)
+  - [x] DTOs: 8 testes (toJson para 7 request types)
+  - [x] API Client: 4 testes (model construction, AuditEvent, PlacementHistory, IntakeInfo)
+  - [x] InProcessBff: 3 testes (full lifecycle, failure mode, lookup tables)
+- [x] Analyzer: 0 warnings/errors (1 info)
+- [x] Handbook atualizado (ARCHITECTURE.md secoes 4.2 e 7.6)
+
+**Nota:** Testes rodam com `flutter test` (nao `dart test`) porque core depende transitivamente de Flutter via package:oidc.
+
+### Pendente para futuro (nao bloqueante)
+
+- [ ] `DartoServer` — implementacao web (Fase 6)
+- [ ] `bin/server.dart` — entry point web (Fase 6)
+- [ ] Integracao com SyncQueue/cache offline (Fase 4)
 
 ---
 
@@ -325,10 +352,15 @@ Quando TODOS os itens abaixo estiverem marcados, o frontend esta pronto para dep
 - [x] Role-based routing (GoRouter global + local redirect)
 
 ### BFF
-- [ ] Domain layer (DDD) com models e VOs
-- [ ] Application layer (commands, queries, sync)
-- [ ] Interface dupla (in-process + Darto HTTP)
-- [ ] Testes >= 95%
+- [x] Contract layer (SocialCareContract, 21 metodos)
+- [x] Domain models imutaveis (16+ modelos puros)
+- [x] Value Objects (CPF, NIS, CEP) integrados nos models
+- [x] API Client com api_models/ separados (5 mapper classes)
+- [x] InProcessBff (desktop, in-process)
+- [x] FakeSocialCareBff (testing double)
+- [x] 48 testes passando
+- [ ] DartoServer (web, Fase 6)
+- [ ] Integracao offline (Fase 4)
 
 ### Offline
 - [ ] Isar schemas
