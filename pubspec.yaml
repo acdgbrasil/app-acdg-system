@@ -1,20 +1,20 @@
-name: conecta_raros_workspace
+name: acdg_system_workspace
 publish_to: 'none'
 
 environment:
   sdk: ^3.11.1
 
 workspace:
-  - shell
+  - apps/acdg_system
   - packages/core
-  - packages/design_system
-  - bff/social_care_bff
+  - packages/auth
+  - packages/network
 
 dev_dependencies:
   melos: ^7.4.0
 
 melos:
-  name: conecta_raros
+  name: acdg_system
   repository: https://github.com/acdgbrasil/acdg
 
   command:

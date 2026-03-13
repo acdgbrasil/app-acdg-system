@@ -1,5 +1,5 @@
 name: core
-description: Core package - network, auth, platform, base classes.
+description: Core package - base classes and platform resolution.
 version: 0.1.0
 publish_to: 'none'
 
@@ -12,11 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.8.0+1
-  connectivity_plus: ^6.1.4
-  oidc: ^0.14.0+2
-  oidc_default_store: ^0.6.0+2
-  url_launcher: ^6.3.1
+  meta: ^1.16.0
 
 dev_dependencies:
   flutter_test:

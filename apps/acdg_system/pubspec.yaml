@@ -1,0 +1,29 @@
+name: acdg_system
+description: ACDG System - Frontend integrado da ACDG Technology.
+publish_to: 'none'
+version: 0.1.0
+
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../../packages/core
+  auth:
+    path: ../../packages/auth
+  network:
+    path: ../../packages/network
+  go_router: ^17.1.0
+  provider: ^6.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

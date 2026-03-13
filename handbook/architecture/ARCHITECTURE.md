@@ -84,11 +84,11 @@ Segue as diretrizes oficiais de arquitetura Flutter (MVVM), com adição de Logi
 
 | Camada | Responsabilidade | Regras | Exemplos |
 |--------|-----------------|--------|----------|
-| **View** | Exibe dados, captura eventos do usuario. NAO decide nada. | Logica permitida: (1) if/else para mostrar/esconder widgets, (2) logica de animacao, (3) logica de layout baseada em tamanho de tela, (4) roteamento simples. Tudo mais vai no ViewModel. | Pages (Desktop/Web/Mobile), Components (Atomic Design) |
-| **ViewModel** | Gerencia estado da UI. Recebe acoes do usuario e delega para UseCases/Repositories. | Contem logica de **UI** (formatacao, loading states, validacao de formulario). NAO contem logica de negocio (vive no BFF). Expoe estado via **ValueNotifier** (atomico) + **ChangeNotifier** (agregador). Uma instancia por feature, compartilhada entre plataformas. | `PatientRegistrationViewModel`, `AuthViewModel` |
-| **UseCase** | Orquestra chamadas a multiplos Repositories. Camada de indireção entre ViewModel e Data Layer. | Sempre presente por padronizacao, mesmo em features simples (prepara para crescimento). Retorna `Result<T>`. Usa **Command pattern** para acoes do usuario. | `RegisterPatientUseCase`, `SyncOfflineQueueUseCase` |
-| **Repository** | Fonte de verdade para dados. Cache, retry, error handling, mapeamento de modelos. | Classes abstratas (interfaces) para permitir fakes em testes e diferentes implementacoes (dev/staging/prod). Podem ser compartilhados entre features. | `PatientRepository`, `LookupRepository` |
-| **Service** | Wrapper puro de chamadas externas (HTTP/Platform). Sem logica. | Uma responsabilidade: traduzir chamadas externas em objetos Dart. | `PatientService` (Dio -> BFF), `ConnectivityService` |
+| **View** | Exibe dados, captura eventos. NAO decide nada. | Organizada em **Atomic Design** (Atoms, Molecules, Organisms). | `HomePage`, `UserMenuButton` |
+| **ViewModel** | Gerencia estado da UI. | Recebe acoes da View e delega para **UseCases**. NAO fala com Repositories. | `AuthViewModel` |
+| **UseCase** | Orquestrador da Camada de Lógica. | Regras de negócio cross-cutting e orquestração de dados. Retorna `Result<T>`. | `LoginUseCase` |
+| **Repository** | Fonte de verdade para dados. | Abstrai Repositories reais e Fakes. Encapsula Services. | `AuthRepository` |
+| **Config/Env** | Gestão de Infraestrutura e Ambiente. | Centraliza `--dart-define` e decisão de plataforma. | `Env`, `OidcConfigFactory` |
 
 ### 2.3 Fluxo de Dados (Unidirecional)
 
@@ -119,6 +119,7 @@ Acoes do usuario (upstream):
 | Logic Layer (UseCase) | **Condicional** (adotado) | Presente em todas as features por padronizacao e preparacao para crescimento |
 | Command pattern | **Recomendado** | Previne erros de renderizacao, padroniza interacao usuario -> dados |
 | Models imutaveis | **Fortemente recomendado** | `final` em tudo, `copyWith()`, fluxo unidirecional |
+| Validacao estrutural nos models | **Fortemente recomendado** (ADR-014) | VOs e entidades validam formato/normalizacao no construtor. Logica de negocio permanece no BFF. Alinhado com `contracts/shared/validation-rules/TESTING_GUIDE.md` |
 | Modelos de API separados de dominio | **Condicional** (adotado) | API models na Data Layer, domain models na Domain Layer |
 | Provider para DI | **Recomendado** | Integrado com widget tree, sem code generation |
 | GoRouter | **Recomendado** | Roteamento declarativo com deferred loading |
@@ -213,7 +214,7 @@ Flutter App -> Dio HTTP -> Darto Server (BFF) -> ApiClient (Dio) -> API Backend
 
 | Camada | Responsabilidade | O que NAO faz |
 |--------|-----------------|---------------|
-| **Flutter App** | UI, estado de tela, navegacao | Logica de negocio, validacao de dominio |
+| **Flutter App** | UI, estado de tela, navegacao, validacao estrutural (formato, normalizacao, campos obrigatorios — ADR-014) | Logica de negocio (invariantes de agregado, state machines, regras cross-entidade) |
 | **BFF** | Proxy tipado, auth headers, adaptacao de plataforma | Duplicar regras que ja existem na API |
 | **API Backend** | DDD completo, validacao, event sourcing, CQRS, analytics | Apresentacao, estado de UI |
 

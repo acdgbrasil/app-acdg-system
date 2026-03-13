@@ -40,7 +40,7 @@ void main() {
       });
 
       test('toString is descriptive', () {
-        expect(const Success(42).toString(), 'Success(42)');
+        expect(const Success(42).toString(), 'Success<int>(42)');
       });
     });
 
@@ -85,7 +85,7 @@ void main() {
       });
 
       test('toString is descriptive', () {
-        expect(const Failure<int>('oops').toString(), 'Failure(oops)');
+        expect(const Failure<int>('oops').toString(), 'Failure<int>(oops, null)');
       });
     });
 

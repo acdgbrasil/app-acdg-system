@@ -1,8 +1,7 @@
 # Plano de Implementacao — Frontend ACDG (Conecta Raros)
 
-> **Stack:** Flutter/Dart (Web WASM + Desktop Nativo) | BFF Dart AOT (EDD + DDD) | Isar (Offline)
+> **Stack:** Flutter/Dart (Web WASM + Desktop Nativo) | Isar (Offline)
 > **Idioma:** Code EN / UI PT-BR
-> **Design:** Figma ACDG (Atomic Design)
 > **Padrao:** MVVM + Logic Layer (UseCase) | Estado Atomico (ValueNotifier) | GoF Patterns
 
 ---
@@ -18,6 +17,23 @@
 7. [Fase 5 — Features Social Care](#fase-5)
 8. [Fase 6 — Polish + Desktop Build](#fase-6)
 9. [Checklist Final](#checklist-final)
+
+---
+
+## Decisoes de Re-estruturacao (2026-03-12)
+
+> **IMPORTANTE:** Em 2026-03-12 decidimos remover e refazer dois componentes:
+>
+> ### Design System — REMOVIDO
+> O `packages/design_system/` (tokens Figma + Atomic Design: 8 atoms, 2 cells, 2 templates, 77 testes) foi **deletado**.
+> O shell agora usa Material 3 nativo (`Theme.of(context)` + `colorSchemeSeed`).
+> Sera reconstruido do zero com nova abordagem.
+>
+> ### BFF Social Care — REMOVIDO para re-estruturacao
+> O `bff/social_care_bff/` (contract layer, 21 metodos, domain models, API client, 48 testes) foi **removido**.
+> Sera reconstruido do zero com nova arquitetura.
+>
+> **Impacto:** Fases 1 e 3 voltam ao status de re-trabalho. Fase 2 (Shell + Auth) permanece intacta.
 
 ---
 
@@ -40,9 +56,9 @@
 | Item | Status |
 |------|--------|
 | Codigo Flutter | EM ANDAMENTO (shell + core + auth OIDC) |
-| BFF Dart | COMPLETO (proxy tipado, 48 testes) |
+| BFF Dart | REMOVIDO — sera refeito |
 | Design System (Figma) | EXISTENTE |
-| Design System (codigo) | EM ANDAMENTO (tokens + 8 atoms) |
+| Design System (codigo) | REMOVIDO — sera refeito |
 | Offline Engine | NAO INICIADO |
 | CI/CD Frontend | NAO INICIADO |
 
@@ -51,14 +67,14 @@
 ## 2. Plano de Fases
 
 ```
-FASE 1: Foundation (monorepo + core + design system)      ██████████  100%
-FASE 2: Shell + Auth (Zitadel OIDC PKCE)                  ██████████  100%
-FASE 3: BFF Social Care (proxy tipado + contract)          ██████████  100%
-FASE 4: Offline Engine (Isar + SyncQueue + CRDT)           ░░░░░░░░░░
-FASE 5: Features Social Care (12 features MVVM)            ░░░░░░░░░░
-FASE 6: Polish + Desktop Build + CI/CD                     ░░░░░░░░░░
-                                                           ──────────
-                                                           Progresso: ~45%
+FASE 1: Foundation (monorepo + core)                        ████████░░  ~80% (design system removido, sera refeito)
+FASE 2: Shell + Auth (Zitadel OIDC PKCE)                    ██████████  100%
+FASE 3: BFF Social Care (proxy tipado + contract)            ░░░░░░░░░░  REMOVIDO — sera refeito
+FASE 4: Offline Engine (Isar + SyncQueue + CRDT)             ░░░░░░░░░░
+FASE 5: Features Social Care (12 features MVVM)              ░░░░░░░░░░
+FASE 6: Polish + Desktop Build + CI/CD                       ░░░░░░░░░░
+                                                             ──────────
+                                                             Progresso: ~25%
 ```
 
 ---
@@ -78,11 +94,8 @@ Setup do monorepo Flutter com packages compartilhados.
   - [x] `DioClient` com interceptors (auth token, retry, logging)
   - [x] `PlatformResolver` (isDesktop, isWeb, isMobile)
   - [x] `ConnectivityService` (online/offline listener)
-- [x] `packages/design_system/` — tokens do Figma + atoms base
-  - [x] Tokens: cores (Figma), tipografia (Inter/Space Grotesk/Erode), spacing, radius, shadows
-  - [x] Atoms: AcdgButton, AcdgTextField, AcdgText, AcdgIcon, AcdgCard, AcdgCheckbox, AcdgRadioGroup, AcdgDropdown — 51 testes
-  - [x] Cells: AcdgFormField (label + input + error), AcdgInfoCard — 16 testes
-  - [x] Templates: FormLayoutTemplate, PageScaffoldTemplate — 10 testes
+- ~~[x] `packages/design_system/` — tokens do Figma + atoms base~~ **REMOVIDO (2026-03-12)** — sera refeito
+- [ ] `packages/design_system/` — **A REFAZER** com nova abordagem
 - [x] `analysis_options.yaml` compartilhado (lint rules)
 - [x] `.gitignore` para Flutter
 
@@ -174,54 +187,20 @@ flutter run -d macos \
 
 ## FASE 3 — BFF Social Care
 
-Proxy tipado ao social-care API. Conforme handbook secao 4: o backend (Swift/Vapor) ja contem todo o DDD, o BFF NAO duplica — apenas traduz chamadas Flutter em requests HTTP e retorna domain models Dart puros.
+> **STATUS: REMOVIDO (2026-03-12)** — Sera reconstruido do zero com nova arquitetura.
+>
+> A implementacao anterior (contract layer, 21 metodos, domain models, API client, InProcessBff, 48 testes)
+> foi removida. O codigo e testes serao refeitos.
 
-### Entregaveis
+### Entregaveis (a refazer)
 
-- [x] `bff/social_care_bff/` — package Dart (workspace resolution)
-- [x] Contract Layer
-  - [x] `SocialCareContract` — interface abstrata com 21 metodos (Registry 7, Audit 1, Assessment 7, Care 2, Protection 3, Lookup 1)
-  - [x] Request DTOs com `toJson()` — 4 arquivos (registry, assessment, care, protection)
-  - [x] Response barrels — 5 arquivos re-exportando domain models por bounded context
-- [x] Domain Models (imutaveis, puros, sem JSON)
-  - [x] `Patient` agregado (personId, version, personalData, civilDocuments, address, socialIdentity)
-  - [x] `FamilyMember`, `Diagnosis`, `PersonalData`, `CivilDocuments`, `RgDocument`, `Address`, `SocialIdentity`
-  - [x] Assessment: `HousingCondition`, `SocioEconomicSituation`, `WorkAndIncome`, `EducationalStatus`, `HealthStatus`, `CommunitySupportNetwork`, `SocialHealthSummary`
-  - [x] Care: `Appointment`, `IntakeInfo`, `ProgramLink`
-  - [x] Protection: `Referral`, `ViolationReport`, `PlacementHistory`, `PlacementRegistry`
-  - [x] Common: `LookupItem`, `AuditEvent`, `ComputedAnalytics` (+ Housing/Financial/AgeProfile/EducationalVulnerabilities)
-- [x] Value Objects
-  - [x] `Cpf` — 11 digitos, `isValid`, `formatted` (XXX.XXX.XXX-XX)
-  - [x] `Nis` — 11 digitos, `isValid`, `formatted` (XXX.XXXXX.XX-X)
-  - [x] `Cep` — 8 digitos, `isValid`, `formatted` (XXXXX-XXX)
-  - [x] Integrados em `CivilDocuments` (Cpf, Nis) e `Address` (Cep)
-- [x] API Client
-  - [x] `SocialCareApiClient` — Dio HTTP wrapper para todas as 21 operacoes
-  - [x] `api_models/` — 5 mapper classes separados (PatientMapper, AssessmentMappers, CareMappers, ProtectionMappers, CommonMappers + ComputedAnalyticsMapper)
-  - [x] Parsing JSON → domain models totalmente encapsulado nos mappers
-- [x] Implementacoes
-  - [x] `InProcessBff` — desktop (in-process via api_client, sem HTTP intermediario)
-  - [ ] `DartoServer` — web (servidor HTTP, futuro)
-- [x] Testing
-  - [x] `FakeSocialCareBff` — in-memory fake com patients map, lookupTables, shouldFail, registerCallCount
-  - [x] Barrel export via `package:social_care_bff/testing.dart`
-- [x] Testes — **48 testes passando**
-  - [x] Contract: 8 testes (register, get, lookup, failure mode, mutations)
-  - [x] Models: 10 testes (equality, toString, fullName, LookupItem)
-  - [x] Value Objects: 15 testes (CPF, NIS, CEP — validity, formatting, equality)
-  - [x] DTOs: 8 testes (toJson para 7 request types)
-  - [x] API Client: 4 testes (model construction, AuditEvent, PlacementHistory, IntakeInfo)
-  - [x] InProcessBff: 3 testes (full lifecycle, failure mode, lookup tables)
-- [x] Analyzer: 0 warnings/errors (1 info)
-- [x] Handbook atualizado (ARCHITECTURE.md secoes 4.2 e 7.6)
-
-**Nota:** Testes rodam com `flutter test` (nao `dart test`) porque core depende transitivamente de Flutter via package:oidc.
-
-### Pendente para futuro (nao bloqueante)
-
-- [ ] `DartoServer` — implementacao web (Fase 6)
-- [ ] `bin/server.dart` — entry point web (Fase 6)
-- [ ] Integracao com SyncQueue/cache offline (Fase 4)
+- [ ] Contract Layer
+- [ ] Domain Models (imutaveis, puros)
+- [ ] Value Objects (CPF, NIS, CEP)
+- [ ] API Client
+- [ ] Implementacoes (InProcessBff, DartoServer)
+- [ ] Testing (fakes)
+- [ ] Testes
 
 ---
 
@@ -291,7 +270,7 @@ Para cada feature acima:
 - [ ] Desktop Page
 - [ ] Web Page
 - [ ] Mobile Page
-- [ ] Components (atoms/cells reutilizaveis)
+- [ ] Components (reutilizaveis)
 - [ ] Testes (ViewModel + UseCase)
 - [ ] Funciona offline
 
@@ -342,9 +321,7 @@ Quando TODOS os itens abaixo estiverem marcados, o frontend esta pronto para dep
 ### Foundation
 - [x] Monorepo com Melos funcionando
 - [x] core package (network, platform, base) — 20 testes passando
-- [x] design_system package (tokens + 8 atoms) — 51 testes passando
-- [x] design_system cells (AcdgFormField, AcdgInfoCard) — 16 testes passando
-- [x] design_system templates (FormLayoutTemplate, PageScaffoldTemplate) — 10 testes passando
+- [ ] Design System — **A REFAZER**
 
 ### Shell + Auth
 - [x] Login com Zitadel OIDC PKCE (OidcAuthService + package:oidc)
@@ -352,15 +329,7 @@ Quando TODOS os itens abaixo estiverem marcados, o frontend esta pronto para dep
 - [x] Role-based routing (GoRouter global + local redirect)
 
 ### BFF
-- [x] Contract layer (SocialCareContract, 21 metodos)
-- [x] Domain models imutaveis (16+ modelos puros)
-- [x] Value Objects (CPF, NIS, CEP) integrados nos models
-- [x] API Client com api_models/ separados (5 mapper classes)
-- [x] InProcessBff (desktop, in-process)
-- [x] FakeSocialCareBff (testing double)
-- [x] 48 testes passando
-- [ ] DartoServer (web, Fase 6)
-- [ ] Integracao offline (Fase 4)
+- [ ] **A REFAZER** — Contract, models, API client, testes
 
 ### Offline
 - [ ] Isar schemas
