@@ -15,7 +15,7 @@ void main() {
     final hmlBaseUrl = 'https://social-care-hml.acdgbrasil.com.br';
 
     setUpAll(() async {
-      print('Initializing Staging Integration Test...');
+      debugPrint('Starting Staging Integration Test setup...');
 
       // Use helper to get token from environment variables
       final authHelper = HmlAuthHelper.fromEnv();
@@ -27,9 +27,9 @@ void main() {
         );
       }
 
-      print('Authenticating with Zitadel Staging (via Env)...');
+      debugPrint('Authenticating with Zitadel Staging (via Env)...');
       accessToken = await authHelper.getAccessToken();
-      print('Authentication successful. Token obtained.');
+      debugPrint('Authentication successful. Token obtained.');
     });
 
     testWidgets('Verify Staging API Connectivity (Health & Ready)', (
@@ -37,11 +37,11 @@ void main() {
     ) async {
       final dio = Dio();
 
-      print('Checking Health endpoint: $hmlBaseUrl/health');
+      debugPrint('Checking Health endpoint: $hmlBaseUrl/health');
       final healthResponse = await dio.get('$hmlBaseUrl/health');
       expect(healthResponse.statusCode, 200);
 
-      print('Checking Ready endpoint: $hmlBaseUrl/ready');
+      debugPrint('Checking Ready endpoint: $hmlBaseUrl/ready');
       final readyResponse = await dio.get('$hmlBaseUrl/ready');
       expect(readyResponse.statusCode, 200);
     });
@@ -76,7 +76,7 @@ void main() {
       expect(find.text('Bem-vindo ao ACDG System'), findsOneWidget);
       expect(find.text('Social Care Integration Tests'), findsOneWidget);
 
-      print(
+      debugPrint(
         'Integration Test: Successfully reached HomePage using real staging token.',
       );
     });

@@ -1,46 +1,92 @@
 import 'dart:async';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-/// Monitors network connectivity and exposes a listenable status.
+/// Monitors network connectivity and validates actual internet access.
 ///
-/// Wraps [Connectivity] plugin to provide:
-/// - Current status via [isOnline]
-/// - Stream of changes via [onStatusChange]
-/// - Dispose-safe lifecycle
+/// Combines [Connectivity] (network interface status) with a real 
+/// internet "ping" check to provide a reliable [isOnline] status.
 class ConnectivityService {
-  ConnectivityService({Connectivity? connectivity})
-      : _connectivity = connectivity ?? Connectivity();
+  ConnectivityService({
+    Connectivity? connectivity,
+    Dio? dio,
+    this.checkUrl = 'https://www.google.com',
+    this.checkInterval = const Duration(seconds: 5),
+  })  : _connectivity = connectivity ?? Connectivity(),
+        _dio = dio ?? Dio(BaseOptions(connectTimeout: const Duration(seconds: 3)));
 
   final Connectivity _connectivity;
+  final Dio _dio;
+  
+  /// URL used to verify real internet access.
+  final String checkUrl;
+  
+  /// Minimum time between real internet checks when network status changes.
+  final Duration checkInterval;
+
   StreamSubscription<List<ConnectivityResult>>? _subscription;
+  DateTime? _lastCheck;
+  bool _isChecking = false;
 
   final ValueNotifier<bool> _online = ValueNotifier<bool>(true);
 
-  /// Current connectivity state.
+  /// Current connectivity state (Reliable: indicates actual internet access).
   ValueListenable<bool> get isOnline => _online;
 
   /// Stream of connectivity changes.
   Stream<bool> get onStatusChange => _online.toStream();
 
-  /// Starts listening for connectivity changes.
+  /// Starts monitoring connectivity.
   Future<void> initialize() async {
     final results = await _connectivity.checkConnectivity();
-    _online.value = _hasConnection(results);
+    await _updateStatus(results);
 
-    _subscription = _connectivity.onConnectivityChanged.listen((results) {
-      _online.value = _hasConnection(results);
-    });
+    _subscription = _connectivity.onConnectivityChanged.listen(_updateStatus);
   }
 
-  bool _hasConnection(List<ConnectivityResult> results) {
-    return results.any(
-      (r) => r != ConnectivityResult.none,
-    );
+  Future<void> _updateStatus(List<ConnectivityResult> results) async {
+    final hasInterface = results.any((r) => r != ConnectivityResult.none);
+
+    if (!hasInterface) {
+      _online.value = false;
+      return;
+    }
+
+    // If we have an interface, we must verify if internet is actually working.
+    await checkRealInternet();
   }
 
-  /// Stops listening and releases resources.
+  /// Manually forces a check for real internet access.
+  /// 
+  /// Performs a lightweight HEAD request to [checkUrl].
+  Future<bool> checkRealInternet() async {
+    if (_isChecking) return _online.value;
+    
+    // Throttle checks to avoid spamming the network
+    final now = DateTime.now();
+    if (_lastCheck != null && now.difference(_lastCheck!) < checkInterval) {
+      return _online.value;
+    }
+
+    _isChecking = true;
+    try {
+      // Lightweight request to verify access
+      final response = await _dio.head(checkUrl);
+      final hasInternet = response.statusCode != null && response.statusCode! < 400;
+      
+      _online.value = hasInternet;
+      _lastCheck = now;
+      return hasInternet;
+    } catch (_) {
+      _online.value = false;
+      return false;
+    } finally {
+      _isChecking = false;
+    }
+  }
+
+  /// Stops monitoring and releases resources.
   void dispose() {
     _subscription?.cancel();
     _online.dispose();
