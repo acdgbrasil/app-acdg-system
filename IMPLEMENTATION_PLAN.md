@@ -10,7 +10,7 @@ Este documento é o **Dashboard Central**. Ele rastreia o progresso macro e serv
 | :--- | :--- | :--- | :--- | :--- |
 | **Fase 1** | **Foundation** | ✅ CONCLUÍDO | 100% | [Ver Detalhes](./handbook/implementation_plans/PHASE_1_FOUNDATION.md) |
 | **Fase 2** | **Shell + Auth** | ✅ CONCLUÍDO | 100% | [Ver Detalhes](./handbook/implementation_plans/PHASE_2_SHELL_AUTH.md) |
-| **Fase 3** | **BFF Social Care** | 🚀 PRÓXIMA | 0% | [Ver Detalhes](./handbook/implementation_plans/PHASE_3_BFF.md) |
+| **Fase 3** | **BFF Social Care** | 🏗️ EM ANDAMENTO | 90% | [Ver Detalhes](./handbook/implementation_plans/PHASE_3_BFF.md) |
 | **Fase 4** | **Offline Engine** | 📅 AGUARDANDO | 0% | [Ver Detalhes](./handbook/implementation_plans/PHASE_4_OFFLINE.md) |
 | **Fase 5** | **Features Core** | 📅 AGUARDANDO | 0% | [Ver Detalhes](./handbook/implementation_plans/PHASE_5_FEATURES.md) |
 | **Fase 6** | **Polish + CI/CD** | 📅 AGUARDANDO | 0% | [Ver Detalhes](./handbook/implementation_plans/PHASE_6_POLISH.md) |

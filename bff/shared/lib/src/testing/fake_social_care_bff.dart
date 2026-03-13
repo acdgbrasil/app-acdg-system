@@ -1,74 +1,110 @@
 import 'package:core/core.dart';
 import '../contract/social_care_contract.dart';
+import '../domain/assessment/assessment_vos.dart';
+import '../domain/assessment/community_support.dart';
+import '../domain/assessment/educational_status.dart';
+import '../domain/assessment/health_status.dart';
+import '../domain/assessment/social_health_summary.dart';
+import '../domain/assessment/work_and_income.dart';
+import '../domain/care/care_vos.dart';
+import '../domain/kernel/ids.dart';
 import '../domain/models/lookup.dart';
-import '../domain/models/patient.dart';
+import '../domain/registry/family_member.dart';
+import '../domain/registry/patient.dart';
+import '../domain/registry/registry_vos.dart';
+import '../domain/protection/protection_vos.dart';
 
-/// Implementação Fake do BFF para testes de UI e simulação local.
-///
-/// Armazena os dados em memória e simula delays de rede.
+/// Implementation of [SocialCareContract] for testing and local simulation.
 class FakeSocialCareBff implements SocialCareContract {
-  FakeSocialCareBff({this.networkDelay = const Duration(milliseconds: 500)});
+  FakeSocialCareBff({this.delay = const Duration(milliseconds: 200)});
 
-  final Duration networkDelay;
-
+  final Duration delay;
   final Map<String, Patient> _patients = {};
 
-  final Map<String, List<LookupItem>> _lookupTables = {
-    'dominio_tipo_identidade': [
-      const LookupItem(id: '1', codigo: '01', descricao: 'RG'),
-      const LookupItem(id: '2', codigo: '02', descricao: 'CNH'),
-    ],
-    'dominio_sexo': [
-      const LookupItem(id: '1', codigo: 'M', descricao: 'Masculino'),
-      const LookupItem(id: '2', codigo: 'F', descricao: 'Feminino'),
-    ],
-  };
+  @override
+  Future<Result<void>> checkHealth() async => const Success(null);
 
   @override
-  Future<Result<Patient>> getPatient(String patientId) async {
-    await Future.delayed(networkDelay);
-    final patient = _patients[patientId];
-    if (patient != null) {
-      return Success(patient);
-    }
-    return const Failure('Paciente não encontrado.');
-  }
+  Future<Result<void>> checkReady() async => const Success(null);
 
   @override
-  Future<Result<Patient>> getPatientByPersonId(String personId) async {
-    await Future.delayed(networkDelay);
-    try {
-      final patient = _patients.values.firstWhere((p) => p.personId == personId);
-      return Success(patient);
-    } catch (_) {
-      return const Failure('Paciente não encontrado para este Person ID.');
-    }
-  }
-
-  @override
-  Future<Result<String>> registerPatient(Patient patient) async {
-    await Future.delayed(networkDelay);
-    
-    if (_patients.containsKey(patient.id)) {
-      return const Failure('Paciente já cadastrado com este ID.');
-    }
-
-    _patients[patient.id] = patient;
+  Future<Result<PatientId>> registerPatient(Patient patient) async {
+    await Future.delayed(delay);
+    _patients[patient.id.value] = patient;
     return Success(patient.id);
   }
 
   @override
-  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
-    await Future.delayed(networkDelay);
-    final table = _lookupTables[tableName];
-    if (table != null) {
-      return Success(table);
-    }
-    return const Failure('Tabela de domínio não encontrada.');
+  Future<Result<Patient>> getPatient(PatientId id) async {
+    await Future.delayed(delay);
+    final p = _patients[id.value];
+    return p != null ? Success(p) : Failure('Patient not found: ${id.value}');
   }
 
-  /// Método auxiliar (apenas no Fake) para popular dados de teste.
-  void seedPatient(Patient patient) {
-    _patients[patient.id] = patient;
+  @override
+  Future<Result<Patient>> getPatientByPersonId(PersonId personId) async {
+    await Future.delayed(delay);
+    try {
+      final p = _patients.values.firstWhere((p) => p.personId == personId);
+      return Success(p);
+    } catch (_) {
+      return Failure('Patient not found for person: ${personId.value}');
+    }
+  }
+
+  @override
+  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member) async => const Success(null);
+
+  @override
+  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId) async => const Success(null);
+
+  @override
+  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async => const Success(null);
+
+  @override
+  Future<Result<List<dynamic>>> getAuditTrail(PatientId patientId, {String? eventType}) async => const Success([]);
+
+  @override
+  Future<Result<void>> updateHousingCondition(PatientId patientId, HousingCondition condition) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateSocioEconomicSituation(PatientId patientId, SocioEconomicSituation situation) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateWorkAndIncome(PatientId patientId, WorkAndIncome data) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateEducationalStatus(PatientId patientId, EducationalStatus status) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateHealthStatus(PatientId patientId, HealthStatus status) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateCommunitySupportNetwork(PatientId patientId, CommunitySupportNetwork network) async => const Success(null);
+
+  @override
+  Future<Result<void>> updateSocialHealthSummary(PatientId patientId, SocialHealthSummary summary) async => const Success(null);
+
+  @override
+  Future<Result<AppointmentId>> registerAppointment(PatientId patientId, SocialCareAppointment appointment) async => Success(appointment.id);
+
+  @override
+  Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info) async => const Success(null);
+
+  @override
+  Future<Result<void>> updatePlacementHistory(PatientId patientId, PlacementHistory history) async => const Success(null);
+
+  @override
+  Future<Result<ViolationReportId>> reportViolation(PatientId patientId, RightsViolationReport report) async => Success(report.id);
+
+  @override
+  Future<Result<ReferralId>> createReferral(PatientId patientId, Referral referral) async => Success(referral.id);
+
+  @override
+  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
+    return const Success([]);
   }
 }

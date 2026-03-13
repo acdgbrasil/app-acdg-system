@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 
-/// Representa um item retornado pelas tabelas de domínio (Lookup).
+/// Represents an item from a domain (lookup) table.
 final class LookupItem with Equatable {
   const LookupItem({
     required this.id,
