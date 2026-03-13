@@ -1,14 +1,14 @@
-# Plano de Implementacao — Frontend ACDG (Conecta Raros)
+# Plano de Implementação — Frontend ACDG (Conecta Raros)
 
 > **Stack:** Flutter/Dart (Web WASM + Desktop Nativo) | Isar (Offline)
 > **Idioma:** Code EN / UI PT-BR
-> **Padrao:** MVVM + Logic Layer (UseCase) | Estado Atomico (ValueNotifier) | GoF Patterns
+> **Padrão:** Camadas (Data, Logic, UI) | MVVM + UseCase | Command Pattern | Atomic Design
 
 ---
 
-## Indice
+## Índice
 
-1. [Diagnostico: Ponto de Partida](#1-diagnostico)
+1. [Diagnóstico: Ponto de Partida](#1-diagnóstico)
 2. [Plano de Fases](#2-plano-de-fases)
 3. [Fase 1 — Foundation](#fase-1)
 4. [Fase 2 — Shell + Auth](#fase-2)
@@ -20,345 +20,136 @@
 
 ---
 
-## Decisoes de Re-estruturacao (2026-03-12)
+## Decisões de Re-estruturação (2026-03-13)
 
-> **IMPORTANTE:** Em 2026-03-12 decidimos remover e refazer dois componentes:
+> **HISTÓRICO DE MUDANÇAS CRÍTICAS:**
 >
-> ### Design System — REMOVIDO
-> O `packages/design_system/` (tokens Figma + Atomic Design: 8 atoms, 2 cells, 2 templates, 77 testes) foi **deletado**.
-> O shell agora usa Material 3 nativo (`Theme.of(context)` + `colorSchemeSeed`).
-> Sera reconstruido do zero com nova abordagem.
+> ### Consolidação Core (2026-03-13)
+> - **Internalização Técnica:** Engine `Equatable`, padrão `Command` e utilitário `Env` movidos para o package `core` para eliminar dependências externas.
+> - **Arquitetura de 3 Camadas:** Estabelecida a divisão rigorosa: `Data Layer` (Repos/Config), `Logic Layer` (UseCases/Router) e `UI Layer` (ViewModels/Atomic Design).
+> - **Injeção de Dependência:** Configuração movida para `root.dart` com injeção hierárquica por camada via Provider.
 >
-> ### BFF Social Care — REMOVIDO para re-estruturacao
-> O `bff/social_care_bff/` (contract layer, 21 metodos, domain models, API client, 48 testes) foi **removido**.
-> Sera reconstruido do zero com nova arquitetura.
->
-> **Impacto:** Fases 1 e 3 voltam ao status de re-trabalho. Fase 2 (Shell + Auth) permanece intacta.
+> ### Design System (2026-03-12)
+> - O `packages/design_system/` original foi removido. A UI agora segue os princípios de **Atomic Design** integrados no app, usando Material 3 e tokens refinados.
 
 ---
 
-## 1. Diagnostico
+## 1. Diagnóstico
 
-### Backend Disponivel (social-care API)
+### Backend Disponível (social-care API)
+*Status: 100% Funcional (Registry, Assessment, Protection, Care, Lookup, Health, Auth).*
 
-| Recurso | Endpoints | Status |
-|---------|-----------|--------|
-| Patient Registry | 8 rotas (CRUD + audit trail) | PRONTO |
-| Assessment | 7 rotas (PUT housing, socioeco, work, education, health, community, summary) | PRONTO |
-| Protection | 3 rotas (placement, violations, referrals) | PRONTO |
-| Care | 2 rotas (appointments, intake) | PRONTO |
-| Lookup | 1 rota (13 tabelas de dominio) | PRONTO |
-| Health | 2 rotas (/health, /ready) | PRONTO |
-| Auth | JWT via Zitadel OIDC + RBAC (social_worker, owner, admin) | PRONTO |
-
-### Frontend
+### Frontend (Estado Atual)
 
 | Item | Status |
 |------|--------|
-| Codigo Flutter | EM ANDAMENTO (shell + core + auth OIDC) |
-| BFF Dart | REMOVIDO — sera refeito |
-| Design System (Figma) | EXISTENTE |
-| Design System (codigo) | REMOVIDO — sera refeito |
-| Offline Engine | NAO INICIADO |
-| CI/CD Frontend | NAO INICIADO |
+| **Package Core** | PRONTO (Equatable, Command, Env, Result, Platform) |
+| **Package Auth** | PRONTO (AuthRepository, AuthUser, Models) |
+| **Package Network** | PRONTO (DioClient, Connectivity) |
+| **App acdg_system** | REESTRUTURADO (Root/Main, UseCases, Atomic UI) |
+| **BFF Social Care** | A REFAZER (Seguindo novos padrões core) |
+| **Design System** | EM TRANSIÇÃO (Atomic Design implementado na UI Layer) |
 
 ---
 
 ## 2. Plano de Fases
 
 ```
-FASE 1: Foundation (monorepo + core)                        ████████░░  ~80% (design system removido, sera refeito)
+FASE 1: Foundation (monorepo + core)                        ██████████  100%
 FASE 2: Shell + Auth (Zitadel OIDC PKCE)                    ██████████  100%
-FASE 3: BFF Social Care (proxy tipado + contract)            ░░░░░░░░░░  REMOVIDO — sera refeito
-FASE 4: Offline Engine (Isar + SyncQueue + CRDT)             ░░░░░░░░░░
-FASE 5: Features Social Care (12 features MVVM)              ░░░░░░░░░░
-FASE 6: Polish + Desktop Build + CI/CD                       ░░░░░░░░░░
+FASE 3: BFF Social Care (re-estruturação)                    ░░░░░░░░░░  0%
+FASE 4: Offline Engine (Isar + SyncQueue + CRDT)             ░░░░░░░░░░  0%
+FASE 5: Features Social Care (12 features MVVM)              ░░░░░░░░░░  0%
+FASE 6: Polish + Desktop Build + CI/CD                       ░░░░░░░░░░  0%
                                                              ──────────
-                                                             Progresso: ~25%
+                                                             Progresso: ~35%
 ```
 
 ---
 
 ## FASE 1 — Foundation
 
-Setup do monorepo Flutter com packages compartilhados.
+Consolidação da base tecnológica e infraestrutura.
 
-### Entregaveis
-
-- [x] Monorepo com Melos (config em `pubspec.yaml`, Melos 7.x)
-- [x] `shell/` — app Flutter com `main.dart`, GoRouter, Provider
-- [x] `packages/core/` — network (Dio), platform resolver, base classes
-  - [x] `Result<T>` (Success/Failure) para error handling — 13 testes
-  - [x] `BaseViewModel` com dispose automatico — 4 testes
-  - [x] `BaseUseCase<Input, Output>`
-  - [x] `DioClient` com interceptors (auth token, retry, logging)
-  - [x] `PlatformResolver` (isDesktop, isWeb, isMobile)
-  - [x] `ConnectivityService` (online/offline listener)
-- ~~[x] `packages/design_system/` — tokens do Figma + atoms base~~ **REMOVIDO (2026-03-12)** — sera refeito
-- [ ] `packages/design_system/` — **A REFAZER** com nova abordagem
-- [x] `analysis_options.yaml` compartilhado (lint rules)
-- [x] `.gitignore` para Flutter
+### Entregáveis
+- [x] **Core Engine Customizada**:
+  - [x] `Equatable` (Dart 3 mixin class) sem dependências externas.
+  - [x] Padrão `Command` (`Command0`, `Command1`) para reatividade uniforme.
+  - [x] Utilitário `Env` para acesso seguro a variáveis de ambiente.
+  - [x] `Result<T>` simplificado para tratamento de erros.
+- [x] **Organização por Camadas**:
+  - [x] `Data Layer`: Configurações e Repositórios.
+  - [x] `Logic Layer`: UseCases e Router.
+  - [x] `UI Layer`: ViewModels e Hierarquia Atômica.
+- [x] **Bootstrap Limpo**:
+  - [x] `main.dart` minimalista.
+  - [x] `root.dart` orquestrando DI e Router.
 
 ---
 
 ## FASE 2 — Shell + Auth
 
-App principal com login e roteamento por roles.
+Módulo de autenticação e proteção de rotas seguindo o novo padrão de camadas.
 
-### Entregaveis
-
-- [x] Domain models (core/src/auth/) — 62 testes
-  - [x] `AuthRole` — enum com 3 roles, `fromString()`, `fromJwtClaim()`
-  - [x] `AuthUser` — modelo imutavel (id, name, email, roles, canWrite, canRead, copyWith)
-  - [x] `AuthToken` — modelo imutavel (accessToken, refreshToken, idToken, expiresAt, isExpired)
-  - [x] `AuthStatus` — sealed class (Authenticated, Unauthenticated, AuthLoading, AuthError)
-  - [x] `AuthService` — interface abstrata (statusStream, login, logout, tryRestoreSession, refreshToken)
-- [x] `OidcAuthConfig` — configuracao imutavel do OIDC (issuer, clientId, redirectUri, scopes) — 7 testes
-  - [x] Discovery document URI derivado do issuer
-  - [x] Default scopes para Zitadel (openid, profile, email, offline_access, roles)
-- [x] `OidcAuthService` — implementacao concreta com `package:oidc` (Bdaya-Dev) — 3 testes
-  - [x] OIDC Authorization Code + PKCE via `OidcUserManager`
-  - [x] Mapeamento de claims JWT para AuthUser/AuthRole
-  - [x] Token refresh automatico via `OidcUserManager`
-  - [x] Session restore via `OidcUserManager.init()`
-  - [x] Login/logout delegados ao OidcUserManager
-- [x] `AuthViewModel` (shell/auth/) — 12 testes
-  - [x] Estado atomico: `status` (ValueNotifier<AuthStatus>), `user` (ValueNotifier<AuthUser?>), `busy` (ValueNotifier<bool>)
-  - [x] Command pattern: `init()`, `login()`, `logout()`, `tryRestoreSession()`
-  - [x] ChangeNotifier para GoRouter refreshListenable
-- [x] GoRouter configurado — 10 testes
-  - [x] Global redirect (auth check por AuthStatus)
-  - [x] `requireRole()` guard (RBAC local redirect)
-  - [x] `refreshListenable: authViewModel` (reativo a mudancas de auth)
-  - [x] Rotas: `/` (splash), `/login`, `/home`
-- [x] Role-based routing:
-  - [x] `social_worker` -> Social Care (full CRUD)
-  - [x] `owner` -> Social Care (read-only)
-  - [x] `admin` -> Social Care (read) + Admin area
-- [x] Role extraction do JWT (`urn:zitadel:iam:org:project:roles`)
-- [x] Telas — 13 testes
-  - [x] Splash (logo + loading, GoRouter redireciona)
-  - [x] Login (logo, descricao, botao OIDC, banner de erro, loading state)
-  - [x] Home (avatar com iniciais, menu popup com email/roles, module cards com permissoes)
-- [x] Provider DI setup (main.dart)
-  - [x] MultiProvider com ChangeNotifierProvider<AuthViewModel>
-  - [x] OidcAuthService configurado com platform-specific redirect URIs
-  - [x] AuthService injetavel para testes
-- [x] Token storage (via package:oidc + oidc_default_store)
-  - [x] Web: Split-Token Pattern (ADR-011) — access token em memoria, refresh em cookie HttpOnly
-  - [x] Desktop: flutter_secure_storage (Keychain/DPAPI/libsecret)
-- [x] Token refresh silencioso (OidcUserManager auto-refresh)
-- [x] Logout com limpeza de tokens
-- [x] Splash screen / loading state
-- [x] Documentacao atualizada
-  - [x] ADR-011: Split-Token Pattern
-  - [x] ADR-012: package:oidc
-  - [x] ADR-013: Flutter Architecture Guidelines alignment
-  - [x] ARCHITECTURE.md secoes 2, 6, 7 reescritas
-  - [x] CLAUDE.md atualizado com todas as decisoes
-
-- [x] Configuracao de plataforma
-  - [x] macOS entitlements: `network.client` + `network.server`
-  - [x] macOS Info.plist: custom URL scheme `com.acdg.conectararos`
-  - [x] Zitadel: app type "Native" (PKCE public client)
-  - [x] Redirect URIs: `com.acdg.conectararos://callback` (macOS), `http://localhost:0` (Win/Linux)
-  - [x] OIDC config via `--dart-define` (nunca hardcoded)
-  - [x] Error handling no init (app nao trava se Zitadel indisponivel)
-- [x] .gitignore atualizado (macOS Pods, ephemeral, secrets)
-
-**Total Fase 2: 116 testes (81 core + 35 shell)**
-
-**Como buildar:**
-```bash
-# macOS (debug)
-flutter build macos --debug \
-  --dart-define=OIDC_ISSUER=https://auth.acdgbrasil.com.br \
-  --dart-define=OIDC_CLIENT_ID=363110312318140539
-
-# macOS (run)
-flutter run -d macos \
-  --dart-define=OIDC_ISSUER=https://auth.acdgbrasil.com.br \
-  --dart-define=OIDC_CLIENT_ID=363110312318140539
-```
-
-**Nota:** Web precisara de app separado no Zitadel (tipo "Web") com seu proprio Client ID.
+### Entregáveis
+- [x] **Auth Layering**:
+  - [x] `AuthRepository`: Única fonte de verdade para tokens e status.
+  - [x] `AuthUseCases`: `Login`, `Logout`, `RestoreSession`.
+  - [x] `AuthViewModel`: Reativo via `Command`s.
+- [x] **OIDC PKCE Flow**:
+  - [x] Implementação com `package:oidc`.
+  - [x] Configuração via `OidcConfigFactory` consumindo `Env`.
+- [x] **Atomic UI**:
+  - [x] `atoms/`: `AppLogo`, `RoleBadge`.
+  - [x] `molecules/`: `UserMenuButton`, `ModuleCard`.
+  - [x] `organisms/`: `HomeContent`.
+  - [x] `pages/`: `LoginPage`, `HomePage`, `SplashPage`.
+- [x] **Router**:
+  - [x] `AppRouter` na camada de lógica.
+  - [x] Guards por Role e verificação de status.
 
 ---
 
-## FASE 3 — BFF Social Care
+## FASE 3 — BFF Social Care (A Refazer)
 
-> **STATUS: REMOVIDO (2026-03-12)** — Sera reconstruido do zero com nova arquitetura.
->
-> A implementacao anterior (contract layer, 21 metodos, domain models, API client, InProcessBff, 48 testes)
-> foi removida. O codigo e testes serao refeitos.
+Reconstrução do BFF para alinhar com os modelos do `core` e o padrão `Result`.
 
-### Entregaveis (a refazer)
-
-- [ ] Contract Layer
-- [ ] Domain Models (imutaveis, puros)
-- [ ] Value Objects (CPF, NIS, CEP)
-- [ ] API Client
-- [ ] Implementacoes (InProcessBff, DartoServer)
-- [ ] Testing (fakes)
-- [ ] Testes
+### Entregáveis
+- [ ] **BFF Shared**: Models usando `with Equatable` e imutabilidade total.
+- [ ] **Contract Layer**: Retornando `Future<Result<T>>` em todos os 21 métodos.
+- [ ] **UseCases no App**: Mapeamento 1:1 entre BFF e Logic Layer do app.
+- [ ] **Configuração via Env**: Base URLs e timeouts centralizados.
 
 ---
 
 ## FASE 4 — Offline Engine
-
-Sistema completo de offline first.
-
-### Entregaveis
-
-- [ ] Isar schemas para:
-  - [ ] `SyncAction` (id, timestamp, type, payload, status, retries)
-  - [ ] `CachedPatient` (cache local do agregado)
-  - [ ] `CachedLookup` (cache de tabelas de dominio)
-- [ ] `SyncQueue` — fila ordenada por timestamp
-  - [ ] Enqueue: salva acao no Isar com timestamp monotonic + UUID
-  - [ ] Dequeue: processa acoes pendentes na ordem
-  - [ ] Retry: backoff exponencial em caso de falha
-- [ ] `SyncEngine` — orquestrador de sincronizacao
-  - [ ] Escuta `ConnectivityService`
-  - [ ] Ao reconectar: processa queue via BFF
-  - [ ] Reporta progresso (syncing, synced, conflict)
-- [ ] Conflict resolution
-  - [ ] Merge automatico por campo (campos diferentes = merge)
-  - [ ] Conflito de mesmo campo = flag para resolucao manual
-  - [ ] UI de resolucao de conflitos
-- [ ] Indicador visual de status (online/offline/syncing)
-- [ ] Testes unitarios da SyncQueue e SyncEngine
+*(Inalterado - Aguardando início)*
 
 ---
 
 ## FASE 5 — Features Social Care
-
-12 features seguindo MVVM + Logic Layer. Cada feature com 3 Pages (Desktop/Web/Mobile).
-
-### 5.1 Features por Prioridade
-
-**Prioridade 1 — Fluxo Principal:**
-
-- [ ] `patient_registration` — Cadastro da PR (3 partes: dados pessoais, endereco, composicao familiar)
-- [ ] `family_composition` — Composicao familiar + perfil etario
-- [ ] `housing_assessment` — Condicoes habitacionais + densidade
-- [ ] `lookup` — Servico de tabelas de dominio (compartilhado)
-
-**Prioridade 2 — Avaliacao Social:**
-
-- [ ] `health_status` — Saude, deficiencias, gestantes
-- [ ] `work_income` — Trabalho e renda (4 calculos automaticos)
-- [ ] `education` — Educacao + vulnerabilidades
-- [ ] `socioeconomic` — Situacao socioeconomica + beneficios
-- [ ] `community_support` — Rede de apoio comunitario
-- [ ] `social_health_summary` — Resumo de saude social
-
-**Prioridade 3 — Protecao e Atendimento:**
-
-- [ ] `protection` — Acolhimento + violencia + encaminhamentos
-- [ ] `care` — Atendimentos + ingresso
-- [ ] `audit_trail` — Historico de eventos (read-only)
-
-### 5.2 Checklist por Feature
-
-Para cada feature acima:
-- [ ] Models (schemas imutaveis)
-- [ ] Service (Dio wrapper)
-- [ ] Repository (interface + impl)
-- [ ] UseCase
-- [ ] ViewModel (ChangeNotifier + ValueNotifier)
-- [ ] Desktop Page
-- [ ] Web Page
-- [ ] Mobile Page
-- [ ] Components (reutilizaveis)
-- [ ] Testes (ViewModel + UseCase)
-- [ ] Funciona offline
+*(Inalterado - Agora exigindo UseCase e Atomic Design obrigatórios)*
 
 ---
 
-## FASE 6 — Polish + Desktop Build
+## Checklist Final (v2)
 
-Finalizacao, builds nativos e CI/CD.
-
-### Entregaveis
-
-- [ ] Desktop builds:
-  - [ ] macOS (.dmg)
-  - [ ] Windows (.exe installer)
-  - [ ] Linux (.AppImage)
-- [ ] BFF embarcado no desktop (in-process + Isar local)
-- [ ] CI pipeline:
-  - [ ] `flutter analyze` em todo PR
-  - [ ] `flutter test` em todo PR
-  - [ ] `dart test` (BFF) em todo PR
-  - [ ] Build web WASM no merge para main
-  - [ ] Build desktop artifacts na tag
-- [ ] Docker:
-  - [ ] Dockerfile para web (Flutter WASM)
-  - [ ] Dockerfile para BFF (Dart AOT)
-  - [ ] FluxCD HelmRelease no K3s
-- [ ] Performance:
-  - [ ] Deferred loading verificado
-  - [ ] Bundle size otimizado
-  - [ ] Memory profiling
-- [ ] Acessibilidade:
-  - [ ] Semantics em widgets interativos
-  - [ ] Navegacao por teclado (desktop)
-  - [ ] Contraste WCAG AA
-- [ ] Testes E2E:
-  - [ ] Login flow
-  - [ ] Cadastro de paciente completo
-  - [ ] Sync offline -> online
-- [ ] README.md atualizado
-- [ ] CHANGELOG.md criado
-
----
-
-## Checklist Final
-
-Quando TODOS os itens abaixo estiverem marcados, o frontend esta pronto para deploy:
-
-### Foundation
-- [x] Monorepo com Melos funcionando
-- [x] core package (network, platform, base) — 20 testes passando
-- [ ] Design System — **A REFAZER**
+### Foundation & Infra
+- [x] Monorepo Melos 7.x funcionando.
+- [x] Package `core` independente e testado.
+- [x] Gestão de ambiente via classe `Env`.
+- [x] Separação Root/Main e Injeção por Camadas.
 
 ### Shell + Auth
-- [x] Login com Zitadel OIDC PKCE (OidcAuthService + package:oidc)
-- [x] Token storage seguro (Split-Token web, keychain desktop via oidc_default_store)
-- [x] Role-based routing (GoRouter global + local redirect)
+- [x] Auth via UseCases e Repository.
+- [x] UI organizada em Atomic Design.
+- [x] Todos os botões e loadings usando `Command Pattern`.
 
-### BFF
-- [ ] **A REFAZER** — Contract, models, API client, testes
-
-### Offline
-- [ ] Isar schemas
-- [ ] SyncQueue CRDT-like
-- [ ] SyncEngine com auto-sync
-- [ ] Conflict resolution (merge + manual)
-- [ ] Indicador visual
-
-### Features
-- [ ] 12 features Social Care implementadas
-- [ ] 3 Pages por feature (Desktop/Web/Mobile)
-- [ ] ViewModel testada por feature
-- [ ] Funciona offline por feature
-
-### Desktop
-- [ ] Build macOS funcionando
-- [ ] Build Windows funcionando
-- [ ] Build Linux funcionando
-- [ ] BFF embarcado + Isar local
-
-### CI/CD
-- [ ] Pipeline CI (analyze + test + build)
-- [ ] Pipeline release web (WASM + Docker + GHCR)
-- [ ] Pipeline release desktop (artifacts no GitHub Releases)
-- [ ] Pipeline BFF (Dart AOT + Docker + GHCR)
+### BFF & Offline
+- [ ] BFF Shared com `Equatable` e `Result`.
+- [ ] SyncQueue integrada via UseCases.
 
 ### Qualidade
-- [ ] Cobertura >= 85% global
-- [ ] ViewModels/UseCases >= 95%
-- [ ] BFF Domain >= 95%
-- [ ] Acessibilidade WCAG AA
-- [ ] Performance targets atingidos
+- [x] Testes unitários de ViewModel suportando UseCases.
+- [ ] Cobertura global >= 85%.
+- [ ] Acessibilidade WCAG AA.

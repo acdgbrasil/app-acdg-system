@@ -84,7 +84,7 @@ class _RootState extends State<Root> {
     return MultiProvider(
       providers: [
         // ---------- DATA LAYER ----------
-        Provider<AuthRepository>.value(value: _authRepository),
+        ListenableProvider<AuthRepository>.value(value: _authRepository),
 
         // ---------- LOGIC LAYER (UseCases) ----------
         Provider<LoginUseCase>(

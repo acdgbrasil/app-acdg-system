@@ -14,5 +14,6 @@ export 'src/platform/platform_resolver.dart';
 
 // Utils
 export 'src/utils/env.dart';
+export 'src/utils/hml_auth_helper.dart';
 export 'src/utils/equatable/equatable.dart';
 export 'src/utils/equatable/equatable_config.dart';
