@@ -1,0 +1,19 @@
+name: social_care_web
+description: A starting point for Dart libraries or applications.
+version: 1.0.0
+publish_to: 'none'
+
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  shared:
+    path: ../shared
+  network:
+    path: ../../packages/network
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.24.0

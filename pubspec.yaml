@@ -9,6 +9,9 @@ workspace:
   - packages/core
   - packages/auth
   - packages/network
+  - bff/shared
+  - bff/social_care_desktop
+  - bff/social_care_web
 
 dev_dependencies:
   melos: ^7.4.0
