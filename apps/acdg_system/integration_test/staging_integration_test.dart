@@ -72,8 +72,13 @@ void main() {
         print('Lookup table fetch failed: ${(lookupResult as Failure).error}');
       }
       expect(lookupResult.isSuccess, isTrue);
-      final prRelId = LookupId.create(lookupResult.valueOrNull!.first.id).valueOrNull!;
-      print('Using relationship ID: ${prRelId.value} (${lookupResult.valueOrNull!.first.descricao})');
+      
+      final lookups = lookupResult.valueOrNull!;
+      final prRelId = LookupId.create(lookups[0].id).valueOrNull!;
+      final otherRelId = LookupId.create(lookups[1].id).valueOrNull!;
+      
+      print('PR Relationship: ${prRelId.value} (${lookups[0].descricao})');
+      print('Member Relationship: ${otherRelId.value} (${lookups[1].descricao})');
 
       // 1. Prepare a Patient model with valid VOs
       final uniqueSuffix = DateTime.now().millisecondsSinceEpoch.toString().padLeft(12, '0').substring(0, 12);
@@ -181,9 +186,103 @@ void main() {
       }
 
       expect(getResult.isSuccess, isTrue, reason: 'Failed to fetch patient after registration');
-      expect(getResult.valueOrNull!.id, newId);
+      final fetchedPatient = getResult.valueOrNull!;
+      expect(fetchedPatient.id, newId);
+
+      // 4. Fetch the patient by personId
+      print('Fetching patient by personId: ${personId.value}...');
+      final getByPersonResult = await bff.getPatientByPersonId(personId);
       
-      print('BFF Integration Success: Patient persisted and retrieved correctly.');
+      if (getByPersonResult.isFailure) {
+        final error = (getByPersonResult as Failure).error;
+        print('Get patient by personId failure: $error');
+      }
+
+      expect(getByPersonResult.isSuccess, isTrue, reason: 'Failed to fetch patient by personId');
+      expect(getByPersonResult.valueOrNull!.id, newId);
+      expect(getByPersonResult.valueOrNull!.personId, personId);
+
+      // 5. Add a new family member
+      print('Adding a new family member to patient ${newId.value}...');
+      // Ensure a distinct personId by changing the suffix more reliably
+      final memberSuffix = (int.parse(uniqueSuffix) + 1).toString().padLeft(12, '0');
+      final newMemberPersonId = PersonId.create('550e8400-e29b-41d4-a716-$memberSuffix').valueOrNull!;
+      
+      final newMember = FamilyMember.create(
+        personId: newMemberPersonId,
+        relationshipId: otherRelId,
+        residesWithPatient: false,
+        requiredDocuments: [RequiredDocument.rg],
+        birthDate: TimeStamp.fromIso('2000-01-01T00:00:00.000Z').valueOrNull!,
+      ).valueOrNull!;
+
+      final addMemberResult = await bff.addFamilyMember(newId, newMember, prRelId);
+      
+      if (addMemberResult.isFailure) {
+        final error = (addMemberResult as Failure).error;
+        print('Add family member failure: $error');
+      }
+
+      expect(addMemberResult.isSuccess, isTrue, reason: 'Failed to add family member');
+      print('Family member added successfully.');
+
+      // 6. Verify family member was added by fetching the patient again
+      print('Verifying family composition...');
+      final finalGetResult = await bff.getPatient(newId);
+      expect(finalGetResult.isSuccess, isTrue);
+      final updatedPatient = finalGetResult.valueOrNull!;
+      
+      expect(updatedPatient.familyMembers.length, greaterThan(1), 
+        reason: 'Patient should have more than 1 family member now');
+      
+      final addedOne = updatedPatient.familyMembers.any((m) => m.personId == newMemberPersonId);
+      expect(addedOne, isTrue, reason: 'The newly added family member should be present in the family list');
+
+      // 7. Assign the new member as primary caregiver
+      print('Assigning family member ${newMemberPersonId.value} as primary caregiver...');
+      final assignResult = await bff.assignPrimaryCaregiver(newId, newMemberPersonId);
+      
+      if (assignResult.isFailure) {
+        final error = (assignResult as Failure).error;
+        print('Assign primary caregiver failure: $error');
+      }
+
+      expect(assignResult.isSuccess, isTrue, reason: 'Failed to assign primary caregiver');
+      print('Primary caregiver assigned successfully.');
+
+      // 8. Verify primary caregiver assignment
+      print('Verifying caregiver assignment...');
+      final caregiverGetResult = await bff.getPatient(newId);
+      expect(caregiverGetResult.isSuccess, isTrue);
+      final caregiverPatient = caregiverGetResult.valueOrNull!;
+      
+      final isCaregiver = caregiverPatient.familyMembers
+          .firstWhere((m) => m.personId == newMemberPersonId)
+          .isPrimaryCaregiver;
+      expect(isCaregiver, isTrue, reason: 'The member should now be marked as primary caregiver');
+
+      // 9. Remove the family member
+      print('Removing family member ${newMemberPersonId.value} from patient ${newId.value}...');
+      final removeResult = await bff.removeFamilyMember(newId, newMemberPersonId);
+      
+      if (removeResult.isFailure) {
+        final error = (removeResult as Failure).error;
+        print('Remove family member failure: $error');
+      }
+
+      expect(removeResult.isSuccess, isTrue, reason: 'Failed to remove family member');
+      print('Family member removed successfully.');
+
+      // 8. Verify family member was removed
+      print('Verifying final family composition...');
+      final lastGetResult = await bff.getPatient(newId);
+      expect(lastGetResult.isSuccess, isTrue);
+      final finalPatient = lastGetResult.valueOrNull!;
+      
+      final stillThere = finalPatient.familyMembers.any((m) => m.personId == newMemberPersonId);
+      expect(stillThere, isFalse, reason: 'The removed family member should NOT be present in the family list');
+
+      print('BFF Integration Success: End-to-end Registry flow validated (Add & Remove).');
     });
 
     testWidgets('App starts and restores session using staging token', (tester) async {

@@ -42,7 +42,7 @@ abstract interface class SocialCareContract {
   Future<Result<Patient>> getPatientByPersonId(PersonId personId);
 
   /// Adds a new family member to a patient's record.
-  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member);
+  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member, LookupId prRelationshipId);
 
   /// Removes a family member from a patient's record.
   Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId);

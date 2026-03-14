@@ -40,17 +40,39 @@ Campos mapeados como `jsonb` no PostgreSQL (ex: `required_documents`) devem ser 
 
 ---
 
-## 3. Regras de Negócio e Invariantes
+## 3. Gestão de Composição Familiar (Registry)
+
+A composição familiar segue regras rígidas de integridade referencial e lógica de negócio no Backend Swift/Vapor.
+
+### Adição de Membros
+*   **Rota:** `/api/v1/patients/{patientId}/family-members` (POST).
+*   **Parâmetro `prRelationshipId`:** Mesmo sendo um comando para adicionar um *novo* membro, o backend exige o `prRelationshipId` (UUID da relação da Pessoa de Referência) no corpo do JSON para validar que o agregado continua tendo exatamente uma PR.
+*   **Conflito de PR:** Se você tentar adicionar um membro usando o mesmo `relationshipId` que define a PR, o backend retornará `multiplePrimaryReferencesNotAllowed`.
+
+### Atribuição de Cuidador Principal
+*   **Rota:** `/api/v1/patients/{patientId}/primary-caregiver` (PUT).
+*   **Regra:** O membro deve primeiro existir na família (ter sido adicionado via POST) antes de ser promovido a cuidador.
+
+### Remoção de Membros
+*   **Rota:** `/api/v1/patients/{patientId}/family-members/{memberPersonId}` (DELETE).
+*   **Atenção:** Use o `personId` do membro na URL, não o `patientId` do prontuário nem IDs de relacionamento.
+
+---
+
+## 4. Regras de Negócio e Invariantes
 
 ### Agregado Patient
-O `Patient` exige a definição explícita do `prRelationshipId` (ID da relação com a Pessoa de Referência) no momento da criação. Este ID deve vir de uma lookup table real (`dominio_parentesco`).
+O `Patient` exige a definição explícita do `prRelationshipId` no momento da criação. Este ID deve vir de uma lookup table real (`dominio_parentesco`).
+
+### Mapeamento Reverso (API -> Domain)
+Ao ler dados do backend (`GET`), use sempre o método `reconstitute` dos modelos Dart. Isso evita que validações de "novo objeto" (como obrigatoriedade de certos campos apenas no ato da criação) quebrem a exibição de dados já existentes no banco.
 
 ### Documentação Obrigatória
 O backend exige ao menos um documento civil válido para o registro (`REGP-018`). Em testes, use o `generateValidCpf()` para evitar colisões no banco de dados.
 
 ---
 
-## 4. Diagnóstico de Erros em HML
+## 5. Diagnóstico de Erros em HML
 
 ### Campo `details`
 Em ambiente HML, o backend retorna um campo extra no JSON de erro chamado `details`.

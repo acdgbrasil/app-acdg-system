@@ -50,6 +50,27 @@ final class FamilyMember with Equatable {
     ));
   }
 
+  /// Reconstitui um membro familiar a partir da persistência sem validações.
+  static FamilyMember reconstitute({
+    required PersonId personId,
+    required LookupId relationshipId,
+    required bool isPrimaryCaregiver,
+    required bool residesWithPatient,
+    required bool hasDisability,
+    required List<RequiredDocument> requiredDocuments,
+    required TimeStamp birthDate,
+  }) {
+    return FamilyMember._(
+      personId: personId,
+      relationshipId: relationshipId,
+      isPrimaryCaregiver: isPrimaryCaregiver,
+      residesWithPatient: residesWithPatient,
+      hasDisability: hasDisability,
+      requiredDocuments: List.unmodifiable(requiredDocuments),
+      birthDate: birthDate,
+    );
+  }
+
   FamilyMember copyWith({
     PersonId? personId,
     LookupId? relationshipId,

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 // Simple mock for Dio using noSuchMethod to avoid boilerplate
 class MockDio implements Dio {
   Map<String, dynamic>? lastBody;
+  String? lastPath;
   
   @override
   BaseOptions options = BaseOptions();
@@ -20,11 +21,45 @@ class MockDio implements Dio {
     void Function(int, int)? onSendProgress,
     void Function(int, int)? onReceiveProgress,
   }) async {
+    lastPath = path;
     lastBody = data as Map<String, dynamic>?;
     return Response(
       requestOptions: RequestOptions(path: path),
       data: {'data': {'id': 'test-id'}} as T,
       statusCode: 201,
+    );
+  }
+
+  @override
+  Future<Response<T>> delete<T>(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    lastPath = path;
+    return Response(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 204,
+    );
+  }
+
+  @override
+  Future<Response<T>> put<T>(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+    void Function(int, int)? onSendProgress,
+    void Function(int, int)? onReceiveProgress,
+  }) async {
+    lastPath = path;
+    lastBody = data as Map<String, dynamic>?;
+    return Response(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 204,
     );
   }
 
@@ -191,6 +226,47 @@ void main() {
       expect(member['isPrimaryCaregiver'], isTrue);
       expect(member['requiredDocuments'], containsAll(['CPF', 'RG']));
       expect(member['requiredDocuments'], isA<List<String>>());
+    });
+
+    test('Should map addFamilyMember request correctly', () async {
+      final patientId = PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+      final personId = PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!;
+      final relId = LookupId.create('00000000-0000-0000-0000-000000000000').valueOrNull!;
+
+      final member = FamilyMember.create(
+        personId: personId,
+        relationshipId: relId,
+        residesWithPatient: true,
+        isPrimaryCaregiver: false,
+        requiredDocuments: [RequiredDocument.cpf],
+        birthDate: TimeStamp.fromIso('1990-01-01T00:00:00.000Z').valueOrNull!,
+      ).valueOrNull!;
+
+      await bff.addFamilyMember(patientId, member, relId);
+      
+      expect(mockDio.lastBody!['memberPersonId'], equals(personId.value));
+      expect(mockDio.lastBody!['relationship'], equals(relId.value));
+      expect(mockDio.lastBody!['requiredDocuments'], contains('CPF'));
+      expect(mockDio.lastBody!['prRelationshipId'], equals(relId.value));
+    });
+
+    test('Should map removeFamilyMember request correctly', () async {
+      final patientId = PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+      final memberId = PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!;
+
+      await bff.removeFamilyMember(patientId, memberId);
+      
+      expect(mockDio.lastPath, equals('/api/v1/patients/${patientId.value}/family-members/${memberId.value}'));
+    });
+
+    test('Should map assignPrimaryCaregiver request correctly', () async {
+      final patientId = PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+      final memberId = PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!;
+
+      await bff.assignPrimaryCaregiver(patientId, memberId);
+      
+      expect(mockDio.lastPath, equals('/api/v1/patients/${patientId.value}/primary-caregiver'));
+      expect(mockDio.lastBody!['memberPersonId'], equals(memberId.value));
     });
   });
 }

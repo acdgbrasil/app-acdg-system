@@ -84,13 +84,14 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/patients/by-person/${personId.value}',
+        options: Options(validateStatus: (status) => true),
       );
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as Map<String, dynamic>;
         return Success(_mapApiToPatient(data));
       }
-      return Failure('Patient not found');
+      return Failure(response.data ?? 'Patient not found');
     } catch (e) {
       return Failure(e);
     }
@@ -151,22 +152,95 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   Patient _mapApiToPatient(Map<String, dynamic> data) {
-    // Basic reconstitution for integration test verification
+    final prRelId = data['prRelationshipId'] as String? ?? '00000000-0000-0000-0000-000000000000';
+    
+    // Map family members
+    final List<dynamic> membersJson = data['familyMembers'] ?? [];
+    final familyMembers = membersJson.map((m) {
+      return FamilyMember.reconstitute(
+        personId: PersonId.create(m['personId'] as String).valueOrNull!,
+        relationshipId: LookupId.create(m['relationshipId'] as String).valueOrNull!,
+        isPrimaryCaregiver: m['isPrimaryCaregiver'] as bool? ?? false,
+        residesWithPatient: m['residesWithPatient'] as bool? ?? false,
+        hasDisability: m['hasDisability'] as bool? ?? false,
+        requiredDocuments: (m['requiredDocuments'] as List? ?? [])
+            .map((d) => RequiredDocument.values.firstWhere((v) => v.value == d))
+            .toList(),
+        birthDate: TimeStamp.fromIso(m['birthDate'] as String).valueOrNull!,
+      );
+    }).toList();
+
     return Patient.reconstitute(
       id: PatientId.create(data['patientId'] as String).valueOrNull!,
       version: data['version'] as int? ?? 1,
       personId: PersonId.create(data['personId'] as String).valueOrNull!,
-      prRelationshipId: LookupId.create(data['prRelationshipId'] as String? ?? '00000000-0000-0000-0000-000000000000').valueOrNull!,
+      prRelationshipId: LookupId.create(prRelId).valueOrNull!,
+      familyMembers: familyMembers,
     );
   }
 
   // Implementation of other methods omitted for brevity in this stage
   @override
-  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member) async => const Success(null);
+  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member, LookupId prRelationshipId) async {
+    try {
+      final payload = {
+        'memberPersonId': member.personId.value,
+        'relationship': member.relationshipId.value,
+        'isResiding': member.residesWithPatient,
+        'isCaregiver': member.isPrimaryCaregiver,
+        'hasDisability': member.hasDisability,
+        'requiredDocuments': member.requiredDocuments.map((d) => d.value).toList(),
+        'birthDate': member.birthDate.toIso8601(),
+        'prRelationshipId': prRelationshipId.value,
+      };
+
+      final response = await _dio.post(
+        '/api/v1/patients/${patientId.value}/family-members',
+        data: payload,
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 204 || response.statusCode == 201 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return Failure(response.data ?? 'Failed to add family member');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
   @override
-  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId) async => const Success(null);
+  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId) async {
+    try {
+      final response = await _dio.delete(
+        '/api/v1/patients/${patientId.value}/family-members/${memberId.value}',
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return Failure(response.data ?? 'Failed to remove family member');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
   @override
-  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId) async => const Success(null);
+  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/patients/${patientId.value}/primary-caregiver',
+        data: {'memberPersonId': memberId.value},
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return Failure(response.data ?? 'Failed to assign primary caregiver');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
   @override
   Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async => const Success(null);
   @override
