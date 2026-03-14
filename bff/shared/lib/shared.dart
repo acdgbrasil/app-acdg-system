@@ -4,6 +4,7 @@ library shared;
 // Utils
 export 'src/utils/app_error.dart';
 export 'src/utils/string_helpers.dart';
+export 'src/utils/api_extensions.dart';
 
 // Kernel
 export 'src/domain/kernel/address.dart';

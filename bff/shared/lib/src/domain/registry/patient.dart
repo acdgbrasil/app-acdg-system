@@ -20,6 +20,7 @@ final class Patient with Equatable {
     required this.id,
     this.version = 1,
     required this.personId,
+    required this.prRelationshipId,
     this.personalData,
     this.civilDocuments,
     this.address,
@@ -44,6 +45,9 @@ final class Patient with Equatable {
   final PatientId id;
   final int version;
   final PersonId personId;
+
+  /// ID da relação da Pessoa de Referência (PR) na tabela de domínios.
+  final LookupId prRelationshipId;
 
   // Dados Civis
   final PersonalData? personalData;
@@ -105,6 +109,7 @@ final class Patient with Equatable {
     return Success(Patient._(
       id: id,
       personId: personId,
+      prRelationshipId: prRelationshipId,
       personalData: personalData,
       civilDocuments: civilDocuments,
       address: address,
@@ -118,6 +123,7 @@ final class Patient with Equatable {
     required PatientId id,
     required int version,
     required PersonId personId,
+    required LookupId prRelationshipId,
     PersonalData? personalData,
     CivilDocuments? civilDocuments,
     Address? address,
@@ -141,6 +147,7 @@ final class Patient with Equatable {
       id: id,
       version: version,
       personId: personId,
+      prRelationshipId: prRelationshipId,
       personalData: personalData,
       civilDocuments: civilDocuments,
       address: address,
@@ -164,6 +171,7 @@ final class Patient with Equatable {
 
   Patient copyWith({
     int? version,
+    LookupId? prRelationshipId,
     PersonalData? Function()? personalData,
     CivilDocuments? Function()? civilDocuments,
     Address? Function()? address,
@@ -187,6 +195,7 @@ final class Patient with Equatable {
       id: id,
       version: version ?? this.version,
       personId: personId,
+      prRelationshipId: prRelationshipId ?? this.prRelationshipId,
       personalData: personalData != null ? personalData() : this.personalData,
       civilDocuments: civilDocuments != null ? civilDocuments() : this.civilDocuments,
       address: address != null ? address() : this.address,

@@ -21,41 +21,53 @@ class HmlAuthHelper {
   /// Gets an access token using the JWT Profile grant.
   Future<String> getAccessToken() async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    
+    final jti = DateTime.now().microsecondsSinceEpoch.toString(); // Unique ID for this request
+
     // Create JWT assertion
     final jwt = JWT(
       {
         'iss': userId,
         'sub': userId,
-        'aud': issuer,
+        'aud': [issuer, '363109883022671995'], // Issuer URL + Project ID as audience
         'iat': now,
-        'exp': now + 3600,
+        'exp': now + 300, 
+        'jti': jti,      
       },
       header: {
         'kid': keyId,
+        'typ': 'JWT',
       },
     );
-
-    final signedJwt = jwt.sign(RSAPrivateKey(privateKey), algorithm: JWTAlgorithm.RS256);
+    final signedJwt = jwt.sign(
+      RSAPrivateKey(privateKey.trim()), 
+      algorithm: JWTAlgorithm.RS256,
+    );
 
     final dio = Dio();
-    final response = await dio.post<Map<String, dynamic>>(
-      tokenEndpoint,
-      data: {
-        'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        'assertion': signedJwt,
-        'scope': 'openid profile email urn:zitadel:iam:org:project:roles',
-      },
-      options: Options(
-        contentType: Headers.formUrlEncodedContentType,
-      ),
-    );
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        tokenEndpoint,
+        data: {
+          'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          'assertion': signedJwt,
+          'scope': 'openid profile urn:zitadel:iam:org:project:id:363109883022671995:aud',
+        },
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          validateStatus: (status) => true, // Handle error response manually
+        ),
+      );
 
-    if (response.statusCode == 200) {
-      final data = response.data!;
-      return data['access_token'] as String;
-    } else {
-      throw Exception('Failed to get access token: ${response.data}');
+      if (response.statusCode == 200) {
+        final data = response.data!;
+        return data['access_token'] as String;
+      } else {
+        print('HmlAuthHelper: Error from Zitadel (${response.statusCode}): ${response.data}');
+        throw Exception('Failed to get access token: ${response.data}');
+      }
+    } on DioException catch (e) {
+      print('HmlAuthHelper: Dio Error: ${e.message}');
+      rethrow;
     }
   }
 

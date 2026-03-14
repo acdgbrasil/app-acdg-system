@@ -1,8 +1,4 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
-library;
+/// BFF implementation for Desktop (in-process).
+library social_care_desktop;
 
-export 'src/social_care_desktop_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/remote/social_care_bff_remote.dart';
