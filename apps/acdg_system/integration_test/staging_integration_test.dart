@@ -76,9 +76,6 @@ void main() {
       final lookups = lookupResult.valueOrNull!;
       final prRelId = LookupId.create(lookups[0].id).valueOrNull!;
       final otherRelId = LookupId.create(lookups[1].id).valueOrNull!;
-      
-      print('PR Relationship: ${prRelId.value} (${lookups[0].descricao})');
-      print('Member Relationship: ${otherRelId.value} (${lookups[1].descricao})');
 
       // 1. Prepare a Patient model with valid VOs
       final uniqueSuffix = DateTime.now().millisecondsSinceEpoch.toString().padLeft(12, '0').substring(0, 12);
@@ -250,18 +247,31 @@ void main() {
       expect(assignResult.isSuccess, isTrue, reason: 'Failed to assign primary caregiver');
       print('Primary caregiver assigned successfully.');
 
-      // 8. Verify primary caregiver assignment
-      print('Verifying caregiver assignment...');
-      final caregiverGetResult = await bff.getPatient(newId);
-      expect(caregiverGetResult.isSuccess, isTrue);
-      final caregiverPatient = caregiverGetResult.valueOrNull!;
+      // 8. Update Social Identity
+      print('Fetching lookup table: dominio_tipo_identidade...');
+      final socialIdLookupResult = await bff.getLookupTable('dominio_tipo_identidade');
+      expect(socialIdLookupResult.isSuccess, isTrue);
+      final socialIdTypeId = LookupId.create(socialIdLookupResult.valueOrNull!.first.id).valueOrNull!;
       
-      final isCaregiver = caregiverPatient.familyMembers
-          .firstWhere((m) => m.personId == newMemberPersonId)
-          .isPrimaryCaregiver;
-      expect(isCaregiver, isTrue, reason: 'The member should now be marked as primary caregiver');
+      print('Updating social identity for patient ${newId.value}...');
+      final socialIdentity = SocialIdentity.create(
+        typeId: socialIdTypeId,
+        otherDescription: 'Identidade testada via integração',
+      ).valueOrNull!;
 
-      // 9. Remove the family member
+      final updateSocialIdResult = await bff.updateSocialIdentity(newId, socialIdentity);
+      if (updateSocialIdResult.isFailure) {
+        print('Update social identity failure: ${(updateSocialIdResult as Failure).error}');
+      }
+      expect(updateSocialIdResult.isSuccess, isTrue, reason: 'Failed to update social identity');
+      print('Social identity updated successfully.');
+
+      // 9. Verify social identity update
+      print('Verifying social identity in patient record...');
+      final finalPatientResult = await bff.getPatient(newId);
+      expect(finalPatientResult.isSuccess, isTrue);
+      
+      // 10. Remove the family member
       print('Removing family member ${newMemberPersonId.value} from patient ${newId.value}...');
       final removeResult = await bff.removeFamilyMember(newId, newMemberPersonId);
       

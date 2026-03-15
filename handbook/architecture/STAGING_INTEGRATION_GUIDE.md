@@ -57,6 +57,11 @@ A composição familiar segue regras rígidas de integridade referencial e lógi
 *   **Rota:** `/api/v1/patients/{patientId}/family-members/{memberPersonId}` (DELETE).
 *   **Atenção:** Use o `personId` do membro na URL, não o `patientId` do prontuário nem IDs de relacionamento.
 
+### Atualização de Identidade Social
+*   **Rota:** `/api/v1/patients/{patientId}/social-identity` (PUT).
+*   **Atenção:** O sufixo da rota é `/social-identity` (completo), não `/social-id`.
+*   **Dados:** Requer um `typeId` válido da lookup table `dominio_tipo_identidade`.
+
 ---
 
 ## 4. Regras de Negócio e Invariantes

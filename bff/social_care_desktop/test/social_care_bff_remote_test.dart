@@ -268,5 +268,21 @@ void main() {
       expect(mockDio.lastPath, equals('/api/v1/patients/${patientId.value}/primary-caregiver'));
       expect(mockDio.lastBody!['memberPersonId'], equals(memberId.value));
     });
+
+    test('Should map updateSocialIdentity request correctly', () async {
+      final patientId = PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+      final typeId = LookupId.create('550e8400-e29b-41d4-a716-446655440003').valueOrNull!;
+      
+      final identity = SocialIdentity.create(
+        typeId: typeId,
+        otherDescription: 'Some description',
+      ).valueOrNull!;
+
+      await bff.updateSocialIdentity(patientId, identity);
+      
+      expect(mockDio.lastPath, equals('/api/v1/patients/${patientId.value}/social-identity'));
+      expect(mockDio.lastBody!['typeId'], equals(typeId.value));
+      expect(mockDio.lastBody!['description'], equals('Some description'));
+    });
   });
 }

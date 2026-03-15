@@ -242,7 +242,25 @@ class SocialCareBffRemote implements SocialCareContract {
     }
   }
   @override
-  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async => const Success(null);
+  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/patients/${patientId.value}/social-identity',
+        data: {
+          'typeId': identity.typeId.value,
+          if (identity.otherDescription != null) 'description': identity.otherDescription,
+        },
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return Failure(response.data ?? 'Failed to update social identity');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
   @override
   Future<Result<List>> getAuditTrail(PatientId patientId, {String? eventType}) async => const Success([]);
   @override
