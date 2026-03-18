@@ -1,0 +1,223 @@
+import 'dart:async';
+import 'package:core/core.dart';
+import 'package:shared/shared.dart';
+import 'package:network/network.dart';
+import 'local_social_care_repository.dart';
+import '../remote/social_care_bff_remote.dart';
+import '../sync/sync_engine.dart';
+
+/// Orchestrator that implements [SocialCareContract] with an offline-first strategy.
+/// 
+/// Rules:
+/// - Writes: Always local first, then trigger sync if online.
+/// - Reads: Remote first if online (with cache update), fallback to local.
+class OfflineFirstRepository implements SocialCareContract {
+  final LocalSocialCareRepository _local;
+  final SocialCareBffRemote _remote;
+  final ConnectivityService _connectivity;
+  final SyncEngine _syncEngine;
+
+  OfflineFirstRepository({
+    required LocalSocialCareRepository local,
+    required SocialCareBffRemote remote,
+    required ConnectivityService connectivity,
+    required SyncEngine syncEngine,
+  })  : _local = local,
+        _remote = remote,
+        _connectivity = connectivity,
+        _syncEngine = syncEngine;
+
+  bool get _isOnline => _connectivity.isOnline.value;
+
+  // ==========================================
+  // HELPERS
+  // ==========================================
+
+  Future<Result<T>> _handleWrite<T>(Future<Result<T>> Function() localCall) async {
+    final result = await localCall();
+    
+    if (result.isSuccess && _isOnline) {
+      unawaited(_syncEngine.processQueue());
+    }
+    
+    return result;
+  }
+
+  Future<Result<T>> _handleRead<T>({
+    required Future<Result<T>> Function() remoteCall,
+    required Future<Result<T>> Function() localCall,
+    Future<void> Function(T)? onRemoteSuccess,
+  }) async {
+    if (_isOnline) {
+      final remoteResult = await remoteCall();
+      
+      if (remoteResult case Success(:final value)) {
+        if (onRemoteSuccess != null) {
+          unawaited(onRemoteSuccess(value));
+        }
+        return Success(value);
+      }
+    }
+    
+    return localCall();
+  }
+
+  // ==========================================
+  // HEALTH
+  // ==========================================
+
+  @override
+  Future<Result<void>> checkHealth() => _remote.checkHealth();
+
+  @override
+  Future<Result<void>> checkReady() => _remote.checkReady();
+
+  // ==========================================
+  // REGISTRY
+  // ==========================================
+
+  @override
+  Future<Result<PatientId>> registerPatient(Patient patient) => 
+      _handleWrite(() => _local.registerPatient(patient));
+
+  @override
+  Future<Result<Patient>> getPatient(PatientId id) => _handleRead(
+        remoteCall: () => _remote.getPatient(id),
+        localCall: () => _local.getPatient(id),
+        onRemoteSuccess: (p) => _local.updateCache(p),
+      );
+
+  @override
+  Future<Result<Patient>> getPatientByPersonId(PersonId personId) => _handleRead(
+        remoteCall: () => _remote.getPatientByPersonId(personId),
+        localCall: () => _local.getPatientByPersonId(personId),
+        onRemoteSuccess: (p) => _local.updateCache(p),
+      );
+
+  @override
+  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member, LookupId prRelationshipId) =>
+      _handleWrite(() => _local.addFamilyMember(patientId, member, prRelationshipId));
+
+  @override
+  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId) =>
+      _handleWrite(() => _local.removeFamilyMember(patientId, memberId));
+
+  @override
+  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId) =>
+      _handleWrite(() => _local.assignPrimaryCaregiver(patientId, memberId));
+
+  @override
+  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) =>
+      _handleWrite(() => _local.updateSocialIdentity(patientId, identity));
+
+  @override
+  Future<Result<List<AuditEvent>>> getAuditTrail(PatientId patientId, {String? eventType}) =>
+      _remote.getAuditTrail(patientId, eventType: eventType);
+
+  // ==========================================
+  // ASSESSMENT
+  // ==========================================
+
+  @override
+  Future<Result<void>> updateHousingCondition(PatientId patientId, HousingCondition condition) =>
+      _handleWrite(() => _local.updateHousingCondition(patientId, condition));
+
+  @override
+  Future<Result<void>> updateSocioEconomicSituation(PatientId patientId, SocioEconomicSituation situation) =>
+      _handleWrite(() => _local.updateSocioEconomicSituation(patientId, situation));
+
+  @override
+  Future<Result<void>> updateWorkAndIncome(PatientId patientId, WorkAndIncome data) =>
+      _handleWrite(() => _local.updateWorkAndIncome(patientId, data));
+
+  @override
+  Future<Result<void>> updateEducationalStatus(PatientId patientId, EducationalStatus status) =>
+      _handleWrite(() => _local.updateEducationalStatus(patientId, status));
+
+  @override
+  Future<Result<void>> updateHealthStatus(PatientId patientId, HealthStatus status) =>
+      _handleWrite(() => _local.updateHealthStatus(patientId, status));
+
+  @override
+  Future<Result<void>> updateCommunitySupportNetwork(PatientId patientId, CommunitySupportNetwork network) =>
+      _handleWrite(() => _local.updateCommunitySupportNetwork(patientId, network));
+
+  @override
+  Future<Result<void>> updateSocialHealthSummary(PatientId patientId, SocialHealthSummary summary) =>
+      _handleWrite(() => _local.updateSocialHealthSummary(patientId, summary));
+
+  // ==========================================
+  // CARE
+  // ==========================================
+
+  @override
+  Future<Result<AppointmentId>> registerAppointment(PatientId patientId, SocialCareAppointment appointment) =>
+      _handleWrite(() => _local.registerAppointment(patientId, appointment));
+
+  @override
+  Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info) =>
+      _handleWrite(() => _local.updateIntakeInfo(patientId, info));
+
+  // ==========================================
+  // PROTECTION
+  // ==========================================
+
+  @override
+  Future<Result<void>> updatePlacementHistory(PatientId patientId, PlacementHistory history) =>
+      _handleWrite(() => _local.updatePlacementHistory(patientId, history));
+
+  @override
+  Future<Result<ViolationReportId>> reportViolation(PatientId patientId, RightsViolationReport report) =>
+      _handleWrite(() => _local.reportViolation(patientId, report));
+
+  @override
+  Future<Result<ReferralId>> createReferral(PatientId patientId, Referral referral) =>
+      _handleWrite(() => _local.createReferral(patientId, referral));
+
+  // ==========================================
+  // LOOKUP
+  // ==========================================
+
+  @override
+  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
+    final localResult = await _local.getLookupTable(tableName);
+    
+    if (localResult case Success(value: final items) when items.isNotEmpty) {
+      return Success(items);
+    }
+
+    if (_isOnline) {
+      final remoteResult = await _remote.getLookupTable(tableName);
+      if (remoteResult case Success(:final value)) {
+        unawaited(_local.updateLookupCache(tableName, value));
+        return Success(value);
+      }
+    }
+
+    return localResult;
+  }
+
+  /// Manually pre-fetches all common lookup tables.
+  Future<void> prefetchLookupTables() async {
+    if (!_isOnline) return;
+    
+    final tables = [
+      'dominio_parentesco',
+      'dominio_escolaridade',
+      'dominio_deficiencia',
+      'dominio_tipo_residencia',
+      'dominio_abastecimento_agua',
+      'dominio_escoamento_sanitario',
+      'dominio_destino_lixo',
+      'dominio_acesso_energia',
+      'dominio_situacao_imovel',
+    ];
+
+    for (final table in tables) {
+      final result = await _remote.getLookupTable(table);
+      if (result case Success(:final value)) {
+        await _local.updateLookupCache(table, value);
+      }
+    }
+  }
+}
