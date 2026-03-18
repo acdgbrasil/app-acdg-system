@@ -57,6 +57,7 @@ void main() {
     onlineNotifier = ValueNotifier<bool>(true);
 
     when(() => connectivity.isOnline).thenReturn(onlineNotifier);
+    when(() => queue.getAllActions()).thenAnswer((_) async => []);
 
     engine = SyncEngine(
       queueService: queue,
