@@ -17,6 +17,12 @@ dependencies:
     path: ../../packages/auth
   network:
     path: ../../packages/network
+  persistence:
+    path: ../../packages/persistence
+  shared:
+    path: ../../bff/shared
+  social_care_desktop:
+    path: ../../bff/social_care_desktop
   go_router: ^17.1.0
   provider: ^6.1.5
   dio: ^5.9.2

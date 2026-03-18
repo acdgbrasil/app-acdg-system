@@ -17,6 +17,9 @@ abstract class AuthRepository extends Listenable {
   /// Current authenticated user, or null.
   AuthUser? get currentUser;
 
+  /// Current authentication token, or null.
+  AuthToken? get currentToken;
+
   /// Initiates the login flow.
   Future<Result<void>> login();
 
@@ -50,6 +53,9 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
 
   @override
   AuthUser? get currentUser => _authService.currentUser;
+
+  @override
+  AuthToken? get currentToken => _authService.currentToken;
 
   @override
   Future<Result<void>> login() async {

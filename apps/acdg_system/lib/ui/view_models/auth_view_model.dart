@@ -6,19 +6,19 @@ import '../../logic/use_cases/auth_use_cases.dart';
 
 class AuthViewModel extends BaseViewModel {
   AuthViewModel({
-    required AuthRepository authRepository,
+    required this.authRepository,
     required LoginUseCase loginUseCase,
     required LogoutUseCase logoutUseCase,
     required RestoreSessionUseCase restoreSessionUseCase,
-  }) : _authRepository = authRepository {
+  }) {
     login = Command0(() => loginUseCase.execute(null));
     logout = Command0(() => logoutUseCase.execute(null));
     restoreSession = Command0(() => restoreSessionUseCase.execute(null));
 
-    _statusSubscription = _authRepository.statusStream.listen(_onStatusChanged);
+    _statusSubscription = authRepository.statusStream.listen(_onStatusChanged);
   }
 
-  final AuthRepository _authRepository;
+  final AuthRepository authRepository;
   StreamSubscription<AuthStatus>? _statusSubscription;
 
   final ValueNotifier<AuthStatus> status = ValueNotifier(const AuthLoading());

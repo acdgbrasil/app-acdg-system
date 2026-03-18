@@ -266,12 +266,353 @@ void main() {
       expect(updateSocialIdResult.isSuccess, isTrue, reason: 'Failed to update social identity');
       print('Social identity updated successfully.');
 
-      // 9. Verify social identity update
-      print('Verifying social identity in patient record...');
+      // 8.1 Update Housing Condition
+      print('Updating housing condition for patient ${newId.value}...');
+      final housingConditionRes = HousingCondition.create(
+        type: ConditionType.rented,
+        wallMaterial: WallMaterial.masonry,
+        numberOfRooms: 4,
+        numberOfBedrooms: 2,
+        numberOfBathrooms: 1,
+        waterSupply: WaterSupply.publicNetwork,
+        hasPipedWater: true,
+        electricityAccess: ElectricityAccess.meteredConnection,
+        sewageDisposal: SewageDisposal.publicSewer,
+        wasteCollection: WasteCollection.directCollection,
+        accessibilityLevel: AccessibilityLevel.fullyAccessible,
+        isInGeographicRiskArea: false,
+        hasDifficultAccess: false,
+        isInSocialConflictArea: false,
+        hasDiagnosticObservations: false,
+      );
+      if (housingConditionRes.isFailure) fail('HousingCondition creation failed: ${(housingConditionRes as Failure).error}');
+      
+      final updateHousingResult = await bff.updateHousingCondition(newId, housingConditionRes.valueOrNull!);
+      if (updateHousingResult.isFailure) {
+        print('Update housing condition failure: ${(updateHousingResult as Failure).error}');
+      }
+      expect(updateHousingResult.isSuccess, isTrue, reason: 'Failed to update housing condition');
+      print('Housing condition updated successfully.');
+
+      // 8.2 Update Socio-Economic Situation
+      print('Updating socio-economic situation for patient ${newId.value}...');
+      final benefitRes = SocialBenefit.create(
+        benefitName: 'Bolsa Família',
+        amount: 600.0,
+        beneficiaryId: personId,
+      );
+      if (benefitRes.isFailure) fail('SocialBenefit creation failed: ${(benefitRes as Failure).error}');
+      
+      final benefitsCollRes = SocialBenefitsCollection.create([benefitRes.valueOrNull!]);
+      if (benefitsCollRes.isFailure) fail('SocialBenefitsCollection creation failed: ${(benefitsCollRes as Failure).error}');
+
+      final socioEconomicRes = SocioEconomicSituation.create(
+        totalFamilyIncome: 1200.0,
+        incomePerCapita: 300.0,
+        receivesSocialBenefit: true,
+        socialBenefits: benefitsCollRes.valueOrNull!,
+        mainSourceOfIncome: 'Trabalho Informal',
+        hasUnemployed: true,
+      );
+      if (socioEconomicRes.isFailure) fail('SocioEconomicSituation creation failed: ${(socioEconomicRes as Failure).error}');
+
+      final updateSocioResult = await bff.updateSocioEconomicSituation(newId, socioEconomicRes.valueOrNull!);
+      if (updateSocioResult.isFailure) {
+        print('Update socio-economic situation failure: ${(updateSocioResult as Failure).error}');
+      }
+      expect(updateSocioResult.isSuccess, isTrue, reason: 'Failed to update socio-economic situation');
+      print('Socio-economic situation updated successfully.');
+
+      // 8.3 Update Work and Income
+      print('Updating work and income for patient ${newId.value}...');
+      final occLookupRes = await bff.getLookupTable('dominio_condicao_ocupacao');
+      if (occLookupRes.isFailure) fail('Failed to fetch dominio_condicao_ocupacao');
+      
+      final occupationId = LookupId.create(occLookupRes.valueOrNull!.first.id).valueOrNull!;
+
+      final individualIncomeRes = WorkIncomeVO.create(
+        memberId: personId,
+        occupationId: occupationId,
+        hasWorkCard: true,
+        monthlyAmount: 1200.0,
+      );
+      if (individualIncomeRes.isFailure) fail('WorkIncomeVO creation failed: ${(individualIncomeRes as Failure).error}');
+
+      final workAndIncome = WorkAndIncome(
+        familyId: newId,
+        individualIncomes: [individualIncomeRes.valueOrNull!],
+        socialBenefits: [benefitRes.valueOrNull!],
+        hasRetiredMembers: false,
+      );
+
+      final updateWorkResult = await bff.updateWorkAndIncome(newId, workAndIncome);
+      if (updateWorkResult.isFailure) {
+        final error = (updateWorkResult as Failure).error;
+        print('Update work and income failure: $error');
+      }
+      expect(updateWorkResult.isSuccess, isTrue, reason: 'Failed to update work and income');
+      print('Work and income updated successfully.');
+
+      // 8.4 Update Educational Status
+      print('Updating educational status for patient ${newId.value}...');
+      final eduLevelLookupRes = await bff.getLookupTable('dominio_escolaridade');
+      if (eduLevelLookupRes.isFailure) fail('Failed to fetch dominio_escolaridade');
+      final eduLevelId = LookupId.create(eduLevelLookupRes.valueOrNull!.first.id).valueOrNull!;
+
+      final effectLookupRes = await bff.getLookupTable('dominio_efeito_condicionalidade');
+      if (effectLookupRes.isFailure) fail('Failed to fetch dominio_efeito_condicionalidade');
+      final effectId = LookupId.create(effectLookupRes.valueOrNull!.first.id).valueOrNull!;
+
+      final eduStatus = EducationalStatus(
+        familyId: newId,
+        memberProfiles: [
+          MemberEducationalProfile(
+            memberId: personId,
+            canReadWrite: true,
+            attendsSchool: true,
+            educationLevelId: eduLevelId,
+          ),
+        ],
+        programOccurrences: [
+          ProgramOccurrence(
+            memberId: personId,
+            date: TimeStamp.now,
+            effectId: effectId,
+            isSuspensionRequested: false,
+          ),
+        ],
+      );
+
+      final updateEduResult = await bff.updateEducationalStatus(newId, eduStatus);
+      if (updateEduResult.isFailure) {
+        print('Update educational status failure: ${(updateEduResult as Failure).error}');
+      }
+      expect(updateEduResult.isSuccess, isTrue, reason: 'Failed to update educational status');
+      print('Educational status updated successfully.');
+
+      // 8.5 Register Appointment
+      print('Registering appointment for patient ${newId.value}...');
+      final appointmentIdRes = AppointmentId.create('550e8400-e29b-41d4-a716-${uniqueSuffix.replaceAll('0', '5')}');
+      if (appointmentIdRes.isFailure) fail('AppointmentId creation failed');
+      
+      // Use a valid UUID for professionalId (backend might reject non-UUID actorIds)
+      final profIdRes = ProfessionalId.create('550e8400-e29b-41d4-a716-999999999999');
+      if (profIdRes.isFailure) fail('ProfessionalId creation failed');
+
+      final appointmentRes = SocialCareAppointment.create(
+        id: appointmentIdRes.valueOrNull!,
+        date: TimeStamp.now,
+        professionalInChargeId: profIdRes.valueOrNull!,
+        type: AppointmentType.officeAppointment,
+        summary: 'Atendimento de teste via integração',
+        actionPlan: 'Plano de ação de teste',
+      );
+      if (appointmentRes.isFailure) fail('SocialCareAppointment creation failed: ${(appointmentRes as Failure).error}');
+
+      final regApptResult = await bff.registerAppointment(newId, appointmentRes.valueOrNull!);
+      if (regApptResult.isFailure) {
+        print('Register appointment failure: ${(regApptResult as Failure).error}');
+      }
+      expect(regApptResult.isSuccess, isTrue, reason: 'Failed to register appointment');
+      print('Appointment registered successfully.');
+
+      // 8.6 Update Intake Info
+      print('Updating intake info for patient ${newId.value}...');
+      final ingressLookupRes = await bff.getLookupTable('dominio_tipo_ingresso');
+      if (ingressLookupRes.isFailure) fail('Failed to fetch dominio_tipo_ingresso');
+      final ingressTypeId = LookupId.create(ingressLookupRes.valueOrNull!.first.id).valueOrNull!;
+
+      final programLookupRes = await bff.getLookupTable('dominio_programa_social');
+      if (programLookupRes.isFailure) fail('Failed to fetch dominio_programa_social');
+      final programId = LookupId.create(programLookupRes.valueOrNull!.first.id).valueOrNull!;
+
+      final intakeInfo = IngressInfo.create(
+        ingressTypeId: ingressTypeId,
+        serviceReason: 'Motivo de teste via integração',
+        linkedSocialPrograms: [
+          ProgramLink(programId: programId, observation: 'Observação de teste'),
+        ],
+      ).valueOrNull!;
+
+      final updateIntakeResult = await bff.updateIntakeInfo(newId, intakeInfo);
+      if (updateIntakeResult.isFailure) {
+        print('Update intake info failure: ${(updateIntakeResult as Failure).error}');
+      }
+      expect(updateIntakeResult.isSuccess, isTrue, reason: 'Failed to update intake info');
+      print('Intake info updated successfully.');
+
+      // 8.7 Update Placement History
+      print('Updating placement history for patient ${newId.value}...');
+      final placementHistory = PlacementHistory(
+        familyId: newId,
+        individualPlacements: [
+          PlacementRegistry.create(
+            memberId: personId,
+            startDate: TimeStamp.now,
+            reason: 'Necessidade de acolhimento temporário via integração',
+          ).valueOrNull!,
+        ],
+        collectiveSituations: const CollectiveSituations(
+          homeLossReport: 'Relato de perda de moradia para teste',
+        ),
+        separationChecklist: const SeparationChecklist(
+          adultInPrison: false,
+          adolescentInInternment: false,
+        ),
+      );
+
+      final updatePlacementResult = await bff.updatePlacementHistory(newId, placementHistory);
+      if (updatePlacementResult.isFailure) {
+        print('Update placement history failure: ${(updatePlacementResult as Failure).error}');
+      }
+      expect(updatePlacementResult.isSuccess, isTrue, reason: 'Failed to update placement history');
+      print('Placement history updated successfully.');
+
+      // 8.8 Report Rights Violation
+      print('Reporting rights violation for patient ${newId.value}...');
+      final now = TimeStamp.now;
+      final vriRes = ViolationReportId.create('550e8400-e29b-41d4-a716-${uniqueSuffix.replaceAll('0', '6')}');
+      if (vriRes.isFailure) fail('ViolationReportId creation failed');
+
+      final violationReportRes = RightsViolationReport.create(
+        id: vriRes.valueOrNull!,
+        reportDate: now,
+        incidentDate: now,
+        victimId: personId,
+        violationType: ViolationType.neglect,
+        descriptionOfFact: 'Relato de negligência para teste via integração',
+        actionsTaken: 'Encaminhamento para rede de proteção',
+      );
+      if (violationReportRes.isFailure) fail('RightsViolationReport creation failed: ${(violationReportRes as Failure).error}');
+
+      final reportViolationResult = await bff.reportViolation(newId, violationReportRes.valueOrNull!);
+      if (reportViolationResult.isFailure) {
+        print('Report violation failure: ${(reportViolationResult as Failure).error}');
+      }
+      expect(reportViolationResult.isSuccess, isTrue, reason: 'Failed to report violation');
+      print('Rights violation reported successfully.');
+
+      // 8.9 Create Referral
+      print('Creating referral for patient ${newId.value}...');
+      final referral = Referral.create(
+        id: ReferralId.create('550e8400-e29b-41d4-a716-${uniqueSuffix.replaceAll('0', '7')}').valueOrNull!,
+        date: TimeStamp.now,
+        requestingProfessionalId: profIdRes.valueOrNull!,
+        referredPersonId: personId,
+        destinationService: DestinationService.creas,
+        reason: 'Encaminhamento para acompanhamento especializado via integração',
+      ).valueOrNull!;
+
+      final createReferralResult = await bff.createReferral(newId, referral);
+      if (createReferralResult.isFailure) {
+        print('Create referral failure: ${(createReferralResult as Failure).error}');
+      }
+      expect(createReferralResult.isSuccess, isTrue, reason: 'Failed to create referral');
+      print('Referral created successfully.');
+
+      // 8.10 Update Health Status
+      print('Updating health status for patient ${newId.value}...');
+      final deficiencyLookupRes = await bff.getLookupTable('dominio_tipo_deficiencia');
+      if (deficiencyLookupRes.isFailure) fail('Failed to fetch dominio_tipo_deficiencia');
+      final deficiencyTypeId = LookupId.create(deficiencyLookupRes.valueOrNull!.first.id).valueOrNull!;
+
+      final healthStatus = HealthStatus(
+        familyId: newId,
+        deficiencies: [
+          MemberDeficiency(
+            memberId: personId,
+            deficiencyTypeId: deficiencyTypeId,
+            needsConstantCare: true,
+            responsibleCaregiverName: 'Cuidador Teste',
+          ),
+        ],
+        gestatingMembers: [
+          PregnantMember(
+            memberId: personId,
+            monthsGestation: 5,
+            startedPrenatalCare: true,
+          ),
+        ],
+        constantCareNeeds: [personId],
+        foodInsecurity: false,
+      );
+
+      final updateHealthResult = await bff.updateHealthStatus(newId, healthStatus);
+      if (updateHealthResult.isFailure) {
+        print('Update health status failure: ${(updateHealthResult as Failure).error}');
+      }
+      expect(updateHealthResult.isSuccess, isTrue, reason: 'Failed to update health status');
+      print('Health status updated successfully.');
+
+      // 8.11 Update Community Support Network
+      print('Updating community support network for patient ${newId.value}...');
+      final supportNetwork = CommunitySupportNetwork.create(
+        hasRelativeSupport: true,
+        hasNeighborSupport: true,
+        familyConflicts: 'Nenhum conflito relevante para teste',
+        patientParticipatesInGroups: true,
+        familyParticipatesInGroups: false,
+        patientHasAccessToLeisure: true,
+        facesDiscrimination: false,
+      ).valueOrNull!;
+
+      final updateSupportResult = await bff.updateCommunitySupportNetwork(newId, supportNetwork);
+      if (updateSupportResult.isFailure) {
+        print('Update community support failure: ${(updateSupportResult as Failure).error}');
+      }
+      expect(updateSupportResult.isSuccess, isTrue, reason: 'Failed to update community support network');
+      print('Community support network updated successfully.');
+
+      // 8.12 Update Social Health Summary
+      print('Updating social health summary for patient ${newId.value}...');
+      final summary = SocialHealthSummary.create(
+        requiresConstantCare: true,
+        hasMobilityImpairment: false,
+        functionalDependencies: ['Alimentação', 'Higiene'],
+        hasRelevantDrugTherapy: true,
+      ).valueOrNull!;
+
+      final updateSummaryResult = await bff.updateSocialHealthSummary(newId, summary);
+      if (updateSummaryResult.isFailure) {
+        print('Update social health summary failure: ${(updateSummaryResult as Failure).error}');
+      }
+      expect(updateSummaryResult.isSuccess, isTrue, reason: 'Failed to update social health summary');
+      print('Social health summary updated successfully.');
+
+      // 9. Verify all records in audit trail
+      print('Verifying records in audit trail...');
       final finalPatientResult = await bff.getPatient(newId);
       expect(finalPatientResult.isSuccess, isTrue);
       
-      // 10. Remove the family member
+      // 10. Fetch Audit Trail
+      print('Waiting for audit trail relay (2s)...');
+      await Future.delayed(const Duration(seconds: 2));
+      
+      print('Fetching audit trail for patient ${newId.value}...');
+      final auditResult = await bff.getAuditTrail(newId);
+      if (auditResult.isFailure) {
+        print('Fetch audit trail failure: ${(auditResult as Failure).error}');
+      }
+      expect(auditResult.isSuccess, isTrue, reason: 'Failed to fetch audit trail');
+      
+      final auditEvents = auditResult.valueOrNull!;
+      print('Retrieved ${auditEvents.length} audit events.');
+      
+      expect(auditEvents.any((e) => e.eventType == 'PatientCreatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'HousingConditionUpdatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'SocioEconomicSituationUpdatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'WorkAndIncomeUpdatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'EducationalStatusUpdatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'SocialCareAppointmentRegisteredEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'IntakeInfoUpdatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'PlacementHistoryUpdatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'RightsViolationReportedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'ReferralCreatedEvent'), isTrue);
+      expect(auditEvents.any((e) => e.eventType == 'HealthStatusUpdatedEvent'), isTrue, reason: 'HealthStatusUpdatedEvent should be in the audit trail');
+      expect(auditEvents.any((e) => e.eventType == 'CommunitySupportNetworkUpdatedEvent'), isTrue, reason: 'CommunitySupportNetworkUpdatedEvent should be in the audit trail');
+      expect(auditEvents.any((e) => e.eventType == 'SocialHealthSummaryUpdatedEvent'), isTrue, reason: 'SocialHealthSummaryUpdatedEvent should be in the audit trail');
+
+      // 11. Remove the family member
       print('Removing family member ${newMemberPersonId.value} from patient ${newId.value}...');
       final removeResult = await bff.removeFamilyMember(newId, newMemberPersonId);
       
@@ -328,6 +669,8 @@ class _RealTokenAuthRepository extends ChangeNotifier implements AuthRepository 
   AuthStatus get currentStatus => _status;
   @override
   AuthUser? get currentUser => _status is Authenticated ? (this._status as Authenticated).user : null;
+  @override
+  AuthToken? get currentToken => _status is Authenticated ? AuthToken(accessToken: token, expiresAt: DateTime.now().add(const Duration(hours: 1))) : null;
   @override
   Future<Result<void>> login() async => const Success(null);
   @override

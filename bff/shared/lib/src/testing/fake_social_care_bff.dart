@@ -9,6 +9,7 @@ import '../domain/assessment/work_and_income.dart';
 import '../domain/care/care_vos.dart';
 import '../domain/kernel/ids.dart';
 import '../domain/models/lookup.dart';
+import '../domain/audit/audit_event.dart';
 import '../domain/registry/family_member.dart';
 import '../domain/registry/patient.dart';
 import '../domain/registry/registry_vos.dart';
@@ -65,7 +66,7 @@ class FakeSocialCareBff implements SocialCareContract {
   Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async => const Success(null);
 
   @override
-  Future<Result<List<dynamic>>> getAuditTrail(PatientId patientId, {String? eventType}) async => const Success([]);
+  Future<Result<List<AuditEvent>>> getAuditTrail(PatientId patientId, {String? eventType}) async => const Success([]);
 
   @override
   Future<Result<void>> updateHousingCondition(PatientId patientId, HousingCondition condition) async => const Success(null);

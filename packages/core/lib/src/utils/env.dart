@@ -30,4 +30,7 @@ class Env {
   static String get oidcClientId => getString('OIDC_CLIENT_ID');
   static String get oidcWebRedirectUri => getString('OIDC_WEB_REDIRECT_URI');
   static String get oidcWebPostLogoutUri => getString('OIDC_WEB_POST_LOGOUT_URI');
+
+  /// BFF Configuration
+  static String get bffBaseUrl => getString('BFF_BASE_URL', defaultValue: 'http://localhost:8080');
 }

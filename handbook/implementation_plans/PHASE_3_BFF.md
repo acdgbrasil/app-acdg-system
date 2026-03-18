@@ -2,7 +2,7 @@
 
 Reconstrução da camada de comunicação com o backend seguindo os novos padrões.
 
-## Status: 🚀 PRÓXIMA
+## Status: ✅ CONCLUÍDO
 
 ### Entregáveis
 - [x] **BFF Models**: Criação de modelos de domínio usando o novo `Equatable` e imutabilidade total.
@@ -13,4 +13,4 @@ Reconstrução da camada de comunicação com o backend seguindo os novos padrõ
 - [x] **Testing Domain**: Suite completa de 67 testes unitários cobrindo todas as regras de negócio offline.
 - [x] **Analytics Service**: Implementação de cálculos offline (Habitacional, Financeiro, Etário, Educacional).
 - [x] **Testing Fakes**: Implementação do `FakeSocialCareBff` atualizada para o novo contrato.
-- [ ] **Integration Test Extension**: Expandir o `staging_integration_test.dart` para validar CRUD de pacientes.
+- [x] **Integration Test Extension**: Expandir o `staging_integration_test.dart` para validar CRUD de pacientes.

@@ -8,6 +8,7 @@ import '../domain/assessment/work_and_income.dart';
 import '../domain/care/care_vos.dart';
 import '../domain/kernel/ids.dart';
 import '../domain/models/lookup.dart';
+import '../domain/audit/audit_event.dart';
 import '../domain/registry/family_member.dart';
 import '../domain/registry/patient.dart';
 import '../domain/registry/registry_vos.dart';
@@ -54,8 +55,7 @@ abstract interface class SocialCareContract {
   Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity);
 
   /// Retrieves the audit trail for a specific patient.
-  /// TODO: Define AuditEvent model.
-  Future<Result<List<dynamic>>> getAuditTrail(PatientId patientId, {String? eventType});
+  Future<Result<List<AuditEvent>>> getAuditTrail(PatientId patientId, {String? eventType});
 
   // ==========================================
   // ASSESSMENT (Evaluations)

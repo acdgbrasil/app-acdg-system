@@ -1,5 +1,5 @@
 /// Kernel compartilhado do BFF Social Care.
-library shared;
+library;
 
 // Utils
 export 'src/utils/app_error.dart';
@@ -18,6 +18,9 @@ export 'src/domain/kernel/time_stamp.dart';
 // Models
 export 'src/domain/models/lookup.dart';
 
+// Audit
+export 'src/domain/audit/audit_event.dart';
+
 // Registry
 export 'src/domain/registry/family_member.dart';
 export 'src/domain/registry/patient.dart';
@@ -30,6 +33,9 @@ export 'src/domain/assessment/educational_status.dart';
 export 'src/domain/assessment/health_status.dart';
 export 'src/domain/assessment/social_health_summary.dart';
 export 'src/domain/assessment/work_and_income.dart';
+
+// Mapper
+export 'src/infrastructure/patient_mapper.dart';
 
 // Care
 export 'src/domain/care/care_vos.dart';

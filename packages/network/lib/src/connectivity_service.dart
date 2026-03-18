@@ -34,6 +34,12 @@ class ConnectivityService {
   /// Current connectivity state (Reliable: indicates actual internet access).
   ValueListenable<bool> get isOnline => _online;
 
+  /// Manually set connectivity status for testing purposes.
+  @visibleForTesting
+  void setOnlineForTesting(bool value) {
+    _online.value = value;
+  }
+
   /// Stream of connectivity changes.
   Stream<bool> get onStatusChange => _online.toStream();
 
