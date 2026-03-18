@@ -17,4 +17,19 @@ extension StringNormalization on String {
 
   /// Normaliza (trim + collapse) e retorna nulo se a string ficar vazia.
   String? nullIfEmptyNormalized() => normalize().isEmpty ? null : normalize();
+
+  /// Converte camelCase para SNAKE_CASE_UPPER.
+  /// Ex: homeVisit -> HOME_VISIT
+  String toSnakeCaseUpper() {
+    if (isEmpty) return this;
+    final buffer = StringBuffer();
+    for (int i = 0; i < length; i++) {
+      final char = this[i];
+      if (char.toUpperCase() == char && i > 0) {
+        buffer.write('_');
+      }
+      buffer.write(char.toUpperCase());
+    }
+    return buffer.toString();
+  }
 }

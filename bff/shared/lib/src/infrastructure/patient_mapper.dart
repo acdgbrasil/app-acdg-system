@@ -39,7 +39,7 @@ class PatientMapper {
       'lastName': d.lastName,
       'motherName': d.motherName,
       'nationality': d.nationality,
-      'sex': d.sex.name,
+      'sex': d.sex.name, // Keep original casing for Sex (masculino/feminino)
       'socialName': d.socialName,
       'birthDate': d.birthDate.toIso8601(),
       'phone': d.phone,
@@ -102,17 +102,17 @@ class PatientMapper {
 
   static Map<String, dynamic> housingConditionToJson(HousingCondition c) {
     return {
-      'type': c.type.name.toUpperCase(),
-      'wallMaterial': c.wallMaterial.name.toUpperCase(),
+      'type': c.type.name.toSnakeCaseUpper(),
+      'wallMaterial': c.wallMaterial.name.toSnakeCaseUpper(),
       'numberOfRooms': c.numberOfRooms,
       'numberOfBedrooms': c.numberOfBedrooms,
       'numberOfBathrooms': c.numberOfBathrooms,
-      'waterSupply': c.waterSupply.name.toUpperCase(),
+      'waterSupply': c.waterSupply.name.toSnakeCaseUpper(),
       'hasPipedWater': c.hasPipedWater,
-      'electricityAccess': c.electricityAccess.name.toUpperCase(),
-      'sewageDisposal': c.sewageDisposal.name.toUpperCase(),
-      'wasteCollection': c.wasteCollection.name.toUpperCase(),
-      'accessibilityLevel': c.accessibilityLevel.name.toUpperCase(),
+      'electricityAccess': c.electricityAccess.name.toSnakeCaseUpper(),
+      'sewageDisposal': c.sewageDisposal.name.toSnakeCaseUpper(),
+      'wasteCollection': c.wasteCollection.name.toSnakeCaseUpper(),
+      'accessibilityLevel': c.accessibilityLevel.name.toSnakeCaseUpper(),
       'isInGeographicRiskArea': c.isInGeographicRiskArea,
       'hasDifficultAccess': c.hasDifficultAccess,
       'isInSocialConflictArea': c.isInSocialConflictArea,
@@ -214,7 +214,7 @@ class PatientMapper {
       'summary': a.summary,
       'actionPlan': a.actionPlan,
       'date': a.date.toIso8601(),
-      'type': a.type.name.toUpperCase(),
+      'type': a.type.name.toSnakeCaseUpper(),
     };
   }
 
@@ -253,7 +253,7 @@ class PatientMapper {
   static Map<String, dynamic> violationReportToJson(RightsViolationReport r) {
     return {
       'victimId': r.victimId.value,
-      'violationType': r.violationType.name.toUpperCase(),
+      'violationType': r.violationType.name.toSnakeCaseUpper(),
       'descriptionOfFact': r.descriptionOfFact,
       'reportDate': r.reportDate.toIso8601(),
       'incidentDate': r.incidentDate?.toIso8601(),
@@ -264,7 +264,7 @@ class PatientMapper {
   static Map<String, dynamic> referralToJson(Referral r) {
     return {
       'referredPersonId': r.referredPersonId.value,
-      'destinationService': r.destinationService.name.toUpperCase(),
+      'destinationService': r.destinationService.name.toSnakeCaseUpper(),
       'reason': r.reason,
       'date': r.date.toIso8601(),
       'professionalId': r.requestingProfessionalId.value,
@@ -306,7 +306,7 @@ class PatientMapper {
       lastName: j['lastName'],
       motherName: j['motherName'],
       nationality: j['nationality'],
-      sex: Sex.values.byName(j['sex']),
+      sex: Sex.values.firstWhere((v) => v.name == j['sex']),
       socialName: j['socialName'],
       birthDate: TimeStamp.fromIso(j['birthDate']).valueOrNull!,
       phone: j['phone'],
@@ -371,17 +371,17 @@ class PatientMapper {
 
   static HousingCondition housingConditionFromJson(Map<String, dynamic> j) {
     return HousingCondition.create(
-      type: ConditionType.values.firstWhere((v) => v.name.toUpperCase() == j['type']),
-      wallMaterial: WallMaterial.values.firstWhere((v) => v.name.toUpperCase() == j['wallMaterial']),
+      type: ConditionType.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['type']),
+      wallMaterial: WallMaterial.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['wallMaterial']),
       numberOfRooms: j['numberOfRooms'],
       numberOfBedrooms: j['numberOfBedrooms'],
       numberOfBathrooms: j['numberOfBathrooms'],
-      waterSupply: WaterSupply.values.firstWhere((v) => v.name.toUpperCase() == j['waterSupply']),
+      waterSupply: WaterSupply.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['waterSupply']),
       hasPipedWater: j['hasPipedWater'],
-      electricityAccess: ElectricityAccess.values.firstWhere((v) => v.name.toUpperCase() == j['electricityAccess']),
-      sewageDisposal: SewageDisposal.values.firstWhere((v) => v.name.toUpperCase() == j['sewageDisposal']),
-      wasteCollection: WasteCollection.values.firstWhere((v) => v.name.toUpperCase() == j['wasteCollection']),
-      accessibilityLevel: AccessibilityLevel.values.firstWhere((v) => v.name.toUpperCase() == j['accessibilityLevel']),
+      electricityAccess: ElectricityAccess.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['electricityAccess']),
+      sewageDisposal: SewageDisposal.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['sewageDisposal']),
+      wasteCollection: WasteCollection.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['wasteCollection']),
+      accessibilityLevel: AccessibilityLevel.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['accessibilityLevel']),
       isInGeographicRiskArea: j['isInGeographicRiskArea'],
       hasDifficultAccess: j['hasDifficultAccess'],
       isInSocialConflictArea: j['isInSocialConflictArea'],
@@ -486,7 +486,7 @@ class PatientMapper {
       id: AppointmentId.create(j['id'] ?? '').valueOrNull ?? AppointmentId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
       date: TimeStamp.fromIso(j['date']).valueOrNull!,
       professionalInChargeId: ProfessionalId.create(j['professionalId']).valueOrNull!,
-      type: AppointmentType.values.firstWhere((v) => v.name.toUpperCase() == j['type']),
+      type: AppointmentType.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['type']),
       summary: j['summary'],
       actionPlan: j['actionPlan'],
     ).valueOrNull!;
@@ -530,7 +530,7 @@ class PatientMapper {
       id: ViolationReportId.create(j['id'] ?? '').valueOrNull ?? ViolationReportId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
       reportDate: TimeStamp.fromIso(j['reportDate']).valueOrNull!,
       victimId: PersonId.create(j['victimId']).valueOrNull!,
-      violationType: ViolationType.values.firstWhere((v) => v.name.toUpperCase() == j['violationType']),
+      violationType: ViolationType.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['violationType']),
       descriptionOfFact: j['descriptionOfFact'],
       incidentDate: j['incidentDate'] != null ? TimeStamp.fromIso(j['incidentDate']).valueOrNull : null,
       actionsTaken: j['actionsTaken'],
@@ -543,7 +543,7 @@ class PatientMapper {
       date: TimeStamp.fromIso(j['date']).valueOrNull!,
       requestingProfessionalId: ProfessionalId.create(j['professionalId']).valueOrNull!,
       referredPersonId: PersonId.create(j['referredPersonId']).valueOrNull!,
-      destinationService: DestinationService.values.firstWhere((v) => v.name.toUpperCase() == j['destinationService']),
+      destinationService: DestinationService.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['destinationService']),
       reason: j['reason'],
     ).valueOrNull!;
   }
