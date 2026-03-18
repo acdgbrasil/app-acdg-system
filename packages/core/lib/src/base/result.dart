@@ -1,3 +1,5 @@
+import '../utils/equatable/equatable.dart';
+
 /// A discriminated union for success/failure handling.
 ///
 /// Use pattern matching to handle both cases:
@@ -8,33 +10,36 @@
 ///   case Failure(:final error): // handle error
 /// }
 /// ```
-sealed class Result<T> {
+sealed class Result<T> extends Equatable {
   const Result();
+
+  @override
+  List<Object?> get props => [];
 
   bool get isSuccess => this is Success<T>;
   bool get isFailure => this is Failure<T>;
 
   T? get valueOrNull => switch (this) {
-    Success(:final value) => value,
-    Failure() => null,
-  };
+        Success(:final value) => value,
+        Failure() => null,
+      };
 
   Result<R> map<R>(R Function(T value) transform) => switch (this) {
-    Success(:final value) => Success(transform(value)),
-    Failure(:final error, :final stackTrace) =>
-      Failure(error, stackTrace: stackTrace),
-  };
+        Success(:final value) => Success(transform(value)),
+        Failure(:final error, :final stackTrace) =>
+          Failure(error, stackTrace: stackTrace),
+      };
 
   Result<R> flatMap<R>(Result<R> Function(T value) transform) => switch (this) {
-    Success(:final value) => transform(value),
-    Failure(:final error, :final stackTrace) =>
-      Failure(error, stackTrace: stackTrace),
-  };
+        Success(:final value) => transform(value),
+        Failure(:final error, :final stackTrace) =>
+          Failure(error, stackTrace: stackTrace),
+      };
 
   T getOrElse(T Function(Object error) fallback) => switch (this) {
-    Success(:final value) => value,
-    Failure(:final error) => fallback(error),
-  };
+        Success(:final value) => value,
+        Failure(:final error) => fallback(error),
+      };
 }
 
 /// Represents a successful result containing a [value].
@@ -44,15 +49,7 @@ final class Success<T> extends Result<T> {
   final T value;
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Success<T> && other.value == value;
-
-  @override
-  int get hashCode => value.hashCode;
-
-  @override
-  String toString() => 'Success($value)';
+  List<Object?> get props => [value];
 }
 
 /// Represents a failed result containing an [error].
@@ -63,13 +60,5 @@ final class Failure<T> extends Result<T> {
   final StackTrace? stackTrace;
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Failure<T> && other.error == error;
-
-  @override
-  int get hashCode => error.hashCode;
-
-  @override
-  String toString() => 'Failure($error)';
+  List<Object?> get props => [error, stackTrace];
 }

@@ -44,14 +44,11 @@ Patterns obrigatorios no codebase:
 
 | Pattern | Uso |
 |---------|-----|
-| **Repository** | Abstrai acesso a dados. Interface -> implementacao concreta. |
-| **Factory** | Criacao de objetos complexos (models, ViewModels, UseCases). |
-| **Strategy** | Algoritmos intercambiaveis (ex: resolucao de plataforma, sync strategies). |
-| **Observer** | ValueNotifier/ChangeNotifier = Observer pattern nativo. |
-| **Command** | Acoes do usuario encapsuladas como objetos (offline queue). |
-| **Adapter** | Converte models da API para models do dominio do front. |
-| **Singleton** | Apenas para services stateless (DI via Provider resolve isso). |
-| **Builder** | Construcao de objetos complexos passo a passo (forms multi-step). |
+| **Repository** | Abstrai acesso a dados. Fonte única de verdade. |
+| **UseCase** | Orquestra lógica de negócio e interage com múltiplos Repositories. |
+| **Command** | Encapsula ações assíncronas e gerencia estado de execução/erro. |
+| **Factory** | Criação de objetos complexos (ex: `OidcConfigFactory`). |
+| **Observer** | Reatividade via `ValueNotifier` e `ListenableBuilder`. |
 
 ### Anti-patterns proibidos
 - **God Object** — nenhuma classe com mais de ~200 linhas

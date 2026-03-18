@@ -31,3 +31,5 @@ O que vem a seguir.
 | Data | Titulo | Tipo |
 |------|--------|------|
 | 2026-03-07 | Definicao de Arquitetura Frontend | Arquitetura |
+| 2026-03-08 | Foundation (Fase 1) | Implementacao |
+| 2026-03-10 | BFF Social Care (Fase 3) | Implementacao |

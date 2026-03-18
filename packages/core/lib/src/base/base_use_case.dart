@@ -1,4 +1,4 @@
-import 'package:core/src/base/result.dart';
+import 'result.dart';
 
 /// Base contract for all use cases.
 ///
