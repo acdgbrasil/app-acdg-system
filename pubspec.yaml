@@ -9,6 +9,7 @@ workspace:
   - packages/core
   - packages/auth
   - packages/network
+  - packages/social_care
   - bff/shared
   - bff/social_care_desktop
   - bff/social_care_web
