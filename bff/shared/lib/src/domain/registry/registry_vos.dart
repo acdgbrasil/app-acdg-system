@@ -52,15 +52,15 @@ final class PersonalData with Equatable {
 
   @override
   List<Object?> get props => [
-        firstName,
-        lastName,
-        motherName,
-        nationality,
-        sex,
-        socialName,
-        birthDate,
-        phone,
-      ];
+    firstName,
+    lastName,
+    motherName,
+    nationality,
+    sex,
+    socialName,
+    birthDate,
+    phone,
+  ];
 
   static Result<PersonalData> create({
     required String? firstName,
@@ -74,34 +74,47 @@ final class PersonalData with Equatable {
     TimeStamp? now,
   }) {
     final fn = firstName?.nullIfEmptyNormalized();
-    if (fn == null) return Failure(_buildError('PDT-001', 'Nome não pode ser vazio.'));
+    if (fn == null)
+      return Failure(_buildError('PDT-001', 'Nome não pode ser vazio.'));
 
     final ln = lastName?.nullIfEmptyNormalized();
-    if (ln == null) return Failure(_buildError('PDT-002', 'Sobrenome não pode ser vazio.'));
+    if (ln == null)
+      return Failure(_buildError('PDT-002', 'Sobrenome não pode ser vazio.'));
 
     final mn = motherName?.nullIfEmptyNormalized();
-    if (mn == null) return Failure(_buildError('PDT-003', 'Nome da mãe não pode ser vazio.'));
+    if (mn == null)
+      return Failure(_buildError('PDT-003', 'Nome da mãe não pode ser vazio.'));
 
     final nat = nationality?.nullIfEmptyNormalized();
-    if (nat == null) return Failure(_buildError('PDT-005', 'Nacionalidade não pode ser vazia.'));
+    if (nat == null)
+      return Failure(
+        _buildError('PDT-005', 'Nacionalidade não pode ser vazia.'),
+      );
 
-    if (birthDate == null) return Failure(_buildError('PDT-004', 'Data de nascimento é obrigatória.'));
+    if (birthDate == null)
+      return Failure(
+        _buildError('PDT-004', 'Data de nascimento é obrigatória.'),
+      );
 
     final refNow = now ?? TimeStamp.now;
     if (birthDate.date.isAfter(refNow.date)) {
-      return Failure(_buildError('PDT-004', 'Data de nascimento não pode ser no futuro.'));
+      return Failure(
+        _buildError('PDT-004', 'Data de nascimento não pode ser no futuro.'),
+      );
     }
 
-    return Success(PersonalData._(
-      firstName: fn,
-      lastName: ln,
-      motherName: mn,
-      nationality: nat,
-      sex: sex,
-      socialName: socialName?.nullIfEmptyNormalized(),
-      birthDate: birthDate,
-      phone: phone?.nullIfEmptyTrimmed(),
-    ));
+    return Success(
+      PersonalData._(
+        firstName: fn,
+        lastName: ln,
+        motherName: mn,
+        nationality: nat,
+        sex: sex,
+        socialName: socialName?.nullIfEmptyNormalized(),
+        birthDate: birthDate,
+        phone: phone?.nullIfEmptyTrimmed(),
+      ),
+    );
   }
 
   static AppError _buildError(String code, String message) {
@@ -111,7 +124,10 @@ final class PersonalData with Equatable {
       module: 'social-care/personal-data',
       kind: 'domainValidation',
       http: 422,
-      observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning),
+      observability: const Observability(
+        category: ErrorCategory.domainRuleViolation,
+        severity: ErrorSeverity.warning,
+      ),
     );
   }
 }
@@ -126,20 +142,30 @@ final class CivilDocuments with Equatable {
   @override
   List<Object?> get props => [cpf, nis, rgDocument];
 
-  static Result<CivilDocuments> create({Cpf? cpf, Nis? nis, RgDocument? rgDocument}) {
+  static Result<CivilDocuments> create({
+    Cpf? cpf,
+    Nis? nis,
+    RgDocument? rgDocument,
+  }) {
     if (cpf == null && nis == null && rgDocument == null) {
       return Failure(
         AppError(
           code: 'CVD-001',
-          message: 'Pelo menos um documento civil deve ser informado (CPF, NIS ou RG).',
+          message:
+              'Pelo menos um documento civil deve ser informado (CPF, NIS ou RG).',
           module: 'social-care/civil-documents',
           kind: 'domainValidation',
           http: 422,
-          observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning),
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.warning,
+          ),
         ),
       );
     }
-    return Success(CivilDocuments._(cpf: cpf, nis: nis, rgDocument: rgDocument));
+    return Success(
+      CivilDocuments._(cpf: cpf, nis: nis, rgDocument: rgDocument),
+    );
   }
 }
 
@@ -158,16 +184,20 @@ final class SocialIdentity with Equatable {
     bool isOtherType = false,
   }) {
     final desc = otherDescription?.nullIfEmptyTrimmed();
-    
+
     if (isOtherType && desc == null) {
       return Failure(
         AppError(
           code: 'SID-003',
-          message: "Descrição é obrigatória quando o tipo de identidade é 'Outras'.",
+          message:
+              "Descrição é obrigatória quando o tipo de identidade é 'Outras'.",
           module: 'social-care/social-identity',
           kind: 'domainValidation',
           http: 422,
-          observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning),
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.warning,
+          ),
         ),
       );
     }

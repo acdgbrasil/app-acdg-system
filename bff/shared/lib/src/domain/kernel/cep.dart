@@ -3,7 +3,16 @@ import '../../utils/app_error.dart';
 import '../../utils/string_helpers.dart';
 
 enum PostalRegion {
-  region0, region1, region2, region3, region4, region5, region6, region7, region8, region9;
+  region0,
+  region1,
+  region2,
+  region3,
+  region4,
+  region5,
+  region6,
+  region7,
+  region8,
+  region9;
 
   static PostalRegion fromDigit(int digit) => PostalRegion.values[digit];
 }
@@ -36,7 +45,8 @@ final class Cep with Equatable {
     if (s >= 0 && s <= 899) return DistributionKind.streetRange;
     if (s >= 900 && s <= 959) return DistributionKind.specialCodes;
     if (s >= 960 && s <= 969) return DistributionKind.promotional;
-    if ((s >= 970 && s <= 989) || s == 999) return DistributionKind.postOfficeUnits;
+    if ((s >= 970 && s <= 989) || s == 999)
+      return DistributionKind.postOfficeUnits;
     return DistributionKind.other;
   }
 
@@ -52,17 +62,26 @@ final class Cep with Equatable {
 
     final trimmed = rawValue.normalizedTrim();
     if (!RegExp(r'^[\d\-\s]+$').hasMatch(trimmed)) {
-      return Failure(_buildError('CEP-002', 'O CEP contém caracteres inválidos.'));
+      return Failure(
+        _buildError('CEP-002', 'O CEP contém caracteres inválidos.'),
+      );
     }
 
     final digits = trimmed.replaceAll(RegExp(r'\D'), '');
 
     if (digits.length != 8) {
-      return Failure(_buildError('CEP-003', 'O CEP deve conter exatamente 8 dígitos.'));
+      return Failure(
+        _buildError('CEP-003', 'O CEP deve conter exatamente 8 dígitos.'),
+      );
     }
 
     if (!_isValidStateRange(int.parse(digits))) {
-      return Failure(_buildError('CEP-004', 'O CEP não pertence a nenhuma faixa de UF válida.'));
+      return Failure(
+        _buildError(
+          'CEP-004',
+          'O CEP não pertence a nenhuma faixa de UF válida.',
+        ),
+      );
     }
 
     return Success(Cep._(digits));

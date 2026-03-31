@@ -68,11 +68,13 @@ class AppError implements Exception {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! AppError) return false;
-    return id == other.id || (code == other.code && bc == other.bc && module == other.module);
+    return id == other.id ||
+        (code == other.code && bc == other.bc && module == other.module);
   }
 
   @override
-  int get hashCode => id.hashCode ^ code.hashCode ^ bc.hashCode ^ module.hashCode;
+  int get hashCode =>
+      id.hashCode ^ code.hashCode ^ bc.hashCode ^ module.hashCode;
 }
 
 abstract interface class AppErrorConvertible {
