@@ -1,4 +1,4 @@
-import 'package:shared/shared.dart';
+import 'patient_detail.dart';
 
 /// Represents a ficha (form/section) and whether it's been filled.
 final class FichaStatus {
@@ -7,48 +7,48 @@ final class FichaStatus {
 
   const FichaStatus({required this.name, required this.filled});
 
-  /// Derives all 10 fichas from a domain [Patient].
-  static List<FichaStatus> fromPatient(Patient patient) {
+  /// Derives all 10 fichas from a UI [PatientDetail].
+  static List<FichaStatus> fromDetail(PatientDetail detail) {
     return [
       FichaStatus(
         name: 'Composição familiar',
-        filled: patient.familyMembers.isNotEmpty,
+        filled: detail.familyMembers.isNotEmpty,
       ),
       FichaStatus(
         name: 'Acesso a benefícios eventuais',
-        filled: patient.socioeconomicSituation != null,
+        filled: detail.socioeconomicSituation != null,
       ),
       FichaStatus(
         name: 'Condições de saúde da família',
-        filled: patient.healthStatus != null,
+        filled: detail.healthStatus != null,
       ),
       FichaStatus(
         name: 'Convivência familiar e comunitária',
-        filled: patient.communitySupportNetwork != null,
+        filled: detail.communitySupportNetwork != null,
       ),
       FichaStatus(
         name: 'Condições educacionais da família',
-        filled: patient.educationalStatus != null,
+        filled: detail.educationalStatus != null,
       ),
       FichaStatus(
         name: 'Situações de violência e violação de direitos',
-        filled: patient.violationReports.isNotEmpty,
+        filled: detail.violationReports.isNotEmpty,
       ),
       FichaStatus(
         name: 'Condições de trabalho e rendimento da família',
-        filled: patient.workAndIncome != null,
+        filled: detail.workAndIncome != null,
       ),
       FichaStatus(
         name: 'Especificidades sociais, étnicas ou culturais',
-        filled: patient.socialIdentity != null,
+        filled: detail.socialIdentity != null,
       ),
       FichaStatus(
         name: 'Forma de ingresso e motivo do primeiro atendimento',
-        filled: patient.intakeInfo != null,
+        filled: detail.intakeInfo != null,
       ),
       FichaStatus(
         name: 'Serviços e programas de convivência comunitária',
-        filled: patient.housingCondition != null,
+        filled: detail.housingCondition != null,
       ),
     ];
   }
