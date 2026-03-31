@@ -1,5 +1,3 @@
-import 'package:shared/shared.dart';
-
 import 'address_detail.dart';
 import 'appointment_detail.dart';
 import 'civil_documents_detail.dart';
@@ -117,7 +115,6 @@ final class PatientDetail {
 
   String? get entryDate {
     if (appointments.isEmpty) return null;
-    // Appointments store raw JSON, try to extract date
     return null;
   }
 
@@ -142,29 +139,43 @@ final class PatientDetail {
   factory PatientDetail.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? json;
     return PatientDetail(
-      patientId: data['patientId'] as String,
-      personId: data['personId'] as String,
-      version: data['version'] as int,
-      familyMembers: (data['familyMembers'] as List)
+      patientId: data['patientId'] as String? ?? '',
+      personId: data['personId'] as String? ?? '',
+      version: data['version'] as int? ?? 1,
+      familyMembers: (data['familyMembers'] as List? ?? [])
           .map((e) => FamilyMemberDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
-      diagnoses: (data['diagnoses'] as List)
+      diagnoses: (data['diagnoses'] as List? ?? data['initialDiagnoses'] as List? ?? [])
           .map((e) => DiagnosisDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
-      appointments: (data['appointments'] as List)
+      appointments: (data['appointments'] as List? ?? [])
           .map((e) => AppointmentDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
-      referrals: (data['referrals'] as List)
+      referrals: (data['referrals'] as List? ?? [])
           .map((e) => ReferralDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
-      violationReports: (data['violationReports'] as List)
+      violationReports: (data['violationReports'] as List? ?? [])
           .map(
             (e) => ViolationReportDetail.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
-      computedAnalytics: ComputedAnalyticsDetail.fromJson(
-        data['computedAnalytics'] as Map<String, dynamic>,
-      ),
+      computedAnalytics: data['computedAnalytics'] != null
+          ? ComputedAnalyticsDetail.fromJson(
+              data['computedAnalytics'] as Map<String, dynamic>,
+            )
+          : const ComputedAnalyticsDetail(
+              ageProfile: AgeProfileDetail(
+                range0to6: 0,
+                range7to14: 0,
+                range15to17: 0,
+                range18to29: 0,
+                range30to59: 0,
+                range60to64: 0,
+                range65to69: 0,
+                range70Plus: 0,
+                totalMembers: 0,
+              ),
+            ),
       personalData: data['personalData'] != null
           ? PersonalDataDetail.fromJson(
               data['personalData'] as Map<String, dynamic>,
@@ -228,172 +239,6 @@ final class PatientDetail {
               data['intakeInfo'] as Map<String, dynamic>,
             )
           : null,
-    );
-  }
-
-  /// Maps a domain [Patient] to [PatientDetail] for UI display.
-  factory PatientDetail.fromPatient(Patient patient) {
-    final pd = patient.personalData;
-    final docs = patient.civilDocuments;
-    final addr = patient.address;
-    final si = patient.socialIdentity;
-    final ii = patient.intakeInfo;
-
-    return PatientDetail(
-      patientId: patient.id.value,
-      personId: patient.personId.value,
-      version: patient.version,
-      familyMembers: patient.familyMembers
-          .map(
-            (m) => FamilyMemberDetail.fromJson({
-              'id': m.personId.value,
-              'relationshipId': m.relationshipId.value,
-              'isPrimaryCaregiver': m.isPrimaryCaregiver,
-              'residesWithPatient': m.residesWithPatient,
-              'hasDisability': m.hasDisability,
-              'birthDate': m.birthDate.date.toIso8601String(),
-            }),
-          )
-          .toList(),
-      diagnoses: patient.diagnoses
-          .map(
-            (d) => DiagnosisDetail.fromJson({
-              'id': d.id.value,
-              'description': d.description,
-              'date': d.date.date.toIso8601String(),
-            }),
-          )
-          .toList(),
-      appointments: patient.appointments
-          .map(
-            (a) => AppointmentDetail.fromJson({
-              'id': a.id.value,
-              'date': a.date.date.toIso8601String(),
-              'professionalInChargeId': a.professionalInChargeId.value,
-              'type': a.type.name,
-              'summary': a.summary,
-              'actionPlan': a.actionPlan,
-            }),
-          )
-          .toList(),
-      referrals: patient.referrals
-          .map((r) => ReferralDetail.fromJson({}))
-          .toList(),
-      violationReports: patient.violationReports
-          .map((v) => ViolationReportDetail.fromJson({}))
-          .toList(),
-      computedAnalytics: _buildAnalytics(patient),
-      personalData: pd != null
-          ? PersonalDataDetail(
-              firstName: pd.firstName,
-              lastName: pd.lastName,
-              motherName: pd.motherName,
-              nationality: pd.nationality,
-              sex: pd.sex.name,
-              socialName: pd.socialName,
-              birthDate: pd.birthDate.date.toIso8601String(),
-              phone: pd.phone,
-            )
-          : null,
-      civilDocuments: docs != null
-          ? CivilDocumentsDetail(
-              cpf: docs.cpf?.formatted,
-              nis: docs.nis?.value,
-              rgDocument: docs.rgDocument != null
-                  ? RgDocumentDetail(
-                      number: docs.rgDocument!.number,
-                      issuingState: docs.rgDocument!.issuingState,
-                      issuingAgency: docs.rgDocument!.issuingAgency,
-                      issueDate:
-                          docs.rgDocument!.issueDate.date.toIso8601String(),
-                    )
-                  : null,
-            )
-          : null,
-      address: addr != null
-          ? AddressDetail(
-              cep: addr.cep?.formatted,
-              isShelter: addr.isShelter,
-              residenceLocation: addr.residenceLocation.name,
-              street: addr.street,
-              neighborhood: addr.neighborhood,
-              number: addr.number,
-              complement: addr.complement,
-              state: addr.state,
-              city: addr.city,
-            )
-          : null,
-      socialIdentity: si != null
-          ? SocialIdentityDetail(
-              typeId: si.typeId.value,
-              otherDescription: si.otherDescription,
-            )
-          : null,
-      intakeInfo: ii != null
-          ? IntakeInfoDetail(
-              ingressTypeId: ii.ingressTypeId.value,
-              originName: ii.originName,
-              originContact: ii.originContact,
-              serviceReason: ii.serviceReason,
-              linkedSocialPrograms: ii.linkedSocialPrograms
-                  .map(
-                    (p) => LinkedProgramDetail(
-                      programId: p.programId.value,
-                      observation: p.observation,
-                    ),
-                  )
-                  .toList(),
-            )
-          : null,
-    );
-  }
-
-  static ComputedAnalyticsDetail _buildAnalytics(Patient patient) {
-    final now = DateTime.now();
-    int age(DateTime birth) => now.year - birth.year;
-
-    int r0to6 = 0,
-        r7to14 = 0,
-        r15to17 = 0,
-        r18to29 = 0,
-        r30to59 = 0,
-        r60to64 = 0,
-        r65to69 = 0,
-        r70plus = 0;
-
-    for (final m in patient.familyMembers) {
-      final a = age(m.birthDate.date);
-      if (a <= 6) {
-        r0to6++;
-      } else if (a <= 14) {
-        r7to14++;
-      } else if (a <= 17) {
-        r15to17++;
-      } else if (a <= 29) {
-        r18to29++;
-      } else if (a <= 59) {
-        r30to59++;
-      } else if (a <= 64) {
-        r60to64++;
-      } else if (a <= 69) {
-        r65to69++;
-      } else {
-        r70plus++;
-      }
-    }
-
-    return ComputedAnalyticsDetail(
-      ageProfile: AgeProfileDetail(
-        range0to6: r0to6,
-        range7to14: r7to14,
-        range15to17: r15to17,
-        range18to29: r18to29,
-        range30to59: r30to59,
-        range60to64: r60to64,
-        range65to69: r65to69,
-        range70Plus: r70plus,
-        totalMembers: patient.familyMembers.length,
-      ),
     );
   }
 }
