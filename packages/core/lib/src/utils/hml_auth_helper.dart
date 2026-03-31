@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:dio/dio.dart';
+import './acdg_logger.dart';
 
 /// Helper to authenticate with Zitadel using a Service Account key (JWT Profile).
 class HmlAuthHelper {
+  static final _log = AcdgLogger.get('HmlAuthHelper');
+
   HmlAuthHelper({
     required this.userId,
     required this.keyId,
@@ -21,25 +24,26 @@ class HmlAuthHelper {
   /// Gets an access token using the JWT Profile grant.
   Future<String> getAccessToken() async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final jti = DateTime.now().microsecondsSinceEpoch.toString(); // Unique ID for this request
+    final jti = DateTime.now().microsecondsSinceEpoch
+        .toString(); // Unique ID for this request
 
     // Create JWT assertion
     final jwt = JWT(
       {
         'iss': userId,
         'sub': userId,
-        'aud': [issuer, '363109883022671995'], // Issuer URL + Project ID as audience
+        'aud': [
+          issuer,
+          '363109883022671995',
+        ], // Issuer URL + Project ID as audience
         'iat': now,
-        'exp': now + 300, 
-        'jti': jti,      
+        'exp': now + 300,
+        'jti': jti,
       },
-      header: {
-        'kid': keyId,
-        'typ': 'JWT',
-      },
+      header: {'kid': keyId, 'typ': 'JWT'},
     );
     final signedJwt = jwt.sign(
-      RSAPrivateKey(privateKey.trim()), 
+      RSAPrivateKey(privateKey.trim()),
       algorithm: JWTAlgorithm.RS256,
     );
 
@@ -50,7 +54,8 @@ class HmlAuthHelper {
         data: {
           'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
           'assertion': signedJwt,
-          'scope': 'openid profile urn:zitadel:iam:org:project:id:363109883022671995:aud',
+          'scope':
+              'openid profile urn:zitadel:iam:org:project:id:363109883022671995:aud',
         },
         options: Options(
           contentType: Headers.formUrlEncodedContentType,
@@ -62,11 +67,13 @@ class HmlAuthHelper {
         final data = response.data!;
         return data['access_token'] as String;
       } else {
-        print('HmlAuthHelper: Error from Zitadel (${response.statusCode}): ${response.data}');
+        _log.warning(
+          'HmlAuthHelper: Error from Zitadel (${response.statusCode}): ${response.data}',
+        );
         throw Exception('Failed to get access token: ${response.data}');
       }
     } on DioException catch (e) {
-      print('HmlAuthHelper: Dio Error: ${e.message}');
+      _log.severe('HmlAuthHelper: Dio Error: ${e.message}');
       rethrow;
     }
   }
