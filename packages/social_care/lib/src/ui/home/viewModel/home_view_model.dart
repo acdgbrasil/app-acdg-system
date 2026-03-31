@@ -1,9 +1,6 @@
 import 'package:core/core.dart';
-import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
 import 'package:social_care/src/logic/use_case/registry/list_patients_use_case.dart';
-import 'package:social_care/src/ui/home/models/ficha_status.dart';
-import 'package:social_care/src/ui/home/models/patient_detail.dart';
 import 'package:social_care/src/ui/home/models/patient_summary.dart';
 import 'package:social_care/src/ui/home/view/components/detail_panel_state.dart';
 import 'package:social_care/src/ui/home/view/components/home_form_state.dart';
@@ -47,19 +44,16 @@ class HomeViewModel extends BaseViewModel {
       return const Success(null);
     }
 
-    final id = PatientId.create(patientId);
-    if (id.isFailure) return const Success(null);
-
-    final result = await _getPatientUseCase.execute(id.valueOrNull!);
+    // UseCase now handles String -> PatientId conversion and returns ResultBundle
+    final result = await _getPatientUseCase.execute(patientId);
 
     if (detailPanelState.selectedPatientId.value != patientId) {
       return const Success(null);
     }
 
-    if (result case Success(:final value)) {
-      detailPanelState.patientDetail.value =
-          PatientDetail.fromPatient(value);
-      detailPanelState.fichas.value = FichaStatus.fromPatient(value);
+    if (result case Success(value: final bundle)) {
+      detailPanelState.patientDetail.value = bundle.patientDetail;
+      detailPanelState.fichas.value = bundle.fichas;
       return const Success(null);
     }
 
