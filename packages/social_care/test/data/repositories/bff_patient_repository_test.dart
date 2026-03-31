@@ -1,6 +1,8 @@
+import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
+import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
 
 import '../../../testing/social_care_testing.dart';
 
@@ -22,29 +24,44 @@ void main() {
 
       final result = await repository.registerPatient(patient);
 
-      expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull, patient.id);
+      if (result case Success(value: final id)) {
+        expect(id, patient.id);
+      } else {
+        fail('Should have returned success');
+      }
     });
 
-    test('should delegate getPatient to BFF contract', () async {
+    test('should map getPatient to PatientDetailResult', () async {
+      // Arrange
       final patient = PatientFixtures.validPatient;
-      // Seed the fake BFF
       await fakeBff.registerPatient(patient);
 
+      // Act
       final result = await repository.getPatient(patient.id);
 
-      expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull?.id, patient.id);
+      // Assert
+      if (result case Success(value: final value)) {
+        expect(value, isA<PatientDetailResult>());
+        expect(value.patientDetail.patientId, patient.id.value);
+        expect(value.fichas, isNotEmpty);
+      } else {
+        fail('Should have returned success');
+      }
     });
 
     test('should return failure when patient not found', () async {
-      final unknownId = PatientId.create(
-        '550e8400-e29b-41d4-a716-999999999999',
-      ).valueOrNull!;
+      // Arrange
+      final unknownIdRes = PatientId.create('550e8400-e29b-41d4-a716-999999999999');
 
-      final result = await repository.getPatient(unknownId);
+      if (unknownIdRes case Success(value: final unknownId)) {
+        // Act
+        final result = await repository.getPatient(unknownId);
 
-      expect(result.isFailure, isTrue);
+        // Assert
+        expect(result.isFailure, isTrue);
+      } else {
+        fail('Failed to create test ID');
+      }
     });
 
     test('should delegate getPatientByPersonId to BFF contract', () async {
@@ -53,8 +70,11 @@ void main() {
 
       final result = await repository.getPatientByPersonId(patient.personId);
 
-      expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull?.personId, patient.personId);
+      if (result case Success(value: final p)) {
+        expect(p.personId, patient.personId);
+      } else {
+        fail('Should have returned success');
+      }
     });
   });
 }

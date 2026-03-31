@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
+import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
 import 'package:social_care/src/ui/home/models/patient_summary.dart';
 
 /// Repository contract for Patient-related operations.
@@ -14,7 +15,7 @@ abstract class PatientRepository {
   Future<Result<PatientId>> registerPatient(Patient patient);
 
   /// Retrieves a patient by their unique [id].
-  Future<Result<Patient>> getPatient(PatientId id);
+  Future<Result<PatientDetailResult>> getPatient(PatientId id);
 
   /// Retrieves a patient by their associated [personId].
   Future<Result<Patient>> getPatientByPersonId(PersonId personId);
