@@ -1,6 +1,9 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
+import 'package:social_care/src/ui/home/models/ficha_status.dart';
+import 'package:social_care/src/ui/home/models/patient_detail.dart';
+import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
 import 'package:social_care/src/ui/home/models/patient_summary.dart';
 
 /// In-memory [PatientRepository] for testing.
@@ -43,20 +46,29 @@ class InMemoryPatientRepository implements PatientRepository {
   }
 
   @override
-  Future<Result<Patient>> getPatient(PatientId id) async {
+  Future<Result<PatientDetailResult>> getPatient(PatientId id) async {
     final patient = _store[id.value];
-    if (patient != null) return Success(patient);
-    return Failure(
-      AppError(
-        code: 'PAT-404',
-        message: 'Patient not found: ${id.value}',
-        module: 'social-care/test',
-        kind: 'notFound',
-        http: 404,
-        observability: const Observability(
-          category: ErrorCategory.domainRuleViolation,
-          severity: ErrorSeverity.warning,
+    if (patient == null) {
+      return Failure(
+        AppError(
+          code: 'PAT-404',
+          message: 'Patient not found: ${id.value}',
+          module: 'social-care/test',
+          kind: 'notFound',
+          http: 404,
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.warning,
+          ),
         ),
+      );
+    }
+
+    final detail = _toPatientDetail(patient);
+    return Success(
+      PatientDetailResult(
+        patientDetail: detail,
+        fichas: FichaStatus.fromDetail(detail),
       ),
     );
   }
@@ -435,5 +447,158 @@ class InMemoryPatientRepository implements PatientRepository {
     Referral referral,
   ) async {
     return Success(referral.id);
+  }
+
+  // --- Internal Mapping (matches BffPatientRepository) ---
+
+  PatientDetail _toPatientDetail(Patient patient) {
+    final pd = patient.personalData;
+    final docs = patient.civilDocuments;
+    final addr = patient.address;
+    final si = patient.socialIdentity;
+    final ii = patient.intakeInfo;
+
+    return PatientDetail(
+      patientId: patient.id.value,
+      personId: patient.personId.value,
+      version: patient.version,
+      familyMembers: patient.familyMembers
+          .map(
+            (m) => FamilyMemberDetail.fromJson({
+              'id': m.personId.value,
+              'relationshipId': m.relationshipId.value,
+              'isPrimaryCaregiver': m.isPrimaryCaregiver,
+              'residesWithPatient': m.residesWithPatient,
+              'hasDisability': m.hasDisability,
+              'birthDate': m.birthDate.date.toIso8601String(),
+            }),
+          )
+          .toList(),
+      diagnoses: patient.diagnoses
+          .map(
+            (d) => DiagnosisDetail.fromJson({
+              'id': d.id.value,
+              'description': d.description,
+              'date': d.date.date.toIso8601String(),
+            }),
+          )
+          .toList(),
+      appointments: patient.appointments
+          .map(
+            (a) => AppointmentDetail.fromJson({
+              'id': a.id.value,
+              'date': a.date.date.toIso8601String(),
+              'professionalInChargeId': a.professionalInChargeId.value,
+              'type': a.type.name,
+              'summary': a.summary,
+              'actionPlan': a.actionPlan,
+            }),
+          )
+          .toList(),
+      referrals: patient.referrals
+          .map((r) => ReferralDetail.fromJson(const {}))
+          .toList(),
+      violationReports: patient.violationReports
+          .map((v) => ViolationReportDetail.fromJson(const {}))
+          .toList(),
+      computedAnalytics: _buildAnalytics(patient),
+      personalData: pd != null
+          ? PersonalDataDetail(
+              firstName: pd.firstName,
+              lastName: pd.lastName,
+              motherName: pd.motherName,
+              nationality: pd.nationality,
+              sex: pd.sex.name,
+              socialName: pd.socialName,
+              birthDate: pd.birthDate.date.toIso8601String(),
+              phone: pd.phone,
+            )
+          : null,
+      civilDocuments: docs != null
+          ? CivilDocumentsDetail(
+              cpf: docs.cpf?.formatted,
+              nis: docs.nis?.value,
+              rgDocument: docs.rgDocument != null
+                  ? RgDocumentDetail(
+                      number: docs.rgDocument!.number,
+                      issuingState: docs.rgDocument!.issuingState,
+                      issuingAgency: docs.rgDocument!.issuingAgency,
+                      issueDate:
+                          docs.rgDocument!.issueDate.date.toIso8601String(),
+                    )
+                  : null,
+            )
+          : null,
+      address: addr != null
+          ? AddressDetail(
+              cep: addr.cep?.formatted,
+              isShelter: addr.isShelter,
+              residenceLocation: addr.residenceLocation.name,
+              street: addr.street,
+              neighborhood: addr.neighborhood,
+              number: addr.number,
+              complement: addr.complement,
+              state: addr.state,
+              city: addr.city,
+            )
+          : null,
+      socialIdentity: si != null
+          ? SocialIdentityDetail(
+              typeId: si.typeId.value,
+              otherDescription: si.otherDescription,
+            )
+          : null,
+      intakeInfo: ii != null
+          ? IntakeInfoDetail(
+              ingressTypeId: ii.ingressTypeId.value,
+              originName: ii.originName,
+              originContact: ii.originContact,
+              serviceReason: ii.serviceReason,
+              linkedSocialPrograms: ii.linkedSocialPrograms
+                  .map(
+                    (p) => LinkedProgramDetail(
+                      programId: p.programId.value,
+                      observation: p.observation,
+                    ),
+                  )
+                  .toList(),
+            )
+          : null,
+      housingCondition: patient.housingCondition != null
+          ? HousingConditionDetail.fromJson({
+              'type': patient.housingCondition!.type.name,
+              'wallMaterial': patient.housingCondition!.wallMaterial.name,
+              'waterSupply': patient.housingCondition!.waterSupply.name,
+              'electricityAccess': patient.housingCondition!.electricityAccess.name,
+              'sewageDisposal': patient.housingCondition!.sewageDisposal.name,
+              'wasteCollection': patient.housingCondition!.wasteCollection.name,
+              'accessibilityLevel': patient.housingCondition!.accessibilityLevel.name,
+              'numberOfRooms': patient.housingCondition!.numberOfRooms,
+              'numberOfBedrooms': patient.housingCondition!.numberOfBedrooms,
+              'numberOfBathrooms': patient.housingCondition!.numberOfBathrooms,
+              'hasPipedWater': patient.housingCondition!.hasPipedWater,
+              'isInGeographicRiskArea': patient.housingCondition!.isInGeographicRiskArea,
+              'hasDifficultAccess': patient.housingCondition!.hasDifficultAccess,
+              'isInSocialConflictArea': patient.housingCondition!.isInSocialConflictArea,
+              'hasDiagnosticObservations': patient.housingCondition!.hasDiagnosticObservations,
+            })
+          : null,
+    );
+  }
+
+  ComputedAnalyticsDetail _buildAnalytics(Patient patient) {
+    return const ComputedAnalyticsDetail(
+      ageProfile: AgeProfileDetail(
+        range0to6: 0,
+        range7to14: 0,
+        range15to17: 0,
+        range18to29: 0,
+        range30to59: 0,
+        range60to64: 0,
+        range65to69: 0,
+        range70Plus: 0,
+        totalMembers: 0,
+      ),
+    );
   }
 }

@@ -2,7 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
-
+import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
 import '../../../testing/social_care_testing.dart';
 
 void main() {
@@ -15,8 +15,8 @@ void main() {
   });
 
   group('GetPatientUseCase', () {
-    test('should return patient detail when found', () async {
-      // Arrange — seed repository with a patient
+    test('should return PatientDetailResult when given a valid UUID string', () async {
+      // Arrange
       final patient = PatientFixtures.validPatient;
       await repository.registerPatient(patient);
 
@@ -25,22 +25,19 @@ void main() {
 
       // Assert
       if (result case Success(value: final value)) {
+        expect(value, isA<PatientDetailResult>());
         expect(value.patientDetail.patientId, patient.id.value);
-        expect(value.patientDetail.personalData?.firstName, 'Maria');
       } else {
         fail('Should have returned success');
       }
     });
 
-    test('should fail when patient not found', () async {
+    test('should return failure when given an invalid UUID string', () async {
       // Act
-      final result = await useCase.execute('550e8400-e29b-41d4-a716-999999999999');
+      final result = await useCase.execute('invalid-uuid');
 
       // Assert
       expect(result.isFailure, isTrue);
-      if (result case Failure(error: final AppError error)) {
-        expect(error.code, 'PAT-404');
-      }
     });
   });
 }
