@@ -38,7 +38,8 @@ final class AuthUser with Equatable {
 
   bool hasRole(AuthRole role) => roles.contains(role);
 
-  bool hasAnyRole(Set<AuthRole> required) => roles.intersection(required).isNotEmpty;
+  bool hasAnyRole(Set<AuthRole> required) =>
+      roles.intersection(required).isNotEmpty;
 
   /// Whether this user can write data in social-care modules.
   bool get canWrite => hasRole(AuthRole.socialWorker);
@@ -65,7 +66,9 @@ final class AuthUser with Equatable {
       id: id ?? this.id,
       name: name != null ? name() : this.name,
       email: email != null ? email() : this.email,
-      preferredUsername: preferredUsername != null ? preferredUsername() : this.preferredUsername,
+      preferredUsername: preferredUsername != null
+          ? preferredUsername()
+          : this.preferredUsername,
       roles: roles ?? this.roles,
     );
   }
