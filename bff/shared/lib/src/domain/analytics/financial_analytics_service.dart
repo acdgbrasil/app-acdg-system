@@ -19,11 +19,11 @@ final class FinancialIndicators with Equatable {
 
   @override
   List<Object?> get props => [
-        totalWorkIncome,
-        perCapitaWorkIncome,
-        totalGlobalIncome,
-        perCapitaGlobalIncome,
-      ];
+    totalWorkIncome,
+    perCapitaWorkIncome,
+    totalGlobalIncome,
+    perCapitaGlobalIncome,
+  ];
 }
 
 /// Service for calculating financial indicators based on household income and benefits.
