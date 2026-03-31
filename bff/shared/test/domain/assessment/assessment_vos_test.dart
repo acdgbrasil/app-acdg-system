@@ -53,7 +53,9 @@ void main() {
   });
 
   group('SocialBenefit - Validações', () {
-    final personId = PersonId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+    final personId = PersonId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
 
     test('Deve rejeitar valor zero ou negativo (SB-002)', () {
       final result = SocialBenefit.create(
@@ -83,18 +85,21 @@ void main() {
       expect(((result as Failure).error as AppError).code, 'SES-006');
     });
 
-    test('Deve rejeitar inconsistência entre flag e lista de benefícios (SES-002)', () {
-      final result = SocioEconomicSituation.create(
-        totalFamilyIncome: 1000,
-        incomePerCapita: 500,
-        receivesSocialBenefit: true, // Diz que recebe
-        socialBenefits: benefits, // Mas a lista está vazia
-        mainSourceOfIncome: 'Trabalho',
-        hasUnemployed: false,
-      );
+    test(
+      'Deve rejeitar inconsistência entre flag e lista de benefícios (SES-002)',
+      () {
+        final result = SocioEconomicSituation.create(
+          totalFamilyIncome: 1000,
+          incomePerCapita: 500,
+          receivesSocialBenefit: true, // Diz que recebe
+          socialBenefits: benefits, // Mas a lista está vazia
+          mainSourceOfIncome: 'Trabalho',
+          hasUnemployed: false,
+        );
 
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'SES-002');
-    });
+        expect(result.isFailure, isTrue);
+        expect(((result as Failure).error as AppError).code, 'SES-002');
+      },
+    );
   });
 }

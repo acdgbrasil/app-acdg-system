@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:network/src/connectivity_service.dart';
 
 class MockConnectivity extends Mock implements Connectivity {}
+
 class MockDio extends Mock implements Dio {}
 
 void main() {
@@ -17,11 +18,13 @@ void main() {
   setUp(() {
     mockConnectivity = MockConnectivity();
     mockDio = MockDio();
-    connectivityStreamController = StreamController<List<ConnectivityResult>>.broadcast();
-    
-    when(() => mockConnectivity.onConnectivityChanged)
-        .thenAnswer((_) => connectivityStreamController.stream);
-    
+    connectivityStreamController =
+        StreamController<List<ConnectivityResult>>.broadcast();
+
+    when(
+      () => mockConnectivity.onConnectivityChanged,
+    ).thenAnswer((_) => connectivityStreamController.stream);
+
     service = ConnectivityService(
       connectivity: mockConnectivity,
       dio: mockDio,
@@ -36,8 +39,9 @@ void main() {
 
   group('ConnectivityService', () {
     test('initializes as offline when no interface is available', () async {
-      when(() => mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.none]);
+      when(
+        () => mockConnectivity.checkConnectivity(),
+      ).thenAnswer((_) async => [ConnectivityResult.none]);
 
       await service.initialize();
 
@@ -45,13 +49,16 @@ void main() {
     });
 
     test('is offline when interface is available but ping fails', () async {
-      when(() => mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-      
-      when(() => mockDio.head(any())).thenThrow(DioException(
-        requestOptions: RequestOptions(),
-        type: DioExceptionType.connectionTimeout,
-      ));
+      when(
+        () => mockConnectivity.checkConnectivity(),
+      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+
+      when(() => mockDio.head<void>(any())).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(),
+          type: DioExceptionType.connectionTimeout,
+        ),
+      );
 
       await service.initialize();
 
@@ -59,56 +66,62 @@ void main() {
     });
 
     test('is online when interface is available and ping succeeds', () async {
-      when(() => mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-      
-      when(() => mockDio.head(any())).thenAnswer((_) async => Response(
-        requestOptions: RequestOptions(),
-        statusCode: 200,
-      ));
+      when(
+        () => mockConnectivity.checkConnectivity(),
+      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+
+      when(() => mockDio.head<void>(any())).thenAnswer(
+        (_) async =>
+            Response<void>(requestOptions: RequestOptions(), statusCode: 200),
+      );
 
       await service.initialize();
 
       expect(service.isOnline.value, isTrue);
     });
 
-    test('updates status when interface changes from none to wifi with internet', () async {
-      // Start offline
-      when(() => mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.none]);
-      await service.initialize();
-      expect(service.isOnline.value, isFalse);
+    test(
+      'updates status when interface changes from none to wifi with internet',
+      () async {
+        // Start offline
+        when(
+          () => mockConnectivity.checkConnectivity(),
+        ).thenAnswer((_) async => [ConnectivityResult.none]);
+        await service.initialize();
+        expect(service.isOnline.value, isFalse);
 
-      // Change to wifi with successful ping
-      when(() => mockDio.head(any())).thenAnswer((_) async => Response(
-        requestOptions: RequestOptions(),
-        statusCode: 200,
-      ));
-      
-      connectivityStreamController.add([ConnectivityResult.wifi]);
-      
-      // Wait for async check to complete
-      await Future.delayed(Duration.zero);
-      
-      expect(service.isOnline.value, isTrue);
-    });
+        // Change to wifi with successful ping
+        when(() => mockDio.head<void>(any())).thenAnswer(
+          (_) async =>
+              Response<void>(requestOptions: RequestOptions(), statusCode: 200),
+        );
+
+        connectivityStreamController.add([ConnectivityResult.wifi]);
+
+        // Wait for async check to complete
+        await Future<void>.delayed(Duration.zero);
+
+        expect(service.isOnline.value, isTrue);
+      },
+    );
 
     test('emits status changes via onStatusChange stream', () async {
-      when(() => mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.none]);
-      
+      when(
+        () => mockConnectivity.checkConnectivity(),
+      ).thenAnswer((_) async => [ConnectivityResult.none]);
+
       await service.initialize();
 
       final states = <bool>[];
       final sub = service.onStatusChange.listen(states.add);
 
-      when(() => mockDio.head(any())).thenAnswer((_) async => Response(
-        requestOptions: RequestOptions(),
-        statusCode: 200,
-      ));
+      when(() => mockDio.head<void>(any())).thenAnswer(
+        (_) async =>
+            Response<void>(requestOptions: RequestOptions(), statusCode: 200),
+      );
 
       connectivityStreamController.add([ConnectivityResult.wifi]);
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
 
       expect(states, contains(true));
       await sub.cancel();

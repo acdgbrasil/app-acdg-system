@@ -7,7 +7,9 @@ import 'package:test/test.dart';
 
 void main() {
   group('PersonalData - Validações', () {
-    final validDate = TimeStamp.fromIso('1990-01-01T00:00:00.000Z').valueOrNull!;
+    final validDate = TimeStamp.fromIso(
+      '1990-01-01T00:00:00.000Z',
+    ).valueOrNull!;
     final now = TimeStamp.fromIso('2026-03-12T00:00:00.000Z').valueOrNull!;
 
     test('Deve criar com dados válidos e normalizar nomes', () {
@@ -86,7 +88,9 @@ void main() {
   });
 
   group('SocialIdentity - Validações', () {
-    final typeId = LookupId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+    final typeId = LookupId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
 
     test('Deve rejeitar tipo Outras sem descrição', () {
       final result = SocialIdentity.create(

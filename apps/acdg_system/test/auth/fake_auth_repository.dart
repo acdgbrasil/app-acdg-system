@@ -21,7 +21,12 @@ class FakeAuthRepository extends ChangeNotifier implements AuthRepository {
   AuthUser? get currentUser => _user;
 
   @override
-  AuthToken? get currentToken => _user != null ? AuthToken(accessToken: 'fake-token', expiresAt: DateTime.now().add(const Duration(hours: 1))) : null;
+  AuthToken? get currentToken => _user != null
+      ? AuthToken(
+          accessToken: 'fake-token',
+          expiresAt: DateTime.now().add(const Duration(hours: 1)),
+        )
+      : null;
 
   @override
   Future<Result<void>> login() async {
@@ -29,11 +34,7 @@ class FakeAuthRepository extends ChangeNotifier implements AuthRepository {
       _emit(const AuthError('Login failed'));
       return const Failure('Login failed');
     }
-    _user = const AuthUser(
-      id: '1',
-      name: 'Fake User',
-      roles: {AuthRole.admin},
-    );
+    _user = const AuthUser(id: '1', name: 'Fake User', roles: {AuthRole.admin});
     _emit(Authenticated(_user!));
     return const Success(null);
   }
@@ -59,6 +60,9 @@ class FakeAuthRepository extends ChangeNotifier implements AuthRepository {
     }
     return const Success(null);
   }
+
+  @override
+  Future<void> init() async {}
 
   void _emit(AuthStatus status) {
     _status = status;

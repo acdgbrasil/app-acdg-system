@@ -6,8 +6,8 @@ import 'package:social_care/social_care.dart';
 import '../../../testing/social_care_testing.dart';
 
 void main() {
-  late InMemoryPatientRepository repository;
   late RegisterPatientUseCase useCase;
+  late InMemoryPatientRepository repository;
 
   setUp(() {
     repository = InMemoryPatientRepository();
@@ -15,86 +15,102 @@ void main() {
   });
 
   group('RegisterPatientUseCase', () {
-    test('should register a valid patient and return PatientId', () async {
-      final command = RegisterPatientCommand(
-        patientId: PatientFixtures.patientId,
-        personId: PatientFixtures.personId,
-        prRelationshipId: PatientFixtures.prRelationshipId,
-        personalData: PatientFixtures.personalData,
-        diagnoses: [PatientFixtures.diagnosis],
-        familyMembers: [PatientFixtures.familyMember],
-      );
+    test(
+      'should register a valid patient and auto-add them as PR member',
+      () async {
+        final intent = RegisterPatientIntent(
+          firstName: 'Maria',
+          lastName: 'Silva',
+          motherName: 'Ana Silva',
+          nationality: 'Brasileira',
+          sex: Sex.feminino,
+          birthDate: kBirthDate,
+          prRelationshipId: PatientFixtures.prRelationshipId.value,
+          cpf: PatientFixtures.validCpf,
+          addressState: 'SP',
+          city: 'São Paulo',
+          residenceLocation: ResidenceLocation.urbano,
+          diagnoses: [PatientFixtures.diagnosis],
+          familyMembers: [], // Only other members go here
+        );
 
-      final result = await useCase.execute(command);
+        final result = await useCase.execute(intent);
 
-      expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull, PatientFixtures.patientId);
-      expect(repository.patients, hasLength(1));
-      expect(repository.patients.first.id, PatientFixtures.patientId);
-    });
+        expect(result.isSuccess, isTrue);
+        final stored = repository.patients.first;
+        expect(stored.personalData?.firstName, 'Maria');
+        expect(stored.civilDocuments?.cpf?.value, PatientFixtures.validCpf);
+        expect(stored.address?.city, 'São Paulo');
+
+        // Verify domain invariant: Patient is the PR member
+        expect(stored.familyMembers, hasLength(1));
+        expect(
+          stored.familyMembers.first.relationshipId.value,
+          intent.prRelationshipId,
+        );
+        expect(stored.familyMembers.first.isPrimaryCaregiver, isTrue);
+      },
+    );
 
     test('should fail when diagnoses list is empty', () async {
-      final command = RegisterPatientCommand(
-        patientId: PatientFixtures.patientId,
-        personId: PatientFixtures.personId,
-        prRelationshipId: PatientFixtures.prRelationshipId,
-        personalData: PatientFixtures.personalData,
-        diagnoses: [], // Empty — invariant violation
-        familyMembers: [PatientFixtures.familyMember],
+      final intent = RegisterPatientIntent(
+        firstName: 'Maria',
+        lastName: 'Silva',
+        motherName: 'Ana Silva',
+        nationality: 'Brasileira',
+        sex: Sex.feminino,
+        birthDate: kBirthDate,
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
+        residenceLocation: ResidenceLocation.urbano,
+        city: 'São Paulo',
+        addressState: 'SP',
+        diagnoses: const <Diagnosis>[], // Empty — invariant violation
       );
 
-      final result = await useCase.execute(command);
+      final result = await useCase.execute(intent);
 
       expect(result.isFailure, isTrue);
-      final error = (result as Failure).error as AppError;
-      expect(error.code, 'PAT-003');
+      final error = (result as Failure).error;
+      expect(error, isA<InvalidDataError>());
       expect(repository.patients, isEmpty);
     });
 
-    test('should fail when no Pessoa de Referência (PR) in family', () async {
-      // Family member with a DIFFERENT relationship ID (not PR)
-      final nonPrRelId = LookupId.create('550e8400-e29b-41d4-a716-999999999999').valueOrNull!;
-      final nonPrMember = FamilyMember.create(
+    test('should fail when multiple PRs are provided', () async {
+      // Manual member with PR relationship ID
+      final extraPrMember = FamilyMember.create(
         personId: PatientFixtures.familyMemberPersonId,
-        relationshipId: nonPrRelId, // Not matching prRelationshipId
+        relationshipId: PatientFixtures.prRelationshipId, // Same as patient
         residesWithPatient: true,
         birthDate: TimeStamp.fromIso('1965-08-20T00:00:00.000Z').valueOrNull!,
       ).valueOrNull!;
 
-      final command = RegisterPatientCommand(
-        patientId: PatientFixtures.patientId,
-        personId: PatientFixtures.personId,
-        prRelationshipId: PatientFixtures.prRelationshipId,
-        personalData: PatientFixtures.personalData,
+      final intent = RegisterPatientIntent(
+        firstName: 'Maria',
+        lastName: 'Silva',
+        motherName: 'Ana Silva',
+        nationality: 'Brasileira',
+        sex: Sex.feminino,
+        birthDate: kBirthDate,
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
+        city: 'São Paulo',
+        addressState: 'SP',
+        residenceLocation: ResidenceLocation.urbano,
         diagnoses: [PatientFixtures.diagnosis],
-        familyMembers: [nonPrMember], // No PR match
+        familyMembers: [
+          extraPrMember,
+        ], // This will create 2 PRs (Auto + Manual)
       );
 
-      final result = await useCase.execute(command);
+      final result = await useCase.execute(intent);
 
       expect(result.isFailure, isTrue);
-      final error = (result as Failure).error as AppError;
-      expect(error.code, 'PAT-008');
-      expect(repository.patients, isEmpty);
-    });
-
-    test('should pass optional civilDocuments and address', () async {
-      final command = RegisterPatientCommand(
-        patientId: PatientFixtures.patientId,
-        personId: PatientFixtures.personId,
-        prRelationshipId: PatientFixtures.prRelationshipId,
-        personalData: PatientFixtures.personalData,
-        diagnoses: [PatientFixtures.diagnosis],
-        familyMembers: [PatientFixtures.familyMember],
-      );
-
-      final result = await useCase.execute(command);
-
-      expect(result.isSuccess, isTrue);
-      final stored = repository.patients.first;
-      expect(stored.personalData, PatientFixtures.personalData);
-      expect(stored.civilDocuments, isNull);
-      expect(stored.address, isNull);
+      final error = (result as Failure).error;
+      // PAT-009: Multiple PRs not allowed
+      expect(error, isA<MultiplePrimaryReferencesError>());
     });
   });
 }
+
+final kBirthDate = DateTime(1990, 5, 15);

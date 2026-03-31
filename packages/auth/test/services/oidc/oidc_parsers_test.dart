@@ -36,10 +36,7 @@ void main() {
       });
 
       test('falls back to empty string when uid and sub are both null', () {
-        final user = OidcClaimsParser.userFromClaims(
-          uid: null,
-          claims: {},
-        );
+        final user = OidcClaimsParser.userFromClaims(uid: null, claims: {});
 
         expect(user.id, '');
       });
@@ -56,9 +53,7 @@ void main() {
       test('returns empty roles when roles claim is not a Map', () {
         final user = OidcClaimsParser.userFromClaims(
           uid: 'uid',
-          claims: {
-            'urn:zitadel:iam:org:project:roles': 'invalid_type',
-          },
+          claims: {'urn:zitadel:iam:org:project:roles': 'invalid_type'},
         );
 
         expect(user.roles, isEmpty);
@@ -134,13 +129,17 @@ void main() {
 
       test('falls back to DateTime.now() when expiresAt is null', () {
         final before = DateTime.now();
-        final token = OidcClaimsParser.tokenFromRaw(
-          accessToken: 'access',
-        );
+        final token = OidcClaimsParser.tokenFromRaw(accessToken: 'access');
         final after = DateTime.now();
 
-        expect(token.expiresAt.isAfter(before.subtract(const Duration(seconds: 1))), isTrue);
-        expect(token.expiresAt.isBefore(after.add(const Duration(seconds: 1))), isTrue);
+        expect(
+          token.expiresAt.isAfter(before.subtract(const Duration(seconds: 1))),
+          isTrue,
+        );
+        expect(
+          token.expiresAt.isBefore(after.add(const Duration(seconds: 1))),
+          isTrue,
+        );
       });
 
       test('token with future expiry is not expired', () {
