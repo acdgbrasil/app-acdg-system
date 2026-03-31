@@ -1,17 +1,48 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
+import 'package:social_care/src/data/model/patient_summary_api_model.dart';
+import 'package:social_care/src/data/services/patient_service.dart';
+import 'package:social_care/src/ui/home/models/patient_summary.dart';
 
 import 'patient_repository.dart';
 
 /// [PatientRepository] implementation backed by the Social Care BFF.
 ///
-/// Delegates all operations to [SocialCareContract], which already
-/// handles offline-first coordination (OfflineFirstRepository) or
-/// direct remote calls depending on the platform.
+/// Uses [PatientService] for raw BFF calls, then maps API models
+/// to typed domain/UI models.
 class BffPatientRepository implements PatientRepository {
-  BffPatientRepository({required SocialCareContract bff}) : _bff = bff;
+  BffPatientRepository({
+    required SocialCareContract bff,
+    required PatientService patientService,
+  }) : _bff = bff,
+       _patientService = patientService;
 
   final SocialCareContract _bff;
+  final PatientService _patientService;
+
+  @override
+  Future<Result<List<PatientSummary>>> listPatients() async {
+    final result = await _patientService.listPatients();
+
+    return switch (result) {
+      Success(:final value) => Success(
+        value
+            .map(PatientSummaryApiModel.fromJson)
+            .map(
+              (api) => PatientSummary(
+                patientId: api.patientId,
+                firstName: api.firstName,
+                lastName: api.lastName,
+                fullName: api.fullName ?? '${api.firstName} ${api.lastName}',
+                primaryDiagnosis: api.primaryDiagnosis,
+                memberCount: api.memberCount,
+              ),
+            )
+            .toList(),
+      ),
+      Failure(:final error) => Failure(error),
+    };
+  }
 
   @override
   Future<Result<PatientId>> registerPatient(Patient patient) {
@@ -26,5 +57,139 @@ class BffPatientRepository implements PatientRepository {
   @override
   Future<Result<Patient>> getPatientByPersonId(PersonId personId) {
     return _bff.getPatientByPersonId(personId);
+  }
+
+  @override
+  Future<Result<void>> addFamilyMember(
+    PatientId patientId,
+    FamilyMember member,
+    LookupId prRelationshipId,
+  ) {
+    return _bff.addFamilyMember(patientId, member, prRelationshipId);
+  }
+
+  @override
+  Future<Result<void>> removeFamilyMember(
+    PatientId patientId,
+    PersonId memberId,
+  ) {
+    return _bff.removeFamilyMember(patientId, memberId);
+  }
+
+  @override
+  Future<Result<void>> assignPrimaryCaregiver(
+    PatientId patientId,
+    PersonId memberId,
+  ) {
+    return _bff.assignPrimaryCaregiver(patientId, memberId);
+  }
+
+  @override
+  Future<Result<void>> updateSocialIdentity(
+    PatientId patientId,
+    SocialIdentity identity,
+  ) {
+    return _bff.updateSocialIdentity(patientId, identity);
+  }
+
+  @override
+  Future<Result<List<AuditEvent>>> getAuditTrail(
+    PatientId patientId, {
+    String? eventType,
+  }) {
+    return _bff.getAuditTrail(patientId, eventType: eventType);
+  }
+
+  @override
+  Future<Result<void>> updateHousingCondition(
+    PatientId patientId,
+    HousingCondition condition,
+  ) {
+    return _bff.updateHousingCondition(patientId, condition);
+  }
+
+  @override
+  Future<Result<void>> updateSocioEconomicSituation(
+    PatientId patientId,
+    SocioEconomicSituation situation,
+  ) {
+    return _bff.updateSocioEconomicSituation(patientId, situation);
+  }
+
+  @override
+  Future<Result<void>> updateWorkAndIncome(
+    PatientId patientId,
+    WorkAndIncome data,
+  ) {
+    return _bff.updateWorkAndIncome(patientId, data);
+  }
+
+  @override
+  Future<Result<void>> updateEducationalStatus(
+    PatientId patientId,
+    EducationalStatus status,
+  ) {
+    return _bff.updateEducationalStatus(patientId, status);
+  }
+
+  @override
+  Future<Result<void>> updateHealthStatus(
+    PatientId patientId,
+    HealthStatus status,
+  ) {
+    return _bff.updateHealthStatus(patientId, status);
+  }
+
+  @override
+  Future<Result<void>> updateCommunitySupportNetwork(
+    PatientId patientId,
+    CommunitySupportNetwork network,
+  ) {
+    return _bff.updateCommunitySupportNetwork(patientId, network);
+  }
+
+  @override
+  Future<Result<void>> updateSocialHealthSummary(
+    PatientId patientId,
+    SocialHealthSummary summary,
+  ) {
+    return _bff.updateSocialHealthSummary(patientId, summary);
+  }
+
+  @override
+  Future<Result<AppointmentId>> registerAppointment(
+    PatientId patientId,
+    SocialCareAppointment appointment,
+  ) {
+    return _bff.registerAppointment(patientId, appointment);
+  }
+
+  @override
+  Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info) {
+    return _bff.updateIntakeInfo(patientId, info);
+  }
+
+  @override
+  Future<Result<void>> updatePlacementHistory(
+    PatientId patientId,
+    PlacementHistory history,
+  ) {
+    return _bff.updatePlacementHistory(patientId, history);
+  }
+
+  @override
+  Future<Result<ViolationReportId>> reportViolation(
+    PatientId patientId,
+    RightsViolationReport report,
+  ) {
+    return _bff.reportViolation(patientId, report);
+  }
+
+  @override
+  Future<Result<ReferralId>> createReferral(
+    PatientId patientId,
+    Referral referral,
+  ) {
+    return _bff.createReferral(patientId, referral);
   }
 }
