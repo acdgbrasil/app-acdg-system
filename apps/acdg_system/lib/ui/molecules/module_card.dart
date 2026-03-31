@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class ModuleCard extends StatelessWidget {
@@ -16,44 +17,52 @@ class ModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return GestureDetector(
       onTap: onTap,
       child: MouseRegion(
         cursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.space4), // 24px
           decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colorScheme.outline),
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.inputLine),
+            boxShadow: const [AppShadows.xsShadow],
           ),
           child: Row(
             children: [
-              Icon(icon, color: colorScheme.primary),
-              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.space2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 32),
+              ),
+              const SizedBox(width: AppSpacing.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AcdgText(
                       title,
-                      style: textTheme.headlineSmall?.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
+                      variant: AcdgTextVariant.headingSmall,
+                      color: AppColors.textPrimary,
                     ),
-                    Text(
+                    const SizedBox(height: 4),
+                    AcdgText(
                       subtitle,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      variant: AcdgTextVariant.bodyLarge,
+                      color: AppColors.textMuted,
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textMuted,
+                size: 24,
+              ),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:auth/auth.dart';
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../molecules/module_card.dart';
@@ -10,40 +11,40 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space6, // 40px
+            vertical: AppSpacing.space9, // 64px
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AcdgText(
                 'Bem-vindo ao ACDG System',
-                style: textTheme.headlineLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
+                variant: AcdgTextVariant.displayLarge,
+                color: AppColors.textPrimary,
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Plataforma de cuidado e defesa de pacientes com doencas geneticas raras.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
+              const SizedBox(height: AppSpacing.space3),
+              AcdgText(
+                'Plataforma de cuidado e defesa de pacientes com doenças genéticas raras.',
+                variant: AcdgTextVariant.bodyLarge,
+                color: AppColors.textMuted,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.space10), // 72px gap
               ModuleCard(
-                icon: user.canWrite ? Icons.people : Icons.visibility,
+                icon: user.canWrite
+                    ? Icons.people_outline
+                    : Icons.visibility_outlined,
                 title: user.canWrite
                     ? 'Social Care'
                     : 'Social Care (somente leitura)',
                 subtitle: user.canWrite
-                    ? 'Cadastro, avaliacao e acompanhamento de pacientes'
-                    : 'Visualizacao de dados de pacientes',
+                    ? 'Cadastro, avaliação e acompanhamento de pacientes'
+                    : 'Visualização de dados de pacientes',
                 onTap: () => context.push('/social-care'),
               ),
             ],

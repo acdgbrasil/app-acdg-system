@@ -1,17 +1,27 @@
-import 'package:acdg_system/pages/home_page.dart';
-import 'package:acdg_system/pages/login_page.dart';
-import 'package:acdg_system/pages/splash_page.dart';
 import 'package:auth/auth.dart';
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:social_care/social_care.dart';
+import 'package:social_care_desktop/social_care_desktop.dart';
 
+import '../../ui/atoms/sync_indicator.dart';
+import '../../ui/organisms/sync_detail_panel.dart';
+import '../../ui/pages/home_page.dart';
+import '../../ui/pages/login_page.dart';
+import '../../ui/pages/splash_page.dart';
 import '../../ui/view_models/auth_view_model.dart';
 
 abstract final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
   static const home = '/home';
+  static const socialCare = '/social-care';
   static const patientRegistration = '/patient-registration';
+  static const registrationStep1 = '/patient-registration/reference-person';
+  static const registrationStep2 = '/patient-registration/family-composition';
+  static const registrationStep3 = '/patient-registration/specificities';
 }
 
 class AppRouter {
@@ -36,6 +46,53 @@ class AppRouter {
         path: AppRoutes.home,
         builder: (context, state) => const HomePage(),
         redirect: _requireAuth,
+      ),
+      GoRoute(
+        path: AppRoutes.socialCare,
+        redirect: _requireAuth,
+        builder: (context, state) {
+          final listUseCase = context.read<ListPatientsUseCase>();
+          final getUseCase = context.read<GetPatientUseCase>();
+          final syncEngine = context.read<SyncEngine?>();
+          final queueService = context.read<SyncQueueService>();
+          final isarService = context.read<IsarService>();
+          return ChangeNotifierProvider(
+            create: (_) => HomeViewModel(
+              listPatientsUseCase: listUseCase,
+              getPatientUseCase: getUseCase,
+            ),
+            child: SocialCareHomePage(
+              syncIndicator: syncEngine != null
+                  ? Builder(
+                      builder: (ctx) => SyncIndicator(
+                        status: syncEngine.status,
+                        onTap: () => SyncDetailPanel.show(
+                          ctx,
+                          queueService: queueService,
+                          syncEngine: syncEngine,
+                          isarService: isarService,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.patientRegistration,
+        redirect: _requireAuth,
+        builder: (context, state) {
+          final useCase = context.read<RegisterPatientUseCase>();
+          final lookupRepo = context.read<LookupRepository>();
+          return ChangeNotifierProvider(
+            create: (_) => PatientRegistrationViewModel(
+              useCase: useCase,
+              lookupRepository: lookupRepo,
+            ),
+            child: const PatientRegistrationPage(),
+          );
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
