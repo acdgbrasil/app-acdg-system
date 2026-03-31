@@ -10,12 +10,14 @@ workspace:
   - packages/auth
   - packages/network
   - packages/social_care
+  - packages/design_system
   - bff/shared
   - bff/social_care_desktop
   - bff/social_care_web
 
 dev_dependencies:
   melos: ^7.4.0
+  yaml: ^3.1.2
 
 melos:
   name: acdg_system
