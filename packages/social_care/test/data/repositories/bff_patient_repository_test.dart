@@ -1,4 +1,3 @@
-import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
@@ -11,7 +10,10 @@ void main() {
 
   setUp(() {
     fakeBff = FakeSocialCareBff(delay: Duration.zero);
-    repository = BffPatientRepository(bff: fakeBff);
+    repository = BffPatientRepository(
+      bff: fakeBff,
+      patientService: PatientService(bff: fakeBff),
+    );
   });
 
   group('BffPatientRepository', () {
@@ -36,7 +38,9 @@ void main() {
     });
 
     test('should return failure when patient not found', () async {
-      final unknownId = PatientId.create('550e8400-e29b-41d4-a716-999999999999').valueOrNull!;
+      final unknownId = PatientId.create(
+        '550e8400-e29b-41d4-a716-999999999999',
+      ).valueOrNull!;
 
       final result = await repository.getPatient(unknownId);
 

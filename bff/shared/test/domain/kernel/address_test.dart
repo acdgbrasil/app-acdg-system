@@ -1,6 +1,5 @@
 import 'package:core/core.dart';
 import 'package:shared/src/domain/kernel/address.dart';
-import 'package:shared/src/domain/kernel/cep.dart';
 import 'package:shared/src/utils/app_error.dart';
 import 'package:test/test.dart';
 

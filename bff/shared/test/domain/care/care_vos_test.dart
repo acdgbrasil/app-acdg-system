@@ -27,22 +27,29 @@ void main() {
   });
 
   group('SocialCareAppointment - Validações', () {
-    final id = AppointmentId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
-    final profId = ProfessionalId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!;
+    final id = AppointmentId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
+    final profId = ProfessionalId.create(
+      '550e8400-e29b-41d4-a716-446655440001',
+    ).valueOrNull!;
     final date = TimeStamp.now;
 
-    test('Deve rejeitar quando resumo e plano de ação estão vazios (SCA-003)', () {
-      final result = SocialCareAppointment.create(
-        id: id,
-        date: date,
-        professionalInChargeId: profId,
-        type: AppointmentType.homeVisit,
-        summary: '   ',
-        actionPlan: null,
-      );
+    test(
+      'Deve rejeitar quando resumo e plano de ação estão vazios (SCA-003)',
+      () {
+        final result = SocialCareAppointment.create(
+          id: id,
+          date: date,
+          professionalInChargeId: profId,
+          type: AppointmentType.homeVisit,
+          summary: '   ',
+          actionPlan: null,
+        );
 
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'SCA-003');
-    });
+        expect(result.isFailure, isTrue);
+        expect(((result as Failure).error as AppError).code, 'SCA-003');
+      },
+    );
   });
 }

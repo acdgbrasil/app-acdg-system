@@ -29,7 +29,9 @@ void main() {
     });
 
     test('should fail when patient not found', () async {
-      final unknownId = PatientId.create('550e8400-e29b-41d4-a716-999999999999').valueOrNull!;
+      final unknownId = PatientId.create(
+        '550e8400-e29b-41d4-a716-999999999999',
+      ).valueOrNull!;
 
       final result = await useCase.execute(unknownId);
 

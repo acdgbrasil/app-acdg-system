@@ -6,16 +6,36 @@ import 'package:test/test.dart';
 
 void main() {
   group('FinancialAnalyticsService - Cálculos', () {
-    final personId = PersonId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+    final personId = PersonId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
 
     test('Deve calcular indicadores financeiros corretamente', () {
       final workIncomes = [
-        WorkIncomeVO.create(memberId: personId, occupationId: LookupId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!, hasWorkCard: true, monthlyAmount: 1000).valueOrNull!,
-        WorkIncomeVO.create(memberId: personId, occupationId: LookupId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!, hasWorkCard: true, monthlyAmount: 500).valueOrNull!,
+        WorkIncomeVO.create(
+          memberId: personId,
+          occupationId: LookupId.create(
+            '550e8400-e29b-41d4-a716-446655440001',
+          ).valueOrNull!,
+          hasWorkCard: true,
+          monthlyAmount: 1000,
+        ).valueOrNull!,
+        WorkIncomeVO.create(
+          memberId: personId,
+          occupationId: LookupId.create(
+            '550e8400-e29b-41d4-a716-446655440001',
+          ).valueOrNull!,
+          hasWorkCard: true,
+          monthlyAmount: 500,
+        ).valueOrNull!,
       ];
 
       final socialBenefits = [
-        SocialBenefit.create(benefitName: 'BPC', amount: 600, beneficiaryId: personId).valueOrNull!,
+        SocialBenefit.create(
+          benefitName: 'BPC',
+          amount: 600,
+          beneficiaryId: personId,
+        ).valueOrNull!,
       ];
 
       final result = FinancialAnalyticsService.calculate(

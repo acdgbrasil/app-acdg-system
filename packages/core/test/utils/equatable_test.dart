@@ -35,7 +35,19 @@ void main() {
 
       test('should return true for equal Lists (deep)', () {
         expect(objectsEquals([1, 2], [1, 2]), isTrue);
-        expect(objectsEquals([1, [2]], [1, [2]]), isTrue);
+        expect(
+          objectsEquals(
+            [
+              1,
+              [2],
+            ],
+            [
+              1,
+              [2],
+            ],
+          ),
+          isTrue,
+        );
       });
 
       test('should return true for equal Sets (unordered)', () {
@@ -43,10 +55,7 @@ void main() {
       });
 
       test('should return true for equal Maps (unordered keys)', () {
-        expect(
-          objectsEquals({'a': 1, 'b': 2}, {'b': 2, 'a': 1}),
-          isTrue,
-        );
+        expect(objectsEquals({'a': 1, 'b': 2}, {'b': 2, 'a': 1}), isTrue);
       });
 
       test('should return false for different types', () {
@@ -56,13 +65,23 @@ void main() {
 
     group('mapPropsToHashCode', () {
       test('should be consistent for identical props', () {
-        final props = [1, 'a', [2]];
+        final props = [
+          1,
+          'a',
+          [2],
+        ];
         expect(mapPropsToHashCode(props), equals(mapPropsToHashCode(props)));
       });
 
       test('should be order-independent for Maps and Sets in props', () {
-        final h1 = mapPropsToHashCode([{'a': 1, 'b': 2}, {1, 2}]);
-        final h2 = mapPropsToHashCode([{'b': 2, 'a': 1}, {2, 1}]);
+        final h1 = mapPropsToHashCode([
+          {'a': 1, 'b': 2},
+          {1, 2},
+        ]);
+        final h2 = mapPropsToHashCode([
+          {'b': 2, 'a': 1},
+          {2, 1},
+        ]);
         expect(h1, equals(h2));
       });
     });
@@ -77,17 +96,11 @@ void main() {
     });
 
     test('supports mixin', () {
-      expect(
-        const _MixinEquatable([1, 2]),
-        const _MixinEquatable([1, 2]),
-      );
+      expect(const _MixinEquatable([1, 2]), const _MixinEquatable([1, 2]));
     });
 
     test('different values are not equal', () {
-      expect(
-        const _SimpleEquatable(1),
-        isNot(const _SimpleEquatable(2)),
-      );
+      expect(const _SimpleEquatable(1), isNot(const _SimpleEquatable(2)));
     });
 
     test('toString output follows props', () {
