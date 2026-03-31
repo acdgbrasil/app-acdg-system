@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
@@ -28,9 +29,13 @@ void main() {
       final result = await useCase.execute(intent);
 
       expect(result.isSuccess, isTrue);
-      final updated = (await repository.getPatient(patient.id)).valueOrNull!;
-      // Verify total members: 1 (auto-PR from registration) + 1 (new member)
-      expect(updated.familyMembers.length, 2);
+      final getResult = await repository.getPatient(patient.id);
+      if (getResult case Success(value: final updated)) {
+        // Verify total members: 1 (auto-PR from registration) + 1 (new member)
+        expect(updated.patientDetail.familyMembers.length, 2);
+      } else {
+        fail('Should have found patient');
+      }
     });
 
     test(
@@ -62,8 +67,12 @@ void main() {
         final result = await useCase.execute(intent);
 
         expect(result.isSuccess, isTrue);
-        final updated = (await repository.getPatient(patient.id)).valueOrNull!;
-        expect(updated.housingCondition?.type, equals(ConditionType.owned));
+        final getResult = await repository.getPatient(patient.id);
+        if (getResult case Success(value: final updated)) {
+          expect(updated.patientDetail.housingCondition?.type, equals(ConditionType.owned.name));
+        } else {
+          fail('Should have found patient');
+        }
       },
     );
 
@@ -87,8 +96,12 @@ void main() {
       final result = await useCase.execute(intent);
 
       expect(result.isSuccess, isTrue);
-      final updated = (await repository.getPatient(patient.id)).valueOrNull!;
-      expect(updated.socialIdentity, equals(identity));
+      final getResult = await repository.getPatient(patient.id);
+      if (getResult case Success(value: final updated)) {
+        expect(updated.patientDetail.socialIdentity?.typeId, equals(identity.typeId.value));
+      } else {
+        fail('Should have found patient');
+      }
     });
 
     test('RegisterAppointmentUseCase should delegate to repository', () async {
@@ -106,7 +119,11 @@ void main() {
       final result = await useCase.execute(intent);
 
       expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull, isNotNull);
+      if (result case Success(value: final val)) {
+        expect(val, isNotNull);
+      } else {
+        fail('Should have returned success');
+      }
     });
   });
 }
