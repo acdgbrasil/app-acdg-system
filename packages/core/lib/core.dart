@@ -19,6 +19,9 @@ export 'src/offline/sync_status.dart';
 
 // Utils
 export 'src/utils/env.dart';
+export 'src/utils/acdg_logger.dart';
+export 'src/utils/uuid_util.dart';
 export 'src/utils/hml_auth_helper.dart';
 export 'src/utils/equatable/equatable.dart';
 export 'src/utils/equatable/equatable_config.dart';
+export 'src/utils/custom_masks.dart';

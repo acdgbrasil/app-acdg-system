@@ -10,8 +10,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:flutter/foundation.dart';
 
 class MockLocalRepo extends Mock implements LocalSocialCareRepository {}
+
 class MockRemoteRepo extends Mock implements SocialCareBffRemote {}
+
 class MockConnectivity extends Mock implements ConnectivityService {}
+
 class MockSyncEngine extends Mock implements SyncEngine {}
 
 void main() {
@@ -23,12 +26,20 @@ void main() {
   late ValueNotifier<bool> onlineNotifier;
 
   setUpAll(() {
-    registerFallbackValue(Patient.reconstitute(
-      id: PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!,
-      personId: PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!,
-      prRelationshipId: LookupId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!,
-      version: 1,
-    ));
+    registerFallbackValue(
+      Patient.reconstitute(
+        id: PatientId.create(
+          '550e8400-e29b-41d4-a716-446655440000',
+        ).valueOrNull!,
+        personId: PersonId.create(
+          '550e8400-e29b-41d4-a716-446655440001',
+        ).valueOrNull!,
+        prRelationshipId: LookupId.create(
+          '550e8400-e29b-41d4-a716-446655440002',
+        ).valueOrNull!,
+        version: 1,
+      ),
+    );
   });
 
   setUp(() {
@@ -52,13 +63,21 @@ void main() {
   group('OfflineFirstRepository - Write Operations', () {
     test('registerPatient should trigger sync if online', () async {
       final patient = Patient.reconstitute(
-        id: PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!,
-        personId: PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!,
-        prRelationshipId: LookupId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!,
+        id: PatientId.create(
+          '550e8400-e29b-41d4-a716-446655440000',
+        ).valueOrNull!,
+        personId: PersonId.create(
+          '550e8400-e29b-41d4-a716-446655440001',
+        ).valueOrNull!,
+        prRelationshipId: LookupId.create(
+          '550e8400-e29b-41d4-a716-446655440002',
+        ).valueOrNull!,
         version: 1,
       );
 
-      when(() => local.registerPatient(any())).thenAnswer((_) async => Success(patient.id));
+      when(
+        () => local.registerPatient(any()),
+      ).thenAnswer((_) async => Success(patient.id));
 
       final result = await repository.registerPatient(patient);
 
@@ -70,13 +89,21 @@ void main() {
     test('registerPatient should NOT trigger sync if offline', () async {
       onlineNotifier.value = false;
       final patient = Patient.reconstitute(
-        id: PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!,
-        personId: PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!,
-        prRelationshipId: LookupId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!,
+        id: PatientId.create(
+          '550e8400-e29b-41d4-a716-446655440000',
+        ).valueOrNull!,
+        personId: PersonId.create(
+          '550e8400-e29b-41d4-a716-446655440001',
+        ).valueOrNull!,
+        prRelationshipId: LookupId.create(
+          '550e8400-e29b-41d4-a716-446655440002',
+        ).valueOrNull!,
         version: 1,
       );
 
-      when(() => local.registerPatient(any())).thenAnswer((_) async => Success(patient.id));
+      when(
+        () => local.registerPatient(any()),
+      ).thenAnswer((_) async => Success(patient.id));
 
       final result = await repository.registerPatient(patient);
 
@@ -87,17 +114,25 @@ void main() {
   });
 
   group('OfflineFirstRepository - Read Operations', () {
-    final patientId = PatientId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
+    final patientId = PatientId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
     final patient = Patient.reconstitute(
       id: patientId,
-      personId: PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!,
-      prRelationshipId: LookupId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!,
+      personId: PersonId.create(
+        '550e8400-e29b-41d4-a716-446655440001',
+      ).valueOrNull!,
+      prRelationshipId: LookupId.create(
+        '550e8400-e29b-41d4-a716-446655440002',
+      ).valueOrNull!,
       version: 1,
     );
 
     test('getPatient should try remote and update cache if online', () async {
       onlineNotifier.value = true;
-      when(() => remote.getPatient(patientId)).thenAnswer((_) async => Success(patient));
+      when(
+        () => remote.getPatient(patientId),
+      ).thenAnswer((_) async => Success(patient));
       when(() => local.updateCache(any())).thenAnswer((_) async {});
 
       final result = await repository.getPatient(patientId);
@@ -107,22 +142,31 @@ void main() {
       verify(() => remote.getPatient(patientId)).called(1);
     });
 
-    test('getPatient should fallback to local if remote fails and online', () async {
-      onlineNotifier.value = true;
-      when(() => remote.getPatient(patientId)).thenAnswer((_) async => const Failure('Network error'));
-      when(() => local.getPatient(patientId)).thenAnswer((_) async => Success(patient));
+    test(
+      'getPatient should fallback to local if remote fails and online',
+      () async {
+        onlineNotifier.value = true;
+        when(
+          () => remote.getPatient(patientId),
+        ).thenAnswer((_) async => const Failure('Network error'));
+        when(
+          () => local.getPatient(patientId),
+        ).thenAnswer((_) async => Success(patient));
 
-      final result = await repository.getPatient(patientId);
+        final result = await repository.getPatient(patientId);
 
-      expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull, patient);
-      verify(() => remote.getPatient(patientId)).called(1);
-      verify(() => local.getPatient(patientId)).called(1);
-    });
+        expect(result.isSuccess, isTrue);
+        expect(result.valueOrNull, patient);
+        verify(() => remote.getPatient(patientId)).called(1);
+        verify(() => local.getPatient(patientId)).called(1);
+      },
+    );
 
     test('getPatient should go straight to local if offline', () async {
       onlineNotifier.value = false;
-      when(() => local.getPatient(patientId)).thenAnswer((_) async => Success(patient));
+      when(
+        () => local.getPatient(patientId),
+      ).thenAnswer((_) async => Success(patient));
 
       final result = await repository.getPatient(patientId);
 

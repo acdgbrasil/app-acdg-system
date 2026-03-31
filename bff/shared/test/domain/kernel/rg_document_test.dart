@@ -26,7 +26,7 @@ void main() {
         issueDate: validDate,
         now: now,
       );
-      
+
       expect(result.isSuccess, isTrue);
       final rg = result.valueOrNull!;
       expect(rg.number, '123456782');
@@ -36,32 +36,64 @@ void main() {
     });
 
     test('Deve rejeitar número vazio', () {
-      final result = RgDocument.create(number: ' ', issuingState: 'SP', issuingAgency: 'SSP', issueDate: validDate, now: now);
+      final result = RgDocument.create(
+        number: ' ',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+        now: now,
+      );
       expect(result.isFailure, isTrue);
       expect(((result as Failure).error as AppError).code, 'RGD-001');
     });
 
     test('Deve rejeitar formato inválido', () {
-      final result = RgDocument.create(number: '123', issuingState: 'SP', issuingAgency: 'SSP', issueDate: validDate, now: now);
+      final result = RgDocument.create(
+        number: '123',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+        now: now,
+      );
       expect(result.isFailure, isTrue);
       expect(((result as Failure).error as AppError).code, 'RGD-005');
     });
 
     test('Deve rejeitar check digit inválido', () {
-      final result = RgDocument.create(number: '12345678-3', issuingState: 'SP', issuingAgency: 'SSP', issueDate: validDate, now: now);
+      final result = RgDocument.create(
+        number: '12345678-3',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+        now: now,
+      );
       expect(result.isFailure, isTrue);
       expect(((result as Failure).error as AppError).code, 'RGD-006');
     });
 
     test('Deve rejeitar estado inválido', () {
-      final result = RgDocument.create(number: '12345678-2', issuingState: 'XX', issuingAgency: 'SSP', issueDate: validDate, now: now);
+      final result = RgDocument.create(
+        number: '12345678-2',
+        issuingState: 'XX',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+        now: now,
+      );
       expect(result.isFailure, isTrue);
       expect(((result as Failure).error as AppError).code, 'RGD-002');
     });
 
     test('Deve rejeitar data no futuro', () {
-      final futureDate = TimeStamp.fromIso('2030-01-01T00:00:00.000Z').valueOrNull!;
-      final result = RgDocument.create(number: '12345678-2', issuingState: 'SP', issuingAgency: 'SSP', issueDate: futureDate, now: now);
+      final futureDate = TimeStamp.fromIso(
+        '2030-01-01T00:00:00.000Z',
+      ).valueOrNull!;
+      final result = RgDocument.create(
+        number: '12345678-2',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: futureDate,
+        now: now,
+      );
       expect(result.isFailure, isTrue);
       expect(((result as Failure).error as AppError).code, 'RGD-004');
     });

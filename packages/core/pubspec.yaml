@@ -12,6 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  meta: ^1.11.0
+  logging: ^1.2.0
   dio: ^5.7.0
   dart_jsonwebtoken: ^3.0.0
   persistence:

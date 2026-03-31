@@ -52,10 +52,7 @@ void main() {
       });
 
       test('returns false when token has plenty of time left', () {
-        expect(
-          validToken.expiresWithin(const Duration(seconds: 30)),
-          isFalse,
-        );
+        expect(validToken.expiresWithin(const Duration(seconds: 30)), isFalse);
       });
 
       test('accepts injectable now for deterministic testing', () {
@@ -65,16 +62,19 @@ void main() {
         );
         final now = DateTime(2030, 1, 1, 0, 0, 40); // 00:00:40 → 20s left
 
-        expect(token.expiresWithin(const Duration(seconds: 30), now: now), isTrue);
-        expect(token.expiresWithin(const Duration(seconds: 10), now: now), isFalse);
+        expect(
+          token.expiresWithin(const Duration(seconds: 30), now: now),
+          isTrue,
+        );
+        expect(
+          token.expiresWithin(const Duration(seconds: 10), now: now),
+          isFalse,
+        );
       });
     });
 
     test('refreshToken can be null (web Split-Token)', () {
-      final webToken = AuthToken(
-        accessToken: 'access',
-        expiresAt: futureDate,
-      );
+      final webToken = AuthToken(accessToken: 'access', expiresAt: futureDate);
       expect(webToken.refreshToken, isNull);
       expect(webToken.isExpired(), isFalse);
     });

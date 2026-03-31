@@ -4,15 +4,25 @@ import '../kernel/ids.dart';
 import 'assessment_vos.dart'; // To get SocialBenefit
 
 final class WorkIncomeVO with Equatable {
-  const WorkIncomeVO._({required this.memberId, required this.occupationId, required this.hasWorkCard, required this.monthlyAmount});
-  
+  const WorkIncomeVO._({
+    required this.memberId,
+    required this.occupationId,
+    required this.hasWorkCard,
+    required this.monthlyAmount,
+  });
+
   final PersonId memberId;
   final LookupId occupationId;
   final bool hasWorkCard;
   final double monthlyAmount;
 
   @override
-  List<Object?> get props => [memberId, occupationId, hasWorkCard, monthlyAmount];
+  List<Object?> get props => [
+    memberId,
+    occupationId,
+    hasWorkCard,
+    monthlyAmount,
+  ];
 
   static Result<WorkIncomeVO> create({
     required PersonId memberId,
@@ -22,10 +32,27 @@ final class WorkIncomeVO with Equatable {
   }) {
     if (monthlyAmount < 0) {
       return Failure(
-        AppError(code: 'WI-001', message: 'Renda mensal não pode ser negativa', module: 'social-care/work-income', kind: 'domainValidation', http: 422, observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning))
+        AppError(
+          code: 'WI-001',
+          message: 'Renda mensal não pode ser negativa',
+          module: 'social-care/work-income',
+          kind: 'domainValidation',
+          http: 422,
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.warning,
+          ),
+        ),
       );
     }
-    return Success(WorkIncomeVO._(memberId: memberId, occupationId: occupationId, hasWorkCard: hasWorkCard, monthlyAmount: monthlyAmount));
+    return Success(
+      WorkIncomeVO._(
+        memberId: memberId,
+        occupationId: occupationId,
+        hasWorkCard: hasWorkCard,
+        monthlyAmount: monthlyAmount,
+      ),
+    );
   }
 }
 
@@ -43,5 +70,10 @@ final class WorkAndIncome with Equatable {
   final bool hasRetiredMembers;
 
   @override
-  List<Object?> get props => [familyId, individualIncomes, socialBenefits, hasRetiredMembers];
+  List<Object?> get props => [
+    familyId,
+    individualIncomes,
+    socialBenefits,
+    hasRetiredMembers,
+  ];
 }

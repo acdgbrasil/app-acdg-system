@@ -14,7 +14,7 @@ class CachedPatient {
 
   late String firstName;
   late String lastName;
-  
+
   @Index()
   late String cpf;
 

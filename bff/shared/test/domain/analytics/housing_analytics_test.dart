@@ -12,8 +12,20 @@ void main() {
     });
 
     test('Deve identificar superlotação corretamente', () {
-      expect(HousingAnalyticsService.isOvercrowded(totalFamilyMembers: 7, numberOfBedrooms: 2), isTrue);
-      expect(HousingAnalyticsService.isOvercrowded(totalFamilyMembers: 6, numberOfBedrooms: 2), isFalse);
+      expect(
+        HousingAnalyticsService.isOvercrowded(
+          totalFamilyMembers: 7,
+          numberOfBedrooms: 2,
+        ),
+        isTrue,
+      );
+      expect(
+        HousingAnalyticsService.isOvercrowded(
+          totalFamilyMembers: 6,
+          numberOfBedrooms: 2,
+        ),
+        isFalse,
+      );
     });
   });
 }

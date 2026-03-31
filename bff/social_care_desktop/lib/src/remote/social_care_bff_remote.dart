@@ -1,23 +1,42 @@
-import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
+
+/// Callback that returns a fresh access token on every call.
+typedef TokenProvider = String? Function();
 
 /// Implementation of [SocialCareContract] that communicates with the real Backend API.
 class SocialCareBffRemote implements SocialCareContract {
   SocialCareBffRemote({
     required String baseUrl,
-    required String authToken,
     required String actorId,
+    TokenProvider? tokenProvider,
+    String? authToken,
     Dio? dio,
-  }) : _dio = dio ?? Dio(BaseOptions(
-          baseUrl: baseUrl,
-          headers: {
-            'Authorization': 'Bearer $authToken',
-            'X-Actor-Id': actorId,
-            'Content-Type': 'application/json',
-          },
-        ));
+  }) : _dio = dio ??
+           Dio(
+             BaseOptions(
+               baseUrl: baseUrl,
+               headers: {
+                 'X-Actor-Id': actorId,
+                 'Content-Type': 'application/json',
+               },
+             ),
+           ) {
+    // Interceptor that injects a fresh token on every request
+    final effectiveProvider = tokenProvider ?? () => authToken;
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = effectiveProvider();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+  }
 
   final Dio _dio;
 
@@ -36,6 +55,25 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       await _dio.get('/ready');
       return const Success(null);
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<List<Map<String, dynamic>>>> listPatients() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/patients',
+        queryParameters: {'limit': 100},
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data!['data'] as List<dynamic>;
+        return Success(data.cast<Map<String, dynamic>>());
+      }
+      return Failure(response.data ?? 'Failed to list patients');
     } catch (e) {
       return Failure(e);
     }
@@ -98,7 +136,11 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member, LookupId prRelationshipId) async {
+  Future<Result<void>> addFamilyMember(
+    PatientId patientId,
+    FamilyMember member,
+    LookupId prRelationshipId,
+  ) async {
     try {
       final payload = {
         ...PatientMapper.familyMemberToJson(member),
@@ -111,7 +153,9 @@ class SocialCareBffRemote implements SocialCareContract {
         options: Options(validateStatus: (status) => true),
       );
 
-      if (response.statusCode == 204 || response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 204 ||
+          response.statusCode == 201 ||
+          response.statusCode == 200) {
         return const Success(null);
       }
       return Failure(response.data ?? 'Failed to add family member');
@@ -121,7 +165,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId) async {
+  Future<Result<void>> removeFamilyMember(
+    PatientId patientId,
+    PersonId memberId,
+  ) async {
     try {
       final response = await _dio.delete(
         '/api/v1/patients/${patientId.value}/family-members/${memberId.value}',
@@ -138,7 +185,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId) async {
+  Future<Result<void>> assignPrimaryCaregiver(
+    PatientId patientId,
+    PersonId memberId,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/primary-caregiver',
@@ -156,7 +206,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async {
+  Future<Result<void>> updateSocialIdentity(
+    PatientId patientId,
+    SocialIdentity identity,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/social-identity',
@@ -174,7 +227,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<List<AuditEvent>>> getAuditTrail(PatientId patientId, {String? eventType}) async {
+  Future<Result<List<AuditEvent>>> getAuditTrail(
+    PatientId patientId, {
+    String? eventType,
+  }) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/audit-trail',
@@ -205,7 +261,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateHousingCondition(PatientId patientId, HousingCondition condition) async {
+  Future<Result<void>> updateHousingCondition(
+    PatientId patientId,
+    HousingCondition condition,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/housing-condition',
@@ -223,7 +282,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateSocioEconomicSituation(PatientId patientId, SocioEconomicSituation situation) async {
+  Future<Result<void>> updateSocioEconomicSituation(
+    PatientId patientId,
+    SocioEconomicSituation situation,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/socioeconomic-situation',
@@ -234,14 +296,19 @@ class SocialCareBffRemote implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update socio-economic situation');
+      return Failure(
+        response.data ?? 'Failed to update socio-economic situation',
+      );
     } catch (e) {
       return Failure(e);
     }
   }
 
   @override
-  Future<Result<void>> updateWorkAndIncome(PatientId patientId, WorkAndIncome data) async {
+  Future<Result<void>> updateWorkAndIncome(
+    PatientId patientId,
+    WorkAndIncome data,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/work-and-income',
@@ -259,7 +326,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateEducationalStatus(PatientId patientId, EducationalStatus status) async {
+  Future<Result<void>> updateEducationalStatus(
+    PatientId patientId,
+    EducationalStatus status,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/educational-status',
@@ -277,7 +347,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateHealthStatus(PatientId patientId, HealthStatus status) async {
+  Future<Result<void>> updateHealthStatus(
+    PatientId patientId,
+    HealthStatus status,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/health-status',
@@ -295,7 +368,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateCommunitySupportNetwork(PatientId patientId, CommunitySupportNetwork network) async {
+  Future<Result<void>> updateCommunitySupportNetwork(
+    PatientId patientId,
+    CommunitySupportNetwork network,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/community-support-network',
@@ -306,14 +382,19 @@ class SocialCareBffRemote implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update community support network');
+      return Failure(
+        response.data ?? 'Failed to update community support network',
+      );
     } catch (e) {
       return Failure(e);
     }
   }
 
   @override
-  Future<Result<void>> updateSocialHealthSummary(PatientId patientId, SocialHealthSummary summary) async {
+  Future<Result<void>> updateSocialHealthSummary(
+    PatientId patientId,
+    SocialHealthSummary summary,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/social-health-summary',
@@ -331,7 +412,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<AppointmentId>> registerAppointment(PatientId patientId, SocialCareAppointment appointment) async {
+  Future<Result<AppointmentId>> registerAppointment(
+    PatientId patientId,
+    SocialCareAppointment appointment,
+  ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/appointments',
@@ -350,7 +434,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info) async {
+  Future<Result<void>> updateIntakeInfo(
+    PatientId patientId,
+    IngressInfo info,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/intake-info',
@@ -368,7 +455,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> updatePlacementHistory(PatientId patientId, PlacementHistory history) async {
+  Future<Result<void>> updatePlacementHistory(
+    PatientId patientId,
+    PlacementHistory history,
+  ) async {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/placement-history',
@@ -386,7 +476,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<ViolationReportId>> reportViolation(PatientId patientId, RightsViolationReport report) async {
+  Future<Result<ViolationReportId>> reportViolation(
+    PatientId patientId,
+    RightsViolationReport report,
+  ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/violation-reports',
@@ -405,7 +498,10 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<ReferralId>> createReferral(PatientId patientId, Referral referral) async {
+  Future<Result<ReferralId>> createReferral(
+    PatientId patientId,
+    Referral referral,
+  ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/referrals',
@@ -432,11 +528,17 @@ class SocialCareBffRemote implements SocialCareContract {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data!['data'];
-        return Success(data.map((item) => LookupItem(
-          id: item['id'] as String,
-          codigo: item['codigo'] as String,
-          descricao: item['descricao'] as String,
-        )).toList());
+        return Success(
+          data
+              .map(
+                (item) => LookupItem(
+                  id: item['id'] as String,
+                  codigo: item['codigo'] as String,
+                  descricao: item['descricao'] as String,
+                ),
+              )
+              .toList(),
+        );
       }
       return Failure('Lookup table $tableName not found');
     } catch (e) {

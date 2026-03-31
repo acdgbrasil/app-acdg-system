@@ -28,15 +28,30 @@ final class Nis with Equatable {
     }
 
     if (digits.length != 11) {
-      return Failure(_buildError('NIS-002', "O NIS '${rawValue.normalizedTrim()}' possui ${digits.length} dígitos. Esperado: 11."));
+      return Failure(
+        _buildError(
+          'NIS-002',
+          "O NIS '${rawValue.normalizedTrim()}' possui ${digits.length} dígitos. Esperado: 11.",
+        ),
+      );
     }
 
     if (RegExp(r'^(.)\1*$').hasMatch(digits)) {
-      return Failure(_buildError('NIS-002', "O NIS '${rawValue.normalizedTrim()}' é inválido."));
+      return Failure(
+        _buildError(
+          'NIS-002',
+          "O NIS '${rawValue.normalizedTrim()}' é inválido.",
+        ),
+      );
     }
 
     if (!_isValidMod11(digits)) {
-      return Failure(_buildError('NIS-002', "O NIS '${rawValue.normalizedTrim()}' é inválido."));
+      return Failure(
+        _buildError(
+          'NIS-002',
+          "O NIS '${rawValue.normalizedTrim()}' é inválido.",
+        ),
+      );
     }
 
     return Success(Nis._(digits));
@@ -45,15 +60,15 @@ final class Nis with Equatable {
   static bool _isValidMod11(String digits) {
     final numbers = digits.split('').map(int.parse).toList();
     final weights = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-    
+
     int sum = 0;
     for (int i = 0; i < 10; i++) {
       sum += numbers[i] * weights[i];
     }
-    
+
     int rem = sum % 11;
     int digit = (rem < 2) ? 0 : 11 - rem;
-    
+
     return numbers[10] == digit;
   }
 

@@ -85,7 +85,10 @@ void main() {
       });
 
       test('toString is descriptive', () {
-        expect(const Failure<int>('oops').toString(), 'Failure<int>(oops, null)');
+        expect(
+          const Failure<int>('oops').toString(),
+          'Failure<int>(oops, null)',
+        );
       });
     });
 

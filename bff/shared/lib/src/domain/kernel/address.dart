@@ -31,21 +31,45 @@ final class Address with Equatable {
 
   @override
   List<Object?> get props => [
-        cep,
-        state,
-        city,
-        street,
-        neighborhood,
-        number,
-        complement,
-        residenceLocation,
-        isShelter,
-      ];
+    cep,
+    state,
+    city,
+    street,
+    neighborhood,
+    number,
+    complement,
+    residenceLocation,
+    isShelter,
+  ];
 
   static const _validStates = {
-    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", 
-    "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", 
-    "SP", "SE", "TO"
+    "AC",
+    "AL",
+    "AP",
+    "AM",
+    "BA",
+    "CE",
+    "DF",
+    "ES",
+    "GO",
+    "MA",
+    "MT",
+    "MS",
+    "MG",
+    "PA",
+    "PB",
+    "PR",
+    "PE",
+    "PI",
+    "RJ",
+    "RN",
+    "RS",
+    "RO",
+    "RR",
+    "SC",
+    "SP",
+    "SE",
+    "TO",
   };
 
   static Result<Address> create({
@@ -72,17 +96,19 @@ final class Address with Equatable {
       return Failure(_buildError('ADR-004', 'Cidade é obrigatória.'));
     }
 
-    return Success(Address._(
-      cep: cep,
-      state: st,
-      city: ct,
-      street: street?.nullIfEmptyNormalized(),
-      neighborhood: neighborhood?.nullIfEmptyNormalized(),
-      number: number?.nullIfEmptyNormalized(),
-      complement: complement?.nullIfEmptyNormalized(),
-      residenceLocation: residenceLocation,
-      isShelter: isShelter,
-    ));
+    return Success(
+      Address._(
+        cep: cep,
+        state: st,
+        city: ct,
+        street: street?.nullIfEmptyNormalized(),
+        neighborhood: neighborhood?.nullIfEmptyNormalized(),
+        number: number?.nullIfEmptyNormalized(),
+        complement: complement?.nullIfEmptyNormalized(),
+        residenceLocation: residenceLocation,
+        isShelter: isShelter,
+      ),
+    );
   }
 
   Address copyWith({

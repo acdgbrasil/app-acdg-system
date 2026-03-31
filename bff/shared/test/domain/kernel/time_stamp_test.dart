@@ -45,14 +45,20 @@ void main() {
 
     test('yearsAt calcula idade corretamente considerando meses/dias', () {
       final birth = TimeStamp.fromIso('2000-05-15T00:00:00.000Z').valueOrNull!;
-      
-      final beforeBirthday = TimeStamp.fromIso('2020-05-14T00:00:00.000Z').valueOrNull!;
+
+      final beforeBirthday = TimeStamp.fromIso(
+        '2020-05-14T00:00:00.000Z',
+      ).valueOrNull!;
       expect(birth.yearsAt(referenceDate: beforeBirthday), 19);
 
-      final onBirthday = TimeStamp.fromIso('2020-05-15T00:00:00.000Z').valueOrNull!;
+      final onBirthday = TimeStamp.fromIso(
+        '2020-05-15T00:00:00.000Z',
+      ).valueOrNull!;
       expect(birth.yearsAt(referenceDate: onBirthday), 20);
 
-      final afterBirthday = TimeStamp.fromIso('2020-06-10T00:00:00.000Z').valueOrNull!;
+      final afterBirthday = TimeStamp.fromIso(
+        '2020-06-10T00:00:00.000Z',
+      ).valueOrNull!;
       expect(birth.yearsAt(referenceDate: afterBirthday), 20);
     });
 

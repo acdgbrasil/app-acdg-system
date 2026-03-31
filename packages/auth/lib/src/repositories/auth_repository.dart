@@ -29,6 +29,9 @@ abstract class AuthRepository extends Listenable {
   /// Attempts to restore a previous session.
   Future<Result<void>> tryRestoreSession();
 
+  /// Initializes the underlying auth service.
+  Future<void> init();
+
   /// Disposes of the repository.
   void dispose();
 }
@@ -44,6 +47,9 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
 
   final AuthService _authService;
   late final StreamSubscription<AuthStatus> _statusSubscription;
+
+  @override
+  Future<void> init() => _authService.init();
 
   @override
   Stream<AuthStatus> get statusStream => _authService.statusStream;

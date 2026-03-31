@@ -39,15 +39,17 @@ final class FamilyMember with Equatable {
     final docs = requiredDocuments.toSet().toList();
     docs.sort((a, b) => a.value.compareTo(b.value));
 
-    return Success(FamilyMember._(
-      personId: personId,
-      relationshipId: relationshipId,
-      isPrimaryCaregiver: isPrimaryCaregiver,
-      residesWithPatient: residesWithPatient,
-      hasDisability: hasDisability,
-      requiredDocuments: List.unmodifiable(docs),
-      birthDate: birthDate,
-    ));
+    return Success(
+      FamilyMember._(
+        personId: personId,
+        relationshipId: relationshipId,
+        isPrimaryCaregiver: isPrimaryCaregiver,
+        residesWithPatient: residesWithPatient,
+        hasDisability: hasDisability,
+        requiredDocuments: List.unmodifiable(docs),
+        birthDate: birthDate,
+      ),
+    );
   }
 
   /// Reconstitui um membro familiar a partir da persistência sem validações.
