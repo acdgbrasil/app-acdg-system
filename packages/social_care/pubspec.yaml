@@ -13,8 +13,13 @@ dependencies:
     sdk: flutter
   core:
     path: ../core
+  design_system:
+    path: ../design_system
   shared:
     path: ../../bff/shared
+  go_router: ^17.1.0
+  provider: ^6.1.5
+  zard: ^0.0.26
 
 dev_dependencies:
   flutter_test:
