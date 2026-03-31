@@ -67,5 +67,6 @@ final class AuthToken with Equatable {
 
   /// Custom toString to avoid exposing token values in logs.
   @override
-  String toString() => 'AuthToken(expiresAt: $expiresAt, expired: ${isExpired()})';
+  String toString() =>
+      'AuthToken(expiresAt: $expiresAt, expired: ${isExpired()})';
 }

@@ -31,8 +31,8 @@ final class OidcAuthConfig {
 
   /// Discovery document URI derived from [issuer].
   Uri get discoveryDocumentUri => Uri.parse(
-        '${issuer.toString().replaceAll(RegExp(r'/$'), '')}/.well-known/openid-configuration',
-      );
+    '${issuer.toString().replaceAll(RegExp(r'/$'), '')}/.well-known/openid-configuration',
+  );
 
   /// Default scopes for ACDG Zitadel.
   static const defaultScopes = [
