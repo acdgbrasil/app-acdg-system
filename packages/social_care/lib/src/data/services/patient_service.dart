@@ -12,4 +12,8 @@ class PatientService {
   Future<Result<List<Map<String, dynamic>>>> listPatients() {
     return _bff.listPatients();
   }
+
+  Future<Result<Patient>> getPatient(PatientId id) {
+    return _bff.getPatient(id);
+  }
 }
