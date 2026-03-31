@@ -61,7 +61,9 @@ final class Cpf with Equatable {
 
     final trimmed = rawValue.normalizedTrim();
     if (!RegExp(r'^[\d\.\-\s]+$').hasMatch(trimmed)) {
-      return Failure(_buildError('CPF-005', "O CPF '$trimmed' contém caracteres inválidos."));
+      return Failure(
+        _buildError('CPF-005', "O CPF '$trimmed' contém caracteres inválidos."),
+      );
     }
 
     final digits = trimmed.replaceAll(RegExp(r'\D'), '');
@@ -71,15 +73,31 @@ final class Cpf with Equatable {
     }
 
     if (digits.length != 11) {
-      return Failure(_buildError('CPF-002', "O CPF '$trimmed' possui ${digits.length} dígitos. Esperado: 11."));
+      return Failure(
+        _buildError(
+          'CPF-002',
+          "O CPF '$trimmed' possui ${digits.length} dígitos. Esperado: 11.",
+        ),
+      );
     }
 
     if (RegExp(r'^(.)\1*$').hasMatch(digits)) {
-      return Failure(_buildError('CPF-003', "O CPF '$trimmed' possui todos os dígitos iguais."));
+      return Failure(
+        _buildError(
+          'CPF-003',
+          "O CPF '$trimmed' possui todos os dígitos iguais.",
+        ),
+      );
     }
 
     if (!_isValidMod11(digits)) {
-      return Failure(_buildError('CPF-004', "O CPF '$trimmed' possui dígitos verificadores inválidos.", severity: ErrorSeverity.error));
+      return Failure(
+        _buildError(
+          'CPF-004',
+          "O CPF '$trimmed' possui dígitos verificadores inválidos.",
+          severity: ErrorSeverity.error,
+        ),
+      );
     }
 
     return Success(Cpf._(digits));
@@ -87,7 +105,7 @@ final class Cpf with Equatable {
 
   static bool _isValidMod11(String digits) {
     final numbers = digits.split('').map(int.parse).toList();
-    
+
     int sum1 = 0;
     for (int i = 0; i < 9; i++) {
       sum1 += numbers[i] * (10 - i);
@@ -107,7 +125,11 @@ final class Cpf with Equatable {
     return true;
   }
 
-  static AppError _buildError(String code, String message, {ErrorSeverity severity = ErrorSeverity.warning}) {
+  static AppError _buildError(
+    String code,
+    String message, {
+    ErrorSeverity severity = ErrorSeverity.warning,
+  }) {
     return AppError(
       code: code,
       message: message,

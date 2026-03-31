@@ -15,7 +15,12 @@ final class MemberDeficiency with Equatable {
   final String? responsibleCaregiverName;
 
   @override
-  List<Object?> get props => [memberId, deficiencyTypeId, needsConstantCare, responsibleCaregiverName];
+  List<Object?> get props => [
+    memberId,
+    deficiencyTypeId,
+    needsConstantCare,
+    responsibleCaregiverName,
+  ];
 }
 
 final class PregnantMember with Equatable {
@@ -49,5 +54,11 @@ final class HealthStatus with Equatable {
   final bool foodInsecurity;
 
   @override
-  List<Object?> get props => [familyId, deficiencies, gestatingMembers, constantCareNeeds, foodInsecurity];
+  List<Object?> get props => [
+    familyId,
+    deficiencies,
+    gestatingMembers,
+    constantCareNeeds,
+    foodInsecurity,
+  ];
 }

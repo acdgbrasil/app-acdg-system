@@ -14,7 +14,9 @@ final class TimeStamp with Equatable implements Comparable<TimeStamp> {
   /// Tenta criar a partir de um [DateTime]. Se nulo, retorna erro `TS-001`.
   static Result<TimeStamp> fromDate(DateTime? date) {
     if (date == null) {
-      return Failure(_buildError('TS-001', 'Data/hora não pode ser nula', 'invalidDate'));
+      return Failure(
+        _buildError('TS-001', 'Data/hora não pode ser nula', 'invalidDate'),
+      );
     }
     return Success(TimeStamp._(date.toUtc()));
   }
@@ -25,22 +27,30 @@ final class TimeStamp with Equatable implements Comparable<TimeStamp> {
       final parsed = DateTime.parse(iso).toUtc();
       return Success(TimeStamp._(parsed));
     } catch (_) {
-      return Failure(_buildError('TS-001', 'Formato de data inválido. Esperado ISO8601.', 'invalidDate', context: {'value': iso}));
+      return Failure(
+        _buildError(
+          'TS-001',
+          'Formato de data inválido. Esperado ISO8601.',
+          'invalidDate',
+          context: {'value': iso},
+        ),
+      );
     }
   }
 
   /// Compara o dia civil em UTC (ignora horas).
   bool isSameDay(TimeStamp other) {
     return date.year == other.date.year &&
-           date.month == other.date.month &&
-           date.day == other.date.day;
+        date.month == other.date.month &&
+        date.day == other.date.day;
   }
 
   /// Calcula a idade em anos completos na [referenceDate].
   int yearsAt({TimeStamp? referenceDate}) {
     final ref = referenceDate ?? TimeStamp.now;
     var age = ref.date.year - date.year;
-    if (ref.date.month < date.month || (ref.date.month == date.month && ref.date.day < date.day)) {
+    if (ref.date.month < date.month ||
+        (ref.date.month == date.month && ref.date.day < date.day)) {
       age--;
     }
     return age;
@@ -64,7 +74,12 @@ final class TimeStamp with Equatable implements Comparable<TimeStamp> {
   int get minute => date.minute;
   int get second => date.second;
 
-  static AppError _buildError(String code, String message, String kind, {Map<String, dynamic> context = const {}}) {
+  static AppError _buildError(
+    String code,
+    String message,
+    String kind, {
+    Map<String, dynamic> context = const {},
+  }) {
     return AppError(
       code: code,
       message: message,

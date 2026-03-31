@@ -15,7 +15,7 @@ import '../domain/registry/registry_vos.dart';
 import '../domain/protection/protection_vos.dart';
 
 /// Main Backend For Frontend (BFF) contract for the Social Care module.
-/// 
+///
 /// All implementations (Web/Desktop) must adhere to this interface,
 /// ensuring the application logic layer remains platform agnostic.
 abstract interface class SocialCareContract {
@@ -33,6 +33,9 @@ abstract interface class SocialCareContract {
   // REGISTRY (Patients & Family)
   // ==========================================
 
+  /// Lists all patients (lightweight summary for offline cache sync).
+  Future<Result<List<Map<String, dynamic>>>> listPatients();
+
   /// Registers a new patient. Returns the generated [PatientId].
   Future<Result<PatientId>> registerPatient(Patient patient);
 
@@ -43,51 +46,91 @@ abstract interface class SocialCareContract {
   Future<Result<Patient>> getPatientByPersonId(PersonId personId);
 
   /// Adds a new family member to a patient's record.
-  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member, LookupId prRelationshipId);
+  Future<Result<void>> addFamilyMember(
+    PatientId patientId,
+    FamilyMember member,
+    LookupId prRelationshipId,
+  );
 
   /// Removes a family member from a patient's record.
-  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId);
+  Future<Result<void>> removeFamilyMember(
+    PatientId patientId,
+    PersonId memberId,
+  );
 
   /// Assigns a primary caregiver for the patient.
-  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId);
+  Future<Result<void>> assignPrimaryCaregiver(
+    PatientId patientId,
+    PersonId memberId,
+  );
 
   /// Updates the social identity of a patient.
-  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity);
+  Future<Result<void>> updateSocialIdentity(
+    PatientId patientId,
+    SocialIdentity identity,
+  );
 
   /// Retrieves the audit trail for a specific patient.
-  Future<Result<List<AuditEvent>>> getAuditTrail(PatientId patientId, {String? eventType});
+  Future<Result<List<AuditEvent>>> getAuditTrail(
+    PatientId patientId, {
+    String? eventType,
+  });
 
   // ==========================================
   // ASSESSMENT (Evaluations)
   // ==========================================
 
   /// Updates housing condition assessment.
-  Future<Result<void>> updateHousingCondition(PatientId patientId, HousingCondition condition);
+  Future<Result<void>> updateHousingCondition(
+    PatientId patientId,
+    HousingCondition condition,
+  );
 
   /// Updates socioeconomic situation assessment.
-  Future<Result<void>> updateSocioEconomicSituation(PatientId patientId, SocioEconomicSituation situation);
+  Future<Result<void>> updateSocioEconomicSituation(
+    PatientId patientId,
+    SocioEconomicSituation situation,
+  );
 
   /// Updates work and income assessment.
-  Future<Result<void>> updateWorkAndIncome(PatientId patientId, WorkAndIncome data);
+  Future<Result<void>> updateWorkAndIncome(
+    PatientId patientId,
+    WorkAndIncome data,
+  );
 
   /// Updates educational status assessment.
-  Future<Result<void>> updateEducationalStatus(PatientId patientId, EducationalStatus status);
+  Future<Result<void>> updateEducationalStatus(
+    PatientId patientId,
+    EducationalStatus status,
+  );
 
   /// Updates health status assessment.
-  Future<Result<void>> updateHealthStatus(PatientId patientId, HealthStatus status);
+  Future<Result<void>> updateHealthStatus(
+    PatientId patientId,
+    HealthStatus status,
+  );
 
   /// Updates community support network assessment.
-  Future<Result<void>> updateCommunitySupportNetwork(PatientId patientId, CommunitySupportNetwork network);
+  Future<Result<void>> updateCommunitySupportNetwork(
+    PatientId patientId,
+    CommunitySupportNetwork network,
+  );
 
   /// Updates social health summary assessment.
-  Future<Result<void>> updateSocialHealthSummary(PatientId patientId, SocialHealthSummary summary);
+  Future<Result<void>> updateSocialHealthSummary(
+    PatientId patientId,
+    SocialHealthSummary summary,
+  );
 
   // ==========================================
   // CARE (Appointments & Intake)
   // ==========================================
 
   /// Registers a new social care appointment. Returns the generated [AppointmentId].
-  Future<Result<AppointmentId>> registerAppointment(PatientId patientId, SocialCareAppointment appointment);
+  Future<Result<AppointmentId>> registerAppointment(
+    PatientId patientId,
+    SocialCareAppointment appointment,
+  );
 
   /// Updates the intake (acolhimento) information.
   Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info);
@@ -97,13 +140,22 @@ abstract interface class SocialCareContract {
   // ==========================================
 
   /// Updates the institutional placement history.
-  Future<Result<void>> updatePlacementHistory(PatientId patientId, PlacementHistory history);
+  Future<Result<void>> updatePlacementHistory(
+    PatientId patientId,
+    PlacementHistory history,
+  );
 
   /// Reports a new rights violation. Returns the generated [ViolationReportId].
-  Future<Result<ViolationReportId>> reportViolation(PatientId patientId, RightsViolationReport report);
+  Future<Result<ViolationReportId>> reportViolation(
+    PatientId patientId,
+    RightsViolationReport report,
+  );
 
   /// Creates a new referral. Returns the generated [ReferralId].
-  Future<Result<ReferralId>> createReferral(PatientId patientId, Referral referral);
+  Future<Result<ReferralId>> createReferral(
+    PatientId patientId,
+    Referral referral,
+  );
 
   // ==========================================
   // LOOKUP (Domain Tables)

@@ -16,7 +16,12 @@ final class MemberEducationalProfile with Equatable {
   final LookupId educationLevelId;
 
   @override
-  List<Object?> get props => [memberId, canReadWrite, attendsSchool, educationLevelId];
+  List<Object?> get props => [
+    memberId,
+    canReadWrite,
+    attendsSchool,
+    educationLevelId,
+  ];
 }
 
 final class ProgramOccurrence with Equatable {

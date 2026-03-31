@@ -1,5 +1,4 @@
 import 'package:core/core.dart';
-import '../kernel/ids.dart';
 import '../kernel/time_stamp.dart';
 
 /// Representa um evento de auditoria no histórico do paciente.
