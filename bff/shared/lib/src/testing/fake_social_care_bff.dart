@@ -29,6 +29,20 @@ class FakeSocialCareBff implements SocialCareContract {
   Future<Result<void>> checkReady() async => const Success(null);
 
   @override
+  Future<Result<List<Map<String, dynamic>>>> listPatients() async {
+    await Future.delayed(delay);
+    return Success(_patients.values.map((p) => {
+      'patientId': p.id.value,
+      'personId': p.personId.value,
+      'firstName': p.personalData?.firstName,
+      'lastName': p.personalData?.lastName,
+      'fullName': '${p.personalData?.firstName ?? ''} ${p.personalData?.lastName ?? ''}'.trim(),
+      'primaryDiagnosis': p.diagnoses.isNotEmpty ? p.diagnoses.first.description : null,
+      'memberCount': p.familyMembers.length,
+    }).toList());
+  }
+
+  @override
   Future<Result<PatientId>> registerPatient(Patient patient) async {
     await Future.delayed(delay);
     _patients[patient.id.value] = patient;
@@ -54,55 +68,107 @@ class FakeSocialCareBff implements SocialCareContract {
   }
 
   @override
-  Future<Result<void>> addFamilyMember(PatientId patientId, FamilyMember member, LookupId prRelationshipId) async => const Success(null);
+  Future<Result<void>> addFamilyMember(
+    PatientId patientId,
+    FamilyMember member,
+    LookupId prRelationshipId,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> removeFamilyMember(PatientId patientId, PersonId memberId) async => const Success(null);
+  Future<Result<void>> removeFamilyMember(
+    PatientId patientId,
+    PersonId memberId,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> assignPrimaryCaregiver(PatientId patientId, PersonId memberId) async => const Success(null);
+  Future<Result<void>> assignPrimaryCaregiver(
+    PatientId patientId,
+    PersonId memberId,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateSocialIdentity(PatientId patientId, SocialIdentity identity) async => const Success(null);
+  Future<Result<void>> updateSocialIdentity(
+    PatientId patientId,
+    SocialIdentity identity,
+  ) async => const Success(null);
 
   @override
-  Future<Result<List<AuditEvent>>> getAuditTrail(PatientId patientId, {String? eventType}) async => const Success([]);
+  Future<Result<List<AuditEvent>>> getAuditTrail(
+    PatientId patientId, {
+    String? eventType,
+  }) async => const Success([]);
 
   @override
-  Future<Result<void>> updateHousingCondition(PatientId patientId, HousingCondition condition) async => const Success(null);
+  Future<Result<void>> updateHousingCondition(
+    PatientId patientId,
+    HousingCondition condition,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateSocioEconomicSituation(PatientId patientId, SocioEconomicSituation situation) async => const Success(null);
+  Future<Result<void>> updateSocioEconomicSituation(
+    PatientId patientId,
+    SocioEconomicSituation situation,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateWorkAndIncome(PatientId patientId, WorkAndIncome data) async => const Success(null);
+  Future<Result<void>> updateWorkAndIncome(
+    PatientId patientId,
+    WorkAndIncome data,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateEducationalStatus(PatientId patientId, EducationalStatus status) async => const Success(null);
+  Future<Result<void>> updateEducationalStatus(
+    PatientId patientId,
+    EducationalStatus status,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateHealthStatus(PatientId patientId, HealthStatus status) async => const Success(null);
+  Future<Result<void>> updateHealthStatus(
+    PatientId patientId,
+    HealthStatus status,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateCommunitySupportNetwork(PatientId patientId, CommunitySupportNetwork network) async => const Success(null);
+  Future<Result<void>> updateCommunitySupportNetwork(
+    PatientId patientId,
+    CommunitySupportNetwork network,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updateSocialHealthSummary(PatientId patientId, SocialHealthSummary summary) async => const Success(null);
+  Future<Result<void>> updateSocialHealthSummary(
+    PatientId patientId,
+    SocialHealthSummary summary,
+  ) async => const Success(null);
 
   @override
-  Future<Result<AppointmentId>> registerAppointment(PatientId patientId, SocialCareAppointment appointment) async => Success(appointment.id);
+  Future<Result<AppointmentId>> registerAppointment(
+    PatientId patientId,
+    SocialCareAppointment appointment,
+  ) async => Success(appointment.id);
 
   @override
-  Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info) async => const Success(null);
+  Future<Result<void>> updateIntakeInfo(
+    PatientId patientId,
+    IngressInfo info,
+  ) async => const Success(null);
 
   @override
-  Future<Result<void>> updatePlacementHistory(PatientId patientId, PlacementHistory history) async => const Success(null);
+  Future<Result<void>> updatePlacementHistory(
+    PatientId patientId,
+    PlacementHistory history,
+  ) async => const Success(null);
 
   @override
-  Future<Result<ViolationReportId>> reportViolation(PatientId patientId, RightsViolationReport report) async => Success(report.id);
+  Future<Result<ViolationReportId>> reportViolation(
+    PatientId patientId,
+    RightsViolationReport report,
+  ) async => Success(report.id);
 
   @override
-  Future<Result<ReferralId>> createReferral(PatientId patientId, Referral referral) async => Success(referral.id);
+  Future<Result<ReferralId>> createReferral(
+    PatientId patientId,
+    Referral referral,
+  ) async => Success(referral.id);
 
   @override
   Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {

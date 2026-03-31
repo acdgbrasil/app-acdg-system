@@ -7,9 +7,15 @@ import 'package:test/test.dart';
 
 void main() {
   group('Referral - Máquina de Estado', () {
-    final id = ReferralId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
-    final profId = ProfessionalId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!;
-    final personId = PersonId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!;
+    final id = ReferralId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
+    final profId = ProfessionalId.create(
+      '550e8400-e29b-41d4-a716-446655440001',
+    ).valueOrNull!;
+    final personId = PersonId.create(
+      '550e8400-e29b-41d4-a716-446655440002',
+    ).valueOrNull!;
     final date = TimeStamp.now;
 
     test('Deve transitar de PENDING para COMPLETED', () {
@@ -23,7 +29,7 @@ void main() {
       ).valueOrNull!;
 
       expect(ref.status, ReferralStatus.pending);
-      
+
       final completed = ref.complete().valueOrNull!;
       expect(completed.status, ReferralStatus.completed);
     });
@@ -46,13 +52,21 @@ void main() {
   });
 
   group('RightsViolationReport - Validações', () {
-    final id = ViolationReportId.create('550e8400-e29b-41d4-a716-446655440000').valueOrNull!;
-    final victimId = PersonId.create('550e8400-e29b-41d4-a716-446655440001').valueOrNull!;
-    final reportDate = TimeStamp.fromIso('2025-01-01T00:00:00.000Z').valueOrNull!;
+    final id = ViolationReportId.create(
+      '550e8400-e29b-41d4-a716-446655440000',
+    ).valueOrNull!;
+    final victimId = PersonId.create(
+      '550e8400-e29b-41d4-a716-446655440001',
+    ).valueOrNull!;
+    final reportDate = TimeStamp.fromIso(
+      '2025-01-01T00:00:00.000Z',
+    ).valueOrNull!;
 
     test('Deve rejeitar incidente posterior à notificação (RVR-002)', () {
-      final incidentDate = TimeStamp.fromIso('2025-06-01T00:00:00.000Z').valueOrNull!;
-      
+      final incidentDate = TimeStamp.fromIso(
+        '2025-06-01T00:00:00.000Z',
+      ).valueOrNull!;
+
       final result = RightsViolationReport.create(
         id: id,
         reportDate: reportDate,

@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
-import 'package:network/network.dart';
-import 'package:social_care_desktop/social_care_desktop.dart';
-import 'package:shared/shared.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:network/network.dart';
 
-import 'data/config/oidc_config_factory.dart';
-import 'logic/router/app_router.dart';
-import 'logic/use_cases/auth_use_cases.dart';
-import 'ui/view_models/auth_view_model.dart';
+import 'logic/di/app_providers.dart';
+import 'logic/di/dependency_manager.dart';
+import 'ui/app_view.dart';
+import 'ui/widgets/boot_views.dart';
 
-/// The Root widget of the application.
+enum _BootStatus { loading, ready, error }
+
+/// The entry point of the application after main().
+/// Orchestrates the asynchronous initialization of core infrastructure.
 class Root extends StatefulWidget {
   const Root({
     super.key,
@@ -30,159 +30,54 @@ class Root extends StatefulWidget {
 }
 
 class _RootState extends State<Root> {
-  late final AuthRepository _authRepository;
-  late final IsarService _isarService;
-  late final ConnectivityService _connectivityService;
-  late final SyncQueueService _syncQueueService;
-  late final LocalSocialCareRepository _localSocialCareRepository;
-
-  late final AppRouter _appRouter;
-  late final AuthViewModel _authViewModel;
+  late final AppDependencyManager _deps;
+  _BootStatus _status = _BootStatus.loading;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-
-    _authRepository = widget.authRepository ??
-        AuthRepositoryImpl(
-          authService: OidcAuthService(
-            config: OidcConfigFactory.fromEnvironment(),
-          ),
-        );
-
-    _isarService = widget.isarService ?? IsarService();
-    _connectivityService = widget.connectivityService ?? ConnectivityService();
-    _syncQueueService = SyncQueueService(_isarService);
-    _localSocialCareRepository = LocalSocialCareRepository(
-      isarService: _isarService,
-      queueService: _syncQueueService,
+    _deps = AppDependencyManager(
+      authRepository: widget.authRepository,
+      isarService: widget.isarService,
+      connectivityService: widget.connectivityService,
     );
-
-    final loginUseCase = LoginUseCase(_authRepository);
-    final logoutUseCase = LogoutUseCase(_authRepository);
-    final restoreSessionUseCase = RestoreSessionUseCase(_authRepository);
-
-    _authViewModel = AuthViewModel(
-      authRepository: _authRepository,
-      loginUseCase: loginUseCase,
-      logoutUseCase: logoutUseCase,
-      restoreSessionUseCase: restoreSessionUseCase,
-    );
-
-    _appRouter = AppRouter(authViewModel: _authViewModel);
-
-    _initializeApp();
+    _initialize();
   }
 
-  Future<void> _initializeApp() async {
+  Future<void> _initialize() async {
     try {
-      if (widget.isarService == null) {
-        await _isarService.init();
-      }
-      if (widget.connectivityService == null) {
-        await _connectivityService.initialize();
-      }
-      await _authViewModel.init();
+      await _deps.initialize();
+      if (mounted) setState(() => _status = _BootStatus.ready);
     } catch (e) {
-      debugPrint('Initialization failed: $e');
-      _authViewModel.status.value = AuthError('Falha ao inicializar o sistema: $e');
+      debugPrint('Bootstrap error: $e');
+      if (mounted) {
+        setState(() {
+          _status = _BootStatus.error;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    _authViewModel.dispose();
-    _authRepository.dispose();
-    // Only close if we created it
-    if (widget.isarService == null) _isarService.close();
-    if (widget.connectivityService == null) _connectivityService.dispose();
+    _deps.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ListenableProvider<AuthRepository>.value(value: _authRepository),
-        Provider<IsarService>.value(value: _isarService),
-        Provider<ConnectivityService>.value(value: _connectivityService),
-        Provider<SyncQueueService>.value(value: _syncQueueService),
-        Provider<LocalSocialCareRepository>.value(value: _localSocialCareRepository),
-
-        ProxyProvider<AuthViewModel, SyncEngine?>(
-          update: (context, auth, previous) {
-            final authStatus = auth.status.value;
-            if (authStatus is Authenticated) {
-              final currentToken = auth.authRepository.currentToken;
-              if (currentToken == null) return previous;
-
-              final remote = SocialCareBffRemote(
-                baseUrl: Env.bffBaseUrl,
-                authToken: currentToken.accessToken,
-                actorId: authStatus.user.id,
-              );
-
-              if (previous == null) {
-                final engine = SyncEngine(
-                  queueService: _syncQueueService,
-                  connectivityService: _connectivityService,
-                  remoteBff: remote,
-                );
-                engine.start();
-                return engine;
-              }
-              return previous;
-            }
-            previous?.stop();
-            return null;
-          },
-          dispose: (context, engine) => engine?.stop(),
-        ),
-
-        ProxyProvider2<AuthViewModel, SyncEngine?, SocialCareContract>(
-          update: (context, auth, syncEngine, previous) {
-            final authStatus = auth.status.value;
-            
-            if (authStatus is Authenticated && syncEngine != null) {
-              final currentToken = auth.authRepository.currentToken;
-              if (currentToken == null) return _localSocialCareRepository;
-
-              final remote = SocialCareBffRemote(
-                baseUrl: Env.bffBaseUrl,
-                authToken: currentToken.accessToken,
-                actorId: authStatus.user.id,
-              );
-
-              final repo = OfflineFirstRepository(
-                local: _localSocialCareRepository,
-                remote: remote,
-                connectivity: _connectivityService,
-                syncEngine: syncEngine,
-              );
-
-              unawaited(repo.prefetchLookupTables());
-
-              return repo;
-            }
-
-            return _localSocialCareRepository;
-          },
-        ),
-
-        Provider<LoginUseCase>(create: (context) => LoginUseCase(context.read<AuthRepository>())),
-        Provider<LogoutUseCase>(create: (context) => LogoutUseCase(context.read<AuthRepository>())),
-        Provider<RestoreSessionUseCase>(create: (context) => RestoreSessionUseCase(context.read<AuthRepository>())),
-        ChangeNotifierProvider<AuthViewModel>.value(value: _authViewModel),
-      ],
-      child: MaterialApp.router(
-        title: 'ACDG System',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: const Color(0xFF0477BF),
-        ),
-        routerConfig: _appRouter.router,
+    return switch (_status) {
+      _BootStatus.loading => const LoadingView(),
+      _BootStatus.error => ErrorView(
+        message: _errorMessage ?? 'Erro desconhecido',
+        onRetry: () {
+          setState(() => _status = _BootStatus.loading);
+          _initialize();
+        },
       ),
-    );
+      _BootStatus.ready => AppProviders(deps: _deps, child: const AppView()),
+    };
   }
 }

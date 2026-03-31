@@ -30,9 +30,6 @@ enum AuthRole {
   static Set<AuthRole> fromJwtClaim(Map<String, dynamic>? claim) {
     if (claim == null) return const {};
 
-    return claim.keys
-        .map(fromString)
-        .nonNulls
-        .toSet();
+    return claim.keys.map(fromString).nonNulls.toSet();
   }
 }

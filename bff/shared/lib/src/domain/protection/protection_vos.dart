@@ -9,6 +9,7 @@ import '../kernel/time_stamp.dart';
 // =============================================================================
 
 enum DestinationService { cras, creas, healthCare, education, legal, other }
+
 enum ReferralStatus { pending, completed, cancelled }
 
 final class Referral with Equatable {
@@ -45,7 +46,8 @@ final class Referral with Equatable {
     return Referral._(
       id: id ?? this.id,
       date: date ?? this.date,
-      requestingProfessionalId: requestingProfessionalId ?? this.requestingProfessionalId,
+      requestingProfessionalId:
+          requestingProfessionalId ?? this.requestingProfessionalId,
       referredPersonId: referredPersonId ?? this.referredPersonId,
       destinationService: destinationService ?? this.destinationService,
       reason: reason ?? this.reason,
@@ -65,29 +67,97 @@ final class Referral with Equatable {
   }) {
     final refNow = now ?? TimeStamp.now;
     if (date.date.isAfter(refNow.date)) {
-      return Failure(_buildRefError('REF-001', 'Data do encaminhamento não pode ser no futuro'));
+      return Failure(
+        _buildRefError(
+          'REF-001',
+          'Data do encaminhamento não pode ser no futuro',
+        ),
+      );
     }
 
     final r = reason?.normalizedTrim();
     if (r == null || r.isEmpty) {
-      return Failure(_buildRefError('REF-002', 'Motivo do encaminhamento não pode ser vazio'));
+      return Failure(
+        _buildRefError(
+          'REF-002',
+          'Motivo do encaminhamento não pode ser vazio',
+        ),
+      );
     }
 
-    return Success(Referral._(id: id, date: date, requestingProfessionalId: requestingProfessionalId, referredPersonId: referredPersonId, destinationService: destinationService, reason: r, status: status));
+    return Success(
+      Referral._(
+        id: id,
+        date: date,
+        requestingProfessionalId: requestingProfessionalId,
+        referredPersonId: referredPersonId,
+        destinationService: destinationService,
+        reason: r,
+        status: status,
+      ),
+    );
   }
 
   Result<Referral> complete() {
-    if (status != ReferralStatus.pending) return Failure(_buildRefError('REF-003', 'Transição de status inválida. Só é possível alterar status a partir de PENDING', severity: ErrorSeverity.error));
-    return Success(Referral._(id: id, date: date, requestingProfessionalId: requestingProfessionalId, referredPersonId: referredPersonId, destinationService: destinationService, reason: reason, status: ReferralStatus.completed));
+    if (status != ReferralStatus.pending)
+      return Failure(
+        _buildRefError(
+          'REF-003',
+          'Transição de status inválida. Só é possível alterar status a partir de PENDING',
+          severity: ErrorSeverity.error,
+        ),
+      );
+    return Success(
+      Referral._(
+        id: id,
+        date: date,
+        requestingProfessionalId: requestingProfessionalId,
+        referredPersonId: referredPersonId,
+        destinationService: destinationService,
+        reason: reason,
+        status: ReferralStatus.completed,
+      ),
+    );
   }
 
   Result<Referral> cancel() {
-    if (status != ReferralStatus.pending) return Failure(_buildRefError('REF-003', 'Transição de status inválida. Só é possível alterar status a partir de PENDING', severity: ErrorSeverity.error));
-    return Success(Referral._(id: id, date: date, requestingProfessionalId: requestingProfessionalId, referredPersonId: referredPersonId, destinationService: destinationService, reason: reason, status: ReferralStatus.cancelled));
+    if (status != ReferralStatus.pending)
+      return Failure(
+        _buildRefError(
+          'REF-003',
+          'Transição de status inválida. Só é possível alterar status a partir de PENDING',
+          severity: ErrorSeverity.error,
+        ),
+      );
+    return Success(
+      Referral._(
+        id: id,
+        date: date,
+        requestingProfessionalId: requestingProfessionalId,
+        referredPersonId: referredPersonId,
+        destinationService: destinationService,
+        reason: reason,
+        status: ReferralStatus.cancelled,
+      ),
+    );
   }
 
-  static AppError _buildRefError(String code, String message, {ErrorSeverity severity = ErrorSeverity.warning}) {
-    return AppError(code: code, message: message, module: 'social-care/referral', kind: 'domainValidation', http: 422, observability: Observability(category: ErrorCategory.domainRuleViolation, severity: severity));
+  static AppError _buildRefError(
+    String code,
+    String message, {
+    ErrorSeverity severity = ErrorSeverity.warning,
+  }) {
+    return AppError(
+      code: code,
+      message: message,
+      module: 'social-care/referral',
+      kind: 'domainValidation',
+      http: 422,
+      observability: Observability(
+        category: ErrorCategory.domainRuleViolation,
+        severity: severity,
+      ),
+    );
   }
 }
 
@@ -95,11 +165,27 @@ final class Referral with Equatable {
 // RIGHTS VIOLATION REPORT
 // =============================================================================
 
-enum ViolationType { neglect, psychologicalViolence, physicalViolence, sexualAbuse, sexualExploitation, childLabor, financialExploitation, discrimination, other }
+enum ViolationType {
+  neglect,
+  psychologicalViolence,
+  physicalViolence,
+  sexualAbuse,
+  sexualExploitation,
+  childLabor,
+  financialExploitation,
+  discrimination,
+  other,
+}
 
 final class RightsViolationReport with Equatable {
   const RightsViolationReport._({
-    required this.id, required this.reportDate, this.incidentDate, required this.victimId, required this.violationType, required this.descriptionOfFact, this.actionsTaken
+    required this.id,
+    required this.reportDate,
+    this.incidentDate,
+    required this.victimId,
+    required this.violationType,
+    required this.descriptionOfFact,
+    this.actionsTaken,
   });
 
   final ViolationReportId id;
@@ -134,31 +220,75 @@ final class RightsViolationReport with Equatable {
   }
 
   static Result<RightsViolationReport> create({
-    required ViolationReportId id, required TimeStamp reportDate, TimeStamp? incidentDate, required PersonId victimId, required ViolationType violationType, required String? descriptionOfFact, String? actionsTaken, TimeStamp? now
+    required ViolationReportId id,
+    required TimeStamp reportDate,
+    TimeStamp? incidentDate,
+    required PersonId victimId,
+    required ViolationType violationType,
+    required String? descriptionOfFact,
+    String? actionsTaken,
+    TimeStamp? now,
   }) {
     final refNow = now ?? TimeStamp.now;
     if (reportDate.date.isAfter(refNow.date)) {
-      return Failure(_buildRvrError('RVR-001', 'Data da notificação não pode ser no futuro'));
+      return Failure(
+        _buildRvrError('RVR-001', 'Data da notificação não pode ser no futuro'),
+      );
     }
 
     if (incidentDate != null && incidentDate.date.isAfter(reportDate.date)) {
-      return Failure(_buildRvrError('RVR-002', 'Data do incidente não pode ser posterior à data da notificação'));
+      return Failure(
+        _buildRvrError(
+          'RVR-002',
+          'Data do incidente não pode ser posterior à data da notificação',
+        ),
+      );
     }
 
     final desc = descriptionOfFact?.normalizedTrim();
     if (desc == null || desc.isEmpty) {
-      return Failure(_buildRvrError('RVR-003', 'Descrição do fato não pode ser vazia'));
+      return Failure(
+        _buildRvrError('RVR-003', 'Descrição do fato não pode ser vazia'),
+      );
     }
 
-    return Success(RightsViolationReport._(id: id, reportDate: reportDate, incidentDate: incidentDate, victimId: victimId, violationType: violationType, descriptionOfFact: desc, actionsTaken: actionsTaken?.normalizedTrim()));
+    return Success(
+      RightsViolationReport._(
+        id: id,
+        reportDate: reportDate,
+        incidentDate: incidentDate,
+        victimId: victimId,
+        violationType: violationType,
+        descriptionOfFact: desc,
+        actionsTaken: actionsTaken?.normalizedTrim(),
+      ),
+    );
   }
 
   RightsViolationReport updateActions(String newActions) {
-    return RightsViolationReport._(id: id, reportDate: reportDate, incidentDate: incidentDate, victimId: victimId, violationType: violationType, descriptionOfFact: descriptionOfFact, actionsTaken: newActions.normalizedTrim());
+    return RightsViolationReport._(
+      id: id,
+      reportDate: reportDate,
+      incidentDate: incidentDate,
+      victimId: victimId,
+      violationType: violationType,
+      descriptionOfFact: descriptionOfFact,
+      actionsTaken: newActions.normalizedTrim(),
+    );
   }
 
   static AppError _buildRvrError(String code, String message) {
-    return AppError(code: code, message: message, module: 'social-care/rights-violation', kind: 'domainValidation', http: 422, observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning));
+    return AppError(
+      code: code,
+      message: message,
+      module: 'social-care/rights-violation',
+      kind: 'domainValidation',
+      http: 422,
+      observability: const Observability(
+        category: ErrorCategory.domainRuleViolation,
+        severity: ErrorSeverity.warning,
+      ),
+    );
   }
 }
 
@@ -167,7 +297,13 @@ final class RightsViolationReport with Equatable {
 // =============================================================================
 
 final class PlacementRegistry with Equatable {
-  const PlacementRegistry._({required this.id, required this.memberId, required this.startDate, this.endDate, required this.reason});
+  const PlacementRegistry._({
+    required this.id,
+    required this.memberId,
+    required this.startDate,
+    this.endDate,
+    required this.reason,
+  });
 
   final String id;
   final PersonId memberId;
@@ -178,15 +314,39 @@ final class PlacementRegistry with Equatable {
   @override
   List<Object?> get props => [id, memberId, startDate, endDate, reason];
 
-  static Result<PlacementRegistry> create({String? id, required PersonId memberId, required TimeStamp startDate, TimeStamp? endDate, required String reason}) {
+  static Result<PlacementRegistry> create({
+    String? id,
+    required PersonId memberId,
+    required TimeStamp startDate,
+    TimeStamp? endDate,
+    required String reason,
+  }) {
     if (endDate != null && endDate.date.isBefore(startDate.date)) {
       return Failure(
-        AppError(code: 'PLC-001', message: 'Data de término não pode ser anterior à data de início', module: 'social-care/placement', kind: 'domainValidation', http: 422, observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning))
+        AppError(
+          code: 'PLC-001',
+          message: 'Data de término não pode ser anterior à data de início',
+          module: 'social-care/placement',
+          kind: 'domainValidation',
+          http: 422,
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.warning,
+          ),
+        ),
       );
     }
     // id could be auto-generated UUID if null, but as string. We'll use DateTime for fake generation if null, though real system uses UUID.
     final finalId = id ?? DateTime.now().microsecondsSinceEpoch.toString();
-    return Success(PlacementRegistry._(id: finalId, memberId: memberId, startDate: startDate, endDate: endDate, reason: reason));
+    return Success(
+      PlacementRegistry._(
+        id: finalId,
+        memberId: memberId,
+        startDate: startDate,
+        endDate: endDate,
+        reason: reason,
+      ),
+    );
   }
 }
 
@@ -199,7 +359,10 @@ final class CollectiveSituations with Equatable {
 }
 
 final class SeparationChecklist with Equatable {
-  const SeparationChecklist({required this.adultInPrison, required this.adolescentInInternment});
+  const SeparationChecklist({
+    required this.adultInPrison,
+    required this.adolescentInInternment,
+  });
   final bool adultInPrison;
   final bool adolescentInInternment;
   @override
@@ -208,7 +371,10 @@ final class SeparationChecklist with Equatable {
 
 final class PlacementHistory with Equatable {
   const PlacementHistory({
-    required this.familyId, required this.individualPlacements, required this.collectiveSituations, required this.separationChecklist
+    required this.familyId,
+    required this.individualPlacements,
+    required this.collectiveSituations,
+    required this.separationChecklist,
   });
 
   final PatientId familyId;
@@ -217,5 +383,10 @@ final class PlacementHistory with Equatable {
   final SeparationChecklist separationChecklist;
 
   @override
-  List<Object?> get props => [familyId, individualPlacements, collectiveSituations, separationChecklist];
+  List<Object?> get props => [
+    familyId,
+    individualPlacements,
+    collectiveSituations,
+    separationChecklist,
+  ];
 }

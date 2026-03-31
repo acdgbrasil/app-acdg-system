@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class AppLogo extends StatelessWidget {
@@ -11,14 +12,10 @@ class AppLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(16), // Múltiplo de 8
       ),
-      child: Icon(
-        Icons.favorite,
-        color: Theme.of(context).colorScheme.onPrimary,
-        size: size / 2,
-      ),
+      child: Icon(Icons.favorite, color: AppColors.textOnDark, size: size / 2),
     );
   }
 }

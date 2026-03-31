@@ -30,8 +30,7 @@ void main() {
       expect(config.scopes, contains('profile'));
       expect(config.scopes, contains('email'));
       expect(config.scopes, contains('offline_access'));
-      expect(config.scopes,
-          contains('urn:zitadel:iam:org:project:roles'));
+      expect(config.scopes, contains('urn:zitadel:iam:org:project:roles'));
     });
 
     test('allows custom scopes', () {

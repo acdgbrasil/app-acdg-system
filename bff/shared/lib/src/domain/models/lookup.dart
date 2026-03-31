@@ -15,11 +15,7 @@ final class LookupItem with Equatable {
   @override
   List<Object?> get props => [id, codigo, descricao];
 
-  LookupItem copyWith({
-    String? id,
-    String? codigo,
-    String? descricao,
-  }) {
+  LookupItem copyWith({String? id, String? codigo, String? descricao}) {
     return LookupItem(
       id: id ?? this.id,
       codigo: codigo ?? this.codigo,

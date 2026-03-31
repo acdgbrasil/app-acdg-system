@@ -1,5 +1,12 @@
 # CLAUDE.md — Frontend ACDG (Conecta Raros)
 
+> **REGRA #0: SEMPRE use o Dart MCP Server (`dart mcp-server`) para validar o codigo.**
+> - Use `analyze_files` para rodar `dart analyze` nos arquivos modificados antes de considerar qualquer tarefa concluida.
+> - Use `run_tests` para rodar testes dos packages afetados.
+> - Use `dart_format` para formatar codigo modificado.
+> - Use `dart_fix` para aplicar fixes automaticos quando disponivel.
+> - **Setup:** `claude mcp add --transport stdio dart -- dart mcp-server`
+>
 > **REGRA #1: O handbook/ e a fonte de verdade arquitetural. SEMPRE consulte-o antes de tomar decisoes.**
 > - `handbook/architecture/ARCHITECTURE.md` — arquitetura completa
 > - `handbook/architecture/DECISIONS.md` — ADRs (decisoes imutaveis)
@@ -21,15 +28,10 @@ melos bootstrap                    # Instalar dependencias de todos os packages
 melos run analyze                  # Lint em todos os packages
 melos run test                     # Testes em todos os packages
 
-# Shell (requer --dart-define para OIDC)
-cd shell && flutter run -d macos \
-  --dart-define=OIDC_ISSUER=https://auth.acdgbrasil.com.br \
-  --dart-define=OIDC_CLIENT_ID=<client-id>
-cd shell && flutter build web --wasm --release \
-  --dart-define=OIDC_ISSUER=https://auth.acdgbrasil.com.br \
-  --dart-define=OIDC_CLIENT_ID=<client-id> \
-  --dart-define=OIDC_WEB_REDIRECT_URI=https://social-care.acdgbrasil.com.br/callback \
-  --dart-define=OIDC_WEB_POST_LOGOUT_URI=https://social-care.acdgbrasil.com.br
+# Shell (requer .env — copie .env.example e preencha)
+cp apps/acdg_system/.env.example apps/acdg_system/.env  # Primeira vez: copiar e preencher
+cd apps/acdg_system && flutter run -d macos --dart-define-from-file=.env
+cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=.env
 
 # BFF
 cd bff/social_care_bff && dart run bin/server.dart  # Rodar BFF server (Darto)
@@ -164,7 +166,7 @@ De dentro para fora. NUNCA comece pela View.
 
 ## Segredos e Variaveis de Ambiente
 
-- NUNCA hardcoded — usar `--dart-define` para injetar em compile-time
+- NUNCA hardcoded — usar `--dart-define-from-file=.env` para injetar em compile-time
 - Bitwarden Secret Manager para valores de producao
 - `${{ github.token }}` para GHCR
 - **OIDC config:** `OIDC_ISSUER`, `OIDC_CLIENT_ID` (obrigatorios), `OIDC_WEB_REDIRECT_URI`, `OIDC_WEB_POST_LOGOUT_URI` (web only)

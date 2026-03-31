@@ -13,6 +13,9 @@ class MockDio implements Dio {
   BaseOptions options = BaseOptions();
 
   @override
+  Interceptors get interceptors => Interceptors();
+
+  @override
   Future<Response<T>> post<T>(
     String path, {
     Object? data,

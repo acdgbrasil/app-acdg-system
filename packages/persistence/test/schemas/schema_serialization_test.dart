@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:persistence/persistence.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Schema Serialization Tests', () {

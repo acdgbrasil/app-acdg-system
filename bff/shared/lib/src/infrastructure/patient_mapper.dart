@@ -10,23 +10,51 @@ class PatientMapper {
       'personId': p.personId.value,
       'version': p.version,
       'prRelationshipId': p.prRelationshipId.value,
-      'personalData': p.personalData == null ? null : personalDataToJson(p.personalData!),
-      'civilDocuments': p.civilDocuments == null ? null : civilDocumentsToJson(p.civilDocuments!),
+      'personalData': p.personalData == null
+          ? null
+          : personalDataToJson(p.personalData!),
+      'civilDocuments': p.civilDocuments == null
+          ? null
+          : civilDocumentsToJson(p.civilDocuments!),
       'address': p.address == null ? null : addressToJson(p.address!),
-      'familyMembers': p.familyMembers.map((m) => familyMemberToJson(m)).toList(),
+      'familyMembers': p.familyMembers
+          .map((m) => familyMemberToJson(m))
+          .toList(),
       'initialDiagnoses': p.diagnoses.map((d) => diagnosisToJson(d)).toList(),
-      'socialIdentity': p.socialIdentity == null ? null : socialIdentityToJson(p.socialIdentity!),
-      'housingCondition': p.housingCondition == null ? null : housingConditionToJson(p.housingCondition!),
-      'socioeconomicSituation': p.socioeconomicSituation == null ? null : socioEconomicToJson(p.socioeconomicSituation!),
-      'workAndIncome': p.workAndIncome == null ? null : workAndIncomeToJson(p.workAndIncome!),
-      'educationalStatus': p.educationalStatus == null ? null : educationalStatusToJson(p.educationalStatus!),
-      'healthStatus': p.healthStatus == null ? null : healthStatusToJson(p.healthStatus!),
-      'communitySupportNetwork': p.communitySupportNetwork == null ? null : communitySupportToJson(p.communitySupportNetwork!),
-      'socialHealthSummary': p.socialHealthSummary == null ? null : socialHealthSummaryToJson(p.socialHealthSummary!),
+      'socialIdentity': p.socialIdentity == null
+          ? null
+          : socialIdentityToJson(p.socialIdentity!),
+      'housingCondition': p.housingCondition == null
+          ? null
+          : housingConditionToJson(p.housingCondition!),
+      'socioeconomicSituation': p.socioeconomicSituation == null
+          ? null
+          : socioEconomicToJson(p.socioeconomicSituation!),
+      'workAndIncome': p.workAndIncome == null
+          ? null
+          : workAndIncomeToJson(p.workAndIncome!),
+      'educationalStatus': p.educationalStatus == null
+          ? null
+          : educationalStatusToJson(p.educationalStatus!),
+      'healthStatus': p.healthStatus == null
+          ? null
+          : healthStatusToJson(p.healthStatus!),
+      'communitySupportNetwork': p.communitySupportNetwork == null
+          ? null
+          : communitySupportToJson(p.communitySupportNetwork!),
+      'socialHealthSummary': p.socialHealthSummary == null
+          ? null
+          : socialHealthSummaryToJson(p.socialHealthSummary!),
       'appointments': p.appointments.map((a) => appointmentToJson(a)).toList(),
-      'intakeInfo': p.intakeInfo == null ? null : intakeInfoToJson(p.intakeInfo!),
-      'placementHistory': p.placementHistory == null ? null : placementHistoryToJson(p.placementHistory!),
-      'violationReports': p.violationReports.map((r) => violationReportToJson(r)).toList(),
+      'intakeInfo': p.intakeInfo == null
+          ? null
+          : intakeInfoToJson(p.intakeInfo!),
+      'placementHistory': p.placementHistory == null
+          ? null
+          : placementHistoryToJson(p.placementHistory!),
+      'violationReports': p.violationReports
+          .map((r) => violationReportToJson(r))
+          .toList(),
       'referrals': p.referrals.map((r) => referralToJson(r)).toList(),
     };
   }
@@ -50,12 +78,14 @@ class PatientMapper {
     return {
       'cpf': d.cpf?.value,
       'nis': d.nis?.value,
-      'rgDocument': d.rgDocument == null ? null : {
-        'number': d.rgDocument!.number,
-        'issuingState': d.rgDocument!.issuingState,
-        'issuingAgency': d.rgDocument!.issuingAgency,
-        'issueDate': d.rgDocument!.issueDate.toIso8601(),
-      },
+      'rgDocument': d.rgDocument == null
+          ? null
+          : {
+              'number': d.rgDocument!.number,
+              'issuingState': d.rgDocument!.issuingState,
+              'issuingAgency': d.rgDocument!.issuingAgency,
+              'issueDate': d.rgDocument!.issueDate.toIso8601(),
+            },
     };
   }
 
@@ -68,7 +98,9 @@ class PatientMapper {
       'neighborhood': a.neighborhood,
       'number': a.number,
       'complement': a.complement,
-      'residenceLocation': a.residenceLocation == ResidenceLocation.urbano ? 'URBANO' : 'RURAL',
+      'residenceLocation': a.residenceLocation == ResidenceLocation.urbano
+          ? 'URBANO'
+          : 'RURAL',
       'isShelter': a.isShelter,
     };
   }
@@ -94,10 +126,7 @@ class PatientMapper {
   }
 
   static Map<String, dynamic> socialIdentityToJson(SocialIdentity i) {
-    return {
-      'typeId': i.typeId.value,
-      'description': i.otherDescription,
-    };
+    return {'typeId': i.typeId.value, 'description': i.otherDescription};
   }
 
   static Map<String, dynamic> housingConditionToJson(HousingCondition c) {
@@ -127,7 +156,9 @@ class PatientMapper {
       'receivesSocialBenefit': s.receivesSocialBenefit,
       'hasUnemployed': s.hasUnemployed,
       'mainSourceOfIncome': s.mainSourceOfIncome,
-      'socialBenefits': s.socialBenefits.items.map((b) => socialBenefitToJson(b)).toList(),
+      'socialBenefits': s.socialBenefits.items
+          .map((b) => socialBenefitToJson(b))
+          .toList(),
     };
   }
 
@@ -142,52 +173,76 @@ class PatientMapper {
   static Map<String, dynamic> workAndIncomeToJson(WorkAndIncome w) {
     return {
       'hasRetiredMembers': w.hasRetiredMembers,
-      'individualIncomes': w.individualIncomes.map((i) => {
-        'memberId': i.memberId.value,
-        'occupationId': i.occupationId.value,
-        'hasWorkCard': i.hasWorkCard,
-        'monthlyAmount': i.monthlyAmount,
-      }).toList(),
-      'socialBenefits': w.socialBenefits.map((b) => socialBenefitToJson(b)).toList(),
+      'individualIncomes': w.individualIncomes
+          .map(
+            (i) => {
+              'memberId': i.memberId.value,
+              'occupationId': i.occupationId.value,
+              'hasWorkCard': i.hasWorkCard,
+              'monthlyAmount': i.monthlyAmount,
+            },
+          )
+          .toList(),
+      'socialBenefits': w.socialBenefits
+          .map((b) => socialBenefitToJson(b))
+          .toList(),
     };
   }
 
   static Map<String, dynamic> educationalStatusToJson(EducationalStatus e) {
     return {
-      'memberProfiles': e.memberProfiles.map((p) => {
-        'memberId': p.memberId.value,
-        'canReadWrite': p.canReadWrite,
-        'attendsSchool': p.attendsSchool,
-        'educationLevelId': p.educationLevelId.value,
-      }).toList(),
-      'programOccurrences': e.programOccurrences.map((o) => {
-        'memberId': o.memberId.value,
-        'date': o.date.toIso8601(),
-        'effectId': o.effectId.value,
-        'isSuspensionRequested': o.isSuspensionRequested,
-      }).toList(),
+      'memberProfiles': e.memberProfiles
+          .map(
+            (p) => {
+              'memberId': p.memberId.value,
+              'canReadWrite': p.canReadWrite,
+              'attendsSchool': p.attendsSchool,
+              'educationLevelId': p.educationLevelId.value,
+            },
+          )
+          .toList(),
+      'programOccurrences': e.programOccurrences
+          .map(
+            (o) => {
+              'memberId': o.memberId.value,
+              'date': o.date.toIso8601(),
+              'effectId': o.effectId.value,
+              'isSuspensionRequested': o.isSuspensionRequested,
+            },
+          )
+          .toList(),
     };
   }
 
   static Map<String, dynamic> healthStatusToJson(HealthStatus h) {
     return {
-      'deficiencies': h.deficiencies.map((d) => {
-        'memberId': d.memberId.value,
-        'deficiencyTypeId': d.deficiencyTypeId.value,
-        'needsConstantCare': d.needsConstantCare,
-        'responsibleCaregiverName': d.responsibleCaregiverName,
-      }).toList(),
-      'gestatingMembers': h.gestatingMembers.map((g) => {
-        'memberId': g.memberId.value,
-        'monthsGestation': g.monthsGestation,
-        'startedPrenatalCare': g.startedPrenatalCare,
-      }).toList(),
+      'deficiencies': h.deficiencies
+          .map(
+            (d) => {
+              'memberId': d.memberId.value,
+              'deficiencyTypeId': d.deficiencyTypeId.value,
+              'needsConstantCare': d.needsConstantCare,
+              'responsibleCaregiverName': d.responsibleCaregiverName,
+            },
+          )
+          .toList(),
+      'gestatingMembers': h.gestatingMembers
+          .map(
+            (g) => {
+              'memberId': g.memberId.value,
+              'monthsGestation': g.monthsGestation,
+              'startedPrenatalCare': g.startedPrenatalCare,
+            },
+          )
+          .toList(),
       'constantCareNeeds': h.constantCareNeeds.map((id) => id.value).toList(),
       'foodInsecurity': h.foodInsecurity,
     };
   }
 
-  static Map<String, dynamic> communitySupportToJson(CommunitySupportNetwork c) {
+  static Map<String, dynamic> communitySupportToJson(
+    CommunitySupportNetwork c,
+  ) {
     return {
       'hasRelativeSupport': c.hasRelativeSupport,
       'hasNeighborSupport': c.hasNeighborSupport,
@@ -224,21 +279,29 @@ class PatientMapper {
       'originName': i.originName,
       'originContact': i.originContact,
       'serviceReason': i.serviceReason,
-      'linkedSocialPrograms': i.linkedSocialPrograms.map((p) => {
-        'programId': p.programId.value,
-        'observation': p.observation,
-      }).toList(),
+      'linkedSocialPrograms': i.linkedSocialPrograms
+          .map(
+            (p) => {
+              'programId': p.programId.value,
+              'observation': p.observation,
+            },
+          )
+          .toList(),
     };
   }
 
   static Map<String, dynamic> placementHistoryToJson(PlacementHistory p) {
     return {
-      'registries': p.individualPlacements.map((r) => {
-        'memberId': r.memberId.value,
-        'startDate': r.startDate.toIso8601(),
-        'endDate': r.endDate?.toIso8601(),
-        'reason': r.reason,
-      }).toList(),
+      'registries': p.individualPlacements
+          .map(
+            (r) => {
+              'memberId': r.memberId.value,
+              'startDate': r.startDate.toIso8601(),
+              'endDate': r.endDate?.toIso8601(),
+              'reason': r.reason,
+            },
+          )
+          .toList(),
       'collectiveSituations': {
         'homeLossReport': p.collectiveSituations.homeLossReport,
         'thirdPartyGuardReport': p.collectiveSituations.thirdPartyGuardReport,
@@ -273,30 +336,74 @@ class PatientMapper {
 
   // --- From JSON Mappers (Hidration) ---
 
+  /// Default prRelationshipId used when the server response omits it.
+  static const _defaultPrRelationshipId =
+      '00000000-0000-0000-0000-000000000000';
+
   static Patient fromJson(Map<String, dynamic> json) {
     return Patient.reconstitute(
       id: PatientId.create(json['patientId'] as String).valueOrNull!,
       version: json['version'] as int? ?? 1,
       personId: PersonId.create(json['personId'] as String).valueOrNull!,
-      prRelationshipId: LookupId.create(json['prRelationshipId'] as String).valueOrNull!,
-      personalData: json['personalData'] == null ? null : personalDataFromJson(json['personalData']),
-      civilDocuments: json['civilDocuments'] == null ? null : civilDocumentsFromJson(json['civilDocuments']),
-      address: json['address'] == null ? null : addressFromJson(json['address']),
-      familyMembers: (json['familyMembers'] as List? ?? []).map((m) => familyMemberFromJson(m)).toList(),
-      diagnoses: (json['initialDiagnoses'] as List? ?? []).map((d) => diagnosisFromJson(d)).toList(),
-      socialIdentity: json['socialIdentity'] == null ? null : socialIdentityFromJson(json['socialIdentity']),
-      housingCondition: json['housingCondition'] == null ? null : housingConditionFromJson(json['housingCondition']),
-      socioeconomicSituation: json['socioeconomicSituation'] == null ? null : socioEconomicFromJson(json['socioeconomicSituation']),
-      workAndIncome: json['workAndIncome'] == null ? null : workAndIncomeFromJson(json['workAndIncome']),
-      educationalStatus: json['educationalStatus'] == null ? null : educationalStatusFromJson(json['educationalStatus']),
-      healthStatus: json['healthStatus'] == null ? null : healthStatusFromJson(json['healthStatus']),
-      communitySupportNetwork: json['communitySupportNetwork'] == null ? null : communitySupportFromJson(json['communitySupportNetwork']),
-      socialHealthSummary: json['socialHealthSummary'] == null ? null : socialHealthSummaryFromJson(json['socialHealthSummary']),
-      appointments: (json['appointments'] as List? ?? []).map((a) => appointmentFromJson(a)).toList(),
-      intakeInfo: json['intakeInfo'] == null ? null : intakeInfoFromJson(json['intakeInfo']),
-      placementHistory: json['placementHistory'] == null ? null : placementHistoryFromJson(json['placementHistory']),
-      violationReports: (json['violationReports'] as List? ?? []).map((r) => violationReportFromJson(r)).toList(),
-      referrals: (json['referrals'] as List? ?? []).map((r) => referralFromJson(r)).toList(),
+      prRelationshipId: LookupId.create(
+        json['prRelationshipId'] as String? ?? _defaultPrRelationshipId,
+      ).valueOrNull!,
+      personalData: json['personalData'] == null
+          ? null
+          : personalDataFromJson(json['personalData']),
+      civilDocuments: json['civilDocuments'] == null
+          ? null
+          : civilDocumentsFromJson(json['civilDocuments']),
+      address: json['address'] == null
+          ? null
+          : addressFromJson(json['address']),
+      familyMembers: (json['familyMembers'] as List? ?? [])
+          .map((m) => familyMemberFromJson(m))
+          .toList(),
+      diagnoses: (json['initialDiagnoses'] as List? ??
+              json['diagnoses'] as List? ??
+              [])
+          .map((d) => diagnosisFromJson(d))
+          .toList(),
+      socialIdentity: json['socialIdentity'] == null
+          ? null
+          : socialIdentityFromJson(json['socialIdentity']),
+      housingCondition: json['housingCondition'] == null
+          ? null
+          : housingConditionFromJson(json['housingCondition']),
+      socioeconomicSituation: json['socioeconomicSituation'] == null
+          ? null
+          : socioEconomicFromJson(json['socioeconomicSituation']),
+      workAndIncome: json['workAndIncome'] == null
+          ? null
+          : workAndIncomeFromJson(json['workAndIncome']),
+      educationalStatus: json['educationalStatus'] == null
+          ? null
+          : educationalStatusFromJson(json['educationalStatus']),
+      healthStatus: json['healthStatus'] == null
+          ? null
+          : healthStatusFromJson(json['healthStatus']),
+      communitySupportNetwork: json['communitySupportNetwork'] == null
+          ? null
+          : communitySupportFromJson(json['communitySupportNetwork']),
+      socialHealthSummary: json['socialHealthSummary'] == null
+          ? null
+          : socialHealthSummaryFromJson(json['socialHealthSummary']),
+      appointments: (json['appointments'] as List? ?? [])
+          .map((a) => appointmentFromJson(a))
+          .toList(),
+      intakeInfo: json['intakeInfo'] == null
+          ? null
+          : intakeInfoFromJson(json['intakeInfo']),
+      placementHistory: json['placementHistory'] == null
+          ? null
+          : placementHistoryFromJson(json['placementHistory']),
+      violationReports: (json['violationReports'] as List? ?? [])
+          .map((r) => violationReportFromJson(r))
+          .toList(),
+      referrals: (json['referrals'] as List? ?? [])
+          .map((r) => referralFromJson(r))
+          .toList(),
     );
   }
 
@@ -317,12 +424,16 @@ class PatientMapper {
     return CivilDocuments.create(
       cpf: j['cpf'] != null ? Cpf.create(j['cpf']).valueOrNull : null,
       nis: j['nis'] != null ? Nis.create(j['nis']).valueOrNull : null,
-      rgDocument: j['rgDocument'] == null ? null : RgDocument.create(
-        number: j['rgDocument']['number'],
-        issuingState: j['rgDocument']['issuingState'],
-        issuingAgency: j['rgDocument']['issuingAgency'],
-        issueDate: TimeStamp.fromIso(j['rgDocument']['issueDate']).valueOrNull!,
-      ).valueOrNull,
+      rgDocument: j['rgDocument'] == null
+          ? null
+          : RgDocument.create(
+              number: j['rgDocument']['number'],
+              issuingState: j['rgDocument']['issuingState'],
+              issuingAgency: j['rgDocument']['issuingAgency'],
+              issueDate: TimeStamp.fromIso(
+                j['rgDocument']['issueDate'],
+              ).valueOrNull!,
+            ).valueOrNull,
     ).valueOrNull!;
   }
 
@@ -335,7 +446,9 @@ class PatientMapper {
       neighborhood: j['neighborhood'],
       number: j['number'],
       complement: j['complement'],
-      residenceLocation: j['residenceLocation'] == 'URBANO' ? ResidenceLocation.urbano : ResidenceLocation.rural,
+      residenceLocation: j['residenceLocation'] == 'URBANO'
+          ? ResidenceLocation.urbano
+          : ResidenceLocation.rural,
       isShelter: j['isShelter'],
     ).valueOrNull!;
   }
@@ -371,17 +484,31 @@ class PatientMapper {
 
   static HousingCondition housingConditionFromJson(Map<String, dynamic> j) {
     return HousingCondition.create(
-      type: ConditionType.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['type']),
-      wallMaterial: WallMaterial.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['wallMaterial']),
+      type: ConditionType.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['type'],
+      ),
+      wallMaterial: WallMaterial.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['wallMaterial'],
+      ),
       numberOfRooms: j['numberOfRooms'],
       numberOfBedrooms: j['numberOfBedrooms'],
       numberOfBathrooms: j['numberOfBathrooms'],
-      waterSupply: WaterSupply.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['waterSupply']),
+      waterSupply: WaterSupply.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['waterSupply'],
+      ),
       hasPipedWater: j['hasPipedWater'],
-      electricityAccess: ElectricityAccess.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['electricityAccess']),
-      sewageDisposal: SewageDisposal.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['sewageDisposal']),
-      wasteCollection: WasteCollection.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['wasteCollection']),
-      accessibilityLevel: AccessibilityLevel.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['accessibilityLevel']),
+      electricityAccess: ElectricityAccess.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['electricityAccess'],
+      ),
+      sewageDisposal: SewageDisposal.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['sewageDisposal'],
+      ),
+      wasteCollection: WasteCollection.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['wasteCollection'],
+      ),
+      accessibilityLevel: AccessibilityLevel.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['accessibilityLevel'],
+      ),
       isInGeographicRiskArea: j['isInGeographicRiskArea'],
       hasDifficultAccess: j['hasDifficultAccess'],
       isInSocialConflictArea: j['isInSocialConflictArea'],
@@ -390,7 +517,9 @@ class PatientMapper {
   }
 
   static SocioEconomicSituation socioEconomicFromJson(Map<String, dynamic> j) {
-    final benefits = (j['socialBenefits'] as List? ?? []).map((b) => socialBenefitFromJson(b)).toList();
+    final benefits = (j['socialBenefits'] as List? ?? [])
+        .map((b) => socialBenefitFromJson(b))
+        .toList();
     return SocioEconomicSituation.create(
       totalFamilyIncome: j['totalFamilyIncome'],
       incomePerCapita: j['incomePerCapita'],
@@ -411,56 +540,92 @@ class PatientMapper {
 
   static WorkAndIncome workAndIncomeFromJson(Map<String, dynamic> j) {
     return WorkAndIncome(
-      familyId: PatientId.create(j['familyId'] ?? '').valueOrNull ?? PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
-      individualIncomes: (j['individualIncomes'] as List? ?? []).map((i) => WorkIncomeVO.create(
-        memberId: PersonId.create(i['memberId']).valueOrNull!,
-        occupationId: LookupId.create(i['occupationId']).valueOrNull!,
-        hasWorkCard: i['hasWorkCard'],
-        monthlyAmount: i['monthlyAmount'],
-      ).valueOrNull!).toList(),
-      socialBenefits: (j['socialBenefits'] as List? ?? []).map((b) => socialBenefitFromJson(b)).toList(),
+      familyId:
+          PatientId.create(j['familyId'] ?? '').valueOrNull ??
+          PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      individualIncomes: (j['individualIncomes'] as List? ?? [])
+          .map(
+            (i) => WorkIncomeVO.create(
+              memberId: PersonId.create(i['memberId']).valueOrNull!,
+              occupationId: LookupId.create(i['occupationId']).valueOrNull!,
+              hasWorkCard: i['hasWorkCard'],
+              monthlyAmount: i['monthlyAmount'],
+            ).valueOrNull!,
+          )
+          .toList(),
+      socialBenefits: (j['socialBenefits'] as List? ?? [])
+          .map((b) => socialBenefitFromJson(b))
+          .toList(),
       hasRetiredMembers: j['hasRetiredMembers'],
     );
   }
 
   static EducationalStatus educationalStatusFromJson(Map<String, dynamic> j) {
     return EducationalStatus(
-      familyId: PatientId.create(j['familyId'] ?? '').valueOrNull ?? PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
-      memberProfiles: (j['memberProfiles'] as List? ?? []).map((p) => MemberEducationalProfile(
-        memberId: PersonId.create(p['memberId']).valueOrNull!,
-        canReadWrite: p['canReadWrite'],
-        attendsSchool: p['attendsSchool'],
-        educationLevelId: LookupId.create(p['educationLevelId']).valueOrNull!,
-      )).toList(),
-      programOccurrences: (j['programOccurrences'] as List? ?? []).map((o) => ProgramOccurrence(
-        memberId: PersonId.create(o['memberId']).valueOrNull!,
-        date: TimeStamp.fromIso(o['date']).valueOrNull!,
-        effectId: LookupId.create(o['effectId']).valueOrNull!,
-        isSuspensionRequested: o['isSuspensionRequested'],
-      )).toList(),
+      familyId:
+          PatientId.create(j['familyId'] ?? '').valueOrNull ??
+          PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      memberProfiles: (j['memberProfiles'] as List? ?? [])
+          .map(
+            (p) => MemberEducationalProfile(
+              memberId: PersonId.create(p['memberId']).valueOrNull!,
+              canReadWrite: p['canReadWrite'],
+              attendsSchool: p['attendsSchool'],
+              educationLevelId: LookupId.create(
+                p['educationLevelId'],
+              ).valueOrNull!,
+            ),
+          )
+          .toList(),
+      programOccurrences: (j['programOccurrences'] as List? ?? [])
+          .map(
+            (o) => ProgramOccurrence(
+              memberId: PersonId.create(o['memberId']).valueOrNull!,
+              date: TimeStamp.fromIso(o['date']).valueOrNull!,
+              effectId: LookupId.create(o['effectId']).valueOrNull!,
+              isSuspensionRequested: o['isSuspensionRequested'],
+            ),
+          )
+          .toList(),
     );
   }
 
   static HealthStatus healthStatusFromJson(Map<String, dynamic> j) {
     return HealthStatus(
-      familyId: PatientId.create(j['familyId'] ?? '').valueOrNull ?? PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
-      deficiencies: (j['deficiencies'] as List? ?? []).map((d) => MemberDeficiency(
-        memberId: PersonId.create(d['memberId']).valueOrNull!,
-        deficiencyTypeId: LookupId.create(d['deficiencyTypeId']).valueOrNull!,
-        needsConstantCare: d['needsConstantCare'],
-        responsibleCaregiverName: d['responsibleCaregiverName'],
-      )).toList(),
-      gestatingMembers: (j['gestatingMembers'] as List? ?? []).map((g) => PregnantMember(
-        memberId: PersonId.create(g['memberId']).valueOrNull!,
-        monthsGestation: g['monthsGestation'],
-        startedPrenatalCare: g['startedPrenatalCare'],
-      )).toList(),
-      constantCareNeeds: (j['constantCareNeeds'] as List? ?? []).map((id) => PersonId.create(id).valueOrNull!).toList(),
+      familyId:
+          PatientId.create(j['familyId'] ?? '').valueOrNull ??
+          PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      deficiencies: (j['deficiencies'] as List? ?? [])
+          .map(
+            (d) => MemberDeficiency(
+              memberId: PersonId.create(d['memberId']).valueOrNull!,
+              deficiencyTypeId: LookupId.create(
+                d['deficiencyTypeId'],
+              ).valueOrNull!,
+              needsConstantCare: d['needsConstantCare'],
+              responsibleCaregiverName: d['responsibleCaregiverName'],
+            ),
+          )
+          .toList(),
+      gestatingMembers: (j['gestatingMembers'] as List? ?? [])
+          .map(
+            (g) => PregnantMember(
+              memberId: PersonId.create(g['memberId']).valueOrNull!,
+              monthsGestation: g['monthsGestation'],
+              startedPrenatalCare: g['startedPrenatalCare'],
+            ),
+          )
+          .toList(),
+      constantCareNeeds: (j['constantCareNeeds'] as List? ?? [])
+          .map((id) => PersonId.create(id).valueOrNull!)
+          .toList(),
       foodInsecurity: j['foodInsecurity'],
     );
   }
 
-  static CommunitySupportNetwork communitySupportFromJson(Map<String, dynamic> j) {
+  static CommunitySupportNetwork communitySupportFromJson(
+    Map<String, dynamic> j,
+  ) {
     return CommunitySupportNetwork.create(
       hasRelativeSupport: j['hasRelativeSupport'],
       hasNeighborSupport: j['hasNeighborSupport'],
@@ -472,21 +637,33 @@ class PatientMapper {
     ).valueOrNull!;
   }
 
-  static SocialHealthSummary socialHealthSummaryFromJson(Map<String, dynamic> j) {
+  static SocialHealthSummary socialHealthSummaryFromJson(
+    Map<String, dynamic> j,
+  ) {
     return SocialHealthSummary.create(
       requiresConstantCare: j['requiresConstantCare'],
       hasMobilityImpairment: j['hasMobilityImpairment'],
-      functionalDependencies: List<String>.from(j['functionalDependencies'] ?? []),
+      functionalDependencies: List<String>.from(
+        j['functionalDependencies'] ?? [],
+      ),
       hasRelevantDrugTherapy: j['hasRelevantDrugTherapy'],
     ).valueOrNull!;
   }
 
   static SocialCareAppointment appointmentFromJson(Map<String, dynamic> j) {
     return SocialCareAppointment.create(
-      id: AppointmentId.create(j['id'] ?? '').valueOrNull ?? AppointmentId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      id:
+          AppointmentId.create(j['id'] ?? '').valueOrNull ??
+          AppointmentId.create(
+            '00000000-0000-0000-0000-000000000000',
+          ).valueOrNull!,
       date: TimeStamp.fromIso(j['date']).valueOrNull!,
-      professionalInChargeId: ProfessionalId.create(j['professionalId']).valueOrNull!,
-      type: AppointmentType.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['type']),
+      professionalInChargeId: ProfessionalId.create(
+        j['professionalId'],
+      ).valueOrNull!,
+      type: AppointmentType.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['type'],
+      ),
       summary: j['summary'],
       actionPlan: j['actionPlan'],
     ).valueOrNull!;
@@ -498,52 +675,82 @@ class PatientMapper {
       originName: j['originName'],
       originContact: j['originContact'],
       serviceReason: j['serviceReason'],
-      linkedSocialPrograms: (j['linkedSocialPrograms'] as List? ?? []).map((p) => ProgramLink(
-        programId: LookupId.create(p['programId']).valueOrNull!,
-        observation: p['observation'],
-      )).toList(),
+      linkedSocialPrograms: (j['linkedSocialPrograms'] as List? ?? [])
+          .map(
+            (p) => ProgramLink(
+              programId: LookupId.create(p['programId']).valueOrNull!,
+              observation: p['observation'],
+            ),
+          )
+          .toList(),
     ).valueOrNull!;
   }
 
   static PlacementHistory placementHistoryFromJson(Map<String, dynamic> j) {
     return PlacementHistory(
-      familyId: PatientId.create(j['familyId'] ?? '').valueOrNull ?? PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
-      individualPlacements: (j['registries'] as List? ?? []).map((r) => PlacementRegistry.create(
-        memberId: PersonId.create(r['memberId']).valueOrNull!,
-        startDate: TimeStamp.fromIso(r['startDate']).valueOrNull!,
-        endDate: r['endDate'] != null ? TimeStamp.fromIso(r['endDate']).valueOrNull : null,
-        reason: r['reason'],
-      ).valueOrNull!).toList(),
+      familyId:
+          PatientId.create(j['familyId'] ?? '').valueOrNull ??
+          PatientId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      individualPlacements: (j['registries'] as List? ?? [])
+          .map(
+            (r) => PlacementRegistry.create(
+              memberId: PersonId.create(r['memberId']).valueOrNull!,
+              startDate: TimeStamp.fromIso(r['startDate']).valueOrNull!,
+              endDate: r['endDate'] != null
+                  ? TimeStamp.fromIso(r['endDate']).valueOrNull
+                  : null,
+              reason: r['reason'],
+            ).valueOrNull!,
+          )
+          .toList(),
       collectiveSituations: CollectiveSituations(
         homeLossReport: j['collectiveSituations']['homeLossReport'],
-        thirdPartyGuardReport: j['collectiveSituations']['thirdPartyGuardReport'],
+        thirdPartyGuardReport:
+            j['collectiveSituations']['thirdPartyGuardReport'],
       ),
       separationChecklist: SeparationChecklist(
         adultInPrison: j['separationChecklist']['adultInPrison'],
-        adolescentInInternment: j['separationChecklist']['adolescentInInternment'],
+        adolescentInInternment:
+            j['separationChecklist']['adolescentInInternment'],
       ),
     );
   }
 
   static RightsViolationReport violationReportFromJson(Map<String, dynamic> j) {
     return RightsViolationReport.create(
-      id: ViolationReportId.create(j['id'] ?? '').valueOrNull ?? ViolationReportId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      id:
+          ViolationReportId.create(j['id'] ?? '').valueOrNull ??
+          ViolationReportId.create(
+            '00000000-0000-0000-0000-000000000000',
+          ).valueOrNull!,
       reportDate: TimeStamp.fromIso(j['reportDate']).valueOrNull!,
       victimId: PersonId.create(j['victimId']).valueOrNull!,
-      violationType: ViolationType.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['violationType']),
+      violationType: ViolationType.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['violationType'],
+      ),
       descriptionOfFact: j['descriptionOfFact'],
-      incidentDate: j['incidentDate'] != null ? TimeStamp.fromIso(j['incidentDate']).valueOrNull : null,
+      incidentDate: j['incidentDate'] != null
+          ? TimeStamp.fromIso(j['incidentDate']).valueOrNull
+          : null,
       actionsTaken: j['actionsTaken'],
     ).valueOrNull!;
   }
 
   static Referral referralFromJson(Map<String, dynamic> j) {
     return Referral.create(
-      id: ReferralId.create(j['id'] ?? '').valueOrNull ?? ReferralId.create('00000000-0000-0000-0000-000000000000').valueOrNull!,
+      id:
+          ReferralId.create(j['id'] ?? '').valueOrNull ??
+          ReferralId.create(
+            '00000000-0000-0000-0000-000000000000',
+          ).valueOrNull!,
       date: TimeStamp.fromIso(j['date']).valueOrNull!,
-      requestingProfessionalId: ProfessionalId.create(j['professionalId']).valueOrNull!,
+      requestingProfessionalId: ProfessionalId.create(
+        j['professionalId'],
+      ).valueOrNull!,
       referredPersonId: PersonId.create(j['referredPersonId']).valueOrNull!,
-      destinationService: DestinationService.values.firstWhere((v) => v.name.toSnakeCaseUpper() == j['destinationService']),
+      destinationService: DestinationService.values.firstWhere(
+        (v) => v.name.toSnakeCaseUpper() == j['destinationService'],
+      ),
       reason: j['reason'],
     ).valueOrNull!;
   }

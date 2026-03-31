@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:core/core.dart';
 import 'package:oidc/oidc.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
 
@@ -18,6 +19,7 @@ import 'oidc_claims_parser.dart';
 class OidcAuthService implements AuthService {
   OidcAuthService({required OidcAuthConfig config}) : _config = config;
 
+  static final _log = AcdgLogger.get('OidcAuthService');
   final OidcAuthConfig _config;
   late final OidcUserManager _manager;
   final StreamController<AuthStatus> _statusController =
@@ -32,11 +34,13 @@ class OidcAuthService implements AuthService {
   @override
   Future<void> init() async {
     if (_initialized) return;
+    _log.info('Initializing OIDC Manager for issuer: ${_config.issuer}');
 
     _manager = OidcUserManager.lazy(
       discoveryDocumentUri: _config.discoveryDocumentUri,
-      clientCredentials:
-          OidcClientAuthentication.none(clientId: _config.clientId),
+      clientCredentials: OidcClientAuthentication.none(
+        clientId: _config.clientId,
+      ),
       store: OidcDefaultStore(),
       settings: OidcUserManagerSettings(
         redirectUri: _config.redirectUri,
@@ -49,12 +53,14 @@ class OidcAuthService implements AuthService {
     _userSubscription = _manager.userChanges().listen(_onUserChanged);
 
     await _manager.init();
+    _log.info('OIDC Manager initialized successfully');
     _initialized = true;
   }
 
   // ---------- JWT parsing ----------
 
   void _onUserChanged(OidcUser? oidcUser) {
+    _log.info('User changed: ${oidcUser?.uid ?? "null"}');
     if (oidcUser == null || oidcUser.token.accessToken == null) {
       _clearSession();
       return;
@@ -74,6 +80,7 @@ class OidcAuthService implements AuthService {
       );
       _setAuthenticatedSession(user, token);
     } catch (e) {
+      _log.severe('Error parsing user claims: $e');
       _clearSession();
       _updateStatus(AuthError('Erro ao ler dados do usuário: $e'));
     }
@@ -82,12 +89,14 @@ class OidcAuthService implements AuthService {
   // ---------- Predictable State Mutations ----------
 
   void _setAuthenticatedSession(AuthUser user, AuthToken token) {
+    _log.info('Session authenticated for user: ${user.id}');
     _currentUser = user;
     _currentToken = token;
     _updateStatus(Authenticated(user));
   }
 
   void _clearSession() {
+    _log.info('Session cleared');
     _currentUser = null;
     _currentToken = null;
     _updateStatus(const Unauthenticated());
@@ -114,14 +123,16 @@ class OidcAuthService implements AuthService {
 
   @override
   Future<void> login() async {
+    _log.info('Starting login flow...');
     _updateStatus(const AuthLoading());
     try {
       final user = await _manager.loginAuthorizationCodeFlow();
       if (user == null) {
+        _log.warning('Login flow cancelled or returned null user');
         _clearSession();
       }
-      // If user != null, _onUserChanged will handle the status update.
     } catch (e) {
+      _log.severe('Login flow error: $e');
       _clearSession();
       _updateStatus(AuthError('Falha ao fazer login: $e'));
     }
@@ -129,10 +140,11 @@ class OidcAuthService implements AuthService {
 
   @override
   Future<void> logout() async {
+    _log.info('Starting logout flow...');
     try {
       await _manager.logout();
-    } catch (_) {
-      // Ignora o erro da lib, mas garante que o app deslogue localmente
+    } catch (e) {
+      _log.warning('Logout flow error (ignoring): $e');
     } finally {
       _clearSession();
     }
@@ -140,19 +152,26 @@ class OidcAuthService implements AuthService {
 
   @override
   Future<void> tryRestoreSession() async {
+    _log.info('Attempting to restore session...');
     if (_manager.currentUser == null) {
+      _log.info('No session found to restore');
       _clearSession();
+    } else {
+      _log.info('Session found for user: ${_manager.currentUser!.uid}');
     }
   }
 
   @override
   Future<void> refreshToken() async {
+    _log.info('Refreshing token...');
     try {
       final user = await _manager.refreshToken();
       if (user == null) {
+        _log.warning('Token refresh returned null user');
         _clearSession();
       }
     } catch (e) {
+      _log.severe('Token refresh error: $e');
       _updateStatus(AuthError('Falha ao renovar token: $e'));
     }
   }

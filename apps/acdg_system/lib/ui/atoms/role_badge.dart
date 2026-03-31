@@ -1,4 +1,5 @@
 import 'package:auth/auth.dart';
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 class RoleBadge extends StatelessWidget {
@@ -7,17 +8,19 @@ class RoleBadge extends StatelessWidget {
   final AuthRole role;
 
   String get _label => switch (role) {
-        AuthRole.socialWorker => 'Assistente Social',
-        AuthRole.owner => 'Responsavel',
-        AuthRole.admin => 'Administrador',
-      };
+    AuthRole.socialWorker => 'Assistente Social',
+    AuthRole.owner => 'Responsável',
+    AuthRole.admin => 'Administrador',
+  };
 
   @override
   Widget build(BuildContext context) {
     final color = switch (role) {
-      AuthRole.socialWorker => Theme.of(context).colorScheme.primary,
-      AuthRole.owner => Theme.of(context).colorScheme.secondary,
-      AuthRole.admin => Theme.of(context).colorScheme.tertiary,
+      AuthRole.socialWorker => AppColors.primary,
+      AuthRole.owner => const Color(
+        0xFF0477BF,
+      ), // Azul secundário (provisório até novo token)
+      AuthRole.admin => AppColors.textPrimary,
     };
 
     return Container(
@@ -27,13 +30,7 @@ class RoleBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        _label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
+      child: AcdgText(_label, variant: AcdgTextVariant.caption, color: color),
     );
   }
 }

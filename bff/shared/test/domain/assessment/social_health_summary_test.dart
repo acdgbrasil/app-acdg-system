@@ -15,9 +15,9 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       final shs = result.valueOrNull!;
-      // Note: "ALIMENTAÇÃO " != "Alimentação" em termos de case, mas o trim removeu espaços. 
-      // Nosso helper normalize() apenas trim + collapse. 
-      expect(shs.functionalDependencies.length, 3); 
+      // Note: "ALIMENTAÇÃO " != "Alimentação" em termos de case, mas o trim removeu espaços.
+      // Nosso helper normalize() apenas trim + collapse.
+      expect(shs.functionalDependencies.length, 3);
       expect(shs.functionalDependencies[0], 'Alimentação');
     });
 

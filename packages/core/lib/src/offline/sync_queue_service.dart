@@ -36,10 +36,7 @@ class SyncQueueService {
         .filter()
         .statusEqualTo('PENDING')
         .and()
-        .group((q) => q
-            .nextRetryAtIsNull()
-            .or()
-            .nextRetryAtLessThan(now))
+        .group((q) => q.nextRetryAtIsNull().or().nextRetryAtLessThan(now))
         .sortByTimestamp()
         .findAll();
   }
@@ -68,16 +65,18 @@ class SyncQueueService {
       if (action != null) {
         action.retryCount++;
         action.lastError = error;
-        
+
         if (action.retryCount >= 10) {
           action.status = 'FAILED'; // Permanent failure
         } else {
           action.status = 'PENDING';
           // Exponential backoff: 5s, 10s, 20s, 40s... up to 5 min
           final seconds = min(pow(2, action.retryCount) * 5, 300).toInt();
-          action.nextRetryAt = DateTime.now().toUtc().add(Duration(seconds: seconds));
+          action.nextRetryAt = DateTime.now().toUtc().add(
+            Duration(seconds: seconds),
+          );
         }
-        
+
         await _isarService.db.syncActions.put(action);
       }
     });

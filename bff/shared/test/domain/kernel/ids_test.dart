@@ -8,7 +8,9 @@ void main() {
     const validUuid = '550e8400-e29b-41d4-a716-446655440000';
 
     test('Deve criar PersonId válido e normalizar', () {
-      final result = PersonId.create('  550E8400-E29B-41D4-A716-446655440000  ');
+      final result = PersonId.create(
+        '  550E8400-E29B-41D4-A716-446655440000  ',
+      );
       expect(result.isSuccess, isTrue);
       expect(result.valueOrNull!.value, validUuid);
     });

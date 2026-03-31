@@ -16,7 +16,12 @@ final class SocialHealthSummary with Equatable {
   final bool hasRelevantDrugTherapy;
 
   @override
-  List<Object?> get props => [requiresConstantCare, hasMobilityImpairment, functionalDependencies, hasRelevantDrugTherapy];
+  List<Object?> get props => [
+    requiresConstantCare,
+    hasMobilityImpairment,
+    functionalDependencies,
+    hasRelevantDrugTherapy,
+  ];
 
   static Result<SocialHealthSummary> create({
     required bool requiresConstantCare,
@@ -30,7 +35,17 @@ final class SocialHealthSummary with Equatable {
       final trimmed = item.normalizedTrim();
       if (trimmed.isEmpty) {
         return Failure(
-          AppError(code: 'SHS-001', message: 'Itens de dependência funcional não podem ser vazios', module: 'social-care/social-health-summary', kind: 'domainValidation', http: 422, observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.warning))
+          AppError(
+            code: 'SHS-001',
+            message: 'Itens de dependência funcional não podem ser vazios',
+            module: 'social-care/social-health-summary',
+            kind: 'domainValidation',
+            http: 422,
+            observability: const Observability(
+              category: ErrorCategory.domainRuleViolation,
+              severity: ErrorSeverity.warning,
+            ),
+          ),
         );
       }
       if (!normalizedList.contains(trimmed)) {
@@ -38,11 +53,13 @@ final class SocialHealthSummary with Equatable {
       }
     }
 
-    return Success(SocialHealthSummary._(
-      requiresConstantCare: requiresConstantCare,
-      hasMobilityImpairment: hasMobilityImpairment,
-      functionalDependencies: List.unmodifiable(normalizedList),
-      hasRelevantDrugTherapy: hasRelevantDrugTherapy,
-    ));
+    return Success(
+      SocialHealthSummary._(
+        requiresConstantCare: requiresConstantCare,
+        hasMobilityImpairment: hasMobilityImpairment,
+        functionalDependencies: List.unmodifiable(normalizedList),
+        hasRelevantDrugTherapy: hasRelevantDrugTherapy,
+      ),
+    );
   }
 }

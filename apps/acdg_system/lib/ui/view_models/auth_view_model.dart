@@ -18,6 +18,7 @@ class AuthViewModel extends BaseViewModel {
     _statusSubscription = authRepository.statusStream.listen(_onStatusChanged);
   }
 
+  static final _log = AcdgLogger.get('AuthViewModel');
   final AuthRepository authRepository;
   StreamSubscription<AuthStatus>? _statusSubscription;
 
@@ -29,10 +30,17 @@ class AuthViewModel extends BaseViewModel {
   late final Command0<void> restoreSession;
 
   Future<void> init() async {
+    _log.info('Initializing AuthViewModel...');
     await restoreSession.execute();
   }
 
   void _onStatusChanged(AuthStatus newStatus) {
+    _log.info('Auth status changed: ${newStatus.runtimeType}');
+
+    if (newStatus is AuthError) {
+      _log.severe('Authentication error: ${newStatus.message}');
+    }
+
     status.value = newStatus;
     user.value = switch (newStatus) {
       Authenticated(:final user) => user,
@@ -43,6 +51,7 @@ class AuthViewModel extends BaseViewModel {
 
   @override
   void onDispose() {
+    _log.info('Disposing AuthViewModel');
     _statusSubscription?.cancel();
     login.dispose();
     logout.dispose();
