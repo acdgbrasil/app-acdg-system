@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter/widgets.dart';
+import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/models/enums/gender.dart';
 import 'package:social_care/src/ui/patient_registration/models/enums/nationality.dart';
 import 'package:social_care/src/ui/patient_registration/models/personal_data.dart';
@@ -22,11 +23,11 @@ class PersonalDataFormState {
 
   // 3. Validadores Reutilizáveis
   String? _namesValidator(String? value, {bool isOptional = false}) {
-    if (value == null || value.trim().isEmpty) return isOptional ? null : 'Campo obrigatório';
-    if (value.length < 3) return 'Mínimo de 3 caracteres';
-    if (RegExp(r'[0-9]').hasMatch(value)) return 'Nomes não podem conter números';
+    if (value == null || value.trim().isEmpty) return isOptional ? null : ReferencePersonLn10.errorRequired;
+    if (value.length < 3) return ReferencePersonLn10.errorMinChars3;
+    if (RegExp(r'[0-9]').hasMatch(value)) return ReferencePersonLn10.errorNameNoDigits;
     if (RegExp(r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]').hasMatch(value)) {
-      return 'Nomes não podem conter caracteres especiais';
+      return ReferencePersonLn10.errorNameNoSpecialChars;
     }
     return null;
   }
@@ -40,7 +41,7 @@ class PersonalDataFormState {
   String? get phoneNumberError {
     final digitsOnly = phoneNumber.text.replaceAll(RegExp(r'\D'), '');
     if (digitsOnly.isEmpty) return null;
-    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) return 'Número de telefone inválido';
+    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) return ReferencePersonLn10.errorPhoneInvalid;
     return null;
   }
 
@@ -49,14 +50,14 @@ class PersonalDataFormState {
   String? Function(String?) get lastNameValidator => (value) => _namesValidator(value);
   String? Function(String?) get motherNameValidator => (value) => _namesValidator(value);
   String? Function(String?) get socialNameValidator => (value) => _namesValidator(value, isOptional: true);
-  
-  String? Function(Nationality?) get nationalityValidator => (value) => value == null ? 'Selecione a nacionalidade' : null;
-  String? Function(Gender?) get genderValidator => (value) => value == null ? 'Selecione o sexo' : null;
+
+  String? Function(Nationality?) get nationalityValidator => (value) => value == null ? ReferencePersonLn10.errorSelectNationality : null;
+  String? Function(Gender?) get genderValidator => (value) => value == null ? ReferencePersonLn10.errorSelectGender : null;
 
   String? Function(String?) get phoneNumberValidator => (value) {
     final digitsOnly = value?.replaceAll(RegExp(r'\D'), '');
     if (digitsOnly == null || digitsOnly.isEmpty) return null;
-    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) return 'Número de telefone inválido';
+    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) return ReferencePersonLn10.errorPhoneInvalid;
     return null;
   };
 
@@ -89,8 +90,8 @@ class PersonalDataFormState {
     if (lastNameError != null) lastNameError!,
     if (motherNameError != null) motherNameError!,
     if (socialNameError != null) socialNameError!,
-    if (nationality.value == null) 'Selecione a nacionalidade',
-    if (gender.value == null) 'Selecione o sexo',
+    if (nationality.value == null) ReferencePersonLn10.errorSelectNationality,
+    if (gender.value == null) ReferencePersonLn10.errorSelectGender,
     if (phoneNumberError != null) phoneNumberError!,
   ];
 

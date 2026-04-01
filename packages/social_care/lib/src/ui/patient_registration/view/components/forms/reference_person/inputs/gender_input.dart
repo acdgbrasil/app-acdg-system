@@ -35,24 +35,34 @@ final class GenderInput extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                CheckboxListTile(
-                  title: const Text('Masculino'),
-                  value: currentGender == Gender.masculino,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  onChanged: (checked) {
-                    final newValue = checked == true ? Gender.masculino : null;
-                    genderNotifier.value = newValue;
-                    state.didChange(newValue);
+                RadioListTile<Gender>(
+                  title: const Text(ReferencePersonLn10.genderOptionMale),
+                  value: Gender.masculino,
+                  groupValue: currentGender,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    genderNotifier.value = val;
+                    state.didChange(val);
                   },
                 ),
-                CheckboxListTile(
-                  title: const Text('Feminino'),
-                  value: currentGender == Gender.feminino,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  onChanged: (checked) {
-                    final newValue = checked == true ? Gender.feminino : null;
-                    genderNotifier.value = newValue;
-                    state.didChange(newValue);
+                RadioListTile<Gender>(
+                  title: const Text(ReferencePersonLn10.genderOptionFemale),
+                  value: Gender.feminino,
+                  groupValue: currentGender,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    genderNotifier.value = val;
+                    state.didChange(val);
+                  },
+                ),
+                RadioListTile<Gender>(
+                  title: const Text(ReferencePersonLn10.genderOptionOther),
+                  value: Gender.outro,
+                  groupValue: currentGender,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    genderNotifier.value = val;
+                    state.didChange(val);
                   },
                 ),
                 if (state.hasError)

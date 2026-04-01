@@ -5,25 +5,47 @@ import '../models/placement_history_detail.dart';
 
 /// Maps [PlacementHistoryDetail] → [UpdatePlacementHistoryIntent].
 abstract final class PlacementHistoryDetailMapper {
-  static UpdatePlacementHistoryIntent toIntent(
+  static Result<UpdatePlacementHistoryIntent> toIntent(
     PlacementHistoryDetail detail, {
     required PatientId patientId,
   }) {
-    final placements = detail.individualPlacements
-        .map(
-          (p) => PlacementRegistry.create(
-            id: p.id,
-            memberId: PersonId.create(p.memberId).valueOrNull!,
-            startDate: TimeStamp.fromIso(p.startDate).valueOrNull!,
-            endDate: p.endDate != null
-                ? TimeStamp.fromIso(p.endDate!).valueOrNull
-                : null,
-            reason: p.reason,
-          ),
-        )
-        .whereType<Success<PlacementRegistry>>()
-        .map((r) => r.value)
-        .toList();
+    final placements = <PlacementRegistry>[];
+    for (final (i, p) in detail.individualPlacements.indexed) {
+      final PersonId memberId;
+      switch (PersonId.create(p.memberId)) {
+        case Success(:final value): memberId = value;
+        case Failure(:final error):
+          return Failure('individualPlacements[$i].memberId: $error');
+      }
+
+      final TimeStamp startDate;
+      switch (TimeStamp.fromIso(p.startDate)) {
+        case Success(:final value): startDate = value;
+        case Failure(:final error):
+          return Failure('individualPlacements[$i].startDate: $error');
+      }
+
+      TimeStamp? endDate;
+      if (p.endDate != null) {
+        switch (TimeStamp.fromIso(p.endDate!)) {
+          case Success(:final value): endDate = value;
+          case Failure(:final error):
+            return Failure('individualPlacements[$i].endDate: $error');
+        }
+      }
+
+      switch (PlacementRegistry.create(
+        id: p.id,
+        memberId: memberId,
+        startDate: startDate,
+        endDate: endDate,
+        reason: p.reason,
+      )) {
+        case Success(:final value): placements.add(value);
+        case Failure(:final error):
+          return Failure('individualPlacements[$i]: $error');
+      }
+    }
 
     final history = PlacementHistory(
       familyId: patientId,
@@ -38,9 +60,9 @@ abstract final class PlacementHistoryDetailMapper {
       ),
     );
 
-    return UpdatePlacementHistoryIntent(
+    return Success(UpdatePlacementHistoryIntent(
       patientId: patientId,
       history: history,
-    );
+    ));
   }
 }

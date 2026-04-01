@@ -55,7 +55,7 @@ class AppRouter {
           final getUseCase = context.read<GetPatientUseCase>();
           final syncEngine = context.read<SyncEngine?>();
           final queueService = context.read<SyncQueueService>();
-          final isarService = context.read<IsarService>();
+          final dbService = context.read<DriftDatabaseService>();
           return ChangeNotifierProvider(
             create: (_) => HomeViewModel(
               listPatientsUseCase: listUseCase,
@@ -70,7 +70,7 @@ class AppRouter {
                           ctx,
                           queueService: queueService,
                           syncEngine: syncEngine,
-                          isarService: isarService,
+                          dbService: dbService,
                         ),
                       ),
                     )

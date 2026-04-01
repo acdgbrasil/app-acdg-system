@@ -5,28 +5,46 @@ import '../models/socioeconomic_situation_detail.dart';
 
 /// Maps [SocioeconomicSituationDetail] → [UpdateSocioEconomicIntent].
 abstract final class SocioeconomicDetailMapper {
-  static UpdateSocioEconomicIntent toIntent(
+  static Result<UpdateSocioEconomicIntent> toIntent(
     SocioeconomicSituationDetail detail, {
     required PatientId patientId,
   }) {
-    return UpdateSocioEconomicIntent(
+    final benefits = <SocialBenefit>[];
+    for (final (i, b) in detail.socialBenefits.indexed) {
+      final LookupId benefitTypeId;
+      switch (LookupId.create(b.benefitTypeId)) {
+        case Success(:final value): benefitTypeId = value;
+        case Failure(:final error):
+          return Failure('socialBenefits[$i].benefitTypeId: $error');
+      }
+
+      final PersonId beneficiaryId;
+      switch (PersonId.create(b.beneficiaryId)) {
+        case Success(:final value): beneficiaryId = value;
+        case Failure(:final error):
+          return Failure('socialBenefits[$i].beneficiaryId: $error');
+      }
+
+      switch (SocialBenefit.create(
+        benefitName: b.benefitName,
+        benefitTypeId: benefitTypeId,
+        amount: b.amount,
+        beneficiaryId: beneficiaryId,
+      )) {
+        case Success(:final value): benefits.add(value);
+        case Failure(:final error):
+          return Failure('socialBenefits[$i]: $error');
+      }
+    }
+
+    return Success(UpdateSocioEconomicIntent(
       patientId: patientId,
       totalFamilyIncome: detail.totalFamilyIncome,
       incomePerCapita: detail.incomePerCapita,
       receivesSocialBenefit: detail.receivesSocialBenefit,
       hasUnemployed: detail.hasUnemployed,
       mainSourceOfIncome: detail.mainSourceOfIncome,
-      socialBenefits: detail.socialBenefits
-          .map(
-            (b) => SocialBenefit.create(
-              benefitName: b.benefitName,
-              amount: b.amount,
-              beneficiaryId: PersonId.create(b.beneficiaryId).valueOrNull!,
-            ),
-          )
-          .whereType<Success<SocialBenefit>>()
-          .map((r) => r.value)
-          .toList(),
-    );
+      socialBenefits: benefits,
+    ));
   }
 }

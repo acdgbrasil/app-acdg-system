@@ -33,8 +33,9 @@ class StepAddressContent extends StatelessWidget {
         if (showErrors)
           RegistrationErrorBanner(errors: formState.validationErrors),
         IsShelterInput(
-          isShelterNotifier: formState.isShelter,
-          errorText: showErrors ? formState.isShelterError : null,
+          housingSituationNotifier: formState.housingSituation,
+          errorText: showErrors ? formState.housingSituationError : null,
+          onHomelessSelected: formState.clearAddressFields,
         ),
         const SizedBox(height: 24),
         ResidenceLocationInput(
@@ -43,33 +44,69 @@ class StepAddressContent extends StatelessWidget {
         ),
         const SizedBox(height: 32),
         const RegistrationSectionTitle(ReferencePersonLn10.sectionAddress),
-        RegistrationFormGrid(
-          children: [
-            CepInput(
-              cepController: formState.cep,
-              errorText: showErrors ? formState.cepError : null,
-            ),
-            StreetInput(
-              streetController: formState.street,
-            ),
-            NumberInput(
-              numberController: formState.number,
-            ),
-            ComplementInput(
-              complementController: formState.complement,
-            ),
-            NeighborhoodInput(
-              neighborhoodController: formState.neighborhood,
-            ),
-            StateInput(
-              stateNotifier: formState.state,
-              errorText: showErrors ? formState.stateError : null,
-            ),
-            CityInput(
-              cityController: formState.city,
-              errorText: showErrors ? formState.cityError : null,
-            ),
-          ],
+        ValueListenableBuilder<HousingSituation?>(
+          valueListenable: formState.housingSituation,
+          builder: (context, situation, _) {
+            final disabled = formState.areAddressFieldsDisabled;
+            return RegistrationFormGrid(
+              children: [
+                IgnorePointer(
+                  ignoring: disabled,
+                  child: Opacity(
+                    opacity: disabled ? 0.3 : 1.0,
+                    child: CepInput(
+                      cepController: formState.cep,
+                      errorText: showErrors ? formState.cepError : null,
+                    ),
+                  ),
+                ),
+                IgnorePointer(
+                  ignoring: disabled,
+                  child: Opacity(
+                    opacity: disabled ? 0.3 : 1.0,
+                    child: StreetInput(
+                      streetController: formState.street,
+                    ),
+                  ),
+                ),
+                IgnorePointer(
+                  ignoring: disabled,
+                  child: Opacity(
+                    opacity: disabled ? 0.3 : 1.0,
+                    child: NumberInput(
+                      numberController: formState.number,
+                    ),
+                  ),
+                ),
+                IgnorePointer(
+                  ignoring: disabled,
+                  child: Opacity(
+                    opacity: disabled ? 0.3 : 1.0,
+                    child: ComplementInput(
+                      complementController: formState.complement,
+                    ),
+                  ),
+                ),
+                IgnorePointer(
+                  ignoring: disabled,
+                  child: Opacity(
+                    opacity: disabled ? 0.3 : 1.0,
+                    child: NeighborhoodInput(
+                      neighborhoodController: formState.neighborhood,
+                    ),
+                  ),
+                ),
+                StateInput(
+                  stateNotifier: formState.state,
+                  errorText: showErrors ? formState.stateError : null,
+                ),
+                CityInput(
+                  cityController: formState.city,
+                  errorText: showErrors ? formState.cityError : null,
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
