@@ -1,13 +1,22 @@
 import 'dart:convert';
 import 'dart:math';
+
+import 'package:drift/drift.dart';
 import 'package:persistence/persistence.dart';
-import 'isar_service.dart';
 
-/// Service responsible for managing the queue of actions to be synchronized with the backend.
+import 'drift_database_service.dart';
+
+/// Service responsible for managing the sync action queue.
+///
+/// Provides reactive [watchPendingActions] stream that replaces
+/// the former polling-based approach. The SyncEngine subscribes
+/// to this stream and processes actions as they become available.
 class SyncQueueService {
-  final IsarService _isarService;
+  final DriftDatabaseService _dbService;
 
-  SyncQueueService(this._isarService);
+  SyncQueueService(this._dbService);
+
+  AcdgDatabase get _db => _dbService.db;
 
   /// Enqueues a new action for synchronization.
   Future<void> enqueue({
@@ -15,89 +24,138 @@ class SyncQueueService {
     required String actionType,
     required Map<String, dynamic> payload,
   }) async {
-    final action = SyncAction()
-      ..actionId = DateTime.now().millisecondsSinceEpoch.toString()
-      ..patientId = patientId
-      ..actionType = actionType
-      ..payloadJson = jsonEncode(payload)
-      ..timestamp = DateTime.now().toUtc()
-      ..status = 'PENDING'
-      ..retryCount = 0;
-
-    await _isarService.db.writeTxn(() async {
-      await _isarService.db.syncActions.put(action);
-    });
+    await _db.into(_db.syncActions).insert(
+      SyncActionsCompanion.insert(
+        actionId: DateTime.now().millisecondsSinceEpoch.toString(),
+        patientId: patientId,
+        actionType: actionType,
+        payloadJson: jsonEncode(payload),
+        timestamp: DateTime.now().toUtc(),
+      ),
+    );
   }
 
-  /// Returns all pending actions that are ready for retry.
+  /// Returns all pending actions that are ready for processing.
+  ///
+  /// Filters by status = PENDING and nextRetryAt <= now (or null).
   Future<List<SyncAction>> getPendingActions() async {
     final now = DateTime.now().toUtc();
-    return await _isarService.db.syncActions
-        .filter()
-        .statusEqualTo('PENDING')
-        .and()
-        .group((q) => q.nextRetryAtIsNull().or().nextRetryAtLessThan(now))
-        .sortByTimestamp()
-        .findAll();
+    final query = _db.select(_db.syncActions)
+      ..where(
+        (t) =>
+            t.status.equals('PENDING') &
+            (t.nextRetryAt.isNull() | t.nextRetryAt.isSmallerOrEqualValue(now)),
+      )
+      ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]);
+    return query.get();
   }
 
-  /// Returns all actions in the queue (pending, failed, conflict, etc).
-  Future<List<SyncAction>> getAllActions() async {
-    return await _isarService.db.syncActions.where().findAll();
-  }
+  /// Reactive stream that emits whenever pending actions change.
+  ///
+  /// Watches all PENDING actions from Drift (no time filter in SQL).
+  /// The time filter (`nextRetryAt <= now`) is applied in Dart at each
+  /// emission so that `DateTime.now()` is always fresh — fixing the
+  /// frozen-timestamp bug where retries with future `nextRetryAt` were
+  /// permanently excluded from the stream.
+  ///
+  /// Returns a record with:
+  /// - `ready`: actions eligible for processing right now
+  /// - `nextRetryAt`: earliest retry time among not-yet-ready actions,
+  ///   so the caller can schedule a precise delayed re-check
+  Stream<({List<SyncAction> ready, DateTime? nextRetryAt})>
+      watchPendingActions() {
+    final query = _db.select(_db.syncActions)
+      ..where((t) => t.status.equals('PENDING'))
+      ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]);
 
-  /// Updates the status of a sync action.
-  Future<void> updateStatus(Id id, String status, {String? error}) async {
-    await _isarService.db.writeTxn(() async {
-      final action = await _isarService.db.syncActions.get(id);
-      if (action != null) {
-        action.status = status;
-        if (error != null) action.lastError = error;
-        await _isarService.db.syncActions.put(action);
-      }
-    });
-  }
+    return query.watch().map((actions) {
+      final now = DateTime.now().toUtc();
+      final ready = <SyncAction>[];
+      DateTime? earliestRetry;
 
-  /// Marks an action as failed and schedules a retry with exponential backoff.
-  Future<void> markFailed(Id id, String error) async {
-    await _isarService.db.writeTxn(() async {
-      final action = await _isarService.db.syncActions.get(id);
-      if (action != null) {
-        action.retryCount++;
-        action.lastError = error;
-
-        if (action.retryCount >= 10) {
-          action.status = 'FAILED'; // Permanent failure
+      for (final action in actions) {
+        if (action.nextRetryAt == null || !action.nextRetryAt!.isAfter(now)) {
+          ready.add(action);
         } else {
-          action.status = 'PENDING';
-          // Exponential backoff: 5s, 10s, 20s, 40s... up to 5 min
-          final seconds = min(pow(2, action.retryCount) * 5, 300).toInt();
-          action.nextRetryAt = DateTime.now().toUtc().add(
-            Duration(seconds: seconds),
-          );
+          final retryAt = action.nextRetryAt!;
+          if (earliestRetry == null || retryAt.isBefore(earliestRetry)) {
+            earliestRetry = retryAt;
+          }
         }
-
-        await _isarService.db.syncActions.put(action);
       }
+
+      return (ready: ready, nextRetryAt: earliestRetry);
     });
   }
 
-  /// Marks an action as CONFLICT.
-  Future<void> markConflict(Id id, String details) async {
-    await _isarService.db.writeTxn(() async {
-      final action = await _isarService.db.syncActions.get(id);
-      if (action != null) {
-        action.status = 'CONFLICT';
-        action.conflictDetails = details;
-        await _isarService.db.syncActions.put(action);
-      }
-    });
+  /// Returns all actions in the queue (any status).
+  Future<List<SyncAction>> getAllActions() async {
+    return (_db.select(_db.syncActions)
+          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
+        .get();
   }
 
-  /// Deletes a sync action.
-  Future<void> removeAction(Id id) async {
-    await _isarService.db.writeTxn(() async {
-      await _isarService.db.syncActions.delete(id);
-    });
+  /// Updates the status of a sync action by [id].
+  Future<void> updateStatus(int id, String status, {String? error}) async {
+    final companion = SyncActionsCompanion(
+      status: Value(status),
+      lastError: error != null ? Value(error) : const Value.absent(),
+    );
+    await (_db.update(_db.syncActions)..where((t) => t.id.equals(id)))
+        .write(companion);
+  }
+
+  /// Marks an action as failed with exponential backoff retry scheduling.
+  ///
+  /// After 10 retries, the action is permanently marked as FAILED.
+  Future<void> markFailed(int id, String error) async {
+    final action =
+        await (_db.select(_db.syncActions)..where((t) => t.id.equals(id)))
+            .getSingleOrNull();
+    if (action == null) return;
+
+    final newRetryCount = action.retryCount + 1;
+
+    if (newRetryCount >= 10) {
+      await (_db.update(_db.syncActions)..where((t) => t.id.equals(id))).write(
+        SyncActionsCompanion(
+          status: const Value('FAILED'),
+          retryCount: Value(newRetryCount),
+          lastError: Value(error),
+        ),
+      );
+    } else {
+      final seconds = min(pow(2, newRetryCount) * 5, 300).toInt();
+      final nextRetry = DateTime.now().toUtc().add(Duration(seconds: seconds));
+
+      await (_db.update(_db.syncActions)..where((t) => t.id.equals(id))).write(
+        SyncActionsCompanion(
+          status: const Value('PENDING'),
+          retryCount: Value(newRetryCount),
+          lastError: Value(error),
+          nextRetryAt: Value(nextRetry),
+        ),
+      );
+    }
+  }
+
+  /// Marks an action as CONFLICT (409 version mismatch).
+  Future<void> markConflict(int id, String details) async {
+    await (_db.update(_db.syncActions)..where((t) => t.id.equals(id))).write(
+      SyncActionsCompanion(
+        status: const Value('CONFLICT'),
+        conflictDetails: Value(details),
+      ),
+    );
+  }
+
+  /// Removes a sync action after successful synchronization.
+  Future<void> removeAction(int id) async {
+    await (_db.delete(_db.syncActions)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Removes all actions from the sync queue.
+  Future<void> clearAllActions() async {
+    await _db.delete(_db.syncActions).go();
   }
 }
