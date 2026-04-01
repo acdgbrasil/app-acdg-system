@@ -30,9 +30,12 @@ void main() {
         ).valueOrNull!,
       ];
 
-      final socialBenefits = [
+      final socialBenefits = <SocialBenefit>[
         SocialBenefit.create(
           benefitName: 'BPC',
+          benefitTypeId: LookupId.create(
+            '550e8400-e29b-41d4-a716-446655440099',
+          ).valueOrNull!,
           amount: 600,
           beneficiaryId: personId,
         ).valueOrNull!,

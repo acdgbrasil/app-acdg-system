@@ -17,12 +17,12 @@ class Root extends StatefulWidget {
   const Root({
     super.key,
     this.authRepository,
-    this.isarService,
+    this.dbService,
     this.connectivityService,
   });
 
   final AuthRepository? authRepository;
-  final IsarService? isarService;
+  final DriftDatabaseService? dbService;
   final ConnectivityService? connectivityService;
 
   @override
@@ -39,7 +39,7 @@ class _RootState extends State<Root> {
     super.initState();
     _deps = AppDependencyManager(
       authRepository: widget.authRepository,
-      isarService: widget.isarService,
+      dbService: widget.dbService,
       connectivityService: widget.connectivityService,
     );
     _initialize();

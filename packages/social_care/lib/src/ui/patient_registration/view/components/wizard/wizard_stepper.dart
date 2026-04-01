@@ -20,6 +20,9 @@ class WizardStepper extends StatelessWidget {
       ReferencePersonLn10.stepDocuments,
       ReferencePersonLn10.stepAddress,
       ReferencePersonLn10.stepDiagnoses,
+      ReferencePersonLn10.stepFamilyComposition,
+      ReferencePersonLn10.stepSpecificities,
+      ReferencePersonLn10.stepIntakeInfo,
     ];
 
     return Padding(

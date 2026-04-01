@@ -28,7 +28,7 @@ class AppProviders extends StatelessWidget {
         // 1. Core State & Infrastructure
         ChangeNotifierProvider<AuthViewModel>.value(value: deps.authViewModel),
         ListenableProvider<AuthRepository>.value(value: deps.authRepository),
-        Provider<IsarService>.value(value: deps.isarService),
+        Provider<DriftDatabaseService>.value(value: deps.dbService),
         Provider<ConnectivityService>.value(value: deps.connectivityService),
         Provider<SyncQueueService>.value(value: deps.syncQueueService),
         Provider<LocalSocialCareRepository>.value(

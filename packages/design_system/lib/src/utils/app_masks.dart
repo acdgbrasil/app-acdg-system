@@ -33,35 +33,29 @@ class _MaskFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final text = newValue.text;
-    final buffer = StringBuffer();
-    var rawCount = 0;
-    var textIndex = 0;
+    // 1. Extract only valid raw characters from input
+    final rawChars = StringBuffer();
+    for (var i = 0; i < newValue.text.length && rawChars.length < _maxRawChars; i++) {
+      if (_charTest(newValue.text[i])) {
+        rawChars.write(newValue.text[i]);
+      }
+    }
 
-    for (var maskIndex = 0;
-        maskIndex < mask.length && rawCount < _maxRawChars;
-        maskIndex++) {
+    final raw = rawChars.toString();
+    if (raw.isEmpty) {
+      return const TextEditingValue();
+    }
+
+    // 2. Apply mask over raw characters
+    final buffer = StringBuffer();
+    var rawIndex = 0;
+
+    for (var maskIndex = 0; maskIndex < mask.length && rawIndex < raw.length; maskIndex++) {
       if (mask[maskIndex] == '#') {
-        // Advance through input until we find a valid char or exhaust input.
-        while (textIndex < text.length) {
-          final char = text[textIndex];
-          textIndex++;
-          if (_charTest(char)) {
-            buffer.write(char);
-            rawCount++;
-            break;
-          }
-        }
-        // No more valid input chars — stop.
-        if (rawCount == 0 || buffer.length == 0) {
-          if (textIndex >= text.length && rawCount < maskIndex + 1) break;
-        }
-        if (textIndex > text.length) break;
+        buffer.write(raw[rawIndex]);
+        rawIndex++;
       } else {
-        // Only write literal if there's still raw input ahead.
-        if (textIndex < text.length || rawCount > 0) {
-          buffer.write(mask[maskIndex]);
-        }
+        buffer.write(mask[maskIndex]);
       }
     }
 
@@ -106,6 +100,13 @@ abstract final class AppMasks {
     FilteringTextInputFormatter.digitsOnly,
     LengthLimitingTextInputFormatter(15),
     _MaskFormatter(mask: '(##) #####-####', charTest: _isDigit),
+  ];
+
+  /// CNS (Cartão Nacional de Saúde): 15 digits → ### #### #### ####
+  static final List<TextInputFormatter> cns = [
+    FilteringTextInputFormatter.digitsOnly,
+    LengthLimitingTextInputFormatter(18),
+    _MaskFormatter(mask: '### #### #### ####', charTest: _isDigit),
   ];
 
   /// RG: up to 9 alphanumeric chars → ##.###.###-#

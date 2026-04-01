@@ -9,20 +9,20 @@ import 'package:social_care_desktop/social_care_desktop.dart';
 class SyncDetailPanel extends StatefulWidget {
   final SyncQueueService queueService;
   final SyncEngine syncEngine;
-  final IsarService? isarService;
+  final DriftDatabaseService? dbService;
 
   const SyncDetailPanel({
     super.key,
     required this.queueService,
     required this.syncEngine,
-    this.isarService,
+    this.dbService,
   });
 
   static Future<void> show(
     BuildContext context, {
     required SyncQueueService queueService,
     required SyncEngine syncEngine,
-    IsarService? isarService,
+    DriftDatabaseService? dbService,
   }) {
     return showDialog(
       context: context,
@@ -31,7 +31,7 @@ class SyncDetailPanel extends StatefulWidget {
       builder: (_) => SyncDetailPanel(
         queueService: queueService,
         syncEngine: syncEngine,
-        isarService: isarService,
+        dbService: dbService,
       ),
     );
   }
@@ -97,16 +97,13 @@ class _SyncDetailPanelState extends State<SyncDetailPanel> {
   }
 
   Future<void> _clearLocalCache() async {
-    final isar = widget.isarService;
-    if (isar == null) return;
+    final dbService = widget.dbService;
+    if (dbService == null) return;
 
     setState(() => _loading = true);
 
-    // Clear sync queue
-    await isar.db.writeTxn(() async {
-      await isar.db.syncActions.clear();
-      await isar.db.cachedPatients.clear();
-    });
+    await widget.queueService.clearAllActions();
+    await dbService.clearAllPatients();
 
     // Pull fresh data from server
     await widget.syncEngine.pullPatients();
@@ -239,7 +236,7 @@ class _SyncDetailPanelState extends State<SyncDetailPanel> {
                   isLoading: _retrying,
                   onTap: _syncNow,
                 ),
-              if (widget.isarService != null)
+              if (widget.dbService != null)
                 _HeaderAction(
                   label: 'Limpar cache',
                   icon: Icons.delete_sweep_rounded,

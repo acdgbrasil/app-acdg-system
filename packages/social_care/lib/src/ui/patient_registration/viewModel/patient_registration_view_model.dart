@@ -6,7 +6,10 @@ import 'package:social_care/src/ui/patient_registration/models/enums/gender.dart
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/address_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/diagnoses_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/documents_form_state.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/family_composition_form_state.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/intake_info_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/personal_data_form_state.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/specificities_form_state.dart';
 
 class PatientRegistrationViewModel extends BaseViewModel {
   PatientRegistrationViewModel({
@@ -23,6 +26,8 @@ class PatientRegistrationViewModel extends BaseViewModel {
   late final Command1<PatientId, RegisterPatientIntent> registerPatientCommand;
   String? _prRelationshipId;
 
+  static const _totalSteps = 7;
+
   Future<void> _loadPrRelationshipId() async {
     final result = await _lookupRepository.getLookupTable('dominio_parentesco');
     if (result case Success(:final value)) {
@@ -38,18 +43,24 @@ class PatientRegistrationViewModel extends BaseViewModel {
   final documentsFormState = DocumentsFormState();
   final addressFormState = AddressFormState();
   final diagnosesFormState = DiagnosesFormState();
+  final familyCompositionFormState = FamilyCompositionFormState();
+  final specificitiesFormState = SpecificitiesFormState();
+  final intakeInfoFormState = IntakeInfoFormState();
 
   // ── Estado global do wizard ──────────────────────────────────
   final currentStep = ValueNotifier<int>(0);
   final showStepErrors = ValueNotifier<bool>(false);
 
-  bool get isLastStep => currentStep.value == 3;
+  bool get isLastStep => currentStep.value == _totalSteps - 1;
 
   List<String> get currentStepErrors => switch (currentStep.value) {
     0 => referencePersonFormState.validationErrors,
     1 => documentsFormState.validationErrors,
     2 => addressFormState.validationErrors,
     3 => diagnosesFormState.validationErrors,
+    4 => familyCompositionFormState.validationErrors,
+    5 => specificitiesFormState.validationErrors,
+    6 => intakeInfoFormState.validationErrors,
     _ => [],
   };
 
@@ -60,12 +71,15 @@ class PatientRegistrationViewModel extends BaseViewModel {
       1 => documentsFormState.isValidForNextStep,
       2 => addressFormState.isValidForNextStep,
       3 => diagnosesFormState.isValidForNextStep,
+      4 => familyCompositionFormState.isValidForNextStep,
+      5 => specificitiesFormState.isValidForNextStep,
+      6 => intakeInfoFormState.isValidForNextStep,
       _ => false,
     };
   }
 
   void nextStep() {
-    if (currentStep.value >= 3) return;
+    if (currentStep.value >= _totalSteps - 1) return;
     if (!validateCurrentStep()) {
       showStepErrors.value = true;
       notifyListeners();
@@ -86,10 +100,14 @@ class PatientRegistrationViewModel extends BaseViewModel {
     final personal = referencePersonFormState;
     final docs = documentsFormState;
     final addr = addressFormState;
+    final spec = specificitiesFormState;
+    final intake = intakeInfoFormState;
 
-    final sex = personal.gender.value == Gender.masculino
-        ? Sex.masculino
-        : Sex.feminino;
+    final sex = switch (personal.gender.value) {
+      Gender.masculino => Sex.masculino,
+      Gender.feminino => Sex.feminino,
+      Gender.outro || null => Sex.outro,
+    };
 
     final residenceLocation = addr.residenceLocation.value == 'urbano'
         ? ResidenceLocation.urbano
@@ -115,6 +133,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
       birthDate: docs.birthDateParsed!,
       cpf: _nullIfEmpty(docs.cpfDigits),
       nis: _nullIfEmpty(docs.nisDigits),
+      cns: _nullIfEmpty(docs.cnsDigits),
       rgNumber: _nullIfEmpty(docs.rgNumber.text),
       rgAgency: _nullIfEmpty(docs.rgAgency.text),
       rgState: docs.rgUf.value,
@@ -129,7 +148,8 @@ class PatientRegistrationViewModel extends BaseViewModel {
       addressState: addr.state.value,
       city: _nullIfEmpty(addr.city.text),
       residenceLocation: residenceLocation,
-      isShelter: addr.isShelter.value ?? false,
+      isShelter: addr.isShelterValue,
+      isHomeless: addr.isHomelessValue,
 
       // Step 3 — Diagnósticos
       diagnoses: diagnosesFormState.entries.value
@@ -142,6 +162,22 @@ class PatientRegistrationViewModel extends BaseViewModel {
           .where((r) => r.isSuccess)
           .map((r) => r.valueOrNull!)
           .toList(),
+
+      // Step 4 — Composição Familiar (members assembled by RegistryMapper)
+      familyMembers: const [],
+
+      // Step 5 — Especificidades
+      socialIdentityTypeId: spec.selectedIdentity.value,
+      socialIdentityDescription:
+          spec.isDescriptionEnabled ? _nullIfEmpty(spec.identityDescription.text) : null,
+
+      // Step 6 — Forma de Ingresso
+      ingressTypeId: intake.ingressType.value,
+      originName: _nullIfEmpty(intake.originName.text),
+      originContact: _nullIfEmpty(intake.originContact.text),
+      serviceReason: _nullIfEmpty(intake.serviceReason.text),
+      linkedSocialPrograms: intake.selectedPrograms.value.toList(),
+      programObservation: _nullIfEmpty(intake.programObservation.text),
     );
   }
 
@@ -172,6 +208,9 @@ class PatientRegistrationViewModel extends BaseViewModel {
     documentsFormState.dispose();
     addressFormState.dispose();
     diagnosesFormState.dispose();
+    familyCompositionFormState.dispose();
+    specificitiesFormState.dispose();
+    intakeInfoFormState.dispose();
     currentStep.dispose();
     showStepErrors.dispose();
     super.dispose();

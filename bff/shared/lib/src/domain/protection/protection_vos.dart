@@ -184,6 +184,7 @@ final class RightsViolationReport with Equatable {
     this.incidentDate,
     required this.victimId,
     required this.violationType,
+    this.violationTypeId,
     required this.descriptionOfFact,
     this.actionsTaken,
   });
@@ -193,6 +194,7 @@ final class RightsViolationReport with Equatable {
   final TimeStamp? incidentDate;
   final PersonId victimId;
   final ViolationType violationType;
+  final LookupId? violationTypeId;
   final String descriptionOfFact;
   final String? actionsTaken;
 
@@ -205,6 +207,7 @@ final class RightsViolationReport with Equatable {
     TimeStamp? Function()? incidentDate,
     PersonId? victimId,
     ViolationType? violationType,
+    LookupId? Function()? violationTypeId,
     String? descriptionOfFact,
     String? Function()? actionsTaken,
   }) {
@@ -214,6 +217,9 @@ final class RightsViolationReport with Equatable {
       incidentDate: incidentDate != null ? incidentDate() : this.incidentDate,
       victimId: victimId ?? this.victimId,
       violationType: violationType ?? this.violationType,
+      violationTypeId: violationTypeId != null
+          ? violationTypeId()
+          : this.violationTypeId,
       descriptionOfFact: descriptionOfFact ?? this.descriptionOfFact,
       actionsTaken: actionsTaken != null ? actionsTaken() : this.actionsTaken,
     );
@@ -225,6 +231,7 @@ final class RightsViolationReport with Equatable {
     TimeStamp? incidentDate,
     required PersonId victimId,
     required ViolationType violationType,
+    LookupId? violationTypeId,
     required String? descriptionOfFact,
     String? actionsTaken,
     TimeStamp? now,
@@ -259,6 +266,7 @@ final class RightsViolationReport with Equatable {
         incidentDate: incidentDate,
         victimId: victimId,
         violationType: violationType,
+        violationTypeId: violationTypeId,
         descriptionOfFact: desc,
         actionsTaken: actionsTaken?.normalizedTrim(),
       ),
@@ -272,6 +280,7 @@ final class RightsViolationReport with Equatable {
       incidentDate: incidentDate,
       victimId: victimId,
       violationType: violationType,
+      violationTypeId: violationTypeId,
       descriptionOfFact: descriptionOfFact,
       actionsTaken: newActions.normalizedTrim(),
     );

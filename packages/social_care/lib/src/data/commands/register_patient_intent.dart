@@ -30,8 +30,20 @@ final class RegisterPatientIntent with Equatable {
     this.complement,
     this.residenceLocation,
     this.isShelter = false,
+    this.isHomeless = false,
     this.diagnoses = const [],
     this.familyMembers = const [],
+    this.cns,
+    // Step 5 — Social Identity
+    this.socialIdentityTypeId,
+    this.socialIdentityDescription,
+    // Step 6 — Intake Info
+    this.ingressTypeId,
+    this.originName,
+    this.originContact,
+    this.serviceReason,
+    this.linkedSocialPrograms = const [],
+    this.programObservation,
   });
 
   final String firstName;
@@ -44,6 +56,7 @@ final class RegisterPatientIntent with Equatable {
   final String? personId;
   final String? cpf;
   final String? nis;
+  final String? cns;
   final String? rgNumber;
   final String? rgAgency;
   final String? rgState;
@@ -61,9 +74,22 @@ final class RegisterPatientIntent with Equatable {
   final String? complement;
   final ResidenceLocation? residenceLocation;
   final bool isShelter;
+  final bool isHomeless;
 
   final List<Diagnosis> diagnoses;
   final List<FamilyMember> familyMembers;
+
+  // Social Identity (Step 5)
+  final String? socialIdentityTypeId;
+  final String? socialIdentityDescription;
+
+  // Intake Info (Step 6)
+  final String? ingressTypeId;
+  final String? originName;
+  final String? originContact;
+  final String? serviceReason;
+  final List<String> linkedSocialPrograms;
+  final String? programObservation;
 
   @override
   List<Object?> get props => [
@@ -77,6 +103,7 @@ final class RegisterPatientIntent with Equatable {
     personId,
     cpf,
     nis,
+    cns,
     rgNumber,
     rgAgency,
     rgState,
@@ -92,7 +119,16 @@ final class RegisterPatientIntent with Equatable {
     complement,
     residenceLocation,
     isShelter,
+    isHomeless,
     diagnoses,
     familyMembers,
+    socialIdentityTypeId,
+    socialIdentityDescription,
+    ingressTypeId,
+    originName,
+    originContact,
+    serviceReason,
+    linkedSocialPrograms,
+    programObservation,
   ];
 }

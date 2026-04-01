@@ -1,13 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
 import 'package:core/core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:network/network.dart';
-import 'package:shared/shared.dart';
 import 'package:persistence/persistence.dart';
+import 'package:shared/shared.dart';
+
 import '../storage/local_social_care_repository.dart';
 
 /// Engine responsible for synchronizing local pending actions with the remote BFF.
+///
+/// Uses reactive Drift [watchPendingActions] stream instead of periodic polling.
+/// When a new action enters the queue, the engine processes it immediately.
 class SyncEngine {
   final SyncQueueService _queueService;
   final ConnectivityService _connectivityService;
@@ -15,7 +20,10 @@ class SyncEngine {
   final LocalSocialCareRepository? _localRepo;
 
   bool _isProcessing = false;
+  StreamSubscription<({List<SyncAction> ready, DateTime? nextRetryAt})>?
+      _watchSubscription;
   Timer? _retryTimer;
+  Timer? _debounceTimer;
 
   /// Notifies the current status of the sync engine to the UI.
   final ValueNotifier<SyncStatus> status = ValueNotifier(const SyncIdle());
@@ -25,37 +33,73 @@ class SyncEngine {
     required ConnectivityService connectivityService,
     required SocialCareContract remoteBff,
     LocalSocialCareRepository? localRepo,
-  }) : _queueService = queueService,
-       _connectivityService = connectivityService,
-       _remoteBff = remoteBff,
-       _localRepo = localRepo;
+  })  : _queueService = queueService,
+        _connectivityService = connectivityService,
+        _remoteBff = remoteBff,
+        _localRepo = localRepo;
 
   bool get _isOnline => _connectivityService.isOnline.value;
 
   /// Starts the engine.
+  ///
+  /// Subscribes to the reactive pending actions stream from Drift.
+  /// No more 1-minute polling timer — actions are processed as they arrive.
   void start() {
     _connectivityService.isOnline.addListener(_onConnectivityChange);
-    // Periodic retry every 1 minute if online
-    _retryTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (_isOnline) {
-        unawaited(pullPatients());
-        unawaited(processQueue());
-      }
-    });
-    // Initial pull + status check
+
+    // Reactive subscription: fires when sync_actions table changes.
+    // Time filtering is done in Dart (fresh DateTime.now() each emission).
+    _watchSubscription = _queueService.watchPendingActions().listen(
+      (pending) {
+        if (pending.ready.isNotEmpty && _isOnline) {
+          scheduleProcessQueue();
+        }
+        _scheduleRetry(pending.nextRetryAt);
+        unawaited(refreshStatus());
+      },
+    );
+
+    // Initial pull when starting online
     if (_isOnline) unawaited(pullPatients());
-    unawaited(refreshStatus());
   }
 
-  /// Stops the engine.
+  /// Stops the engine and cleans up subscriptions.
   void stop() {
     _connectivityService.isOnline.removeListener(_onConnectivityChange);
+    _watchSubscription?.cancel();
+    _watchSubscription = null;
     _retryTimer?.cancel();
+    _retryTimer = null;
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+  }
+
+  /// Schedules a single delayed callback for the earliest pending retry.
+  ///
+  /// When a failed action has `nextRetryAt` in the future, no table change
+  /// will occur to trigger the Drift stream. This timer fires exactly when
+  /// the earliest retry becomes eligible, then calls [processQueue].
+  void _scheduleRetry(DateTime? nextRetryAt) {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+
+    if (nextRetryAt == null) return;
+
+    final delay = nextRetryAt.difference(DateTime.now().toUtc());
+    if (delay.isNegative) {
+      // Already eligible — process immediately
+      if (_isOnline) unawaited(processQueue());
+      return;
+    }
+
+    _retryTimer = Timer(delay, () {
+      if (_isOnline) unawaited(processQueue());
+    });
   }
 
   void _onConnectivityChange() {
     if (_isOnline) {
-      unawaited(processQueue());
+      scheduleProcessQueue();
     } else {
       unawaited(refreshStatus());
     }
@@ -65,8 +109,7 @@ class SyncEngine {
   Future<void> refreshStatus() async {
     if (_isProcessing) return;
 
-    final allActions = await _queueService
-        .getAllActions(); // I need to add this method to SyncQueueService
+    final allActions = await _queueService.getAllActions();
 
     int pending = 0;
     int errors = 0;
@@ -76,13 +119,10 @@ class SyncEngine {
       switch (action.status) {
         case 'PENDING':
           pending++;
-          break;
         case 'FAILED':
           errors++;
-          break;
         case 'CONFLICT':
           conflicts++;
-          break;
       }
     }
 
@@ -129,6 +169,18 @@ class SyncEngine {
     }
   }
 
+  /// Schedules [processQueue] with a 500ms debounce.
+  ///
+  /// Coalesces rapid-fire calls from multiple sources (watch stream,
+  /// connectivity change, write handlers) into a single queue drain.
+  /// Prefer this over calling [processQueue] directly for non-urgent triggers.
+  void scheduleProcessQueue() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      unawaited(processQueue());
+    });
+  }
+
   /// Drains the pending sync queue.
   Future<void> processQueue() async {
     if (_isProcessing) return;
@@ -143,7 +195,7 @@ class SyncEngine {
       final total = actions.length;
 
       if (total == 0) {
-        _isProcessing = false; // Reset early to allow refreshStatus to work
+        _isProcessing = false;
         await refreshStatus();
         return;
       }
@@ -165,34 +217,35 @@ class SyncEngine {
     try {
       final result = await _dispatchAction(action);
 
-      return await switch (result) {
-        Success() => (() async {
-          await _queueService.removeAction(action.id);
+      if (result case Success()) {
+        await _queueService.removeAction(action.id);
+        return true;
+      }
+
+      if (result case Failure(:final error)) {
+        final errorStr = error.toString().toLowerCase();
+
+        if (errorStr.contains('409') || errorStr.contains('conflict')) {
+          await _queueService.markConflict(action.id, error.toString());
           return true;
-        })(),
-        Failure(:final error) => (() async {
-          final errorStr = error.toString().toLowerCase();
+        }
 
-          if (errorStr.contains('409') || errorStr.contains('conflict')) {
-            await _queueService.markConflict(action.id, error.toString());
-            return true;
-          }
+        if (errorStr.contains('socketexception') ||
+            errorStr.contains('timeout') ||
+            errorStr.contains('network')) {
+          await _queueService.markFailed(action.id, error.toString());
+          return false;
+        }
 
-          if (errorStr.contains('socketexception') ||
-              errorStr.contains('timeout') ||
-              errorStr.contains('network')) {
-            await _queueService.markFailed(action.id, error.toString());
-            return false;
-          }
+        await _queueService.updateStatus(
+          action.id,
+          'FAILED',
+          error: error.toString(),
+        );
+        return true;
+      }
 
-          await _queueService.updateStatus(
-            action.id,
-            'FAILED',
-            error: error.toString(),
-          );
-          return true;
-        })(),
-      };
+      return true;
     } catch (e) {
       await _queueService.updateStatus(
         action.id,
@@ -206,119 +259,165 @@ class SyncEngine {
   Future<Result<void>> _dispatchAction(SyncAction action) async {
     final payload = jsonDecode(action.payloadJson) as Map<String, dynamic>;
 
-    final patientIdRes = PatientId.create(action.patientId);
-    if (patientIdRes case Failure(:final error)) return Failure(error);
-    final patientId = (patientIdRes as Success<PatientId>).value;
+    final PatientId patientId;
+    switch (PatientId.create(action.patientId)) {
+      case Success(:final value): patientId = value;
+      case Failure(:final error): return Failure(error);
+    }
 
     switch (action.actionType) {
       case 'REGISTER_PATIENT':
-        return _remoteBff.registerPatient(PatientMapper.fromJson(payload));
+        final Patient patient;
+        switch (PatientMapper.fromJson(payload)) {
+          case Success(:final value): patient = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.registerPatient(patient);
 
       case 'ADD_FAMILY_MEMBER':
-        final relIdRes = LookupId.create(payload['prRelationshipId']);
-        if (relIdRes case Failure(:final error)) return Failure(error);
-        return _remoteBff.addFamilyMember(
-          patientId,
-          PatientMapper.familyMemberFromJson(payload['member']),
-          (relIdRes as Success<LookupId>).value,
-        );
+        final LookupId relId;
+        switch (LookupId.create(payload['prRelationshipId'])) {
+          case Success(:final value): relId = value;
+          case Failure(:final error): return Failure(error);
+        }
+        final FamilyMember member;
+        switch (PatientMapper.familyMemberFromJson(payload['member'] as Map<String, dynamic>)) {
+          case Success(:final value): member = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.addFamilyMember(patientId, member, relId);
 
       case 'REMOVE_FAMILY_MEMBER':
-        final memIdRes = PersonId.create(payload['memberId']);
-        if (memIdRes case Failure(:final error)) return Failure(error);
-        return _remoteBff.removeFamilyMember(
-          patientId,
-          (memIdRes as Success<PersonId>).value,
-        );
+        final PersonId memberId;
+        switch (PersonId.create(payload['memberId'])) {
+          case Success(:final value): memberId = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.removeFamilyMember(patientId, memberId);
 
       case 'ASSIGN_CAREGIVER':
-        final memIdRes = PersonId.create(payload['memberId']);
-        if (memIdRes case Failure(:final error)) return Failure(error);
-        return _remoteBff.assignPrimaryCaregiver(
-          patientId,
-          (memIdRes as Success<PersonId>).value,
-        );
+        final PersonId memberId;
+        switch (PersonId.create(payload['memberId'])) {
+          case Success(:final value): memberId = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.assignPrimaryCaregiver(patientId, memberId);
 
       case 'UPDATE_SOCIAL_IDENTITY':
-        return _remoteBff.updateSocialIdentity(
-          patientId,
-          PatientMapper.socialIdentityFromJson(payload['identity']),
-        );
+        final SocialIdentity identity;
+        switch (PatientMapper.socialIdentityFromJson(payload['identity'] as Map<String, dynamic>)) {
+          case Success(:final value): identity = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateSocialIdentity(patientId, identity);
 
       case 'UPDATE_HOUSING':
-        return _remoteBff.updateHousingCondition(
-          patientId,
-          PatientMapper.housingConditionFromJson(payload),
-        );
+        final HousingCondition condition;
+        switch (PatientMapper.housingConditionFromJson(payload)) {
+          case Success(:final value): condition = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateHousingCondition(patientId, condition);
 
       case 'UPDATE_SOCIOECONOMIC':
-        return _remoteBff.updateSocioEconomicSituation(
-          patientId,
-          PatientMapper.socioEconomicFromJson(payload),
-        );
+        final SocioEconomicSituation situation;
+        switch (PatientMapper.socioEconomicFromJson(payload)) {
+          case Success(:final value): situation = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateSocioEconomicSituation(patientId, situation);
 
       case 'UPDATE_WORK_INCOME':
-        return _remoteBff.updateWorkAndIncome(
-          patientId,
-          PatientMapper.workAndIncomeFromJson(payload),
-        );
+        final WorkAndIncome data;
+        switch (PatientMapper.workAndIncomeFromJson(payload)) {
+          case Success(:final value): data = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateWorkAndIncome(patientId, data);
 
       case 'UPDATE_EDUCATION':
-        return _remoteBff.updateEducationalStatus(
-          patientId,
-          PatientMapper.educationalStatusFromJson(payload),
-        );
+        final EducationalStatus status;
+        switch (PatientMapper.educationalStatusFromJson(payload)) {
+          case Success(:final value): status = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateEducationalStatus(patientId, status);
 
       case 'UPDATE_HEALTH':
-        return _remoteBff.updateHealthStatus(
-          patientId,
-          PatientMapper.healthStatusFromJson(payload),
-        );
+        final HealthStatus status;
+        switch (PatientMapper.healthStatusFromJson(payload)) {
+          case Success(:final value): status = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateHealthStatus(patientId, status);
 
       case 'UPDATE_COMMUNITY_SUPPORT':
-        return _remoteBff.updateCommunitySupportNetwork(
-          patientId,
-          PatientMapper.communitySupportFromJson(payload),
-        );
+        final CommunitySupportNetwork network;
+        switch (PatientMapper.communitySupportFromJson(payload)) {
+          case Success(:final value): network = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateCommunitySupportNetwork(patientId, network);
 
       case 'UPDATE_SOCIAL_HEALTH':
-        return _remoteBff.updateSocialHealthSummary(
-          patientId,
-          PatientMapper.socialHealthSummaryFromJson(payload),
-        );
+        final SocialHealthSummary summary;
+        switch (PatientMapper.socialHealthSummaryFromJson(payload)) {
+          case Success(:final value): summary = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateSocialHealthSummary(patientId, summary);
 
       case 'REGISTER_APPOINTMENT':
-        return _remoteBff.registerAppointment(
-          patientId,
-          PatientMapper.appointmentFromJson(payload['appointment']),
-        );
+        final SocialCareAppointment appointment;
+        switch (PatientMapper.appointmentFromJson(payload['appointment'] as Map<String, dynamic>)) {
+          case Success(:final value): appointment = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.registerAppointment(patientId, appointment);
 
       case 'UPDATE_INTAKE':
-        return _remoteBff.updateIntakeInfo(
-          patientId,
-          PatientMapper.intakeInfoFromJson(payload['info']),
-        );
+        final IngressInfo info;
+        switch (PatientMapper.intakeInfoFromJson(payload['info'] as Map<String, dynamic>)) {
+          case Success(:final value): info = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updateIntakeInfo(patientId, info);
 
       case 'UPDATE_PLACEMENT':
-        return _remoteBff.updatePlacementHistory(
-          patientId,
-          PatientMapper.placementHistoryFromJson(payload),
-        );
+        final PlacementHistory history;
+        switch (PatientMapper.placementHistoryFromJson(payload)) {
+          case Success(:final value): history = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.updatePlacementHistory(patientId, history);
 
       case 'REPORT_VIOLATION':
-        return _remoteBff.reportViolation(
-          patientId,
-          PatientMapper.violationReportFromJson(payload['report']),
-        );
+        final RightsViolationReport report;
+        switch (PatientMapper.violationReportFromJson(payload['report'] as Map<String, dynamic>)) {
+          case Success(:final value): report = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.reportViolation(patientId, report);
 
       case 'CREATE_REFERRAL':
-        return _remoteBff.createReferral(
-          patientId,
-          PatientMapper.referralFromJson(payload['referral']),
-        );
+        final Referral referral;
+        switch (PatientMapper.referralFromJson(payload['referral'] as Map<String, dynamic>)) {
+          case Success(:final value): referral = value;
+          case Failure(:final error): return Failure(error);
+        }
+        return _remoteBff.createReferral(patientId, referral);
 
       default:
-        return Failure('Unknown action type: ${action.actionType}');
+        return Failure(AppError(
+          code: 'SYNC-400',
+          message: 'Unknown action type: ${action.actionType}',
+          module: 'social-care/sync-engine',
+          kind: 'validation',
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.error,
+          ),
+        ));
     }
   }
 }

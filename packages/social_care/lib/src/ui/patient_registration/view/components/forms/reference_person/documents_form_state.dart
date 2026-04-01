@@ -1,9 +1,11 @@
 import 'package:flutter/widgets.dart';
+import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 class DocumentsFormState {
   // 1. Controladores
   final cpf = TextEditingController();
   final nis = TextEditingController();
+  final cnsNumber = TextEditingController();
   final rgNumber = TextEditingController();
   final rgAgency = TextEditingController();
   final rgDate = TextEditingController();
@@ -38,52 +40,63 @@ class DocumentsFormState {
   // 4. Getters de Erro
   String? get cpfError {
     final digits = cpf.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return 'CPF obrigatório';
-    if (digits.length != 11) return 'CPF inválido';
+    if (digits.isEmpty) return ReferencePersonLn10.errorRequired;
+    if (digits.length != 11) return ReferencePersonLn10.cpfError;
     return null;
   }
 
   String? get nisError {
     final digits = nis.text.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return null;
-    if (digits.length != 11) return 'NIS deve ter 11 dígitos';
+    if (digits.length != 11) return ReferencePersonLn10.nisError;
+    return null;
+  }
+
+  String? get cnsError {
+    final digits = cnsNumber.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return null;
+    if (digits.length != 15) return ReferencePersonLn10.cnsError;
+    final firstDigit = digits[0];
+    if (!{'1', '2', '7', '8', '9'}.contains(firstDigit)) {
+      return ReferencePersonLn10.errorCnsFirstDigit;
+    }
     return null;
   }
 
   String? get rgNumberError {
     if (!_hasAnyRgField) return null;
-    if (rgNumber.text.trim().isEmpty) return 'Preencha todos os campos do RG';
+    if (rgNumber.text.trim().isEmpty) return ReferencePersonLn10.rgGroupError;
     return null;
   }
 
   String? get rgUfError {
     if (!_hasAnyRgField) return null;
-    if (rgUf.value == null) return 'Preencha todos os campos do RG';
+    if (rgUf.value == null) return ReferencePersonLn10.rgGroupError;
     return null;
   }
 
   String? get rgAgencyError {
     if (!_hasAnyRgField) return null;
-    if (rgAgency.text.trim().isEmpty) return 'Preencha todos os campos do RG';
+    if (rgAgency.text.trim().isEmpty) return ReferencePersonLn10.rgGroupError;
     return null;
   }
 
   String? get rgDateError {
     if (!_hasAnyRgField) return null;
     final digits = rgDate.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return 'Preencha todos os campos do RG';
-    if (digits.length != 8) return 'Data incompleta';
-    if (_parseDateBr(digits) == null) return 'Data inválida';
+    if (digits.isEmpty) return ReferencePersonLn10.rgGroupError;
+    if (digits.length != 8) return ReferencePersonLn10.errorDateIncomplete;
+    if (_parseDateBr(digits) == null) return ReferencePersonLn10.errorDateInvalid;
     return null;
   }
 
   String? get birthDateError {
     final digits = birthDate.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return 'Informe a data de nascimento';
-    if (digits.length != 8) return 'Data incompleta';
+    if (digits.isEmpty) return ReferencePersonLn10.birthDateError;
+    if (digits.length != 8) return ReferencePersonLn10.errorDateIncomplete;
     final parsed = _parseDateBr(digits);
-    if (parsed == null) return 'Data inválida';
-    if (parsed.isAfter(DateTime.now())) return 'Data deve ser no passado';
+    if (parsed == null) return ReferencePersonLn10.errorDateInvalid;
+    if (parsed.isAfter(DateTime.now())) return ReferencePersonLn10.birthDateFutureError;
     return null;
   }
 
@@ -92,6 +105,7 @@ class DocumentsFormState {
     if (birthDateError != null) return false;
     if (cpfError != null) return false;
     if (nisError != null) return false;
+    if (cnsError != null) return false;
     if (_hasAnyRgField && !_allRgFieldsFilled) return false;
     if (rgDateError != null) return false;
     return true;
@@ -100,6 +114,7 @@ class DocumentsFormState {
   List<String> get validationErrors => [
     if (cpfError != null) cpfError!,
     if (nisError != null) nisError!,
+    if (cnsError != null) cnsError!,
     if (rgNumberError != null) rgNumberError!,
     if (rgUfError != null) rgUfError!,
     if (rgAgencyError != null) rgAgencyError!,
@@ -116,11 +131,13 @@ class DocumentsFormState {
 
   String get cpfDigits => cpf.text.replaceAll(RegExp(r'\D'), '');
   String get nisDigits => nis.text.replaceAll(RegExp(r'\D'), '');
+  String get cnsDigits => cnsNumber.text.replaceAll(RegExp(r'\D'), '');
 
   // 7. Gerenciamento de Memória
   void dispose() {
     cpf.dispose();
     nis.dispose();
+    cnsNumber.dispose();
     rgNumber.dispose();
     rgAgency.dispose();
     rgDate.dispose();

@@ -1,8 +1,13 @@
+/// Persistence layer — Drift database tables and configuration.
 library;
 
-export 'package:isar/isar.dart';
+export 'package:drift/drift.dart' show Value;
 
-export 'src/isar_schemas.dart';
-export 'src/schemas/cached_lookup.dart';
-export 'src/schemas/cached_patient.dart';
-export 'src/schemas/sync_action.dart';
+export 'src/acdg_database.dart';
+export 'src/acdg_database.drift.dart';
+export 'src/tables/cached_lookups.dart';
+export 'src/tables/cached_lookups.drift.dart';
+export 'src/tables/cached_patients.dart';
+export 'src/tables/cached_patients.drift.dart';
+export 'src/tables/sync_actions.dart';
+export 'src/tables/sync_actions.drift.dart';

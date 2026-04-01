@@ -17,6 +17,7 @@ final class Address with Equatable {
     this.complement,
     required this.residenceLocation,
     required this.isShelter,
+    required this.isHomeless,
   });
 
   final Cep? cep;
@@ -28,6 +29,7 @@ final class Address with Equatable {
   final String? complement;
   final ResidenceLocation residenceLocation;
   final bool isShelter;
+  final bool isHomeless;
 
   @override
   List<Object?> get props => [
@@ -40,6 +42,7 @@ final class Address with Equatable {
     complement,
     residenceLocation,
     isShelter,
+    isHomeless,
   ];
 
   static const _validStates = {
@@ -82,6 +85,7 @@ final class Address with Equatable {
     String? complement,
     required ResidenceLocation residenceLocation,
     required bool isShelter,
+    bool isHomeless = false,
   }) {
     final st = state?.normalizedTrim().toUpperCase();
     if (st == null || st.isEmpty) {
@@ -107,6 +111,7 @@ final class Address with Equatable {
         complement: complement?.nullIfEmptyNormalized(),
         residenceLocation: residenceLocation,
         isShelter: isShelter,
+        isHomeless: isHomeless,
       ),
     );
   }
@@ -121,6 +126,7 @@ final class Address with Equatable {
     String? Function()? complement,
     ResidenceLocation? residenceLocation,
     bool? isShelter,
+    bool? isHomeless,
   }) {
     return Address._(
       cep: cep != null ? cep() : this.cep,
@@ -132,6 +138,7 @@ final class Address with Equatable {
       complement: complement != null ? complement() : this.complement,
       residenceLocation: residenceLocation ?? this.residenceLocation,
       isShelter: isShelter ?? this.isShelter,
+      isHomeless: isHomeless ?? this.isHomeless,
     );
   }
 
