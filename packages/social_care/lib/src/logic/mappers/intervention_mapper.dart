@@ -36,11 +36,15 @@ abstract final class InterventionMapper {
     final incidentDateRes = intent.incidentDate != null
         ? TimeStamp.fromDate(intent.incidentDate)
         : null;
+    final violationTypeIdRes = intent.violationTypeId != null
+        ? LookupId.create(intent.violationTypeId!)
+        : null;
 
     if (idRes case Failure(:final error)) return Failure(error);
     if (victimIdRes case Failure(:final error)) return Failure(error);
     if (incidentDateRes != null && incidentDateRes is Failure)
       return Failure((incidentDateRes as Failure).error);
+    if (violationTypeIdRes case Failure(:final error)) return Failure(error);
 
     return RightsViolationReport.create(
       id: (idRes as Success<ViolationReportId>).value,
@@ -50,6 +54,9 @@ abstract final class InterventionMapper {
           : null,
       victimId: (victimIdRes as Success<PersonId>).value,
       violationType: intent.violationType,
+      violationTypeId: violationTypeIdRes != null
+          ? (violationTypeIdRes as Success<LookupId>).value
+          : null,
       descriptionOfFact: intent.descriptionOfFact,
       actionsTaken: intent.actionsTaken,
     );

@@ -85,12 +85,19 @@ abstract final class RegistryMapper {
       }
     }
 
+    Cns? cns;
+    if (intent.cns != null && intent.cns!.isNotEmpty) {
+      final res = Cns.create(number: intent.cns!, cpf: cpf);
+      if (res case Success(:final value)) cns = value;
+    }
+
     CivilDocuments? civilDocuments;
-    if (cpf != null || nis != null || rg != null) {
+    if (cpf != null || nis != null || rg != null || cns != null) {
       final civilRes = CivilDocuments.create(
         cpf: cpf,
         nis: nis,
         rgDocument: rg,
+        cns: cns,
       );
       if (civilRes case Success(:final value)) civilDocuments = value;
     }
@@ -116,6 +123,7 @@ abstract final class RegistryMapper {
         complement: intent.complement,
         residenceLocation: intent.residenceLocation ?? ResidenceLocation.urbano,
         isShelter: intent.isShelter,
+        isHomeless: intent.isHomeless,
       );
       if (addrRes case Success(:final value)) {
         address = value;
@@ -149,7 +157,48 @@ abstract final class RegistryMapper {
     if (prMemberRes case Failure(:final error)) return Failure(error);
     final prMember = (prMemberRes as Success<FamilyMember>).value;
 
-    return Patient.create(
+    // 8. Social Identity (optional, from step 5)
+    SocialIdentity? socialIdentity;
+    if (intent.socialIdentityTypeId != null) {
+      final typeIdRes = LookupId.create(intent.socialIdentityTypeId);
+      if (typeIdRes case Success(:final value)) {
+        final identityRes = SocialIdentity.create(
+          typeId: value,
+          otherDescription: intent.socialIdentityDescription,
+        );
+        if (identityRes case Success(:final value)) socialIdentity = value;
+      }
+    }
+
+    // 9. Intake Info (optional, from step 6)
+    IngressInfo? intakeInfo;
+    if (intent.ingressTypeId != null && intent.serviceReason != null) {
+      final ingressIdRes = LookupId.create(intent.ingressTypeId);
+      if (ingressIdRes case Success(:final value)) {
+        final programs = <ProgramLink>[];
+        for (final progId in intent.linkedSocialPrograms) {
+          final progIdRes = LookupId.create(progId);
+          if (progIdRes case Success(:final value)) {
+            programs.add(ProgramLink(
+              programId: value,
+              observation: intent.programObservation,
+            ));
+          }
+        }
+
+        final infoRes = IngressInfo.create(
+          ingressTypeId: value,
+          originName: intent.originName,
+          originContact: intent.originContact,
+          serviceReason: intent.serviceReason!,
+          linkedSocialPrograms: programs,
+        );
+        if (infoRes case Success(:final value)) intakeInfo = value;
+      }
+    }
+
+    // 10. Create Patient (validates core invariants) then attach optional data
+    final patientRes = Patient.create(
       id: patientId,
       personId: personId,
       prRelationshipId: prRelId,
@@ -159,5 +208,19 @@ abstract final class RegistryMapper {
       diagnoses: intent.diagnoses,
       familyMembers: [prMember, ...intent.familyMembers],
     );
+
+    if (patientRes case Failure()) return patientRes;
+
+    final patient = (patientRes as Success<Patient>).value;
+
+    // Attach optional sections via copyWith
+    if (socialIdentity != null || intakeInfo != null) {
+      return Success(patient.copyWith(
+        socialIdentity: socialIdentity != null ? () => socialIdentity : null,
+        intakeInfo: intakeInfo != null ? () => intakeInfo : null,
+      ));
+    }
+
+    return patientRes;
   }
 }

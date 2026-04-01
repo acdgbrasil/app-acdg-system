@@ -9,6 +9,7 @@ export 'src/utils/api_extensions.dart';
 // Kernel
 export 'src/domain/kernel/address.dart';
 export 'src/domain/kernel/cep.dart';
+export 'src/domain/kernel/cns.dart';
 export 'src/domain/kernel/cpf.dart';
 export 'src/domain/kernel/ids.dart';
 export 'src/domain/kernel/nis.dart';

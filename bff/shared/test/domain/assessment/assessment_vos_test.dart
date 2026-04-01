@@ -57,9 +57,14 @@ void main() {
       '550e8400-e29b-41d4-a716-446655440000',
     ).valueOrNull!;
 
+    final lookupId = LookupId.create(
+      '550e8400-e29b-41d4-a716-446655440099',
+    ).valueOrNull!;
+
     test('Deve rejeitar valor zero ou negativo (SB-002)', () {
       final result = SocialBenefit.create(
         benefitName: 'BPC',
+        benefitTypeId: lookupId,
         amount: 0,
         beneficiaryId: personId,
       );
