@@ -40,6 +40,129 @@ void main() {
         expect(patient.personalData?.firstName, 'Maria');
       },
     );
+
+    test('toPatient should include CNS in civil documents', () {
+      final intent = RegisterPatientIntent(
+        firstName: 'João',
+        lastName: 'Santos',
+        motherName: 'Rosa Santos',
+        nationality: 'Brasileira',
+        sex: Sex.masculino,
+        birthDate: DateTime(1985, 3, 10),
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
+        cns: '700000000000005',
+        city: 'Rio de Janeiro',
+        addressState: 'RJ',
+        residenceLocation: ResidenceLocation.urbano,
+        diagnoses: [PatientFixtures.diagnosis],
+      );
+
+      final result = RegistryMapper.toPatient(intent);
+
+      expect(result.isSuccess, isTrue);
+      final patient = result.valueOrNull!;
+      expect(patient.civilDocuments?.cns, isNotNull);
+      expect(patient.civilDocuments?.cns?.number, '700000000000005');
+    });
+
+    test('toPatient should set isHomeless on address', () {
+      final intent = RegisterPatientIntent(
+        firstName: 'Pedro',
+        lastName: 'Alves',
+        motherName: 'Lucia Alves',
+        nationality: 'Brasileira',
+        sex: Sex.masculino,
+        birthDate: DateTime(1975, 8, 20),
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        city: 'Belo Horizonte',
+        addressState: 'MG',
+        residenceLocation: ResidenceLocation.urbano,
+        isHomeless: true,
+        diagnoses: [PatientFixtures.diagnosis],
+      );
+
+      final result = RegistryMapper.toPatient(intent);
+
+      expect(result.isSuccess, isTrue);
+      final patient = result.valueOrNull!;
+      expect(patient.address?.isHomeless, isTrue);
+    });
+
+    test('toPatient should attach socialIdentity via copyWith', () {
+      final identityTypeId = PatientFixtures.prRelationshipId.value;
+      final intent = RegisterPatientIntent(
+        firstName: 'Ana',
+        lastName: 'Costa',
+        motherName: 'Julia Costa',
+        nationality: 'Brasileira',
+        sex: Sex.feminino,
+        birthDate: DateTime(1992, 12, 1),
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        city: 'Salvador',
+        addressState: 'BA',
+        residenceLocation: ResidenceLocation.urbano,
+        diagnoses: [PatientFixtures.diagnosis],
+        socialIdentityTypeId: identityTypeId,
+        socialIdentityDescription: 'Quilombola da comunidade X',
+      );
+
+      final result = RegistryMapper.toPatient(intent);
+
+      expect(result.isSuccess, isTrue);
+      final patient = result.valueOrNull!;
+      expect(patient.socialIdentity, isNotNull);
+      expect(patient.socialIdentity?.otherDescription, 'Quilombola da comunidade X');
+    });
+
+    test('toPatient should attach intakeInfo via copyWith', () {
+      final ingressTypeId = PatientFixtures.prRelationshipId.value;
+      final intent = RegisterPatientIntent(
+        firstName: 'Carlos',
+        lastName: 'Lima',
+        motherName: 'Sandra Lima',
+        nationality: 'Brasileira',
+        sex: Sex.masculino,
+        birthDate: DateTime(2000, 6, 15),
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        city: 'Recife',
+        addressState: 'PE',
+        residenceLocation: ResidenceLocation.urbano,
+        diagnoses: [PatientFixtures.diagnosis],
+        ingressTypeId: ingressTypeId,
+        serviceReason: 'Demanda espontânea por atendimento social',
+      );
+
+      final result = RegistryMapper.toPatient(intent);
+
+      expect(result.isSuccess, isTrue);
+      final patient = result.valueOrNull!;
+      expect(patient.intakeInfo, isNotNull);
+      expect(patient.intakeInfo?.serviceReason, 'Demanda espontânea por atendimento social');
+    });
+
+    test('toPatient without optional fields should have null socialIdentity and intakeInfo', () {
+      final intent = RegisterPatientIntent(
+        firstName: 'Maria',
+        lastName: 'Silva',
+        motherName: 'Ana Silva',
+        nationality: 'Brasileira',
+        sex: Sex.feminino,
+        birthDate: DateTime(1990, 5, 15),
+        prRelationshipId: PatientFixtures.prRelationshipId.value,
+        city: 'São Paulo',
+        addressState: 'SP',
+        residenceLocation: ResidenceLocation.urbano,
+        diagnoses: [PatientFixtures.diagnosis],
+      );
+
+      final result = RegistryMapper.toPatient(intent);
+
+      expect(result.isSuccess, isTrue);
+      final patient = result.valueOrNull!;
+      expect(patient.socialIdentity, isNull);
+      expect(patient.intakeInfo, isNull);
+    });
   });
 
   group('FamilyMapper', () {
