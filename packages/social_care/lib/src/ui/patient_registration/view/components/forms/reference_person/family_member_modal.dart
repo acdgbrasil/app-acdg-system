@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 import 'family_composition_form_state.dart';
@@ -14,12 +15,14 @@ class FamilyMemberModal extends StatefulWidget {
   final FamilyMemberSnapshot? existingMember;
   final void Function(FamilyMemberSnapshot snapshot) onSave;
   final bool hasPrimaryCaregiver;
+  final List<LookupItem> parentescoLookup;
 
   const FamilyMemberModal({
     super.key,
     this.existingMember,
     required this.onSave,
     this.hasPrimaryCaregiver = false,
+    this.parentescoLookup = const [],
   });
 
   @override
@@ -34,18 +37,27 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
   static const _offWhite = Color(0xFFF2E2C4);
   static const _red = Color(0xFFA6290D);
 
-  static const _parentescoOptions = [
-    ('02', '02 - Cônjuge / companheiro(a)'),
-    ('03', '03 - Filho(a)'),
-    ('04', '04 - Enteado(a)'),
-    ('05', '05 - Neto(a) / Bisneto(a)'),
-    ('06', '06 - Pai / Mãe'),
-    ('07', '07 - Sogro(a)'),
-    ('08', '08 - Irmão / Irmã'),
-    ('09', '09 - Genro / Nora'),
-    ('10', '10 - Outro parente'),
-    ('11', '11 - Não parente'),
-  ];
+  List<(String, String)> get _parentescoOptions {
+    if (widget.parentescoLookup.isEmpty) {
+      // Fallback if lookups not loaded yet
+      return const [
+        ('02', '02 - Cônjuge / companheiro(a)'),
+        ('03', '03 - Filho(a)'),
+        ('04', '04 - Enteado(a)'),
+        ('05', '05 - Neto(a) / Bisneto(a)'),
+        ('06', '06 - Pai / Mãe'),
+        ('07', '07 - Sogro(a)'),
+        ('08', '08 - Irmão / Irmã'),
+        ('09', '09 - Genro / Nora'),
+        ('10', '10 - Outro parente'),
+        ('11', '11 - Não parente'),
+      ];
+    }
+    return widget.parentescoLookup
+        .where((item) => item.codigo != 'PESSOA_REFERENCIA')
+        .map((item) => (item.codigo, '${item.codigo} - ${item.descricao}'))
+        .toList();
+  }
 
   static const _docOptions = ['CN', 'RG', 'CTPS', 'CPF', 'TE', 'CNS'];
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/intake_info_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_error_banner.dart';
@@ -9,11 +10,15 @@ import 'inputs/service_reason_input.dart';
 /// Step 6 — Intake info (forma de ingresso).
 class StepIntakeInfoContent extends StatelessWidget {
   final IntakeInfoFormState formState;
+  final ValueNotifier<List<LookupItem>> ingressTypeLookup;
+  final ValueNotifier<List<LookupItem>> socialProgramsLookup;
   final bool showErrors;
 
   const StepIntakeInfoContent({
     super.key,
     required this.formState,
+    required this.ingressTypeLookup,
+    required this.socialProgramsLookup,
     this.showErrors = false,
   });
 

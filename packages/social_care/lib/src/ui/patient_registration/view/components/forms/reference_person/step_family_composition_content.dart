@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/family_composition_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/personal_data_form_state.dart';
@@ -12,6 +13,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
   final FamilyCompositionFormState formState;
   final PersonalDataFormState personalDataFormState;
   final DocumentsFormState documentsFormState;
+  final ValueNotifier<List<LookupItem>> parentescoLookup;
   final bool showErrors;
 
   const StepFamilyCompositionContent({
@@ -19,6 +21,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
     required this.formState,
     required this.personalDataFormState,
     required this.documentsFormState,
+    required this.parentescoLookup,
     this.showErrors = false,
   });
 
@@ -46,18 +49,12 @@ class StepFamilyCompositionContent extends StatelessWidget {
         _ => ReferencePersonLn10.genderOptionOther,
       };
 
-  static const _parentescoMap = {
-    '02': '02 - Cônjuge / companheiro(a)',
-    '03': '03 - Filho(a)',
-    '04': '04 - Enteado(a)',
-    '05': '05 - Neto(a) / Bisneto(a)',
-    '06': '06 - Pai / Mãe',
-    '07': '07 - Sogro(a)',
-    '08': '08 - Irmão / Irmã',
-    '09': '09 - Genro / Nora',
-    '10': '10 - Outro parente',
-    '11': '11 - Não parente',
-  };
+  String _parentescoLabel(String code) {
+    final item = parentescoLookup.value
+        .where((i) => i.codigo == code || i.id == code)
+        .firstOrNull;
+    return item != null ? '${item.codigo} - ${item.descricao}' : code;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +160,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
               DataCell(Text(members[i].name)),
               DataCell(Text('${members[i].age} ${ReferencePersonLn10.ageYears}')),
               DataCell(Text(_sexLabel(members[i].sex))),
-              DataCell(Text(_parentescoMap[members[i].relationshipCode] ?? '–')),
+              DataCell(Text(_parentescoLabel(members[i].relationshipCode))),
               DataCell(Text(members[i].hasDisability ? ReferencePersonLn10.radioYes : ReferencePersonLn10.radioNo)),
               DataCell(Text(
                 members[i].requiredDocuments.isEmpty
@@ -206,6 +203,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
       builder: (_) => FamilyMemberModal(
         existingMember: existing,
         hasPrimaryCaregiver: formState.hasPrimaryCaregiver,
+        parentescoLookup: parentescoLookup.value,
         onSave: (snapshot) {
           if (editIndex >= 0) {
             formState.updateMember(editIndex, snapshot);
