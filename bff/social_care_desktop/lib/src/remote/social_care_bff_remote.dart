@@ -109,7 +109,7 @@ class SocialCareBffRemote implements SocialCareContract {
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as Map<String, dynamic>;
-        return Success(PatientMapper.fromJson(data));
+        return PatientMapper.fromJson(data);
       }
       return Failure(response.data ?? 'Patient not found');
     } catch (e) {
@@ -127,7 +127,7 @@ class SocialCareBffRemote implements SocialCareContract {
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as Map<String, dynamic>;
-        return Success(PatientMapper.fromJson(data));
+        return PatientMapper.fromJson(data);
       }
       return Failure(response.data ?? 'Patient not found');
     } catch (e) {
