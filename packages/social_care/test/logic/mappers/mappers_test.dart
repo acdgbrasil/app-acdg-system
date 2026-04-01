@@ -97,6 +97,7 @@ void main() {
     test('toSocioEconomic should fail on duplicate benefits', () {
       final benefit = SocialBenefit.create(
         benefitName: 'BPC',
+        benefitTypeId: PatientFixtures.prRelationshipId,
         amount: 1000,
         beneficiaryId: PatientFixtures.personId,
       ).valueOrNull!;

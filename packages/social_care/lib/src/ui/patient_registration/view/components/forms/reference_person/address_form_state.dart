@@ -1,8 +1,12 @@
 import 'package:flutter/widgets.dart';
+import 'package:social_care/src/constants/reference_person_ln10.dart';
+
+/// Housing situation options for the address step.
+enum HousingSituation { shelter, regular, homeless }
 
 class AddressFormState {
   // 1. Controladores — Seleções
-  final isShelter = ValueNotifier<bool?>(null);
+  final housingSituation = ValueNotifier<HousingSituation?>(null);
   final residenceLocation = ValueNotifier<String?>(null);
   final state = ValueNotifier<String?>(null);
 
@@ -14,39 +18,48 @@ class AddressFormState {
   final neighborhood = TextEditingController();
   final city = TextEditingController();
 
-  // 3. Getters de Erro
-  String? get isShelterError {
-    if (isShelter.value == null) return 'Informe se é um abrigo';
+  // 3. Derived values for contract
+  bool get isShelterValue => housingSituation.value == HousingSituation.shelter;
+  bool get isHomelessValue => housingSituation.value == HousingSituation.homeless;
+
+  /// Whether address fields (CEP, street, number, complement, neighborhood)
+  /// should be disabled. State and city remain enabled for CRAS reference.
+  bool get areAddressFieldsDisabled => isHomelessValue;
+
+  // 4. Getters de Erro
+  String? get housingSituationError {
+    if (housingSituation.value == null) return ReferencePersonLn10.errorSelectHousingSituation;
     return null;
   }
 
   String? get residenceLocationError {
-    if (residenceLocation.value == null) return 'Selecione a localização';
+    if (residenceLocation.value == null) return ReferencePersonLn10.errorSelectLocation;
     return null;
   }
 
   String? get cepError {
+    if (areAddressFieldsDisabled) return null;
     final digits = cep.text.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return null;
-    if (digits.length != 8) return 'CEP inválido';
+    if (digits.length != 8) return ReferencePersonLn10.cepError;
     return null;
   }
 
   String? get stateError {
-    if (state.value == null) return 'Selecione o estado';
+    if (state.value == null) return ReferencePersonLn10.errorSelectState;
     return null;
   }
 
   String? get cityError {
     final text = city.text.trim();
-    if (text.isEmpty) return 'Informe a cidade';
-    if (text.length < 2) return 'Mínimo de 2 caracteres';
+    if (text.isEmpty) return ReferencePersonLn10.errorInformCity;
+    if (text.length < 2) return ReferencePersonLn10.errorMinChars2;
     return null;
   }
 
-  // 4. Validação do Step
+  // 5. Validação do Step
   bool get isValidForNextStep {
-    if (isShelterError != null) return false;
+    if (housingSituationError != null) return false;
     if (residenceLocationError != null) return false;
     if (cepError != null) return false;
     if (stateError != null) return false;
@@ -55,17 +68,26 @@ class AddressFormState {
   }
 
   List<String> get validationErrors => [
-    if (isShelterError != null) isShelterError!,
+    if (housingSituationError != null) housingSituationError!,
     if (residenceLocationError != null) residenceLocationError!,
     if (cepError != null) cepError!,
     if (stateError != null) stateError!,
     if (cityError != null) cityError!,
   ];
 
-  // 5. Acesso a valores
+  // 6. Acesso a valores
   String get cepDigits => cep.text.replaceAll(RegExp(r'\D'), '');
 
-  // 6. Auto-preenchimento via CEP (stub para futura integração ViaCEP)
+  /// Clears address-specific fields when switching to homeless.
+  void clearAddressFields() {
+    cep.clear();
+    street.clear();
+    number.clear();
+    complement.clear();
+    neighborhood.clear();
+  }
+
+  // 7. Auto-preenchimento via CEP (stub para futura integração ViaCEP)
   void fillFromCep({
     String? street,
     String? neighborhood,
@@ -78,9 +100,9 @@ class AddressFormState {
     if (city != null) this.city.text = city;
   }
 
-  // 7. Gerenciamento de Memória
+  // 8. Gerenciamento de Memória
   void dispose() {
-    isShelter.dispose();
+    housingSituation.dispose();
     residenceLocation.dispose();
     state.dispose();
     cep.dispose();

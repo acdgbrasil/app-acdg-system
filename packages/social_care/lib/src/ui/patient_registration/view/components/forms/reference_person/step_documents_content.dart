@@ -6,6 +6,7 @@ import 'package:social_care/src/ui/patient_registration/view/components/registra
 import 'package:social_care/src/ui/patient_registration/view/components/registration_section_title.dart';
 
 import 'inputs/birth_date_input.dart';
+import 'inputs/cns_input.dart';
 import 'inputs/cpf_input.dart';
 import 'inputs/nis_input.dart';
 import 'inputs/rg_agency_input.dart';
@@ -40,6 +41,10 @@ class StepDocumentsContent extends StatelessWidget {
             NisInput(
               nisController: formState.nis,
               errorText: showErrors ? formState.nisError : null,
+            ),
+            CnsInput(
+              cnsController: formState.cnsNumber,
+              errorText: showErrors ? formState.cnsError : null,
             ),
           ],
         ),

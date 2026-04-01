@@ -82,6 +82,20 @@ class DiagnosesFormState {
     removed.dispose();
   }
 
+  /// Fills a diagnosis card at [index] with the given CID code, description,
+  /// and today's date. Used by the CID quick-fill callout (e.g. Z03.9).
+  void applyQuickCid(int index, String icdCode, String description) {
+    if (index < 0 || index >= _entries.value.length) return;
+    final entry = _entries.value[index];
+    entry.icdCode.text = icdCode;
+    entry.description.text = description;
+    final now = DateTime.now();
+    entry.date.text =
+        '${now.day.toString().padLeft(2, '0')}'
+        '${now.month.toString().padLeft(2, '0')}'
+        '${now.year}';
+  }
+
   // Validação: pelo menos 1 completo, nenhum parcial incompleto
   bool get isValidForNextStep {
     final list = _entries.value;

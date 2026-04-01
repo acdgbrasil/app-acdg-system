@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_address_content.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_diagnoses_content.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_documents_content.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_family_composition_content.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_intake_info_content.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_personal_data_content.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_specificities_content.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_error_modal.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_toast.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_wizard_template.dart';
@@ -55,6 +58,14 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       1 => StepDocumentsContent(formState: viewModel.documentsFormState, showErrors: showErrors),
       2 => StepAddressContent(formState: viewModel.addressFormState, showErrors: showErrors),
       3 => StepDiagnosesContent(formState: viewModel.diagnosesFormState, showErrors: showErrors),
+      4 => StepFamilyCompositionContent(
+          formState: viewModel.familyCompositionFormState,
+          personalDataFormState: viewModel.referencePersonFormState,
+          documentsFormState: viewModel.documentsFormState,
+          showErrors: showErrors,
+        ),
+      5 => StepSpecificitiesContent(formState: viewModel.specificitiesFormState, showErrors: showErrors),
+      6 => StepIntakeInfoContent(formState: viewModel.intakeInfoFormState, showErrors: showErrors),
       _ => const SizedBox.shrink(),
     };
   }
