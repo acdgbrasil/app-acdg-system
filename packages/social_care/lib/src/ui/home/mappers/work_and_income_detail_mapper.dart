@@ -5,36 +5,71 @@ import '../models/work_and_income_detail.dart';
 
 /// Maps [WorkAndIncomeDetail] → [UpdateWorkAndIncomeIntent].
 abstract final class WorkAndIncomeDetailMapper {
-  static UpdateWorkAndIncomeIntent toIntent(
+  static Result<UpdateWorkAndIncomeIntent> toIntent(
     WorkAndIncomeDetail detail, {
     required PatientId patientId,
   }) {
-    return UpdateWorkAndIncomeIntent(
+    final incomes = <WorkIncomeVO>[];
+    for (final (i, item) in detail.individualIncomes.indexed) {
+      final PersonId memberId;
+      switch (PersonId.create(item.memberId)) {
+        case Success(:final value): memberId = value;
+        case Failure(:final error):
+          return Failure('individualIncomes[$i].memberId: $error');
+      }
+
+      final LookupId occupationId;
+      switch (LookupId.create(item.occupationId)) {
+        case Success(:final value): occupationId = value;
+        case Failure(:final error):
+          return Failure('individualIncomes[$i].occupationId: $error');
+      }
+
+      switch (WorkIncomeVO.create(
+        memberId: memberId,
+        occupationId: occupationId,
+        hasWorkCard: item.hasWorkCard,
+        monthlyAmount: item.monthlyAmount,
+      )) {
+        case Success(:final value): incomes.add(value);
+        case Failure(:final error):
+          return Failure('individualIncomes[$i]: $error');
+      }
+    }
+
+    final benefits = <SocialBenefit>[];
+    for (final (i, b) in detail.socialBenefits.indexed) {
+      final LookupId benefitTypeId;
+      switch (LookupId.create(b.benefitTypeId)) {
+        case Success(:final value): benefitTypeId = value;
+        case Failure(:final error):
+          return Failure('socialBenefits[$i].benefitTypeId: $error');
+      }
+
+      final PersonId beneficiaryId;
+      switch (PersonId.create(b.beneficiaryId)) {
+        case Success(:final value): beneficiaryId = value;
+        case Failure(:final error):
+          return Failure('socialBenefits[$i].beneficiaryId: $error');
+      }
+
+      switch (SocialBenefit.create(
+        benefitName: b.benefitName,
+        benefitTypeId: benefitTypeId,
+        amount: b.amount,
+        beneficiaryId: beneficiaryId,
+      )) {
+        case Success(:final value): benefits.add(value);
+        case Failure(:final error):
+          return Failure('socialBenefits[$i]: $error');
+      }
+    }
+
+    return Success(UpdateWorkAndIncomeIntent(
       patientId: patientId,
       hasRetiredMembers: detail.hasRetiredMembers,
-      individualIncomes: detail.individualIncomes
-          .map(
-            (i) => WorkIncomeVO.create(
-              memberId: PersonId.create(i.memberId).valueOrNull!,
-              occupationId: LookupId.create(i.occupationId).valueOrNull!,
-              hasWorkCard: i.hasWorkCard,
-              monthlyAmount: i.monthlyAmount,
-            ),
-          )
-          .whereType<Success<WorkIncomeVO>>()
-          .map((r) => r.value)
-          .toList(),
-      socialBenefits: detail.socialBenefits
-          .map(
-            (b) => SocialBenefit.create(
-              benefitName: b.benefitName,
-              amount: b.amount,
-              beneficiaryId: PersonId.create(b.beneficiaryId).valueOrNull!,
-            ),
-          )
-          .whereType<Success<SocialBenefit>>()
-          .map((r) => r.value)
-          .toList(),
-    );
+      individualIncomes: incomes,
+      socialBenefits: benefits,
+    ));
   }
 }

@@ -36,6 +36,7 @@ final class ReportViolationIntent with Equatable {
     required this.patientId,
     required this.victimId,
     required this.violationType,
+    this.violationTypeId,
     required this.descriptionOfFact,
     this.incidentDate,
     this.actionsTaken,
@@ -44,6 +45,7 @@ final class ReportViolationIntent with Equatable {
   final PatientId patientId;
   final String victimId;
   final ViolationType violationType;
+  final String? violationTypeId;
   final String descriptionOfFact;
   final DateTime? incidentDate;
   final String? actionsTaken;
@@ -53,6 +55,7 @@ final class ReportViolationIntent with Equatable {
     patientId,
     victimId,
     violationType,
+    violationTypeId,
     descriptionOfFact,
     incidentDate,
     actionsTaken,

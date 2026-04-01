@@ -1,16 +1,21 @@
 name: persistence
-description: Isolated persistence package for Isar schemas and database logic.
-version: 0.1.0
+description: Isolated persistence package with Drift database tables and logic.
+version: 0.2.0
 publish_to: 'none'
 
+resolution: workspace
+
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.11.0 <4.0.0"
 
 dependencies:
-  isar: 3.1.0+1
+  drift: ^2.22.1
+  sqlite3: ^2.7.4
+  sqlite3_flutter_libs: ^0.5.28
+  drift_flutter: ^0.2.4
   meta: ^1.11.0
 
 dev_dependencies:
   build_runner: ^2.4.8
-  isar_generator: 3.1.0+1
+  drift_dev: ^2.22.3
   test: ^1.24.0

@@ -11,10 +11,10 @@ import '../../ui/view_models/auth_view_model.dart';
 class AppDependencyManager {
   AppDependencyManager({
     AuthRepository? authRepository,
-    IsarService? isarService,
+    DriftDatabaseService? dbService,
     ConnectivityService? connectivityService,
   }) {
-    _isarService = isarService ?? IsarService();
+    _dbService = dbService ?? DriftDatabaseService();
     _connectivityService = connectivityService ?? ConnectivityService();
 
     _authRepository =
@@ -27,7 +27,7 @@ class AppDependencyManager {
   }
 
   late final AuthRepository _authRepository;
-  late final IsarService _isarService;
+  late final DriftDatabaseService _dbService;
   late final ConnectivityService _connectivityService;
 
   // Infrastructure & Logic
@@ -43,7 +43,7 @@ class AppDependencyManager {
 
   // Getters
   AuthRepository get authRepository => _authRepository;
-  IsarService get isarService => _isarService;
+  DriftDatabaseService get dbService => _dbService;
   ConnectivityService get connectivityService => _connectivityService;
   SyncQueueService get syncQueueService => _syncQueueService;
   LocalSocialCareRepository get localSocialCareRepository =>
@@ -57,14 +57,14 @@ class AppDependencyManager {
 
   /// Performs the initial asynchronous setup of services.
   Future<void> initialize() async {
-    if (!_isarService.isOpen) {
-      await _isarService.init();
+    if (!_dbService.isOpen) {
+      await _dbService.init();
     }
     await _connectivityService.initialize();
 
-    _syncQueueService = SyncQueueService(_isarService);
+    _syncQueueService = SyncQueueService(_dbService);
     _localSocialCareRepository = LocalSocialCareRepository(
-      isarService: _isarService,
+      dbService: _dbService,
       queueService: _syncQueueService,
     );
 
@@ -85,10 +85,10 @@ class AppDependencyManager {
     await _authViewModel.init();
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     _authViewModel.dispose();
     _authRepository.dispose();
-    _isarService.close();
+    await _dbService.close();
     _connectivityService.dispose();
   }
 }

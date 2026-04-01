@@ -3,6 +3,7 @@ import '../../utils/app_error.dart';
 import '../../utils/string_helpers.dart';
 import '../kernel/ids.dart';
 import '../kernel/time_stamp.dart';
+import '../kernel/cns.dart';
 import '../kernel/cpf.dart';
 import '../kernel/nis.dart';
 import '../kernel/rg_document.dart';
@@ -11,7 +12,7 @@ import '../kernel/rg_document.dart';
 // ENUMS
 // =============================================================================
 
-enum Sex { masculino, feminino }
+enum Sex { masculino, feminino, outro }
 
 enum RequiredDocument {
   cn('CN', 'Certidão de Nascimento'),
@@ -133,26 +134,28 @@ final class PersonalData with Equatable {
 }
 
 final class CivilDocuments with Equatable {
-  const CivilDocuments._({this.cpf, this.nis, this.rgDocument});
+  const CivilDocuments._({this.cns, this.cpf, this.nis, this.rgDocument});
 
+  final Cns? cns;
   final Cpf? cpf;
   final Nis? nis;
   final RgDocument? rgDocument;
 
   @override
-  List<Object?> get props => [cpf, nis, rgDocument];
+  List<Object?> get props => [cns, cpf, nis, rgDocument];
 
   static Result<CivilDocuments> create({
+    Cns? cns,
     Cpf? cpf,
     Nis? nis,
     RgDocument? rgDocument,
   }) {
-    if (cpf == null && nis == null && rgDocument == null) {
+    if (cns == null && cpf == null && nis == null && rgDocument == null) {
       return Failure(
         AppError(
           code: 'CVD-001',
           message:
-              'Pelo menos um documento civil deve ser informado (CPF, NIS ou RG).',
+              'Pelo menos um documento civil deve ser informado (CNS, CPF, NIS ou RG).',
           module: 'social-care/civil-documents',
           kind: 'domainValidation',
           http: 422,
@@ -163,8 +166,26 @@ final class CivilDocuments with Equatable {
         ),
       );
     }
+
+    if (cpf != null && cns?.cpf != null && cpf.value != cns!.cpf!.value) {
+      return Failure(
+        AppError(
+          code: 'CNS-006',
+          message:
+              'O CPF informado não corresponde ao CPF do Cartão do SUS (CNS).',
+          module: 'social-care/civil-documents',
+          kind: 'domainValidation',
+          http: 422,
+          observability: const Observability(
+            category: ErrorCategory.domainRuleViolation,
+            severity: ErrorSeverity.warning,
+          ),
+        ),
+      );
+    }
+
     return Success(
-      CivilDocuments._(cpf: cpf, nis: nis, rgDocument: rgDocument),
+      CivilDocuments._(cns: cns, cpf: cpf, nis: nis, rgDocument: rgDocument),
     );
   }
 }

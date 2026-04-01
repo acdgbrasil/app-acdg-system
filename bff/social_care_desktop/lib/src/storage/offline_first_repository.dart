@@ -39,7 +39,7 @@ class OfflineFirstRepository implements SocialCareContract {
     final result = await localCall();
 
     if (result.isSuccess && _isOnline) {
-      unawaited(_syncEngine.processQueue());
+      _syncEngine.scheduleProcessQueue();
     }
 
     return result;
@@ -83,7 +83,7 @@ class OfflineFirstRepository implements SocialCareContract {
     // Local-first for listing — the SyncEngine pull keeps cache fresh in background.
     // This avoids blocking the UI with a remote call every time the Home loads.
     final localResult = await _local.listPatients();
-    if (localResult.isSuccess && localResult.valueOrNull!.isNotEmpty) {
+    if (localResult case Success(value: final items) when items.isNotEmpty) {
       return localResult;
     }
     // If local is empty and online, try remote
@@ -265,15 +265,19 @@ class OfflineFirstRepository implements SocialCareContract {
     if (!_isOnline) return;
 
     final tables = [
+      'dominio_tipo_identidade',
       'dominio_parentesco',
+      'dominio_condicao_ocupacao',
       'dominio_escolaridade',
-      'dominio_deficiencia',
-      'dominio_tipo_residencia',
-      'dominio_abastecimento_agua',
-      'dominio_escoamento_sanitario',
-      'dominio_destino_lixo',
-      'dominio_acesso_energia',
-      'dominio_situacao_imovel',
+      'dominio_efeito_condicionalidade',
+      'dominio_tipo_deficiencia',
+      'dominio_programa_social',
+      'dominio_tipo_ingresso',
+      'dominio_tipo_beneficio',
+      'dominio_tipo_violacao',
+      'dominio_servico_vinculo',
+      'dominio_tipo_medida',
+      'dominio_unidade_realizacao',
     ];
 
     for (final table in tables) {
