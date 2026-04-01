@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import '../../utils/app_error.dart';
 import '../../utils/string_helpers.dart';
+import '../kernel/cpf.dart';
 import '../kernel/ids.dart';
 
 // =============================================================================
@@ -207,33 +208,57 @@ final class HousingCondition with Equatable {
 final class SocialBenefit with Equatable {
   const SocialBenefit._({
     required this.benefitName,
+    required this.benefitTypeId,
     required this.amount,
     required this.beneficiaryId,
+    this.birthCertificateNumber,
+    this.deceasedCpf,
   });
 
   final String benefitName;
+  final LookupId benefitTypeId;
   final double amount;
   final PersonId beneficiaryId;
+  final String? birthCertificateNumber;
+  final Cpf? deceasedCpf;
 
   @override
-  List<Object?> get props => [benefitName, amount, beneficiaryId];
+  List<Object?> get props => [
+        benefitName,
+        benefitTypeId,
+        amount,
+        beneficiaryId,
+        birthCertificateNumber,
+        deceasedCpf,
+      ];
 
   SocialBenefit copyWith({
     String? benefitName,
+    LookupId? benefitTypeId,
     double? amount,
     PersonId? beneficiaryId,
+    String? Function()? birthCertificateNumber,
+    Cpf? Function()? deceasedCpf,
   }) {
     return SocialBenefit._(
       benefitName: benefitName ?? this.benefitName,
+      benefitTypeId: benefitTypeId ?? this.benefitTypeId,
       amount: amount ?? this.amount,
       beneficiaryId: beneficiaryId ?? this.beneficiaryId,
+      birthCertificateNumber: birthCertificateNumber != null
+          ? birthCertificateNumber()
+          : this.birthCertificateNumber,
+      deceasedCpf: deceasedCpf != null ? deceasedCpf() : this.deceasedCpf,
     );
   }
 
   static Result<SocialBenefit> create({
     required String? benefitName,
+    required LookupId benefitTypeId,
     required double amount,
     required PersonId beneficiaryId,
+    String? birthCertificateNumber,
+    Cpf? deceasedCpf,
   }) {
     final bn = benefitName?.normalize();
     if (bn == null || bn.isEmpty)
@@ -251,8 +276,11 @@ final class SocialBenefit with Equatable {
     return Success(
       SocialBenefit._(
         benefitName: bn,
+        benefitTypeId: benefitTypeId,
         amount: amount,
         beneficiaryId: beneficiaryId,
+        birthCertificateNumber: birthCertificateNumber?.nullIfEmptyNormalized(),
+        deceasedCpf: deceasedCpf,
       ),
     );
   }
