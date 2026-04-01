@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/specificities_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_section_title.dart';
@@ -6,11 +7,13 @@ import 'package:social_care/src/ui/patient_registration/view/components/registra
 /// Step 5 — Social specificities (single selection radio with conditional text).
 class StepSpecificitiesContent extends StatelessWidget {
   final SpecificitiesFormState formState;
+  final ValueNotifier<List<LookupItem>> identityTypeLookup;
   final bool showErrors;
 
   const StepSpecificitiesContent({
     super.key,
     required this.formState,
+    required this.identityTypeLookup,
     this.showErrors = false,
   });
 

@@ -62,10 +62,20 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
           formState: viewModel.familyCompositionFormState,
           personalDataFormState: viewModel.referencePersonFormState,
           documentsFormState: viewModel.documentsFormState,
+          parentescoLookup: viewModel.parentescoLookup,
           showErrors: showErrors,
         ),
-      5 => StepSpecificitiesContent(formState: viewModel.specificitiesFormState, showErrors: showErrors),
-      6 => StepIntakeInfoContent(formState: viewModel.intakeInfoFormState, showErrors: showErrors),
+      5 => StepSpecificitiesContent(
+          formState: viewModel.specificitiesFormState,
+          identityTypeLookup: viewModel.identityTypeLookup,
+          showErrors: showErrors,
+        ),
+      6 => StepIntakeInfoContent(
+          formState: viewModel.intakeInfoFormState,
+          ingressTypeLookup: viewModel.ingressTypeLookup,
+          socialProgramsLookup: viewModel.socialProgramsLookup,
+          showErrors: showErrors,
+        ),
       _ => const SizedBox.shrink(),
     };
   }
