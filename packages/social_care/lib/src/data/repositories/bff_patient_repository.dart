@@ -254,10 +254,27 @@ class BffPatientRepository implements PatientRepository {
           )
           .toList(),
       referrals: patient.referrals
-          .map((r) => ReferralDetail.fromJson(const {}))
+          .map((r) => ReferralDetail.fromJson({
+                'id': r.id.value,
+                'date': r.date.toIso8601(),
+                'professionalId': r.requestingProfessionalId.value,
+                'referredPersonId': r.referredPersonId.value,
+                'destinationService': r.destinationService.name.toSnakeCaseUpper(),
+                'reason': r.reason,
+                'status': r.status.name.toSnakeCaseUpper(),
+              }))
           .toList(),
       violationReports: patient.violationReports
-          .map((v) => ViolationReportDetail.fromJson(const {}))
+          .map((v) => ViolationReportDetail.fromJson({
+                'id': v.id.value,
+                'reportDate': v.reportDate.toIso8601(),
+                'incidentDate': v.incidentDate?.toIso8601(),
+                'victimId': v.victimId.value,
+                'violationType': v.violationType.name.toSnakeCaseUpper(),
+                'violationTypeId': v.violationTypeId?.value,
+                'descriptionOfFact': v.descriptionOfFact,
+                'actionsTaken': v.actionsTaken,
+              }))
           .toList(),
       computedAnalytics: _buildAnalytics(patient),
       personalData: pd != null
@@ -346,7 +363,14 @@ class BffPatientRepository implements PatientRepository {
 
   ComputedAnalyticsDetail _buildAnalytics(Patient patient) {
     final now = DateTime.now();
-    int age(DateTime birth) => now.year - birth.year;
+    int age(DateTime birth) {
+      int a = now.year - birth.year;
+      if (now.month < birth.month ||
+          (now.month == birth.month && now.day < birth.day)) {
+        a--;
+      }
+      return a;
+    }
 
     int r0to6 = 0,
         r7to14 = 0,
