@@ -75,6 +75,7 @@ void main() {
         sex: Sex.masculino,
         birthDate: DateTime(1975, 8, 20),
         prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
         city: 'Belo Horizonte',
         addressState: 'MG',
         residenceLocation: ResidenceLocation.urbano,
@@ -82,10 +83,11 @@ void main() {
         diagnoses: [PatientFixtures.diagnosis],
       );
 
-      final result = RegistryMapper.toPatient(intent);
-
-      expect(result.isSuccess, isTrue);
-      final patient = result.valueOrNull!;
+      final Patient patient;
+      switch (RegistryMapper.toPatient(intent)) {
+        case Success(:final value): patient = value;
+        case Failure(:final error): fail('toPatient failed: $error');
+      }
       expect(patient.address?.isHomeless, isTrue);
     });
 
@@ -99,6 +101,7 @@ void main() {
         sex: Sex.feminino,
         birthDate: DateTime(1992, 12, 1),
         prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
         city: 'Salvador',
         addressState: 'BA',
         residenceLocation: ResidenceLocation.urbano,
@@ -107,10 +110,11 @@ void main() {
         socialIdentityDescription: 'Quilombola da comunidade X',
       );
 
-      final result = RegistryMapper.toPatient(intent);
-
-      expect(result.isSuccess, isTrue);
-      final patient = result.valueOrNull!;
+      final Patient patient;
+      switch (RegistryMapper.toPatient(intent)) {
+        case Success(:final value): patient = value;
+        case Failure(:final error): fail('toPatient failed: $error');
+      }
       expect(patient.socialIdentity, isNotNull);
       expect(patient.socialIdentity?.otherDescription, 'Quilombola da comunidade X');
     });
@@ -125,6 +129,7 @@ void main() {
         sex: Sex.masculino,
         birthDate: DateTime(2000, 6, 15),
         prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
         city: 'Recife',
         addressState: 'PE',
         residenceLocation: ResidenceLocation.urbano,
@@ -133,10 +138,11 @@ void main() {
         serviceReason: 'Demanda espontânea por atendimento social',
       );
 
-      final result = RegistryMapper.toPatient(intent);
-
-      expect(result.isSuccess, isTrue);
-      final patient = result.valueOrNull!;
+      final Patient patient;
+      switch (RegistryMapper.toPatient(intent)) {
+        case Success(:final value): patient = value;
+        case Failure(:final error): fail('toPatient failed: $error');
+      }
       expect(patient.intakeInfo, isNotNull);
       expect(patient.intakeInfo?.serviceReason, 'Demanda espontânea por atendimento social');
     });
@@ -150,16 +156,18 @@ void main() {
         sex: Sex.feminino,
         birthDate: DateTime(1990, 5, 15),
         prRelationshipId: PatientFixtures.prRelationshipId.value,
+        cpf: PatientFixtures.validCpf,
         city: 'São Paulo',
         addressState: 'SP',
         residenceLocation: ResidenceLocation.urbano,
         diagnoses: [PatientFixtures.diagnosis],
       );
 
-      final result = RegistryMapper.toPatient(intent);
-
-      expect(result.isSuccess, isTrue);
-      final patient = result.valueOrNull!;
+      final Patient patient;
+      switch (RegistryMapper.toPatient(intent)) {
+        case Success(:final value): patient = value;
+        case Failure(:final error): fail('toPatient failed: $error');
+      }
       expect(patient.socialIdentity, isNull);
       expect(patient.intakeInfo, isNull);
     });
