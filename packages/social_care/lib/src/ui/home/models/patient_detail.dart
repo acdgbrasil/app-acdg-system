@@ -124,6 +124,21 @@ final class PatientDetail {
 
   String? get phone => personalData?.phone;
 
+  /// Precise age calculation considering whether birthday has passed this year.
+  int? get age {
+    final iso = personalData?.birthDate;
+    if (iso == null) return null;
+    final birth = DateTime.tryParse(iso);
+    if (birth == null) return null;
+    final now = DateTime.now();
+    int a = now.year - birth.year;
+    if (now.month < birth.month ||
+        (now.month == birth.month && now.day < birth.day)) {
+      a--;
+    }
+    return a;
+  }
+
   String? get formattedAddress {
     final addr = address;
     if (addr == null) return null;
