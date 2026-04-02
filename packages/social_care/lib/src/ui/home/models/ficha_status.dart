@@ -47,7 +47,7 @@ final class FichaStatus {
         filled: detail.intakeInfo != null,
       ),
       FichaStatus(
-        name: 'Serviços e programas de convivência comunitária',
+        name: 'Condições habitacionais da família',
         filled: detail.housingCondition != null,
       ),
     ];
