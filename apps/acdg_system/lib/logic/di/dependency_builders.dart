@@ -16,7 +16,7 @@ abstract final class DependencyBuilders {
     required LocalSocialCareRepository localRepository,
     SyncEngine? previous,
   }) {
-    final authStatus = auth.status.value;
+    final authStatus = auth.status;
 
     if (authStatus is Authenticated) {
       final remote = SocialCareBffRemote(
@@ -49,7 +49,7 @@ abstract final class DependencyBuilders {
     required LocalSocialCareRepository localRepository,
     required ConnectivityService connectivityService,
   }) {
-    final authStatus = auth.status.value;
+    final authStatus = auth.status;
 
     if (authStatus is Authenticated && syncEngine != null) {
       final remote = SocialCareBffRemote(

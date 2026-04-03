@@ -9,11 +9,11 @@ class PatientService {
 
   final SocialCareContract _bff;
 
-  Future<Result<List<Map<String, dynamic>>>> listPatients() {
-    return _bff.listPatients();
+  Future<Result<List<PatientOverview>>> fetchPatients() {
+    return _bff.fetchPatients();
   }
 
-  Future<Result<Patient>> getPatient(PatientId id) {
-    return _bff.getPatient(id);
+  Future<Result<PatientRemote>> fetchPatient(PatientId id) {
+    return _bff.fetchPatient(id);
   }
 }

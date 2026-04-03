@@ -1,0 +1,42 @@
+# RESPOSTA: Refatoracao de Reatividade Redundante - AuthViewModel
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO DA IMPLEMENTACAO
+
+Refatoracao concluida com sucesso. Eliminada a reatividade redundante (ValueNotifier dentro de ChangeNotifier) no AuthViewModel, conforme auditoria.
+
+## 2. ALTERACOES REALIZADAS
+
+### 2.1 `apps/acdg_system/lib/ui/view_models/auth_view_model.dart`
+- **Removido:** `ValueNotifier<AuthStatus> status` e `ValueNotifier<AuthUser?> user`
+- **Adicionado:** Campos privados puros `AuthStatus _status` e `AuthUser? _user` com getters publicos
+- **Atualizado:** `_onStatusChanged` agora atribui diretamente aos campos privados (`_status = ...`, `_user = ...`) e chama `notifyListeners()` — sem `.value`
+- **Atualizado:** `onDispose` — removidos `status.dispose()` e `user.dispose()` (nao existem mais)
+- **Removido:** Import desnecessario `package:flutter/foundation.dart` (nao ha mais `ValueNotifier`)
+
+### 2.2 `apps/acdg_system/lib/logic/router/app_router.dart`
+- **Atualizado:** 3 ocorrencias de `authViewModel.status.value` → `authViewModel.status` (acesso direto ao getter)
+
+### 2.3 `apps/acdg_system/test/auth/auth_view_model_test.dart`
+- **Atualizado:** 3 ocorrencias de `viewModel.status.value` → `viewModel.status` (compatibilidade com nova API)
+
+## 3. VALIDACAO
+
+- `dart analyze` nos 3 arquivos: **0 erros, 0 warnings**
+- Teste TDD (`auth_view_model_refactor_test.dart`): **3/3 PASSED**
+- Testes existentes (`auth_view_model_test.dart`): **4/4 PASSED**
+- Total: **7/7 testes passando**
+- Grep por `.status.value` e `.user.value` no projeto: **0 ocorrencias restantes**
+
+## 4. DECISOES TECNICAS
+
+1. **Import cleanup:** Removi `package:flutter/foundation.dart` porque `ValueNotifier` era o unico tipo desse pacote em uso. `ChangeNotifier` e `notifyListeners()` ja sao herdados via `BaseViewModel` do `core`.
+
+2. **Propagacao de breaking change:** Atualizei o `app_router.dart` e o teste antigo que ainda referenciavam `.value`, evitando erros de compilacao em cascata.
+
+3. **Nenhuma mudanca na logica de negocio:** O fluxo `Stream<AuthStatus> → _onStatusChanged → notifyListeners()` permanece identico. Apenas a camada de indirection (`ValueNotifier`) foi removida.
+
+---
+Aguardando Code Review.

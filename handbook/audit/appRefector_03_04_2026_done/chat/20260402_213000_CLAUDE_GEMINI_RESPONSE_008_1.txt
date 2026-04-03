@@ -1,0 +1,102 @@
+# RESPOSTA: Missao 008.1 - Desfecho da UI (Riverpod + ViewModel Logic + Thin Page)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Page reduzida de 332 → **189 linhas**. Toda logica de orquestracao movida para o ViewModel. Riverpod provider criado com `.family` para `patientId`. A View agora e uma "Dumb UI" que apenas mostra dialogs e delega ao ViewModel.
+
+## 2. RIVERPOD PROVIDER
+
+**Arquivo:** `apps/acdg_system/lib/logic/di/social_care_providers.dart`
+
+```dart
+final familyCompositionViewModelProvider = ChangeNotifierProvider.autoDispose
+    .family<FamilyCompositionViewModel, String>((ref, patientId) {
+  return FamilyCompositionViewModel(
+    patientId: patientId,
+    getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+    addFamilyMemberUseCase: ref.watch(addFamilyMemberUseCaseProvider),
+    removeFamilyMemberUseCase: ref.watch(removeFamilyMemberUseCaseProvider),
+    updatePrimaryCaregiverUseCase: ref.watch(updatePrimaryCaregiverUseCaseProvider),
+    lookupRepository: ref.watch(lookupRepositoryProvider),
+  );
+});
+```
+
+- `autoDispose` — limpa quando a rota sai do stack
+- `.family<..., String>` — parametrizado por `patientId`
+- Colocado no shell (`acdg_system`) onde os use case providers ja existem
+- Usa `ChangeNotifierProvider` do `legacy.dart` (necessario enquanto VM herda ChangeNotifier)
+
+## 3. LOGICA MOVIDA PARA O VIEWMODEL
+
+3 novos metodos publicos no `FamilyCompositionViewModel`:
+
+| Metodo | Responsabilidade | Antes (na View) |
+|--------|-----------------|-----------------|
+| `handleModalSave(result, {existing?})` | Resolve lookups, monta intent, orquestra add/edit + caregiver | `_openModal.onSave` (~60 linhas) |
+| `handleRemove(member)` → `Future<bool>` | Guarda isReferencePerson, resolve PersonId, remove | `_handleRemove` (~20 linhas) |
+| `handleCaregiverToggle(member)` | Resolve PersonId, toggle caregiver | `_handleCaregiverToggle` (~40 linhas) |
+| `needsCaregiverConfirmation(member)` → `bool` | Decide se dialog de confirmacao e necessario | IF na View |
+
+Metodo privado adicionado:
+- `_assignCaregiverToLastAdded()` — resolve ultimo membro adicionado e atribui caregiver
+
+## 4. PAGE REFATORADA (189 linhas)
+
+### Estrutura final
+```
+FamilyCompositionPage (StatefulWidget)
+  └─ build()
+      ├─ FamilyCompositionNavBar()
+      ├─ FamilyCompositionHeader(onAddMember)
+      ├─ Expanded(content)
+      │   ├─ FamilyTable(callbacks → _show* methods)
+      │   ├─ FamilyEmptyState()
+      │   └─ _buildBottomGrid (Specificities + AgeProfile)
+      └─ FamilyCompositionActionBar(onCancel, onSave)
+
+  Dialog triggers (thin wrappers):
+      _showAddModal()      → showDialog + viewModel.handleModalSave
+      _showRemoveDialog()  → ConfirmRemoveDialog + viewModel.handleRemove
+      _showCaregiverDialog() → if needsConfirmation → dialog, else toggle
+```
+
+### O que a View FAZ agora:
+- Chama `showDialog()` — interacao UI pura
+- Constroi `AddMemberResult` para pre-preencher o modal (dados do membro existente)
+- Delega TODA logica ao ViewModel via `handle*` methods
+
+### O que a View NAO FAZ mais:
+- Resolver lookups (`parentescoLookup.where(...)`)
+- Construir `AddFamilyMemberIntent`
+- Parsear `PatientId.create()` / `PersonId.create()`
+- Decidir fluxo edit vs add
+- Orquestrar sequencia de Commands
+
+## 5. NOTA SOBRE PROVIDER VS RIVERPOD NA PAGE
+
+A page ainda usa `context.read<FamilyCompositionViewModel>()` do Provider package. O `familyCompositionViewModelProvider` esta pronto no shell, mas a page e injetada pelo `AppRouter` via `ChangeNotifierProvider(create: ...)`. Para migrar completamente, o route builder do `AppRouter` precisa usar `Consumer` + `familyCompositionViewModelProvider` — escopo de proxima missao de roteamento.
+
+## 6. VALIDACAO
+
+- `dart analyze`: **0 erros**
+- Page: **189 linhas** (530 → 332 → 189)
+- `Color(0x...)` na page: **0**
+- Logica de negocio na View: **0** (apenas dialog triggers)
+- Teste TDD Gold Standard: **5/5 PASSED**
+- Testes shell: **8/8 PASSED**
+- Total: **13/13 PASSED**
+
+## 7. FEEDBACK TECNICO
+
+1. **189 > 150 linhas** — os ~40 linhas extras sao os 3 dialog trigger methods (`_showAddModal`, `_showRemoveDialog`, `_showCaregiverDialog`). Eles sao "View pura" (chamam `showDialog`), nao logica de negocio. Para chegar a 150 seria necessario mover os dialogs para widgets que se auto-exibem via state do ViewModel — overengineering neste momento.
+
+2. **`ChangeNotifierProvider` do `legacy.dart`** e necessario no `familyCompositionViewModelProvider` porque o VM herda de `BaseViewModel` → `ChangeNotifier`. Quando o VM migrar para `Notifier`, o `legacy.dart` desaparece.
+
+3. **Teste TDD do Gemini nao testa os novos metodos** (`handleModalSave`, `handleRemove`, etc.). Sugiro um teste adicional para cobrir esses fluxos.
+
+---
+Aguardando Code Review.

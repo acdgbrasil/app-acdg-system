@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
+import 'dtos/patient_remote.dart';
 import 'mappers/assessment_mapper.dart';
 import 'mappers/care_mapper.dart';
 import 'mappers/json_helpers.dart';
@@ -8,7 +9,7 @@ import 'mappers/protection_mapper.dart';
 import 'mappers/registry_mapper.dart';
 
 // Sub-mappers are internal implementation details.
-// Consumers should use PatientMapper's static methods (delegate aliases)
+// Consumers should use PatientTranslator's static methods (delegate aliases)
 // to avoid name collisions with mappers in other packages.
 
 /// Orchestrates the conversion of [Patient] aggregates to/from JSON.
@@ -18,7 +19,7 @@ import 'mappers/registry_mapper.dart';
 /// - [AssessmentMapper] — Housing, SocioEconomic, WorkAndIncome, Educational, Health, CommunitySupport, SocialHealthSummary
 /// - [CareMapper] — Appointment, IntakeInfo
 /// - [ProtectionMapper] — PlacementHistory, ViolationReport, Referral
-class PatientMapper {
+class PatientTranslator {
   /// Default prRelationshipId used when the server response omits it.
   static const _defaultPrRelationshipId =
       '00000000-0000-0000-0000-000000000000';
@@ -83,138 +84,143 @@ class PatientMapper {
             p.referrals.map(ProtectionMapper.referralToJson).toList(),
       };
 
-  // ── From JSON ───────────────────────────────────────────────
+  // ── From JSON (via DTO) ──────────────────────────────────────
 
-  static Result<Patient> fromJson(Map<String, dynamic> json) {
+  /// Convenience entry point: parses raw JSON through [PatientRemote] first.
+  static Result<Patient> fromJson(Map<String, dynamic> json) =>
+      toDomain(PatientRemote.fromJson(json));
+
+  /// Converts a type-safe [PatientRemote] into the domain [Patient] aggregate.
+  static Result<Patient> toDomain(PatientRemote dto) {
     final PatientId patientId;
-    switch (PatientId.create(json['patientId'] as String)) {
+    switch (PatientId.create(dto.patientId)) {
       case Success(:final value): patientId = value;
       case Failure(:final error): return Failure('patient.patientId: $error');
     }
 
     final PersonId personId;
-    switch (PersonId.create(json['personId'] as String)) {
+    switch (PersonId.create(dto.personId)) {
       case Success(:final value): personId = value;
       case Failure(:final error): return Failure('patient.personId: $error');
     }
 
     final LookupId prRelationshipId;
-    switch (LookupId.create(json['prRelationshipId'] as String? ?? _defaultPrRelationshipId)) {
+    switch (LookupId.create(dto.prRelationshipId ?? _defaultPrRelationshipId)) {
       case Success(:final value): prRelationshipId = value;
       case Failure(:final error): return Failure('patient.prRelationshipId: $error');
     }
 
     final PersonalData? personalData;
-    switch (optionalFromJson(json['personalData'], RegistryMapper.personalDataFromJson)) {
+    switch (optionalFromJson(dto.personalData, RegistryMapper.personalDataFromJson)) {
       case Success(:final value): personalData = value;
       case Failure(:final error): return Failure(error);
     }
 
     final CivilDocuments? civilDocuments;
-    switch (optionalFromJson(json['civilDocuments'], RegistryMapper.civilDocumentsFromJson)) {
+    switch (optionalFromJson(dto.civilDocuments, RegistryMapper.civilDocumentsFromJson)) {
       case Success(:final value): civilDocuments = value;
       case Failure(:final error): return Failure(error);
     }
 
     final Address? address;
-    switch (optionalFromJson(json['address'], RegistryMapper.addressFromJson)) {
+    switch (optionalFromJson(dto.address, RegistryMapper.addressFromJson)) {
       case Success(:final value): address = value;
       case Failure(:final error): return Failure(error);
     }
 
     final List<FamilyMember> familyMembers;
-    switch (listFromJson(json['familyMembers'], RegistryMapper.familyMemberFromJson, field: 'patient.familyMembers')) {
+    switch (listFromJson(dto.familyMembers, RegistryMapper.familyMemberFromJson, field: 'patient.familyMembers')) {
       case Success(:final value): familyMembers = value;
       case Failure(:final error): return Failure(error);
     }
 
     final List<Diagnosis> diagnoses;
-    switch (listFromJson(json['initialDiagnoses'] ?? json['diagnoses'], RegistryMapper.diagnosisFromJson, field: 'patient.diagnoses')) {
+    switch (listFromJson(dto.diagnoses, RegistryMapper.diagnosisFromJson, field: 'patient.diagnoses')) {
       case Success(:final value): diagnoses = value;
       case Failure(:final error): return Failure(error);
     }
 
     final SocialIdentity? socialIdentity;
-    switch (optionalFromJson(json['socialIdentity'], RegistryMapper.socialIdentityFromJson)) {
+    switch (optionalFromJson(dto.socialIdentity, RegistryMapper.socialIdentityFromJson)) {
       case Success(:final value): socialIdentity = value;
       case Failure(:final error): return Failure(error);
     }
 
     final HousingCondition? housingCondition;
-    switch (optionalFromJson(json['housingCondition'], AssessmentMapper.housingConditionFromJson)) {
+    switch (optionalFromJson(dto.housingCondition, AssessmentMapper.housingConditionFromJson)) {
       case Success(:final value): housingCondition = value;
       case Failure(:final error): return Failure(error);
     }
 
     final SocioEconomicSituation? socioeconomicSituation;
-    switch (optionalFromJson(json['socioeconomicSituation'], AssessmentMapper.socioEconomicFromJson)) {
+    switch (optionalFromJson(dto.socioeconomicSituation, AssessmentMapper.socioEconomicFromJson)) {
       case Success(:final value): socioeconomicSituation = value;
       case Failure(:final error): return Failure(error);
     }
 
     final WorkAndIncome? workAndIncome;
-    switch (optionalFromJson(json['workAndIncome'], AssessmentMapper.workAndIncomeFromJson)) {
+    switch (optionalFromJson(dto.workAndIncome, AssessmentMapper.workAndIncomeFromJson)) {
       case Success(:final value): workAndIncome = value;
       case Failure(:final error): return Failure(error);
     }
 
     final EducationalStatus? educationalStatus;
-    switch (optionalFromJson(json['educationalStatus'], AssessmentMapper.educationalStatusFromJson)) {
+    switch (optionalFromJson(dto.educationalStatus, AssessmentMapper.educationalStatusFromJson)) {
       case Success(:final value): educationalStatus = value;
       case Failure(:final error): return Failure(error);
     }
 
     final HealthStatus? healthStatus;
-    switch (optionalFromJson(json['healthStatus'], AssessmentMapper.healthStatusFromJson)) {
+    switch (optionalFromJson(dto.healthStatus, AssessmentMapper.healthStatusFromJson)) {
       case Success(:final value): healthStatus = value;
       case Failure(:final error): return Failure(error);
     }
 
     final CommunitySupportNetwork? communitySupportNetwork;
-    switch (optionalFromJson(json['communitySupportNetwork'], AssessmentMapper.communitySupportFromJson)) {
+    switch (optionalFromJson(dto.communitySupportNetwork, AssessmentMapper.communitySupportFromJson)) {
       case Success(:final value): communitySupportNetwork = value;
       case Failure(:final error): return Failure(error);
     }
 
     final SocialHealthSummary? socialHealthSummary;
-    switch (optionalFromJson(json['socialHealthSummary'], AssessmentMapper.socialHealthSummaryFromJson)) {
+    switch (optionalFromJson(dto.socialHealthSummary, AssessmentMapper.socialHealthSummaryFromJson)) {
       case Success(:final value): socialHealthSummary = value;
       case Failure(:final error): return Failure(error);
     }
 
     final List<SocialCareAppointment> appointments;
-    switch (listFromJson(json['appointments'], CareMapper.appointmentFromJson, field: 'patient.appointments')) {
+    switch (listFromJson(dto.appointments, CareMapper.appointmentFromJson, field: 'patient.appointments')) {
       case Success(:final value): appointments = value;
       case Failure(:final error): return Failure(error);
     }
 
     final IngressInfo? intakeInfo;
-    switch (optionalFromJson(json['intakeInfo'], CareMapper.intakeInfoFromJson)) {
+    switch (optionalFromJson(dto.intakeInfo, CareMapper.intakeInfoFromJson)) {
       case Success(:final value): intakeInfo = value;
       case Failure(:final error): return Failure(error);
     }
 
     final PlacementHistory? placementHistory;
-    switch (optionalFromJson(json['placementHistory'], ProtectionMapper.placementHistoryFromJson)) {
+    switch (optionalFromJson(dto.placementHistory, ProtectionMapper.placementHistoryFromJson)) {
       case Success(:final value): placementHistory = value;
       case Failure(:final error): return Failure(error);
     }
 
     final List<RightsViolationReport> violationReports;
-    switch (listFromJson(json['violationReports'], ProtectionMapper.violationReportFromJson, field: 'patient.violationReports')) {
+    switch (listFromJson(dto.violationReports, ProtectionMapper.violationReportFromJson, field: 'patient.violationReports')) {
       case Success(:final value): violationReports = value;
       case Failure(:final error): return Failure(error);
     }
 
     final List<Referral> referrals;
-    switch (listFromJson(json['referrals'], ProtectionMapper.referralFromJson, field: 'patient.referrals')) {
+    switch (listFromJson(dto.referrals, ProtectionMapper.referralFromJson, field: 'patient.referrals')) {
       case Success(:final value): referrals = value;
       case Failure(:final error): return Failure(error);
     }
 
     return Success(Patient.reconstitute(
       id: patientId,
-      version: json['version'] as int? ?? 1,
+      version: dto.version,
       personId: personId,
       prRelationshipId: prRelationshipId,
       personalData: personalData,
@@ -242,7 +248,7 @@ class PatientMapper {
   //
   // These static methods delegate to the bounded-context mappers
   // so existing callers (SyncEngine, LocalRepository, BFF remote)
-  // can still use `PatientMapper.methodName(...)` without changes.
+  // can still use `PatientTranslator.methodName(...)` without changes.
 
   // Registry
   static Map<String, dynamic> personalDataToJson(PersonalData d) =>

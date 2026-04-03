@@ -38,8 +38,10 @@ export 'src/logic/use_case/registry/list_patients_use_case.dart';
 export 'src/logic/use_case/registry/register_patient_use_case.dart';
 export 'src/logic/use_case/registry/update_social_identity_use_case.dart';
 // UI — Patient Registration
+export 'src/ui/patient_registration/di/patient_registration_providers.dart';
 export 'src/ui/patient_registration/view/page/patient_registration_page.dart';
 export 'src/ui/patient_registration/viewModel/patient_registration_view_model.dart';
 // UI — Home
+export 'src/ui/home/di/home_providers.dart';
 export 'src/ui/home/view/page/home_page.dart';
 export 'src/ui/home/viewModel/home_view_model.dart';

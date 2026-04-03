@@ -1,5 +1,8 @@
 import 'package:core/core.dart';
 import '../contract/social_care_contract.dart';
+import '../infrastructure/dtos/patient_remote.dart';
+import '../infrastructure/dtos/patient_overview.dart';
+import '../infrastructure/patient_translator.dart';
 import '../domain/assessment/assessment_vos.dart';
 import '../domain/assessment/community_support.dart';
 import '../domain/assessment/educational_status.dart';
@@ -29,17 +32,17 @@ class FakeSocialCareBff implements SocialCareContract {
   Future<Result<void>> checkReady() async => const Success(null);
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> listPatients() async {
+  Future<Result<List<PatientOverview>>> fetchPatients() async {
     await Future.delayed(delay);
-    return Success(_patients.values.map((p) => {
-      'patientId': p.id.value,
-      'personId': p.personId.value,
-      'firstName': p.personalData?.firstName,
-      'lastName': p.personalData?.lastName,
-      'fullName': '${p.personalData?.firstName ?? ''} ${p.personalData?.lastName ?? ''}'.trim(),
-      'primaryDiagnosis': p.diagnoses.isNotEmpty ? p.diagnoses.first.description : null,
-      'memberCount': p.familyMembers.length,
-    }).toList());
+    return Success(_patients.values.map((p) => PatientOverview(
+      patientId: p.id.value,
+      personId: p.personId.value,
+      firstName: p.personalData?.firstName,
+      lastName: p.personalData?.lastName,
+      fullName: '${p.personalData?.firstName ?? ''} ${p.personalData?.lastName ?? ''}'.trim(),
+      primaryDiagnosis: p.diagnoses.isNotEmpty ? p.diagnoses.first.description : null,
+      memberCount: p.familyMembers.length,
+    )).toList());
   }
 
   @override
@@ -50,18 +53,19 @@ class FakeSocialCareBff implements SocialCareContract {
   }
 
   @override
-  Future<Result<Patient>> getPatient(PatientId id) async {
+  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
     await Future.delayed(delay);
     final p = _patients[id.value];
-    return p != null ? Success(p) : Failure('Patient not found: ${id.value}');
+    if (p == null) return Failure('Patient not found: ${id.value}');
+    return Success(PatientRemote.fromJson(PatientTranslator.toJson(p)));
   }
 
   @override
-  Future<Result<Patient>> getPatientByPersonId(PersonId personId) async {
+  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async {
     await Future.delayed(delay);
     try {
       final p = _patients.values.firstWhere((p) => p.personId == personId);
-      return Success(p);
+      return Success(PatientRemote.fromJson(PatientTranslator.toJson(p)));
     } catch (_) {
       return Failure('Patient not found for person: ${personId.value}');
     }

@@ -1,0 +1,29 @@
+# REJEITADO NOVAMENTE: Missão 009.1 - Falha TDD (Arquitetura)
+# DATA: 03 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW: TESTES FALHARAM
+Claude, não adianta escrever no seu relatório que a missão foi cumprida se a nossa suíte de TDD Arquitetural apita no CI. 
+
+Você expurgou as cores (Visual), mas ignorou a Refatoração Arquitetural (Comportamental).
+
+### Falhas Detectadas pelos Testes Unitários:
+1. **`FamilyMemberModal` MANTÉM LÓGICA DE ESTADO:**
+   - O teste detectou `_entry = FamilyMemberEntry()` instanciado localmente no Widget. 
+   - **SOLUÇÃO OBRIGATÓRIA:** O `FamilyMemberEntry` deve ser movido para o ViewModel (ou passado para o Modal via construtor, gerenciado pelo `FamilyCompositionFormState`). A View é burra, não cria formulários complexos.
+
+2. **`FamilyMemberModal` MANTÉM ORQUESTRAÇÃO DE FLUXO:**
+   - O teste detectou `ScaffoldMessenger.of(context)` sendo chamado direto no Modal.
+   - **SOLUÇÃO OBRIGATÓRIA:** A validação de `hasPrimaryCaregiver` deve ocorrer no `ViewModel.handleModalSave()`. Se falhar, o ViewModel deve emitir um estado de erro, que o `PatientRegistrationPage` escuta para exibir o Toast/Snackbar.
+
+3. **`HomePage` MANTÉM LÓGICA DE NEGÓCIO NO SETSTATE:**
+   - O teste detectou `setState(() => _activeTab = tab)` e `setState(() {})` no `home_page.dart`.
+   - **SOLUÇÃO OBRIGATÓRIA:** Mova o estado `_activeTab` para o `HomeViewModel`. A transição de abas e a busca não precisam de `setState` quando você tem o Riverpod ou um `ListenableBuilder` devidamente orquestrado.
+
+## 2. EXIGÊNCIA FINAL (MISSÃO 009.2)
+Eu construí testes automáticos para barrar você. Você só passará por mim se apagar cada uma das três violações acima. 
+
+Não tente burlar o teste mudando o nome das variáveis; mude a arquitetura. Eu não vou aprovar o seu trabalho enquanto o console de teste não cuspir "All tests passed!".
+
+Aguardando. E dessa vez, faça direito.

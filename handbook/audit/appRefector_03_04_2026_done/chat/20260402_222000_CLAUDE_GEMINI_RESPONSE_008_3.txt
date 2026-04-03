@@ -1,0 +1,72 @@
+# RESPOSTA: Missao 008.3 - Purga Final de Cores + Design System Integration
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Purga total de cores hardcoded em TODOS os componentes da feature. 2 componentes migrados para o Design System. Zero `Color(0x...)` restante na feature family_composition.
+
+## 2. DESIGN SYSTEM — Novos Tokens
+
+3 tokens adicionados a `AppColors`:
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `AppColors.surface` | `Color(0xFFFAF0E0)` | Cream claro (FAB, dialog backgrounds) |
+| `AppColors.warning` | `Color(0xFFC9960A)` | Dourado/amber (estrela do cuidador) |
+| `AppColors.barrierDark` | `Color(0x59261D11)` | Overlay de dialogs |
+
+## 3. DESIGN SYSTEM — Novos Atoms
+
+### `AcdgBadge` (migrado de FamilyTableBadge)
+- **Arquivo:** `packages/design_system/lib/src/atoms/acdg_badge.dart`
+- **Exportado** em `design_system.dart`
+- Widget generico: texto + cor de fundo + cor de texto
+- Sem dependencia de dominio — recebe apenas `String` e `Color`
+
+### `FamilyTableActionButton` → DELETADO
+- Substituido por `AcdgIconButton` (ja existia no design_system)
+- `family_table.dart` agora usa `AcdgIconButton(icon, onPressed, color, size, tooltip)`
+
+## 4. PURGA DE CORES — 10 ARQUIVOS LIMPOS
+
+| Arquivo | Cores substituidas |
+|---------|-------------------|
+| `empty_state.dart` | 3 |
+| `confirm_caregiver_dialog.dart` | 11 |
+| `confirm_remove_dialog.dart` | 10 |
+| `family_table.dart` | 6 |
+| `family_table_doc_checkbox.dart` | 5 |
+| `family_composition_header.dart` | 1 |
+| `age_profile_panel.dart` | 5 |
+| `add_member_modal.dart` | ~30 (removidas constantes privadas `_deepBlue`, `_offWhite`, `_red`) |
+| `family_table_badge.dart` | DELETADO (migrado para AcdgBadge) |
+| `family_table_action_button.dart` | DELETADO (substituido por AcdgIconButton) |
+
+**Total: ~70+ substituicoes de `Color(0x...)` → `AppColors.*`**
+
+## 5. VERIFICACAO
+
+```
+grep -r 'Color(0x' packages/social_care/lib/src/ui/family_composition/ → 0 resultados
+```
+
+## 6. REGRA BUSINESS vs UI RESPEITADA
+
+| Onde | O que vive la |
+|------|--------------|
+| `design_system/atoms/` | `AcdgBadge`, `AcdgIconButton` — tipos primitivos (String, Color, IconData) |
+| `social_care/components/` | `FamilyTable`, `FamilyCompositionContent` — recebem `FamilyMemberModel`, `FamilyCompositionViewModel` |
+
+## 7. VALIDACAO
+
+- `dart analyze`: **0 erros**
+- `Color(0x...)` na feature: **0 ocorrencias**
+- Design System atoms: **AcdgBadge** criado, **AcdgIconButton** reutilizado
+- Teste TDD Gold Standard: **5/5 PASSED**
+- Testes shell: **8/8 PASSED**
+- Total: **13/13 PASSED**
+
+---
+Aguardando Code Review.

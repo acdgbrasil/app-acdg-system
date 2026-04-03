@@ -1,0 +1,94 @@
+# RESPOSTA UNIFICADA: Missao 004.1 + Missao 005
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+---
+
+## MISSAO 004.1: Unblock & Automacao
+
+### Resultado
+- **build_runner funcional** — workaround aplicado: `PATH=$(echo $PATH | sed -e 's/:\/Users\/gabriel_aderaldo\/\.swiftly\/bin//') dart run build_runner build`
+- **0 outputs** = os `.g.dart` manuais estavam 100% corretos, build_runner confirmou
+- O fix definitivo de PATH nao resolveu porque o hook do `objective_c` cacheou a resolucao em `.dart_tool/hooks_runner/`. O workaround de PATH-stripping funciona de forma confiavel.
+
+---
+
+## MISSAO 005: Saneamento do Contrato
+
+### 1. RESUMO
+
+Contrato `SocialCareContract` atualizado para usar DTOs tipados. Eliminado o anti-padrao de `Map<String, dynamic>` em `listPatients` e `Patient` domain model em `getPatient`/`getPatientByPersonId`. O "falsificador de JSON" (`_extractSummary`) foi substituido por `_toSummaryDTO` que retorna `PatientSummaryDTO` tipado.
+
+### 2. ARQUIVOS CRIADOS
+
+| Arquivo | Conteudo |
+|---------|----------|
+| `bff/shared/lib/src/infrastructure/dtos/patient_summary_dto.dart` | DTO leve para listagem (patientId, personId, firstName, lastName, fullName, primaryDiagnosis, memberCount) |
+| `bff/shared/lib/src/infrastructure/dtos/patient_summary_dto.g.dart` | Codigo gerado (validado pelo build_runner) |
+
+### 3. ALTERACOES NO CONTRATO
+
+| Metodo | Antes | Depois |
+|--------|-------|--------|
+| `listPatients()` | `Result<List<Map<String, dynamic>>>` | `Result<List<PatientSummaryDTO>>` |
+| `getPatient(id)` | `Result<Patient>` | `Result<PatientDTO>` |
+| `getPatientByPersonId(personId)` | `Result<Patient>` | `Result<PatientDTO>` |
+
+### 4. IMPLEMENTADORES ATUALIZADOS
+
+#### 4.1 `LocalSocialCareRepository` (bff/social_care_desktop)
+- `listPatients()` — retorna `Result<List<PatientSummaryDTO>>`
+- **REMOVIDO:** `_extractSummary(CachedPatient)` → `Map<String, dynamic>` (falsificador de JSON)
+- **ADICIONADO:** `_toSummaryDTO(CachedPatient)` → `PatientSummaryDTO` (tipado, mesma logica de extracao)
+- `getPatient()` / `getPatientByPersonId()` — retornam `Result<PatientDTO>` via `PatientDTO.fromJson(json)`
+- **ADICIONADO:** `updateCacheFromDTO(PatientDTO)` — persiste DTO no cache local (usado pelo OfflineFirstRepository)
+- `updateCacheFromSummaries()` — agora aceita `List<PatientSummaryDTO>` em vez de `List<Map<String, dynamic>>`
+
+#### 4.2 `SocialCareBffRemote` (bff/social_care_desktop)
+- `listPatients()` — mapeia response JSON para `List<PatientSummaryDTO>` via `PatientSummaryDTO.fromJson`
+- `getPatient()` / `getPatientByPersonId()` — retornam `Success(PatientDTO.fromJson(data))` em vez de `PatientMapper.fromJson(data)`
+
+#### 4.3 `OfflineFirstRepository` (bff/social_care_desktop)
+- `listPatients()` — type change (delegates ao local/remote que ja retornam DTO)
+- `getPatient()` / `getPatientByPersonId()` — `onRemoteSuccess` agora usa `updateCacheFromDTO(dto)` em vez de `updateCache(patient)`
+
+#### 4.4 `FakeSocialCareBff` (bff/shared/testing)
+- `listPatients()` — constroi `PatientSummaryDTO` a partir dos `Patient` internos
+- `getPatient()` / `getPatientByPersonId()` — converte `Patient` → JSON → `PatientDTO` via `PatientMapper.toJson` + `PatientDTO.fromJson`
+
+### 5. CAMADA FLUTTER (packages/social_care)
+
+#### 5.1 `PatientService`
+- Passthrough atualizado: `Result<List<PatientSummaryDTO>>` e `Result<PatientDTO>`
+
+#### 5.2 `BffPatientRepository`
+- `listPatients()` — mapeia `PatientSummaryDTO` → `PatientSummary` (UI model) diretamente, **eliminado** o intermediario `PatientSummaryApiModel`
+- `getPatient()` — converte `PatientDTO` → `Patient` via `PatientMapper.toDomain(dto)` → `PatientDetailResult`
+- `getPatientByPersonId()` — converte `PatientDTO` → `Patient` via `PatientMapper.toDomain(dto)`
+- Fallback `'—'` para `firstName`/`lastName` nullable do DTO
+
+### 6. BARREL EXPORT
+- `bff/shared/lib/shared.dart` — adicionados exports de `PatientDTO` e `PatientSummaryDTO`
+
+### 7. VALIDACAO
+
+- `dart analyze` em **4 packages** (shared, social_care_desktop, social_care, acdg_system): **0 erros**
+- `build_runner build`: **0 outputs** (gerado = manual, confirmado)
+- Testes shell (auth + router): **8/8 PASSED**
+
+### 8. FEEDBACK TECNICO
+
+1. **O workaround do PATH funciona mas e fragil.** O Orquestrador precisa investigar por que `.dart_tool/hooks_runner/` cacheia o path antigo do `swiftly` mesmo apos o fix de prioridade. Uma possivel solucao: `rm -rf .dart_tool/hooks_runner/` para forcar re-resolucao.
+
+2. **`PatientSummaryApiModel` agora e dead code** — foi substituido pelo `PatientSummaryDTO`. Pode ser deletado em limpeza futura.
+
+3. **Fluxo de dados resultante (limpo):**
+```
+API JSON → PatientDTO.fromJson() → SocialCareContract → PatientMapper.toDomain() → Patient → UI Models
+API JSON → PatientSummaryDTO.fromJson() → SocialCareContract → BffPatientRepository → PatientSummary (UI)
+```
+Nenhuma camada toca `Map<String, dynamic>` diretamente exceto o JSON desserializado pelo `@JsonSerializable`.
+
+---
+Aguardando Code Review.

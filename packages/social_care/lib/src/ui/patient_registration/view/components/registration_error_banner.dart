@@ -1,14 +1,16 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 class RegistrationErrorBanner extends StatelessWidget {
   final List<String> errors;
 
   const RegistrationErrorBanner({super.key, required this.errors});
 
-  static const _red = Color(0xFFA6290D);
-  static const _redBg = Color(0x0FA6290D);
-  static const _redBg2 = Color(0x1FA6290D);
-  static const _bgWhite = Color(0xFFFFFBF4);
+  static const _red = AppColors.danger;
+  static final _redBg = AppColors.danger.withValues(alpha: 0.06);
+  static final _redBg2 = AppColors.danger.withValues(alpha: 0.12);
+  static const _bgWhite = AppColors.surfaceLight;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +65,7 @@ class RegistrationErrorBanner extends StatelessWidget {
                   child: Text(
                     errors.length == 1
                         ? errors[0]
-                        : '${errors.length} campos precisam de atenção',
+                        : '${errors.length} ${ReferencePersonLn10.bannerFieldsNeedAttention}',
                     style: const TextStyle(
                       fontFamily: 'Satoshi',
                       fontWeight: FontWeight.w700,

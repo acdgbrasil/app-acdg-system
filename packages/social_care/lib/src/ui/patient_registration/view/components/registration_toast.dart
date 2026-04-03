@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 enum ToastType { success, error, warning }
@@ -74,11 +75,11 @@ class _ToastOverlayState extends State<_ToastOverlay>
   late final Animation<Offset> _slideAnimation;
   Timer? _dismissTimer;
 
-  static const _brown = Color(0xFF261D11);
-  static const _green = Color(0xFF4F8448);
-  static const _red = Color(0xFFA6290D);
-  static const _amber = Color(0xFFB8860B);
-  static const _bgWhite = Color(0xFFFFFBF4);
+  static const _brown = AppColors.textPrimary;
+  static const _green = AppColors.primary;
+  static const _red = AppColors.danger;
+  static const _amber = AppColors.warning;
+  static const _bgWhite = AppColors.surfaceLight;
 
   Color get _backgroundColor => switch (widget.type) {
         ToastType.success => _green,
@@ -139,11 +140,11 @@ class _ToastOverlayState extends State<_ToastOverlay>
               decoration: BoxDecoration(
                 color: _backgroundColor,
                 borderRadius: BorderRadius.circular(100),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x40261D11),
+                    color: AppColors.textPrimary.withValues(alpha: 0.25),
                     blurRadius: 32,
-                    offset: Offset(0, 8),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),

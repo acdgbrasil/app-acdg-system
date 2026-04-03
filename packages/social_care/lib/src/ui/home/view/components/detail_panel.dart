@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/models/ficha_status.dart';
 import 'package:social_care/src/ui/home/models/patient_detail.dart';
@@ -14,6 +15,7 @@ class DetailPanel extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onShowFichas;
   final VoidCallback onShowDados;
+  final void Function(FichaStatus ficha, String patientId)? onFichaTap;
 
   const DetailPanel({
     super.key,
@@ -25,6 +27,7 @@ class DetailPanel extends StatelessWidget {
     required this.onClose,
     required this.onShowFichas,
     required this.onShowDados,
+    this.onFichaTap,
   });
 
   @override
@@ -39,7 +42,9 @@ class DetailPanel extends StatelessWidget {
           opacity: visible ? 1.0 : 0.0,
           child: GestureDetector(
             onTap: onClose,
-            child: Container(color: const Color(0x0D261D11)),
+            child: Container(
+              color: AppColors.textPrimary.withValues(alpha: 0.05),
+            ),
           ),
         ),
 
@@ -54,24 +59,24 @@ class DetailPanel extends StatelessWidget {
               ? 720
               : MediaQuery.sizeOf(context).width * 0.56,
           child: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF172D48),
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDark,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24),
                 bottomLeft: Radius.circular(24),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x4D172D48),
+                  color: AppColors.backgroundDark.withValues(alpha: 0.3),
                   blurRadius: 40,
-                  offset: Offset(-8, 0),
+                  offset: const Offset(-8, 0),
                 ),
               ],
             ),
             child: isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      color: Color(0xFFF2E2C4),
+                      color: AppColors.background,
                     ),
                   )
                 : panelView == 'dados'
@@ -85,6 +90,9 @@ class DetailPanel extends StatelessWidget {
                         fichas: fichas,
                         onClose: onClose,
                         onBack: onShowDados,
+                        onFichaTap: onFichaTap != null
+                            ? (ficha) => onFichaTap!(ficha, detail!.patientId)
+                            : null,
                       ),
           ),
         ),

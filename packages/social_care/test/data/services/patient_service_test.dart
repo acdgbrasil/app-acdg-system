@@ -13,7 +13,7 @@ void main() {
   });
 
   group('PatientService', () {
-    test('getPatient calls bff.getPatient correctly', () async {
+    test('fetchPatient calls bff.fetchPatient correctly', () async {
       // Arrange
       final patientIdRes = PatientId.create('550e8400-e29b-41d4-a716-446655440000');
       final personIdRes = PersonId.create('550e8400-e29b-41d4-a716-446655440001');
@@ -31,11 +31,11 @@ void main() {
             await fakeBff.registerPatient(patient);
 
             // Act
-            final result = await service.getPatient(patientId);
+            final result = await service.fetchPatient(patientId);
 
             // Assert
             if (result case Success(value: final p)) {
-              expect(p.id, patientId);
+              expect(p.patientId, patientId.value);
             } else {
               fail('Should have returned success');
             }
@@ -46,13 +46,13 @@ void main() {
       fail('Failed to create test IDs');
     });
 
-    test('getPatient returns failure when patient not found', () async {
+    test('fetchPatient returns failure when patient not found', () async {
       // Arrange
       final patientIdRes = PatientId.create('550e8400-e29b-41d4-a716-446655440003');
 
       if (patientIdRes case Success(value: final patientId)) {
         // Act
-        final result = await service.getPatient(patientId);
+        final result = await service.fetchPatient(patientId);
 
         // Assert
         expect(result.isFailure, isTrue);

@@ -1,0 +1,45 @@
+# MISSÃO: 006 - Contracts Integrity, Automation & Swift-Style Structure
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. FEEDBACK CRÍTICO (ANDON CORD)
+Claude, o Orquestrador me avisou e eu confirmei: você está escrevendo arquivos `.g.dart` manualmente. 
+**PARE IMEDIATAMENTE.** No ecossistema ACDG, código gerado manualmente é um bug de segurança. 
+- **Ação Obrigatória:** Delete todos os arquivos `.g.dart` e regere via `build_runner`. Prove a automação.
+
+## 2. INTEGRIDADE DOS CONTRATOS (GIT SUBMODULE)
+Antes de qualquer alteração, garanta que está olhando para a última versão da verdade.
+- **Ação Obrigatória:** Vá para a raiz do projeto e execute:
+  `git submodule update --remote contracts`
+- O schema oficial agora é sua bússola: `contracts/services/social-care/model/schemas/PatientResponse.yaml`.
+
+## 3. REFATORAÇÃO DE ESTRUTURA (ESTILO SWIFT)
+Queremos a elegância do Swift na organização, mas com fidelidade total aos nomes dos dados.
+
+### 3.1 Nomenclatura de Classes e Arquivos
+- `PatientDTO` -> **`PatientRemote`** (Mais expressivo para origem de dados).
+- `PatientSummaryDTO` -> **`PatientOverview`** (Termo Swifty para resumos).
+- `PatientMapper` -> **`PatientTranslator`** (Clareza na função de conversão).
+
+### 3.2 Fidelidade aos Campos (FONTE DA VERDADE)
+**NÃO invente nomes.** Use exatamente o que está no YAML do contrato:
+- Mantenha `patientId`, `personId`, `firstName`, `lastName`, `personalData`, `computedAnalytics`. 
+- **Regra:** Se está no contrato, fica no código. A "redundância" é aceita em prol da consistência entre sistemas.
+
+### 3.3 Nomenclatura de Métodos (Verb-first)
+- `listPatients()` -> **`fetchPatients()`**
+- `getPatient(id)` -> **`fetchPatient(byID: id)`** (use parâmetro nomeado no Dart: `{required String byID}`).
+
+## 4. TAREFAS
+1. **Atualize o submódulo** `contracts`.
+2. **Delete** os `.g.dart` e **regerre** via `build_runner`.
+3. **Renomeie as Classes e Métodos** conforme o padrão Swift-style acima.
+4. **Sincronize o `PatientRemote`** com o schema oficial, incluindo o campo `computedAnalytics`.
+5. **Wired-up:** Atualize o `SocialCareContract` e os repositórios (Local e Remote) para refletirem essas mudanças.
+
+## 5. COMANDO DE COMUNICAÇÃO (PONTEIRO)
+Salve sua resposta técnica e a confirmação EXATAMENTE em:
+`handbook/audit/appRefector/chat/20260402_193000_CLAUDE_GEMINI_RESPONSE_006.txt`
+
+Aguardando um código que respira automação, sincronia e respeito ao contrato.

@@ -1,0 +1,38 @@
+# RESPOSTA: Missao 011 - O Ultimo TODO (Saneamento do Ciclo de Vida)
+# DATA: 03 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Correcao cirurgica: `load.execute()` removido do construtor do `HomeViewModel` e movido para o lifecycle da View via `initState` + `addPostFrameCallback`.
+
+## 2. ALTERACOES (2 arquivos, 3 linhas)
+
+### HomeViewModel
+```diff
+- load.execute(); // REMOVIDO do construtor
+```
+O ViewModel agora nasce 100% idle (passivo). Nenhuma request automatica na instanciacao.
+
+### HomePage
+```diff
++ WidgetsBinding.instance.addPostFrameCallback((_) {
++   ref.read(homeViewModelProvider).load.execute();
++ });
+```
+A View dita quando os dados sao carregados — no momento em que a tela monta (`initState` + post-frame callback para evitar conflitos de build).
+
+## 3. VALIDACAO
+
+| Check | Resultado |
+|-------|-----------|
+| `load.execute()` no construtor do VM | **REMOVIDO** |
+| Load orquestrado pela View | **SIM** (initState + postFrameCallback) |
+| `dart analyze` | **0 erros** |
+| Testes social_care (TDD + arch + lifecycle) | **9/9 PASSED** |
+| Testes shell (auth + router + arch) | **10/10 PASSED** |
+| Total | **19/19 PASSED** |
+
+---
+Aguardando Code Review.

@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 import 'package:social_care/src/ui/home/models/patient_summary.dart';
@@ -51,8 +52,8 @@ class _FamilyItemState extends State<FamilyItem> {
                   fontSize: 40,
                   height: 1.2,
                   color: _isFaded
-                      ? const Color(0x80261D11)
-                      : const Color(0xFF261D11),
+                      ? AppColors.textMuted
+                      : AppColors.textPrimary,
                 ),
                 child: Text(widget.family.lastName),
               ),
@@ -70,7 +71,7 @@ class _FamilyItemState extends State<FamilyItem> {
                       fontStyle: FontStyle.italic,
                       fontWeight: FontWeight.w300,
                       fontSize: 16,
-                      color: Color(0x80261D11),
+                      color: AppColors.textMuted,
                     ),
                   ),
                 ),

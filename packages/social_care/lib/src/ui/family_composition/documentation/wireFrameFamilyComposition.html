@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protótipo — Composição Familiar</title>
+<link href="https://cdn.jsdelivr.net/npm/satoshi@1.0.0/css/satoshi.min.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#F2E2C4;
+  --card:#FAF0E0;
+  --brown:#261D11;
+  --b50:rgba(38,29,17,.5);
+  --b20:rgba(38,29,17,.2);
+  --b10:rgba(38,29,17,.1);
+  --b05:rgba(38,29,17,.05);
+  --blue:#172D48;
+  --green:#4F8448;
+  --green10:rgba(79,132,72,.1);
+  --red:#A6290D;
+  --amber:#C9960A;
+  --fh:'Satoshi',system-ui,sans-serif;
+  --fb:'Playfair Display',Georgia,serif;
+}
+
+body{
+  background:#E8D8B2;
+  font-family:var(--fh);
+  color:var(--brown);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── PROTOTYPE CHROME ─────────────────── */
+.proto-header{
+  background:var(--blue);
+  color:#F2E2C4;
+  display:flex;
+  align-items:center;
+  gap:0;
+  flex-wrap:wrap;
+  padding:0;
+  flex-shrink:0;
+}
+.proto-logo{
+  font-size:11px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;padding:14px 20px;
+  border-right:1px solid rgba(242,226,196,.15);
+  white-space:nowrap;opacity:.7;
+}
+.proto-title{
+  font-size:12px;font-weight:500;opacity:.55;
+  padding:14px 20px;border-right:1px solid rgba(242,226,196,.15);
+  white-space:nowrap;
+}
+.scenario-nav{
+  display:flex;align-items:center;
+  gap:2px;padding:8px 16px;
+  flex-wrap:wrap;flex:1;
+}
+.sc-btn{
+  background:none;border:none;cursor:pointer;
+  font-family:var(--fh);font-size:11px;font-weight:500;
+  color:rgba(242,226,196,.5);
+  padding:6px 12px;border-radius:6px;
+  transition:all .2s;white-space:nowrap;
+  line-height:1.3;text-align:left;
+}
+.sc-btn:hover{background:rgba(242,226,196,.08);color:rgba(242,226,196,.85)}
+.sc-btn.active{
+  background:rgba(242,226,196,.15);
+  color:#F2E2C4;
+  font-weight:700;
+}
+.sc-btn .sc-num{
+  display:block;font-size:9px;opacity:.5;margin-bottom:2px;
+  letter-spacing:.5px;
+}
+
+/* ── SCENARIO FRAME ─────────────────────*/
+.scenario-frame{
+  display:none;flex-direction:column;flex:1;
+}
+.scenario-frame.active{display:flex}
+
+/* Scenario top bar */
+.sc-meta{
+  background:var(--blue);
+  color:#F2E2C4;
+  padding:12px 48px;
+  display:flex;align-items:flex-start;gap:16px;
+  border-bottom:2px solid rgba(242,226,196,.1);
+  flex-wrap:wrap;
+}
+.sc-meta-badge{
+  background:rgba(242,226,196,.12);
+  border:1px solid rgba(242,226,196,.2);
+  border-radius:4px;
+  padding:4px 10px;
+  font-size:10px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  white-space:nowrap;flex-shrink:0;margin-top:2px;
+}
+.sc-meta-text{
+  font-size:12px;line-height:1.55;opacity:.75;
+  max-width:640px;
+}
+.sc-meta-text strong{color:#F2E2C4;opacity:1;font-weight:700}
+
+/* ── SCREEN AREA ──────────────────────── */
+.screen{
+  flex:1;
+  background:var(--bg);
+  overflow:auto;
+  position:relative;
+}
+
+/* ── ANNOTATION SYSTEM ──────────────────*/
+.ann{
+  position:absolute;
+  z-index:50;
+  pointer-events:none;
+}
+.ann-dot{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--amber);color:#fff;
+  font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+  border:2px solid #fff;
+}
+.ann-label{
+  position:absolute;
+  background:var(--brown);color:#F2E2C4;
+  font-size:11px;line-height:1.4;
+  padding:8px 12px;border-radius:6px;
+  width:200px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  pointer-events:none;
+}
+.ann-label::before{
+  content:'';position:absolute;
+  width:8px;height:8px;background:var(--brown);
+  transform:rotate(45deg);
+}
+.ann-label.right{left:28px;top:-6px}
+.ann-label.right::before{left:-4px;top:10px}
+.ann-label.left{right:28px;top:-6px}
+.ann-label.left::before{right:-4px;top:10px}
+.ann-label.below{top:28px;left:-90px}
+.ann-label.below::before{top:-4px;left:98px}
+.ann-label.above{bottom:28px;left:-90px}
+.ann-label.above::before{bottom:-4px;left:98px}
+.ann-rule{
+  font-size:9px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--amber);
+  margin-bottom:3px;display:block;
+}
+
+/* ── LEGEND BAR ──────────────────────── */
+.legend-bar{
+  background:var(--blue);
+  padding:12px 48px;
+  display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;
+  border-top:1px solid rgba(242,226,196,.08);
+  flex-shrink:0;
+}
+.legend-bar-title{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;color:rgba(242,226,196,.4);
+  align-self:center;white-space:nowrap;
+}
+.leg{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:11px;color:rgba(242,226,196,.7);
+  line-height:1.4;max-width:220px;
+}
+.leg-num{
+  width:18px;height:18px;border-radius:50%;
+  background:var(--amber);color:#fff;
+  font-size:9px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.leg strong{color:#F2E2C4}
+
+/* ── NAVIGATION FOOTER ───────────────── */
+.proto-footer{
+  background:var(--blue);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;
+  flex-shrink:0;
+  border-top:1px solid rgba(242,226,196,.1);
+}
+.proto-footer-info{
+  font-size:11px;color:rgba(242,226,196,.4);
+}
+.footer-nav{display:flex;gap:8px}
+.fn-btn{
+  background:rgba(242,226,196,.08);
+  border:1px solid rgba(242,226,196,.15);
+  color:#F2E2C4;
+  border-radius:6px;padding:6px 16px;
+  font-family:var(--fh);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.fn-btn:hover{background:rgba(242,226,196,.15)}
+.fn-btn:disabled{opacity:.25;cursor:not-allowed}
+
+/* ═══════════════════════════════════════
+   SCREEN COMPONENTS (shared design system)
+═══════════════════════════════════════ */
+
+/* nav bar */
+.s-nav{
+  display:flex;align-items:center;gap:24px;
+  padding:16px 48px;background:var(--bg);
+}
+.s-nav-menu{display:flex;flex-direction:column;gap:5px;width:24px;cursor:pointer}
+.s-nav-menu span{height:2px;background:var(--brown);border-radius:2px}
+.s-nav a{font-size:14px;font-weight:700;color:var(--brown);text-decoration:none;opacity:.55}
+.s-nav a.active{opacity:1;text-decoration:underline;text-underline-offset:4px}
+
+/* page header */
+.s-header{
+  display:flex;align-items:center;gap:20px;
+  padding:4px 48px 24px;
+}
+.s-header h1{
+  font-family:var(--fh);font-weight:700;
+  font-size:38px;letter-spacing:-1px;
+}
+.s-fab{
+  width:44px;height:44px;border-radius:50%;
+  background:var(--card);border:2px solid var(--b20);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:var(--blue);cursor:pointer;
+  box-shadow:0 2px 8px rgba(38,29,17,.12);
+  transition:all .2s;flex-shrink:0;
+}
+.s-fab:hover{background:var(--blue);color:#F2E2C4;border-color:var(--blue)}
+.s-fab-label{
+  font-family:var(--fb);font-style:italic;font-size:13px;color:var(--b50);
+}
+
+/* content area */
+.s-content{padding:0 48px 32px}
+
+/* table */
+.s-tscroll{overflow-x:auto;border-radius:8px}
+.s-table{width:100%;border-collapse:collapse;font-family:var(--fh);min-width:680px}
+.s-table th{
+  text-align:left;padding:9px 12px;
+  font-weight:700;font-size:10px;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--b50);
+  border-bottom:2px solid var(--b20);
+  background:var(--bg);
+}
+.s-table td{
+  padding:11px 12px;font-size:13px;
+  border-bottom:1px solid var(--b10);
+  vertical-align:middle;
+}
+.s-table tr:hover td{background:var(--b05)}
+.s-table tr:last-child td{border-bottom:none}
+.s-table tr.ref td{background:rgba(79,132,72,.05)}
+.s-table tr.ref:hover td{background:rgba(79,132,72,.08)}
+
+/* badges */
+.badge{
+  display:inline-flex;align-items:center;
+  font-size:8px;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;padding:2px 6px;border-radius:100px;
+  margin-left:6px;vertical-align:middle;
+}
+.badge.ref{background:var(--green);color:#F2E2C4}
+.badge.cg{background:var(--blue);color:#F2E2C4}
+.badge.lock{background:var(--b20);color:var(--brown)}
+
+/* doc chips */
+.doc-row{display:flex;flex-wrap:wrap;gap:6px}
+.dc{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:500;color:var(--b50);
+  cursor:pointer;user-select:none;
+}
+.dc input[type=checkbox]{
+  -webkit-appearance:none;width:14px;height:14px;
+  border-radius:3px;border:1.5px solid var(--b20);
+  cursor:pointer;position:relative;flex-shrink:0;transition:all .15s;
+}
+.dc input[type=checkbox]:checked{background:var(--brown);border-color:var(--brown)}
+.dc input[type=checkbox]:checked::after{
+  content:'✓';position:absolute;color:var(--bg);
+  font-size:8px;font-weight:700;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.dc input:checked + span{color:var(--brown)}
+
+/* row actions */
+.ra{display:flex;gap:3px;justify-content:flex-end}
+.rb{
+  background:none;border:none;cursor:pointer;
+  width:26px;height:26px;border-radius:5px;
+  color:var(--b50);font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.rb:hover{background:var(--b10);color:var(--brown)}
+.rb.del:hover{background:rgba(166,41,13,.1);color:var(--red)}
+.rb.star.on{color:var(--amber)}
+
+/* section divider */
+.s-div{height:1px;background:var(--b20);margin:28px 0}
+
+/* bottom grid */
+.s-bottom{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:0 48px 32px}
+
+/* age table */
+.age-t{width:100%;border-collapse:collapse;font-family:var(--fh)}
+.age-t th{
+  text-align:left;padding:7px 14px;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--b50);
+  border-bottom:1.5px solid var(--b20);
+}
+.age-t th:last-child{text-align:right}
+.age-t td{padding:9px 14px;font-size:13px;border-bottom:1px solid var(--b10)}
+.age-t td:last-child{text-align:right;font-weight:700}
+.age-t td.z{color:var(--b20);font-weight:400}
+.age-t tr:last-child td{border-bottom:none}
+.age-highlight td{background:rgba(79,132,72,.07)!important;font-weight:700}
+
+/* spec checks */
+.spec-grp{display:flex;flex-direction:column;gap:10px}
+.spec-row{
+  display:flex;align-items:center;gap:9px;cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--brown);
+}
+.spec-row input[type=checkbox]{
+  -webkit-appearance:none;width:17px;height:17px;
+  border-radius:4px;border:1.5px solid var(--b20);
+  cursor:pointer;position:relative;flex-shrink:0;transition:all .15s;
+}
+.spec-row input[type=checkbox]:checked{background:var(--brown);border-color:var(--brown)}
+.spec-row input[type=checkbox]:checked::after{
+  content:'✓';position:absolute;color:var(--bg);
+  font-size:10px;font-weight:700;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+
+/* panel title */
+.ptitle{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--b50);
+  margin-bottom:16px;padding-bottom:7px;
+  border-bottom:1px solid var(--b10);
+}
+
+/* action bar */
+.s-actions{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 48px 28px;flex-wrap:wrap;gap:10px;
+}
+.s-actions-r{display:flex;gap:10px}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:12px 24px;border-radius:100px;
+  font-family:var(--fb);font-weight:500;font-style:italic;
+  font-size:14px;cursor:pointer;border:none;transition:all .2s;
+}
+.btn-p{background:var(--green);color:var(--bg);box-shadow:2px 2px 8px rgba(0,0,0,.12)}
+.btn-p:hover{background:#6BA362;transform:translateY(-1px)}
+.btn-s{background:transparent;color:var(--brown);border:1.5px solid var(--b20)}
+.btn-s:hover{border-color:var(--brown)}
+.btn-d{background:var(--red);color:var(--bg);box-shadow:2px 2px 8px rgba(0,0,0,.12)}
+
+/* modal overlay sim */
+.modal-sim{
+  position:absolute;inset:0;
+  background:rgba(23,45,72,.55);
+  backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:10;padding:20px;
+}
+.modal-box{
+  background:#172D48;border-radius:6px;
+  width:100%;max-width:760px;
+  padding:40px 40px 32px;
+  box-shadow:-75px 75px 75px -6px rgba(0,0,0,.24);
+  position:relative;
+}
+.modal-x{
+  position:absolute;top:16px;right:16px;
+  background:none;border:none;cursor:pointer;
+  color:var(--red);font-size:18px;font-weight:700;
+  font-family:var(--fh);padding:4px 7px;border-radius:4px;
+}
+.modal-grid{display:grid;grid-template-columns:1fr 240px;gap:0 40px}
+.mf{margin-bottom:22px}
+.mf label{
+  display:block;font-family:var(--fh);font-weight:700;
+  font-size:15px;color:#F2E2C4;margin-bottom:7px;
+}
+.mf label .req{color:var(--red);font-size:10px;vertical-align:super;margin-left:2px}
+.mf input,.mf select{
+  width:100%;background:transparent;border:none;
+  border-bottom:1px solid rgba(242,226,196,.3);
+  padding:6px 0;font-family:var(--fb);font-style:italic;
+  font-weight:300;font-size:14px;color:#F2E2C4;outline:none;
+}
+.mf select{
+  -webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23F2E2C4' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 4px center;
+}
+.mf select option{background:#172D48}
+.m-rg{display:flex;gap:20px;padding:5px 0;flex-wrap:wrap}
+.m-ro{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-family:var(--fb);font-style:italic;font-size:14px;color:#F2E2C4;
+}
+.m-ro input[type=radio]{
+  -webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  border:2px solid rgba(242,226,196,.4);cursor:pointer;
+  position:relative;background:transparent;flex-shrink:0;transition:all .15s;
+}
+.m-ro input:checked{background:#F2E2C4;border-color:#F2E2C4}
+.m-ro input:checked::after{
+  content:'';position:absolute;width:6px;height:6px;
+  background:#172D48;border-radius:50%;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+}
+.m-dg{display:flex;flex-wrap:wrap;gap:12px;padding:5px 0}
+.m-di{
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:var(--fb);font-style:italic;font-size:14px;
+  color:rgba(242,226,196,.65);
+}
+.m-di input[type=checkbox]{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:4px;
+  border:1.5px solid rgba(242,226,196,.3);cursor:pointer;
+  position:relative;background:transparent;flex-shrink:0;transition:all .15s;
+}
+.m-di input:checked{background:#F2E2C4;border-color:#F2E2C4}
+.m-di input:checked::after{
+  content:'✓';position:absolute;color:#172D48;font-size:9px;font-weight:700;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.m-di input:checked + span{color:#F2E2C4}
+.m-footer{
+  display:flex;justify-content:flex-end;
+  margin-top:16px;padding-top:14px;
+  border-top:1px solid rgba(242,226,196,.1);
+}
+.m-save{
+  background:#172D48;color:#F2E2C4;
+  border:1px solid rgba(242,226,196,.25);
+  border-radius:100px;padding:8px 32px;
+  font-family:var(--fb);font-style:italic;font-size:13px;
+  cursor:pointer;
+  box-shadow:-1px -1px 6px 4px rgba(242,226,196,.12),1px 1px 6px 4px rgba(242,226,196,.12);
+}
+
+/* validation state */
+.mf.err input,.mf.err select{border-bottom-color:var(--red)}
+.mf-err-msg{
+  font-family:var(--fh);font-size:11px;color:var(--red);
+  margin-top:4px;display:block;
+}
+
+/* info note */
+.m-note{
+  display:flex;align-items:flex-start;gap:7px;
+  background:rgba(242,226,196,.07);
+  border:1px solid rgba(242,226,196,.14);
+  border-radius:6px;padding:8px 12px;
+  margin-bottom:18px;
+  font-family:var(--fh);font-size:10px;
+  color:rgba(242,226,196,.55);line-height:1.5;
+}
+
+/* confirm dialog */
+.confirm-box{
+  background:var(--card);border-radius:12px;
+  padding:28px 32px;max-width:400px;width:100%;
+  box-shadow:0 24px 80px rgba(38,29,17,.28);
+  text-align:center;
+}
+.confirm-box h3{
+  font-family:var(--fh);font-size:17px;font-weight:700;
+  margin-bottom:8px;
+}
+.confirm-box p{
+  font-family:var(--fb);font-style:italic;
+  font-size:13px;color:var(--b50);margin-bottom:24px;line-height:1.5;
+}
+.confirm-btns{display:flex;gap:10px;justify-content:center}
+
+/* caregiver conflict */
+.conflict-banner{
+  background:rgba(201,150,10,.12);
+  border:1px solid rgba(201,150,10,.3);
+  border-radius:8px;padding:12px 16px;
+  margin-bottom:16px;
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12px;line-height:1.5;color:var(--brown);
+}
+.conflict-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* empty state */
+.empty-st{
+  text-align:center;padding:32px 20px 20px;
+  font-family:var(--fb);font-style:italic;
+  color:var(--b50);font-size:13px;
+}
+</style>
+</head>
+<body>
+
+<!-- PROTOTYPE CHROME -->
+<header class="proto-header">
+  <div class="proto-logo">Conecta Raros</div>
+  <div class="proto-title">Protótipo · Composição Familiar</div>
+  <nav class="scenario-nav">
+    <button class="sc-btn active" onclick="goTo(0)"><span class="sc-num">TELA 1</span>Estado Vazio</button>
+    <button class="sc-btn" onclick="goTo(1)"><span class="sc-num">TELA 2</span>Com membros</button>
+    <button class="sc-btn" onclick="goTo(2)"><span class="sc-num">TELA 3</span>Cuidador ativo</button>
+    <button class="sc-btn" onclick="goTo(3)"><span class="sc-num">TELA 4</span>Troca de cuidador</button>
+    <button class="sc-btn" onclick="goTo(4)"><span class="sc-num">TELA 5</span>Modal · Adição</button>
+    <button class="sc-btn" onclick="goTo(5)"><span class="sc-num">TELA 6</span>Modal · Validação</button>
+    <button class="sc-btn" onclick="goTo(6)"><span class="sc-num">TELA 7</span>Remover membro</button>
+    <button class="sc-btn" onclick="goTo(7)"><span class="sc-num">TELA 8</span>Perfil Etário</button>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 1 — ESTADO VAZIO
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame active" id="sc0">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">RN-001 · RN-000</span>
+    <p class="sc-meta-text">
+      <strong>Estado inicial:</strong> A página sempre abre com a Pessoa de Referência já na tabela — dados vindos do cadastro principal.
+      Nenhum outro membro foi adicionado. O botão <strong>+</strong> e o call-to-action são o único ponto de entrada.
+    </p>
+  </div>
+
+  <div class="screen" style="position:relative">
+    <nav class="s-nav">
+      <div class="s-nav-menu"><span></span><span></span><span></span></div>
+      <a href="#">Famílias</a><a href="#" class="active">Cadastro</a>
+    </nav>
+    <div class="s-header">
+      <h1>Composição Familiar</h1>
+      <button class="s-fab">+</button>
+      <span class="s-fab-label">Adicionar membro</span>
+    </div>
+    <div class="s-content">
+      <div class="s-tscroll">
+        <table class="s-table">
+          <thead><tr>
+            <th>Nome</th><th>Idade</th><th>Sexo</th><th>Parentesco</th>
+            <th>Reside</th><th>PcD</th><th>Documentos</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr class="ref">
+              <td>Maria Silva <span class="badge ref">Referência</span></td>
+              <td>39 anos</td><td>Feminino</td>
+              <td>01 - Pessoa de Referência</td>
+              <td>—</td><td>Não</td>
+              <td><div class="doc-row"><span style="font-family:var(--fb);font-style:italic;font-size:12px;color:var(--b50)">Nenhum</span></div></td>
+              <td><div class="ra"><button class="rb" style="opacity:.2;cursor:default">🔒</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-st">
+        Nenhum outro membro adicionado.<br>
+        Clique em <strong>+</strong> para adicionar o primeiro membro da família.
+      </div>
+    </div>
+
+    <!-- Annotations -->
+    <div class="ann" style="top:118px;left:310px">
+      <div class="ann-dot">1</div>
+    </div>
+    <div class="ann" style="top:118px;left:344px">
+      <div class="ann-label right" style="width:190px">
+        <span class="ann-rule">RN-001</span>
+        PR é injetada automaticamente dos dados do Step 1. Nunca editável aqui.
+      </div>
+    </div>
+
+    <div class="ann" style="top:82px;left:496px">
+      <div class="ann-dot">2</div>
+    </div>
+    <div class="ann" style="top:82px;left:530px">
+      <div class="ann-label right" style="width:180px">
+        <span class="ann-rule">UX</span>
+        FAB é o único ponto de entrada para adicionar membros. Label textual reforça a ação.
+      </div>
+    </div>
+
+    <div class="ann" style="top:230px;left:48px">
+      <div class="ann-dot">3</div>
+    </div>
+    <div class="ann" style="top:230px;left:82px">
+      <div class="ann-label right" style="width:200px">
+        <span class="ann-rule">UX · Estado Vazio</span>
+        Empty state com instrução clara. Não bloqueia o fluxo — pode salvar sem outros membros.
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>PR automática:</strong> dados de firstName, lastName, birthDate, sex de formData.step0</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>FAB +:</strong> abre modal de adição. Também disponível via botão scroll-fixo em mobile</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>Empty state:</strong> visível quando familyMembers.length === 1 (só PR)</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 2 — COM MEMBROS
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc1">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">Estado Normal</span>
+    <p class="sc-meta-text">
+      <strong>Composição com múltiplos membros.</strong> Docs são checkboxes inline por linha — alteração local, confirmada ao "Salvar Cadastro".
+      PR permanece travada no topo. Outros membros têm ações de editar e remover.
+    </p>
+  </div>
+
+  <div class="screen" style="position:relative">
+    <nav class="s-nav">
+      <div class="s-nav-menu"><span></span><span></span><span></span></div>
+      <a href="#">Famílias</a><a href="#" class="active">Cadastro</a>
+    </nav>
+    <div class="s-header">
+      <h1>Composição Familiar</h1>
+      <button class="s-fab">+</button>
+    </div>
+    <div class="s-content">
+      <div class="s-tscroll">
+        <table class="s-table">
+          <thead><tr>
+            <th>Nome</th><th>Idade</th><th>Sexo</th><th>Parentesco</th>
+            <th>Reside</th><th>PcD</th><th>Documentos Necessários</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr class="ref">
+              <td>Maria Silva <span class="badge ref">Referência</span></td>
+              <td>39 anos</td><td>Feminino</td>
+              <td>01 - Pessoa de Referência</td>
+              <td>—</td><td>Não</td>
+              <td><div class="doc-row">
+                <label class="dc"><input type="checkbox" disabled><span>CN</span></label>
+                <label class="dc"><input type="checkbox" disabled><span>RG</span></label>
+                <label class="dc"><input type="checkbox" disabled><span>CTPS</span></label>
+                <label class="dc"><input type="checkbox" checked disabled><span>CPF</span></label>
+                <label class="dc"><input type="checkbox" disabled><span>TE</span></label>
+              </div></td>
+              <td><div class="ra"><button class="rb" style="opacity:.2;cursor:default">🔒</button></div></td>
+            </tr>
+            <tr>
+              <td>João Silva</td><td>41 anos</td><td>Masculino</td>
+              <td>02 - Cônjuge / companheiro(a)</td>
+              <td>Sim</td><td>Não</td>
+              <td><div class="doc-row">
+                <label class="dc"><input type="checkbox"><span>CN</span></label>
+                <label class="dc"><input type="checkbox" checked><span>RG</span></label>
+                <label class="dc"><input type="checkbox"><span>CTPS</span></label>
+                <label class="dc"><input type="checkbox" checked><span>CPF</span></label>
+                <label class="dc"><input type="checkbox"><span>TE</span></label>
+              </div></td>
+              <td><div class="ra">
+                <button class="rb star" title="Definir como cuidador">★</button>
+                <button class="rb">✎</button>
+                <button class="rb del">✕</button>
+              </div></td>
+            </tr>
+            <tr>
+              <td>Ana Silva</td><td>16 anos</td><td>Feminino</td>
+              <td>03 - Filho(a)</td>
+              <td>Sim</td><td>Sim</td>
+              <td><div class="doc-row">
+                <label class="dc"><input type="checkbox" checked><span>CN</span></label>
+                <label class="dc"><input type="checkbox"><span>RG</span></label>
+                <label class="dc"><input type="checkbox"><span>CTPS</span></label>
+                <label class="dc"><input type="checkbox"><span>CPF</span></label>
+                <label class="dc"><input type="checkbox"><span>TE</span></label>
+              </div></td>
+              <td><div class="ra">
+                <button class="rb star">★</button>
+                <button class="rb">✎</button>
+                <button class="rb del">✕</button>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="s-div" style="margin:0 48px 0"></div>
+    <div class="s-actions">
+      <button class="btn btn-d">✕ Cancelar</button>
+      <div class="s-actions-r">
+        <button class="btn btn-s">Observações</button>
+        <button class="btn btn-p">Salvar Cadastro ✓</button>
+      </div>
+    </div>
+
+    <!-- Annotations -->
+    <div class="ann" style="top:170px;left:540px">
+      <div class="ann-dot">1</div>
+    </div>
+    <div class="ann" style="top:170px;left:574px">
+      <div class="ann-label right" style="width:200px">
+        <span class="ann-rule">RN-DOCS</span>
+        Checkboxes inline por linha. Estado local até "Salvar". Não dispara PATCH individual.
+      </div>
+    </div>
+
+    <div class="ann" style="top:168px;right:52px">
+      <div class="ann-dot">2</div>
+    </div>
+    <div class="ann" style="top:168px;right:80px">
+      <div class="ann-label left" style="width:185px">
+        <span class="ann-rule">Ações do membro</span>
+        ★ define cuidador · ✎ abre modal de edição · ✕ abre confirmação de remoção
+      </div>
+    </div>
+
+    <div class="ann" style="top:126px;right:52px">
+      <div class="ann-dot">3</div>
+    </div>
+    <div class="ann" style="top:126px;right:80px">
+      <div class="ann-label left" style="width:185px">
+        <span class="ann-rule">RN-001 · PR Travada</span>
+        Ícone 🔒. Docs da PR são desabilitadas pois vêm do cadastro principal (steps anteriores).
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Docs inline:</strong> mudanças ficam em memória. O estado é serializado no payload ao clicar "Salvar Cadastro"</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>Ações:</strong> ★ = toggle cuidador · ✎ = edição no modal · ✕ = remoção com confirmação</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>PR bloqueada:</strong> edição só pelo flow principal do wizard (steps 1–3)</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 3 — CUIDADOR ATIVO
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc2">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">RN-Cuidador · PAT-002</span>
+    <p class="sc-meta-text">
+      <strong>Exatamente 1 cuidador principal.</strong> Badge azul "Cuidador" aparece na linha do membro designado.
+      O ★ fica dourado nessa linha. Ao clicar ★ em outro membro, o badge migra (ver Tela 4).
+      A PR nunca pode ser cuidador via este flow — ela é a Pessoa de Referência.
+    </p>
+  </div>
+
+  <div class="screen" style="position:relative">
+    <nav class="s-nav"><div class="s-nav-menu"><span></span><span></span><span></span></div>
+      <a href="#">Famílias</a><a href="#" class="active">Cadastro</a></nav>
+    <div class="s-header"><h1>Composição Familiar</h1><button class="s-fab">+</button></div>
+    <div class="s-content">
+      <div class="s-tscroll">
+        <table class="s-table">
+          <thead><tr>
+            <th>Nome</th><th>Idade</th><th>Sexo</th><th>Parentesco</th>
+            <th>Reside</th><th>PcD</th><th>Documentos</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr class="ref">
+              <td>Maria Silva <span class="badge ref">Referência</span></td>
+              <td>39 anos</td><td>Feminino</td><td>01 - Pessoa de Referência</td>
+              <td>—</td><td>Não</td>
+              <td><div class="doc-row"><label class="dc"><input type="checkbox" checked disabled><span>CPF</span></label></div></td>
+              <td><div class="ra"><button class="rb" style="opacity:.2;cursor:default">🔒</button></div></td>
+            </tr>
+            <tr style="background:rgba(23,45,72,.04)">
+              <td>João Silva <span class="badge cg">Cuidador</span></td>
+              <td>41 anos</td><td>Masculino</td><td>02 - Cônjuge / companheiro(a)</td>
+              <td>Sim</td><td>Não</td>
+              <td><div class="doc-row">
+                <label class="dc"><input type="checkbox" checked><span>RG</span></label>
+                <label class="dc"><input type="checkbox" checked><span>CPF</span></label>
+              </div></td>
+              <td><div class="ra">
+                <button class="rb star on">★</button>
+                <button class="rb">✎</button>
+                <button class="rb del">✕</button>
+              </div></td>
+            </tr>
+            <tr>
+              <td>Ana Silva</td><td>16 anos</td><td>Feminino</td><td>03 - Filho(a)</td>
+              <td>Sim</td><td>Sim</td>
+              <td><div class="doc-row"><label class="dc"><input type="checkbox" checked><span>CN</span></label></div></td>
+              <td><div class="ra">
+                <button class="rb star">★</button>
+                <button class="rb">✎</button>
+                <button class="rb del">✕</button>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Annotations -->
+    <div class="ann" style="top:166px;left:162px">
+      <div class="ann-dot">1</div>
+    </div>
+    <div class="ann" style="top:166px;left:196px">
+      <div class="ann-label right">
+        <span class="ann-rule">Badge "Cuidador"</span>
+        Exibido na linha do isPrimaryCaregiver === true. Apenas 1 pode existir na tabela.
+      </div>
+    </div>
+
+    <div class="ann" style="top:163px;right:52px">
+      <div class="ann-dot">2</div>
+    </div>
+    <div class="ann" style="top:163px;right:80px">
+      <div class="ann-label left">
+        <span class="ann-rule">★ Dourado</span>
+        ★ fica dourado somente na linha do cuidador ativo. Clique remove o status (toggle).
+      </div>
+    </div>
+
+    <div class="ann" style="top:202px;right:52px">
+      <div class="ann-dot">3</div>
+    </div>
+    <div class="ann" style="top:202px;right:80px">
+      <div class="ann-label left">
+        <span class="ann-rule">★ Cinza</span>
+        ★ cinza nos outros membros = clicável para tornar esse o novo cuidador (ver Tela 4).
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Badge "Cuidador":</strong> badge azul inline no nome. Máximo 1 na tabela inteira (invariante PAT)</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>★ dourado = ativo:</strong> clique → remove cuidador (PUT com null) e ★ volta a cinza</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>★ cinza = disponível:</strong> clique → troca o cuidador. O antigo perde o badge antes do novo ganhar</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 4 — TROCA DE CUIDADOR
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc3">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">RN-Cuidador · Conflito</span>
+    <p class="sc-meta-text">
+      <strong>Quando já existe um cuidador e o usuário clica ★ em outro membro,</strong>
+      o sistema exibe um banner de confirmação antes de trocar — deixando claro que o anterior perde o status.
+      Em produção dispara: <strong>PUT /primary-caregiver</strong> com o novo memberPersonId.
+    </p>
+  </div>
+
+  <div class="screen" style="position:relative">
+    <nav class="s-nav"><div class="s-nav-menu"><span></span><span></span><span></span></div>
+      <a href="#">Famílias</a><a href="#" class="active">Cadastro</a></nav>
+    <div class="s-header"><h1>Composição Familiar</h1><button class="s-fab">+</button></div>
+
+    <!-- conflict modal overlay -->
+    <div class="modal-sim">
+      <div class="confirm-box">
+        <div style="font-size:28px;margin-bottom:10px">⚠️</div>
+        <h3>Trocar cuidador principal?</h3>
+        <p>
+          <strong>João Silva</strong> é o cuidador atual.<br>
+          Ao confirmar, <strong>Ana Silva</strong> se tornará o novo cuidador principal
+          e João perderá esse status.
+        </p>
+        <div class="conflict-banner">
+          <span class="conflict-icon">ℹ</span>
+          <span>Isso vai disparar <code style="font-size:10px">PUT /patients/{id}/primary-caregiver</code> com o novo <code style="font-size:10px">memberPersonId</code>.</span>
+        </div>
+        <div class="confirm-btns">
+          <button class="btn btn-s" style="padding:10px 22px">Cancelar</button>
+          <button class="btn btn-p" style="padding:10px 22px">Confirmar troca</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- blurred table behind -->
+    <div class="s-content">
+      <div class="s-tscroll">
+        <table class="s-table">
+          <thead><tr>
+            <th>Nome</th><th>Parentesco</th><th>Reside</th><th>PcD</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr class="ref"><td>Maria Silva <span class="badge ref">Referência</span></td><td>01 - PR</td><td>—</td><td>Não</td><td></td></tr>
+            <tr><td>João Silva <span class="badge cg">Cuidador</span></td><td>02 - Cônjuge</td><td>Sim</td><td>Não</td><td><button class="rb star on">★</button></td></tr>
+            <tr><td>Ana Silva</td><td>03 - Filho(a)</td><td>Sim</td><td>Sim</td><td><button class="rb star">★</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Diálogo de troca:</strong> exibe quem é o atual e quem será o novo. Protege de troca acidental</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>Aviso da API:</strong> informa explicitamente que vai disparar um PUT separado do POST do membro</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>Cancelar:</strong> fecha o diálogo sem alterar o estado. ★ volta ao estado anterior</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 5 — MODAL ADIÇÃO
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc4">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">Modal · POST /family-members</span>
+    <p class="sc-meta-text">
+      <strong>Modal de adição de membro.</strong> Campos mapeados diretamente para o <code>AddFamilyMemberRequest</code>.
+      O campo "Cuidador principal?" dispara um PUT adicional se marcado.
+      <code>memberPersonId</code> é gerado automaticamente no frontend via <code>crypto.randomUUID()</code>.
+    </p>
+  </div>
+
+  <div class="screen">
+    <nav class="s-nav"><div class="s-nav-menu"><span></span><span></span><span></span></div>
+      <a href="#">Famílias</a><a href="#" class="active">Cadastro</a></nav>
+    <div class="s-header"><h1>Composição Familiar</h1></div>
+
+    <div class="modal-sim" style="position:absolute">
+      <div class="modal-box" style="position:relative">
+        <button class="modal-x">✕</button>
+
+        <div class="m-note">
+          <span>ℹ</span>
+          <span>Ao salvar: <strong>POST /family-members</strong>. Se cuidador marcado, dispara também <strong>PUT /primary-caregiver</strong>. O <code>memberPersonId</code> é gerado automaticamente.</span>
+        </div>
+
+        <div class="modal-grid">
+          <div>
+            <div class="mf">
+              <label>Nome Completo <span class="req">*</span></label>
+              <input type="text" placeholder="Nome completo do membro">
+            </div>
+            <div class="mf">
+              <label>Data de Nascimento <span class="req">*</span></label>
+              <input type="date">
+            </div>
+            <div class="mf">
+              <label>Sexo <span class="req">*</span></label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="sx5" value="m"> Masculino</label>
+                <label class="m-ro"><input type="radio" name="sx5" value="f"> Feminino</label>
+                <label class="m-ro"><input type="radio" name="sx5" value="o"> Outro</label>
+              </div>
+            </div>
+            <div class="mf">
+              <label>Reside com o paciente? <span class="req">*</span></label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="rs5" value="s"> Sim</label>
+                <label class="m-ro"><input type="radio" name="rs5" value="n"> Não</label>
+              </div>
+            </div>
+            <div class="mf">
+              <label>Pessoa com deficiência <span class="req">*</span></label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="pcd5" value="s"> Sim</label>
+                <label class="m-ro"><input type="radio" name="pcd5" value="n"> Não</label>
+              </div>
+            </div>
+            <div class="mf">
+              <label>Cuidador principal?</label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="cg5" value="s"> Sim</label>
+                <label class="m-ro"><input type="radio" name="cg5" value="n" checked> Não</label>
+              </div>
+            </div>
+            <div class="mf">
+              <label>Documentos Necessários</label>
+              <div class="m-dg">
+                <label class="m-di"><input type="checkbox"><span>CN</span></label>
+                <label class="m-di"><input type="checkbox"><span>RG</span></label>
+                <label class="m-di"><input type="checkbox"><span>CTPS</span></label>
+                <label class="m-di"><input type="checkbox"><span>CPF</span></label>
+                <label class="m-di"><input type="checkbox"><span>TE</span></label>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="mf">
+              <label>Parentesco <span class="req">*</span></label>
+              <select><option value="">Selecione</option>
+                <option>02 - Cônjuge / companheiro(a)</option>
+                <option>03 - Filho(a)</option><option>04 - Enteado(a)</option>
+                <option>05 - Neto(a)</option><option>06 - Pai / Mãe</option>
+                <option>07 - Sogro(a)</option><option>08 - Irmão / Irmã</option>
+                <option>09 - Genro / Nora</option><option>10 - Outro parente</option>
+                <option>11 - Não parente</option>
+              </select>
+            </div>
+            <div style="margin-top:20px;padding:12px;background:rgba(242,226,196,.06);border-radius:6px;border:1px solid rgba(242,226,196,.12)">
+              <p style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(242,226,196,.4);margin-bottom:8px">Gerado automaticamente</p>
+              <p style="font-family:monospace;font-size:10px;color:rgba(242,226,196,.5);word-break:break-all">memberPersonId:<br>a3f2c1d8-9e47-4b21-...</p>
+              <p style="font-family:monospace;font-size:10px;color:rgba(242,226,196,.4);margin-top:6px">prRelationshipId:<br>domínio parentesco...</p>
+            </div>
+          </div>
+        </div>
+        <div class="m-footer"><button class="m-save">Salvar</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Campos → Contrato</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Nome:</strong> apenas UI — não vai no AddFamilyMemberRequest (só personId vai)</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>Reside:</strong> <code>isResiding: boolean</code> — campo obrigatório do contrato ausente no Figma original</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>Cuidador:</strong> se "Sim" → POST normal + PUT /primary-caregiver. O campo isCaregiver do contrato é ignorado pelo backend</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 6 — VALIDAÇÃO
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc5">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">Modal · Estado de Erro</span>
+    <p class="sc-meta-text">
+      <strong>Quando o usuário clica "Salvar" sem preencher campos obrigatórios.</strong>
+      Campos em vermelho com mensagem inline. O formulário não fecha — foco vai para o primeiro campo com erro.
+    </p>
+  </div>
+
+  <div class="screen">
+    <nav class="s-nav"><div class="s-nav-menu"><span></span><span></span><span></span></div><a href="#">Famílias</a><a href="#" class="active">Cadastro</a></nav>
+    <div class="s-header"><h1>Composição Familiar</h1></div>
+
+    <div class="modal-sim" style="position:absolute">
+      <div class="modal-box" style="position:relative">
+        <button class="modal-x">✕</button>
+        <div class="modal-grid">
+          <div>
+            <div class="mf err">
+              <label>Nome Completo <span class="req">*</span></label>
+              <input type="text" placeholder="Nome completo do membro" style="border-bottom-color:var(--red)">
+              <span class="mf-err-msg">Campo obrigatório</span>
+            </div>
+            <div class="mf err">
+              <label>Data de Nascimento <span class="req">*</span></label>
+              <input type="date" style="border-bottom-color:var(--red)">
+              <span class="mf-err-msg">Informe a data de nascimento</span>
+            </div>
+            <div class="mf">
+              <label>Sexo <span class="req">*</span></label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="sx6" value="m"> Masculino</label>
+                <label class="m-ro"><input type="radio" name="sx6" value="f"> Feminino</label>
+                <label class="m-ro"><input type="radio" name="sx6" value="o"> Outro</label>
+              </div>
+              <span class="mf-err-msg">Selecione o sexo</span>
+            </div>
+            <div class="mf">
+              <label>Reside com o paciente? <span class="req">*</span></label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="rs6" value="s" checked> Sim</label>
+                <label class="m-ro"><input type="radio" name="rs6" value="n"> Não</label>
+              </div>
+            </div>
+            <div class="mf">
+              <label>Pessoa com deficiência <span class="req">*</span></label>
+              <div class="m-rg">
+                <label class="m-ro"><input type="radio" name="pcd6" value="s"> Sim</label>
+                <label class="m-ro"><input type="radio" name="pcd6" value="n" checked> Não</label>
+              </div>
+            </div>
+            <div class="mf">
+              <label>Documentos Necessários</label>
+              <div class="m-dg">
+                <label class="m-di"><input type="checkbox"><span>CN</span></label>
+                <label class="m-di"><input type="checkbox"><span>RG</span></label>
+                <label class="m-di"><input type="checkbox"><span>CTPS</span></label>
+                <label class="m-di"><input type="checkbox"><span>CPF</span></label>
+                <label class="m-di"><input type="checkbox"><span>TE</span></label>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="mf err">
+              <label>Parentesco <span class="req">*</span></label>
+              <select style="border-bottom-color:var(--red)"><option value="">Selecione</option>
+                <option>02 - Cônjuge</option><option>03 - Filho(a)</option>
+              </select>
+              <span class="mf-err-msg">Selecione o parentesco</span>
+            </div>
+          </div>
+        </div>
+        <div class="m-footer"><button class="m-save">Salvar</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Inline error:</strong> borda vermelha no input + mensagem abaixo do campo. Sem modal de erro separado</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>Modal permanece aberto:</strong> não fecha. Focus automático no primeiro campo com erro</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>Campos válidos mantêm estado:</strong> "Reside: Sim" e "PcD: Não" já marcados, não são resetados</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 7 — REMOVER MEMBRO
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc6">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">RN-PAT-005 · DELETE /family-members/{id}</span>
+    <p class="sc-meta-text">
+      <strong>Ao clicar ✕ em um membro,</strong> um diálogo de confirmação aparece com o nome do membro.
+      Caso o membro seja o cuidador atual, há um aviso adicional.
+      A PR nunca tem o botão ✕ — impossível remover.
+    </p>
+  </div>
+
+  <div class="screen">
+    <nav class="s-nav"><div class="s-nav-menu"><span></span><span></span><span></span></div><a href="#">Famílias</a><a href="#" class="active">Cadastro</a></nav>
+    <div class="s-header"><h1>Composição Familiar</h1><button class="s-fab">+</button></div>
+
+    <div class="modal-sim" style="position:absolute">
+      <div class="confirm-box">
+        <div style="font-size:28px;margin-bottom:10px">🗑</div>
+        <h3>Remover membro da família?</h3>
+        <p>Você está prestes a remover <strong>João Silva</strong> da composição familiar.</p>
+        <div class="conflict-banner">
+          <span class="conflict-icon">⚠️</span>
+          <span><strong>João Silva é o cuidador principal.</strong> Ao remover, a família ficará sem cuidador designado. Você pode designar outro membro depois.</span>
+        </div>
+        <p style="font-size:11px;color:var(--b50);margin-bottom:20px;font-family:var(--fb);font-style:italic">Esta ação não pode ser desfeita e dispara <code>DELETE /patients/{id}/family-members/{memberId}</code>.</p>
+        <div class="confirm-btns">
+          <button class="btn btn-s" style="padding:10px 22px">Cancelar</button>
+          <button class="btn btn-d" style="padding:10px 22px">Sim, remover</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Nome do membro no diálogo:</strong> deixa explícito quem está sendo removido — sem ambiguidade</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>Aviso de cuidador:</strong> só aparece se isPrimaryCaregiver === true. Informa consequência</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>Irreversibilidade:</strong> texto explícito + botão vermelho. Cancelar fecha sem ação</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TELA 8 — PERFIL ETÁRIO
+═══════════════════════════════════════════════════════════════ -->
+<div class="scenario-frame" id="sc7">
+  <div class="sc-meta">
+    <span class="sc-meta-badge">Calculado automaticamente</span>
+    <p class="sc-meta-text">
+      <strong>Perfil Etário Familiar</strong> é calculado em tempo real a partir dos birthDates de todos os membros (incluindo PR).
+      Atualiza sem necessidade de salvar. Linhas com valor > 0 são destacadas.
+    </p>
+  </div>
+
+  <div class="screen">
+    <nav class="s-nav"><div class="s-nav-menu"><span></span><span></span><span></span></div><a href="#">Famílias</a><a href="#" class="active">Cadastro</a></nav>
+    <div class="s-header"><h1>Composição Familiar</h1><button class="s-fab">+</button></div>
+    <div class="s-content">
+      <div class="s-tscroll">
+        <table class="s-table">
+          <thead><tr><th>Nome</th><th>Nascimento</th><th>Idade</th><th>Parentesco</th><th></th></tr></thead>
+          <tbody>
+            <tr class="ref"><td>Maria Silva <span class="badge ref">Referência</span></td><td>1985-03-15</td><td>39 anos</td><td>01 - PR</td><td></td></tr>
+            <tr><td>João Silva</td><td>1982-07-20</td><td>42 anos</td><td>02 - Cônjuge</td><td><button class="rb">✎</button></td></tr>
+            <tr><td>Ana Silva</td><td>2008-11-05</td><td>16 anos</td><td>03 - Filho(a)</td><td><button class="rb">✎</button></td></tr>
+            <tr><td>Lucas Silva</td><td>2021-04-12</td><td>3 anos</td><td>03 - Filho(a)</td><td><button class="rb">✎</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="s-div" style="margin:0 48px 0"></div>
+
+    <div class="s-bottom">
+      <div>
+        <p class="ptitle">Especificidades</p>
+        <div class="spec-grp">
+          <label class="spec-row"><input type="checkbox"> Família cigana</label>
+          <label class="spec-row"><input type="checkbox"> Família quilombola</label>
+          <label class="spec-row"><input type="checkbox"> Família ribeirinha</label>
+          <label class="spec-row"><input type="checkbox"> Família / pessoa em situação de rua</label>
+        </div>
+      </div>
+      <div>
+        <p class="ptitle">Perfil Etário Familiar</p>
+        <table class="age-t">
+          <thead><tr><th>Faixa Etária</th><th>Qtd.</th></tr></thead>
+          <tbody>
+            <tr class="age-highlight"><td>0 a 6 anos</td><td>1</td></tr>
+            <tr class="age-highlight"><td>15 a 17 anos</td><td>1</td></tr>
+            <tr><td>7 a 14 anos</td><td class="z">0</td></tr>
+            <tr><td>18 a 29 anos</td><td class="z">0</td></tr>
+            <tr class="age-highlight"><td>30 a 59 anos</td><td>2</td></tr>
+            <tr><td>60 a 64 anos</td><td class="z">0</td></tr>
+            <tr><td>65 a 69 anos</td><td class="z">0</td></tr>
+            <tr><td>70 anos ou mais</td><td class="z">0</td></tr>
+          </tbody>
+        </table>
+        <p style="font-family:var(--fb);font-style:italic;font-size:11px;color:var(--b50);margin-top:12px">
+          ← Calculado automaticamente. Atualiza ao adicionar ou remover membros.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-bar-title">Anotações</span>
+    <div class="leg"><span class="leg-num">1</span><span><strong>Cálculo:</strong> <code>calcAge(birthDate)</code> em tempo real. Usa <code>Date.now()</code> − birthDate / 365.25 dias</span></div>
+    <div class="leg"><span class="leg-num">2</span><span><strong>Linhas destacadas:</strong> faixas com qtd. > 0 ganham fundo verde suave para visualização rápida</span></div>
+    <div class="leg"><span class="leg-num">3</span><span><strong>Fonte:</strong> itera todos os membros incluindo PR. Não depende de salvar para atualizar</span></div>
+  </div>
+</div>
+
+<!-- FOOTER NAV -->
+<footer class="proto-footer">
+  <span class="proto-footer-info" id="scInfo">Tela 1 de 8</span>
+  <div class="footer-nav">
+    <button class="fn-btn" id="btnPrev" onclick="goToPrev()" disabled>← Anterior</button>
+    <button class="fn-btn" id="btnNext2" onclick="goToNext()">Próxima →</button>
+  </div>
+</footer>
+
+<script>
+const TOTAL = 8;
+let current = 0;
+
+function goTo(n){
+  document.querySelectorAll('.scenario-frame').forEach((f,i)=>{
+    f.classList.toggle('active', i===n);
+  });
+  document.querySelectorAll('.sc-btn').forEach((b,i)=>{
+    b.classList.toggle('active', i===n);
+  });
+  current = n;
+  document.getElementById('scInfo').textContent = `Tela ${n+1} de ${TOTAL}`;
+  document.getElementById('btnPrev').disabled = n === 0;
+  document.getElementById('btnNext2').disabled = n === TOTAL - 1;
+}
+
+function goToPrev(){ if(current > 0) goTo(current - 1); }
+function goToNext(){ if(current < TOTAL-1) goTo(current + 1); }
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') goToNext();
+  if(e.key === 'ArrowLeft')  goToPrev();
+});
+</script>
+</body>
+</html>

@@ -8,3 +8,5 @@ export 'fakes/in_memory_lookup_repository.dart';
 export 'fakes/in_memory_patient_repository.dart';
 // Fixtures
 export 'fixtures/patient_fixtures.dart';
+// Type aliases for convenience
+export 'fakes/fake_aliases.dart';

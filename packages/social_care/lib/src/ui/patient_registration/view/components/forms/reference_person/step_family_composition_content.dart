@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
@@ -13,7 +14,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
   final FamilyCompositionFormState formState;
   final PersonalDataFormState personalDataFormState;
   final DocumentsFormState documentsFormState;
-  final ValueNotifier<List<LookupItem>> parentescoLookup;
+  final List<LookupItem> parentescoLookup;
   final bool showErrors;
 
   const StepFamilyCompositionContent({
@@ -50,7 +51,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
       };
 
   String _parentescoLabel(String code) {
-    final item = parentescoLookup.value
+    final item = parentescoLookup
         .where((i) => i.codigo == code || i.id == code)
         .firstOrNull;
     return item != null ? '${item.codigo} - ${item.descricao}' : code;
@@ -119,7 +120,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
           // Reference person row — locked
           DataRow(
             color: WidgetStateProperty.all(
-              const Color(0xFF4F8448).withValues(alpha: 0.06),
+              AppColors.primary.withValues(alpha: 0.06),
             ),
             cells: [
               DataCell(Row(
@@ -131,7 +132,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4F8448),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: const Text(
@@ -179,7 +180,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
                     constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 16, color: Color(0xFFA6290D)),
+                    icon: const Icon(Icons.close, size: 16, color: AppColors.danger),
                     onPressed: () => formState.removeMember(i),
                     tooltip: ReferencePersonLn10.tooltipRemove,
                     padding: EdgeInsets.zero,
@@ -195,15 +196,27 @@ class StepFamilyCompositionContent extends StatelessWidget {
 
   void _openModal(BuildContext context, {required int editIndex}) {
     final existing = editIndex >= 0 ? formState.members.value[editIndex] : null;
+    final entry = existing != null
+        ? formState.createEntryFromSnapshot(existing)
+        : formState.createEntry();
 
     showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black38,
-      builder: (_) => FamilyMemberModal(
+      builder: (dialogContext) => FamilyMemberModal(
+        entry: entry,
         existingMember: existing,
         hasPrimaryCaregiver: formState.hasPrimaryCaregiver,
-        parentescoLookup: parentescoLookup.value,
+        parentescoLookup: parentescoLookup,
+        onCaregiverConflict: () {
+          ScaffoldMessenger.of(dialogContext).showSnackBar(
+            const SnackBar(
+              content: Text(ReferencePersonLn10.errorCaregiverExists),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        },
         onSave: (snapshot) {
           if (editIndex >= 0) {
             formState.updateMember(editIndex, snapshot);
