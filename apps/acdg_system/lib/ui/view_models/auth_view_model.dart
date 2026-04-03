@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
 import '../../logic/use_cases/auth_use_cases.dart';
@@ -9,7 +10,8 @@ class AuthViewModel extends BaseViewModel {
     required LoginUseCase loginUseCase,
     required LogoutUseCase logoutUseCase,
     required RestoreSessionUseCase restoreSessionUseCase,
-  }) {
+  })  : _status = authRepository.currentStatus,
+        _user = authRepository.currentUser {
     login = Command0(() => loginUseCase.execute(null));
     logout = Command0(() => logoutUseCase.execute(null));
     restoreSession = Command0(() => restoreSessionUseCase.execute(null));
@@ -21,7 +23,7 @@ class AuthViewModel extends BaseViewModel {
   final AuthRepository authRepository;
   StreamSubscription<AuthStatus>? _statusSubscription;
 
-  AuthStatus _status = const AuthLoading();
+  AuthStatus _status;
   AuthUser? _user;
 
   AuthStatus get status => _status;
@@ -32,12 +34,13 @@ class AuthViewModel extends BaseViewModel {
   late final Command0<void> restoreSession;
 
   Future<void> init() async {
-    _log.info('Initializing AuthViewModel...');
+    debugPrint('[AuthVM] init — current status: ${_status.runtimeType}');
     await restoreSession.execute();
+    debugPrint('[AuthVM] init complete — status after restore: ${_status.runtimeType}');
   }
 
   void _onStatusChanged(AuthStatus newStatus) {
-    _log.info('Auth status changed: ${newStatus.runtimeType}');
+    debugPrint('[AuthVM] _onStatusChanged: ${newStatus.runtimeType}');
 
     if (newStatus is AuthError) {
       _log.severe('Authentication error: ${newStatus.message}');
