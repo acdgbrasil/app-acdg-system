@@ -1,92 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_address_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_diagnoses_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_documents_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_family_composition_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_intake_info_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_personal_data_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/step_specificities_content.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/registration_error_modal.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/registration_toast.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/registration_wizard_template.dart';
-import 'package:social_care/src/ui/patient_registration/viewModel/patient_registration_view_model.dart';
 
-class PatientRegistrationPage extends StatefulWidget {
+import '../../di/patient_registration_providers.dart';
+import '../../viewModel/patient_registration_view_model.dart';
+import '../components/registration_error_modal.dart';
+import '../components/registration_step_switcher.dart';
+import '../components/registration_toast.dart';
+import '../components/registration_wizard_template.dart';
+
+class PatientRegistrationPage extends ConsumerStatefulWidget {
   const PatientRegistrationPage({super.key});
 
   @override
-  State<PatientRegistrationPage> createState() => _PatientRegistrationPageState();
+  ConsumerState<PatientRegistrationPage> createState() =>
+      _PatientRegistrationPageState();
 }
 
-class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
+class _PatientRegistrationPageState
+    extends ConsumerState<PatientRegistrationPage> {
   bool _isSuccess = false;
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.read<PatientRegistrationViewModel>();
+    final vm = ref.watch(patientRegistrationViewModelProvider);
 
     return ListenableBuilder(
-      listenable: Listenable.merge([viewModel.currentStep, viewModel.showStepErrors]),
+      listenable: vm,
       builder: (context, _) {
-        final step = viewModel.currentStep.value;
-        final showErrors = viewModel.showStepErrors.value;
-
         return RegistrationWizardTemplate(
-          currentStep: step,
-          isLastStep: viewModel.isLastStep,
+          currentStep: vm.currentStep,
+          isLastStep: vm.isLastStep,
           isNextEnabled: !_isSuccess,
           isSuccess: _isSuccess,
-          onBack: step > 0 && !_isSuccess ? viewModel.previousStep : null,
-          onNext: _isSuccess ? null : () {
-            if (viewModel.isLastStep) {
-              _handleSubmit(context, viewModel);
-            } else {
-              _handleNext(context, viewModel);
-            }
-          },
-          child: _buildStepContent(viewModel, step, showErrors),
+          onBack: vm.currentStep > 0 && !_isSuccess ? vm.previousStep : null,
+          onNext: _isSuccess
+              ? null
+              : () {
+                  if (vm.isLastStep) {
+                    _handleSubmit(vm);
+                  } else {
+                    _handleNext(vm);
+                  }
+                },
+          child: RegistrationStepSwitcher(
+            viewModel: vm,
+            currentStep: vm.currentStep,
+            showErrors: vm.showStepErrors,
+          ),
         );
       },
     );
   }
 
-  Widget _buildStepContent(PatientRegistrationViewModel viewModel, int step, bool showErrors) {
-    return switch (step) {
-      0 => StepPersonalDataContent(formState: viewModel.referencePersonFormState, showErrors: showErrors),
-      1 => StepDocumentsContent(formState: viewModel.documentsFormState, showErrors: showErrors),
-      2 => StepAddressContent(formState: viewModel.addressFormState, showErrors: showErrors),
-      3 => StepDiagnosesContent(formState: viewModel.diagnosesFormState, showErrors: showErrors),
-      4 => StepFamilyCompositionContent(
-          formState: viewModel.familyCompositionFormState,
-          personalDataFormState: viewModel.referencePersonFormState,
-          documentsFormState: viewModel.documentsFormState,
-          parentescoLookup: viewModel.parentescoLookup,
-          showErrors: showErrors,
-        ),
-      5 => StepSpecificitiesContent(
-          formState: viewModel.specificitiesFormState,
-          identityTypeLookup: viewModel.identityTypeLookup,
-          showErrors: showErrors,
-        ),
-      6 => StepIntakeInfoContent(
-          formState: viewModel.intakeInfoFormState,
-          ingressTypeLookup: viewModel.ingressTypeLookup,
-          socialProgramsLookup: viewModel.socialProgramsLookup,
-          showErrors: showErrors,
-        ),
-      _ => const SizedBox.shrink(),
-    };
-  }
-
-  void _handleNext(BuildContext context, PatientRegistrationViewModel viewModel) {
-    if (viewModel.validateCurrentStep()) {
-      viewModel.nextStep();
-    } else {
-      viewModel.showStepErrors.value = true;
-      viewModel.notifyListeners();
-
+  void _handleNext(PatientRegistrationViewModel vm) {
+    final result = vm.handleNext();
+    if (result == StepNavigationResult.validationFailed) {
       RegistrationToast.show(
         context,
         message: 'Corrija os campos obrigatórios para continuar',
@@ -95,53 +64,48 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     }
   }
 
-  Future<void> _handleSubmit(BuildContext context, PatientRegistrationViewModel viewModel) async {
-    if (!viewModel.validateCurrentStep()) {
-      viewModel.showStepErrors.value = true;
-      viewModel.notifyListeners();
-
-      RegistrationToast.show(
-        context,
-        message: 'Corrija os campos obrigatórios para continuar',
-        type: ToastType.error,
-      );
-      return;
-    }
-
-    await viewModel.registerPatient();
+  Future<void> _handleSubmit(PatientRegistrationViewModel vm) async {
+    final result = await vm.handleSubmit();
     if (!context.mounted) return;
 
-    final command = viewModel.registerPatientCommand;
-
-    if (command.completed) {
-      setState(() => _isSuccess = true);
-
-      RegistrationToast.show(
-        context,
-        message: 'Cadastro salvo com sucesso!',
-        type: ToastType.success,
-        onDismissed: () {
-          if (context.mounted) context.go('/social-care');
-        },
-      );
-    } else if (command.error) {
-      final errorMsg = viewModel.errorMessage ?? 'Erro desconhecido';
-      final isNetwork = errorMsg.contains('SocketException') ||
-          errorMsg.contains('TimeoutException') ||
-          errorMsg.contains('network');
-
-      RegistrationErrorModal.show(
-        context,
-        type: isNetwork
-            ? RegistrationErrorType.network
-            : RegistrationErrorType.server,
-        errorCode: errorMsg.length > 80 ? errorMsg.substring(0, 80) : errorMsg,
-        onRetry: () {
-          Navigator.of(context).pop();
-          _handleSubmit(context, viewModel);
-        },
-        onClose: () => Navigator.of(context).pop(),
-      );
+    switch (result) {
+      case SubmitResult.success:
+        setState(() => _isSuccess = true);
+        RegistrationToast.show(
+          context,
+          message: 'Cadastro salvo com sucesso!',
+          type: ToastType.success,
+          onDismissed: () {
+            if (context.mounted) context.go('/social-care');
+          },
+        );
+      case SubmitResult.validationFailed:
+        RegistrationToast.show(
+          context,
+          message: 'Corrija os campos obrigatórios para continuar',
+          type: ToastType.error,
+        );
+      case SubmitResult.networkError:
+        _showErrorModal(vm, RegistrationErrorType.network);
+      case SubmitResult.serverError:
+        _showErrorModal(vm, RegistrationErrorType.server);
     }
+  }
+
+  void _showErrorModal(
+    PatientRegistrationViewModel vm,
+    RegistrationErrorType type,
+  ) {
+    final errorMsg = vm.errorMessage ?? 'Erro desconhecido';
+    RegistrationErrorModal.show(
+      context,
+      type: type,
+      errorCode: errorMsg.length > 80 ? errorMsg.substring(0, 80) : errorMsg,
+      onRetry: () {
+        Navigator.of(context).pop();
+        _handleSubmit(vm);
+      },
+      onClose: () => Navigator.of(context).pop(),
+    );
   }
 }

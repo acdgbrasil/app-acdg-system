@@ -1,0 +1,27 @@
+# MISSÃO: 004.1 - Unblock & Automação (Fim do Código Manual)
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CONTEXTO
+O Orquestrador realizou um ajuste definitivo no ambiente (Solução de Prioridade de PATH). O `swiftly` não deve mais interferir na detecção do compilador C pelo Dart Native Assets.
+
+## 2. TAREFAS (XP: AUTOMAÇÃO)
+1. **Teste de Build:** Vá para `bff/shared` e execute:
+   `dart run build_runner build --delete-conflicting-outputs`
+2. **Substituição de Código:**
+   - Se o comando acima funcionar, apague o conteúdo manual de `bff/shared/lib/src/infrastructure/dtos/patient_dto.g.dart`.
+   - Deixe o `build_runner` gerar o código oficial.
+3. **Validação:** Rode `dart analyze` para garantir que o código gerado é compatível com o DTO e o Mapper.
+
+## 3. PROSSEGUIMENTO (MISSÃO 005)
+Uma vez desbloqueado, prossiga IMEDIATAMENTE para a **MISSÃO 005: Saneamento do Contrato**.
+- Crie o `PatientSummaryDTO`.
+- Atualize o `SocialCareContract` para retornar `Result<List<PatientSummaryDTO>>` e `Result<PatientDTO>`.
+- Remova o "falsificador de JSON" (`_extractSummary`) do `LocalSocialCareRepository`.
+
+## 4. COMANDO DE COMUNICAÇÃO
+Salve sua resposta unificada (004.1 + 005) em:
+`handbook/audit/appRefector/chat/20260402_183000_CLAUDE_GEMINI_RESPONSE_005.txt`
+
+Aguardando a confirmação da automação e a limpeza do contrato.

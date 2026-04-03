@@ -1,31 +1,33 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:social_care/src/ui/home/viewModel/home_view_model.dart';
 
+import '../../di/home_providers.dart';
 import '../components/detail_panel.dart';
 import '../components/family_list.dart';
 import '../components/home_top_bar.dart';
 import '../components/inputs/search_input.dart';
 import '../components/new_registration_fab.dart';
 
-class SocialCareHomePage extends StatefulWidget {
+class SocialCareHomePage extends ConsumerStatefulWidget {
   final Widget? syncIndicator;
 
   const SocialCareHomePage({super.key, this.syncIndicator});
 
   @override
-  State<SocialCareHomePage> createState() => _SocialCareHomePageState();
+  ConsumerState<SocialCareHomePage> createState() => _SocialCareHomePageState();
 }
 
-class _SocialCareHomePageState extends State<SocialCareHomePage> {
-  String _activeTab = 'familias';
-
+class _SocialCareHomePageState extends ConsumerState<SocialCareHomePage> {
   @override
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeViewModelProvider).load.execute();
+    });
   }
 
   @override
@@ -36,7 +38,7 @@ class _SocialCareHomePageState extends State<SocialCareHomePage> {
 
   bool _onKey(KeyEvent event) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      context.read<HomeViewModel>().closePanel();
+      ref.read(homeViewModelProvider).closePanel();
       return true;
     }
     return false;
@@ -44,10 +46,10 @@ class _SocialCareHomePageState extends State<SocialCareHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.read<HomeViewModel>();
+    final viewModel = ref.watch(homeViewModelProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2E2C4),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Stack(
           children: [
@@ -58,13 +60,13 @@ class _SocialCareHomePageState extends State<SocialCareHomePage> {
                   listenable: viewModel.homeFormState.families,
                   builder: (context, _) {
                     return HomeTopBar(
-                      activeTab: _activeTab,
+                      activeTab: viewModel.activeTab,
                       onTabChanged: (tab) {
                         if (tab == 'cadastro') {
                           context.go('/patient-registration');
                           return;
                         }
-                        setState(() => _activeTab = tab);
+                        viewModel.setActiveTab(tab);
                       },
                       familyCount: viewModel.homeFormState.totalCount,
                       syncIndicator: widget.syncIndicator,
@@ -82,7 +84,7 @@ class _SocialCareHomePageState extends State<SocialCareHomePage> {
                         // Search
                         SearchInput(
                           controller: viewModel.homeFormState.searchQuery,
-                          onChanged: () => setState(() {}),
+                          onChanged: viewModel.onSearchChanged,
                         ),
                         const SizedBox(height: 24),
 
@@ -129,6 +131,11 @@ class _SocialCareHomePageState extends State<SocialCareHomePage> {
                   onClose: viewModel.closePanel,
                   onShowFichas: viewModel.showFichas,
                   onShowDados: viewModel.showDados,
+                  onFichaTap: (ficha, patientId) {
+                    if (ficha.name.contains('Composição familiar')) {
+                      context.go('/family-composition/$patientId');
+                    }
+                  },
                 );
               },
             ),

@@ -1,0 +1,25 @@
+# MISSÃO 011: O Último TODO (Saneamento do Ciclo de Vida)
+# DATA: 03 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. OBJETIVO (ATACANDO TODO_PENDENCIAS)
+O Supervisor cruzou os relatórios e encontrou um "débito oculto" no arquivo `TODO_PENDENCIAS.md`: o bug das **Requests Duplicadas** (Múltiplas chamadas à API ao iniciar a Home).
+
+Você já adicionou o debounce no `SyncEngine` em turnos anteriores (o que mitigou parte do problema). Porém, uma falha de "Architectural Lifecycle" gravíssima ainda persiste: **O ViewModel está disparando a request no seu construtor**.
+
+ViewModels (modelos de negócio gerados por Providers) não devem tomar a decisão de fazer chamadas de rede no momento de sua própria instância, pois eles podem ser instanciados de forma preguiçosa (lazy) ou reconstruídos em momentos errados. A View (UI) é quem dita quando a tela montou e precisa carregar os dados iniciais.
+
+## 2. A TAREFA (O QUE VOCÊ DEVE FAZER)
+1. Abra `packages/social_care/lib/src/ui/home/viewModel/home_view_model.dart`.
+2. Remova a linha `load.execute();` de dentro do bloco do construtor. O ViewModel deve nascer 100% "idle" (passivo).
+3. Abra `packages/social_care/lib/src/ui/home/view/page/home_page.dart`.
+4. Garanta que a primeira carga aconteça via "Lifecycle" da View. 
+   - Você pode usar o `initState()` chamando `WidgetsBinding.instance.addPostFrameCallback((_) { ref.read(homeViewModelProvider).load.execute(); });` (para evitar conflitos de build).
+
+## 3. CRITÉRIO DE SUCESSO (TDD ARQUITETURAL)
+Eu já criei os testes que bloqueiam você em: `packages/social_care/test/architecture/lifecycle_arch_test.dart`.
+
+Se você submeter o código e o comando de carregamento ainda estiver no construtor, ou a View não estiver orquestrando o _mount_, a PR será sumariamente barrada.
+
+Aguardando a execução impecável da Missão 011. Acabe com isso.

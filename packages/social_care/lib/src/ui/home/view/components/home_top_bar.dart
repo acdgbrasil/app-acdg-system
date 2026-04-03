@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 
@@ -22,7 +23,7 @@ class HomeTopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.menu, size: 24, color: Color(0xFF261D11)),
+            icon: const Icon(Icons.menu, size: 24, color: AppColors.textPrimary),
             onPressed: () {},
           ),
           const SizedBox(width: 32),
@@ -45,7 +46,7 @@ class HomeTopBar extends StatelessWidget {
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.w300,
               fontSize: 14,
-              color: Color(0x80261D11),
+              color: AppColors.textMuted,
             ),
           ),
           if (syncIndicator != null) ...[
@@ -72,7 +73,7 @@ class _TabButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0x14261D11) : Colors.transparent,
+          color: isActive ? AppColors.textPrimary.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Text(
@@ -81,7 +82,7 @@ class _TabButton extends StatelessWidget {
             fontFamily: 'Satoshi',
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
             fontSize: 15,
-            color: const Color(0xFF261D11),
+            color: AppColors.textPrimary,
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 import 'package:social_care/src/ui/home/models/ficha_status.dart';
@@ -10,6 +11,7 @@ class PanelFichas extends StatelessWidget {
   final List<FichaStatus> fichas;
   final VoidCallback onClose;
   final VoidCallback onBack;
+  final void Function(FichaStatus ficha)? onFichaTap;
 
   const PanelFichas({
     super.key,
@@ -17,6 +19,7 @@ class PanelFichas extends StatelessWidget {
     required this.fichas,
     required this.onClose,
     required this.onBack,
+    this.onFichaTap,
   });
 
   @override
@@ -39,7 +42,7 @@ class PanelFichas extends StatelessWidget {
                     fontFamily: 'Satoshi',
                     fontWeight: FontWeight.w700,
                     fontSize: 48,
-                    color: Color(0xFFF2E2C4),
+                    color: AppColors.background,
                     height: 1,
                     letterSpacing: -0.02 * 48,
                   ),
@@ -68,11 +71,11 @@ class PanelFichas extends StatelessWidget {
           // Subtitle
           Text(
             HomeLn10.fichasSubtitle(familyLastName, filledCount, fichas.length),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Playfair Display',
               fontSize: 15,
               fontStyle: FontStyle.italic,
-              color: Color(0x73F2E2C4),
+              color: AppColors.background.withValues(alpha: 0.45),
             ),
           ),
           const SizedBox(height: 24),
@@ -82,9 +85,11 @@ class PanelFichas extends StatelessWidget {
             child: ListView.builder(
               itemCount: fichas.length,
               itemBuilder: (context, index) {
+                final ficha = fichas[index];
                 return FichaRow(
-                  ficha: fichas[index],
+                  ficha: ficha,
                   isLast: index == fichas.length - 1,
+                  onTap: onFichaTap != null ? () => onFichaTap!(ficha) : null,
                 );
               },
             ),

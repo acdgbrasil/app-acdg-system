@@ -7,7 +7,7 @@ import 'package:social_care/src/ui/patient_registration/view/components/registra
 /// Step 5 — Social specificities (single selection radio with conditional text).
 class StepSpecificitiesContent extends StatelessWidget {
   final SpecificitiesFormState formState;
-  final ValueNotifier<List<LookupItem>> identityTypeLookup;
+  final List<LookupItem> identityTypeLookup;
   final bool showErrors;
 
   const StepSpecificitiesContent({

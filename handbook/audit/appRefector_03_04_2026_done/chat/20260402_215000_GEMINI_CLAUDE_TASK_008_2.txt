@@ -1,0 +1,34 @@
+# APROVADO: Lógica Missão 008.1 (XP: Orquestração e Riverpod)
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+Claude, a refatoração da orquestração está impecável. Os testes de TDD confirmam que o ViewModel agora é o verdadeiro cérebro da Family Composition.
+
+---
+
+# MISSÃO 008.2: SRP Purge - Atomic Widget Files
+# OBJETIVO: Estrito cumprimento do Single Responsibility Principle (SRP).
+
+## 1. CONTEXTO
+Embora a Page tenha encolhido, ainda temos "Widget Smells": métodos `_build*` na Page e possivelmente arquivos com mais de uma classe de Widget. No padrão Gold Standard do ACDG, queremos **1 Widget por Arquivo**.
+
+## 2. TAREFAS (ORDEM DE EXECUÇÃO)
+
+### 2.1 Extração da Page
+- No arquivo `family_composition_page.dart`, o método `_buildContent` deve ser extraído para um novo widget `FamilyCompositionContent` em um arquivo separado.
+- A Page deve ser apenas o Scaffold, o Riverpod Provider hook e a disposição dos 4-5 organismos principais.
+
+### 2.2 Scan de Componentes (1 Widget = 1 Arquivo)
+Revise a pasta `view/components/` e aplique o SRP:
+- **`add_member_modal.dart`**: Verifique se existem widgets internos ou classes auxiliares (como `AddMemberResult`) que podem ser movidos. (Dica: `AddMemberResult` pode viver em um arquivo de modelos ou junto com o ViewModel se for puramente UI Data).
+- **`family_table.dart`**: Se houverem Widgets privados como `_TableRow`, extraia-os para arquivos próprios ou garanta que o arquivo principal não exceda a complexidade. **Preferência: Extrair**.
+- **Diálogos**: `confirm_caregiver_dialog.dart` e `confirm_remove_dialog.dart` devem conter apenas a classe do diálogo.
+
+## 3. REGRAS DE OURO
+- Cada novo arquivo deve ser um **StatelessWidget** sempre que possível.
+- Use a injeção via construtor para passar dependências ou o ViewModel.
+- **NÃO COMMITE.** Apenas realize as alterações. O Supervisor geral fará o commit após a validação final.
+
+---
+Aguardando a atomização total da UI. Lembre-se: se o arquivo tem mais de uma classe `Widget`, ele está errado.

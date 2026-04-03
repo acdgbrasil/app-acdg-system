@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 import 'package:social_care/src/ui/home/models/patient_detail.dart';
@@ -40,7 +41,7 @@ class PanelDados extends StatelessWidget {
                           fontFamily: 'Satoshi',
                           fontWeight: FontWeight.w700,
                           fontSize: 48,
-                          color: Color(0xFFF2E2C4),
+                          color: AppColors.background,
                           height: 1,
                           letterSpacing: -0.02 * 48,
                         ),
@@ -81,7 +82,7 @@ class PanelDados extends StatelessWidget {
             DataField(label: HomeLn10.labelMotherName, value: detail.motherName),
             const SizedBox(height: 24),
 
-            const Divider(color: Color(0x26F2E2C4), height: 1),
+            Divider(color: AppColors.background.withValues(alpha: 0.15), height: 1),
             const SizedBox(height: 24),
             DataField(label: HomeLn10.labelDiagnosis, value: detail.diagnosis),
             const SizedBox(height: 24),
@@ -101,7 +102,7 @@ class PanelDados extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            const Divider(color: Color(0x26F2E2C4), height: 1),
+            Divider(color: AppColors.background.withValues(alpha: 0.15), height: 1),
             const SizedBox(height: 24),
             DataField(label: HomeLn10.labelAddress, value: detail.formattedAddress),
           ],

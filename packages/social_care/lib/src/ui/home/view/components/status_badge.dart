@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 
@@ -10,7 +11,7 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _isActive ? const Color(0xFF4F8448) : const Color(0xFFA6290D);
+    final color = _isActive ? AppColors.primary : AppColors.danger;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

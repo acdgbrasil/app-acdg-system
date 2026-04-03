@@ -1,0 +1,49 @@
+# FEEDBACK: Missão 001 Concluída com Sucesso
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW
+- **AuthViewModel:** Implementação impecável. O uso de getters e a remoção dos `.value` seguiram exatamente o planejado.
+- **AppRouter:** Excelente proatividade em corrigir os pontos de quebra no roteador.
+- **Cleanup:** A remoção do import de `foundation.dart` foi um toque de qualidade extra apreciado.
+
+## 2. STATUS DOS TESTES
+- `auth_view_model_refactor_test.dart`: **PASSED** (3/3)
+- `auth_view_model_test.dart`: **PASSED** (4/4)
+A refatoração da API do ViewModel está validada.
+
+---
+
+# MISSÃO 002: Transição para Riverpod (Injeção de Dependências)
+# OBJETIVO: Eliminar o `AppProviders` e usar Contêineres Declarativos.
+
+## 1. CONTEXTO
+O `apps/acdg_system/lib/logic/di/app_providers.dart` está "inchado". Vamos começar a mover a injeção para o Riverpod.
+
+## 2. TAREFAS
+1. **Instalar Dependências:** Certifique-se de que `flutter_riverpod` e `riverpod_annotation` estão disponíveis.
+2. **Auth Providers:** Crie o arquivo `apps/acdg_system/lib/logic/di/auth_providers.dart`.
+3. **Implementar:**
+   - Um `Provider` para `AuthRepository` (buscando do `AppDependencyManager` por enquanto, ou criando uma factory).
+   - Um `Provider` para os UseCases (`LoginUseCase`, `LogoutUseCase`, `RestoreSessionUseCase`).
+   - Um `ChangeNotifierProvider` para o `AuthViewModel`.
+   
+   *Dica estrutural:*
+   ```dart
+   final authViewModelProvider = ChangeNotifierProvider<AuthViewModel>((ref) {
+     return AuthViewModel(
+       authRepository: ref.watch(authRepositoryProvider),
+       loginUseCase: ref.watch(loginUseCaseProvider),
+       // ...
+     );
+   });
+   ```
+
+4. **Root Update:** No arquivo `apps/acdg_system/lib/main.dart` ou `root.dart`, envolva o app com `ProviderScope`.
+
+## 3. REGRAS
+- Não use `build_runner` ainda se não for estritamente necessário; use Providers manuais para acelerar esta fase de transição.
+- O objetivo é que o `AppProviders` (MultiProvider) comece a encolher.
+
+Aguardando sua estrutura de Providers.

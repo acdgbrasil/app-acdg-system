@@ -1,0 +1,213 @@
+# RESPOSTA: Missao 009.1 - Saneamento Total (Patient Registration + Home)
+# DATA: 03 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Saneamento completo em **ambos** os modulos (Patient Registration + Home). Zero cores hardcoded em toda a pasta `ui/`. Home migrado para Riverpod. FamilyMemberModal limpo — design system atoms, sem fallbacks hardcoded, sem logica na View. Strings extraidas para ln10.
+
+---
+
+## 2. HOME — MIGRACAO RIVERPOD
+
+### Provider (Stub + Override)
+- **Stub:** `packages/social_care/lib/src/ui/home/di/home_providers.dart`
+  - `ChangeNotifierProvider.autoDispose<HomeViewModel>` (throws UnimplementedError)
+- **Override:** `apps/acdg_system/lib/logic/di/social_care_providers.dart`
+  - `homeViewModelOverride` — wires ListPatientsUseCase + GetPatientUseCase
+- **Root:** `apps/acdg_system/lib/root.dart` — override registrado no ProviderScope
+
+### SocialCareHomePage
+- Convertida para `ConsumerStatefulWidget`
+- `context.read<HomeViewModel>()` → `ref.watch(homeViewModelProvider)`
+- Import `provider` removido, `flutter_riverpod` adicionado
+
+### Router
+- Rota `/social-care` simplificada — `ChangeNotifierProvider(create: ...)` removido
+- `Consumer` mantido para `syncEngineProvider` (infraestrutura Riverpod)
+
+### Dependencia
+- `flutter_riverpod: ^3.1.0` adicionado ao `pubspec.yaml` do `social_care` package
+
+---
+
+## 3. HOME — PURGA DE CORES
+
+**35 substituicoes** em 13 arquivos:
+
+| Arquivo | Substituicoes |
+|---------|--------------|
+| `circle_button.dart` | 6 |
+| `search_input.dart` | 6 |
+| `ficha_row.dart` | 3 |
+| `detail_panel.dart` | 4 |
+| `home_top_bar.dart` | 4 |
+| `data_field.dart` | 2 |
+| `home_page.dart` | 1 |
+| `panel_fichas.dart` | 2 |
+| `status_badge.dart` | 1 |
+| `family_item.dart` | 3 |
+| `panel_dados.dart` | 3 |
+| `family_list.dart` | 2 |
+| `new_registration_fab.dart` | 1 |
+
+---
+
+## 4. PATIENT REGISTRATION — CORRECOES
+
+### 4.1 Cores restantes (4 arquivos)
+- `Color(0xFFFFFBF4)` → `AppColors.surfaceLight` (novo token adicionado ao design_system)
+- Substituido em: `registration_error_banner.dart`, `registration_error_modal.dart`, `registration_toast.dart`, `wizard_button_bar.dart`
+
+### 4.2 Strings hardcoded → ln10
+10 novas constantes adicionadas a `ReferencePersonLn10`:
+- `errorNetworkTitle`, `errorServerTitle`
+- `errorNetworkDescription`, `errorServerDescription`
+- `errorNetworkCode`, `errorServerCode`
+- `btnClose`, `btnRetry`
+- `bannerFieldsNeedAttention`
+- `savedSuccessfully`
+
+Atualizados: `registration_error_modal.dart`, `registration_error_banner.dart`, `wizard_button_bar.dart`
+
+### 4.3 FamilyMemberModal — Design System Integration
+- **`_buildRadioGroup()`**: widgets manuais (`Container` + `BoxDecoration`) → `AcdgRadioButton<T>` com `activeColor: AppColors.surface`
+- **`_buildDocCheckboxes()`**: widgets manuais → `AcdgCheckbox` com `activeColor: AppColors.surface`, `checkColor: AppColors.backgroundDark`
+- **Fallbacks hardcoded removidos**: lista de 10 parentescos hardcoded → loading state (`"Carregando parentesco..."`) quando lookups estao vazios
+
+---
+
+## 5. DESIGN SYSTEM — TOKENS ADICIONADOS
+
+| Token | Valor | Adicionado em |
+|-------|-------|--------------|
+| `AppColors.surface` | `Color(0xFFFAF0E0)` | Missao 008.3 |
+| `AppColors.warning` | `Color(0xFFC9960A)` | Missao 008.3 |
+| `AppColors.barrierDark` | `Color(0x59261D11)` | Missao 008.3 |
+| `AppColors.surfaceLight` | `Color(0xFFFFFBF4)` | Missao 009.1 |
+
+---
+
+## 6. VERIFICACAO FINAL
+
+```
+grep -r 'Color(0x' packages/social_care/lib/src/ui/ → 0 resultados
+```
+
+| Check | Resultado |
+|-------|-----------|
+| `Color(0x...)` em `ui/home/` | **0** |
+| `Color(0x...)` em `ui/patient_registration/` | **0** |
+| `Color(0x...)` em `ui/family_composition/` | **0** |
+| `context.read<HomeViewModel>()` | **0** (migrado para Riverpod) |
+| Widgets manuais radio/checkbox no modal | **0** (Design System atoms) |
+| Fallbacks hardcoded no modal | **0** (loading state) |
+| Strings hardcoded em modais/toasts | **0** (ln10 constants) |
+| `dart analyze` | **0 erros** |
+| Testes TDD Gold Standard | **5/5 PASSED** |
+| Testes shell | **8/8 PASSED** |
+| Total | **13/13 PASSED** |
+
+---
+
+## 7. ESTADO FINAL DO PROJETO (Pos-sessao XP)
+
+### Riverpod Providers (3 ViewModels migrados)
+| Provider | Tipo | Localizacao |
+|----------|------|-------------|
+| `authViewModelProvider` | `Provider<AuthViewModel>` | shell |
+| `homeViewModelProvider` | `ChangeNotifierProvider.autoDispose` | stub social_care + override shell |
+| `patientRegistrationViewModelProvider` | `ChangeNotifierProvider.autoDispose` | stub social_care + override shell |
+| `familyCompositionViewModelProvider` | `ChangeNotifierProvider.autoDispose.family` | stub social_care + override shell |
+
+### AppProviders (MultiProvider residual)
+Apenas infraestrutura: `AppDependencyManager`, `DriftDatabaseService`, `ConnectivityService`, `SyncQueueService`, `LocalSocialCareRepository`
+
+### Router
+Todas as 3 rotas com ViewModel purgadas de `ChangeNotifierProvider` wrapper:
+- `/social-care` — Consumer para syncEngine, page lê Riverpod
+- `/patient-registration` — `const PatientRegistrationPage()`
+- `/family-composition/:id` — `FamilyCompositionPage(patientId: id)`
+
+### Design System
+6 novos tokens em `AppColors`, 2 novos atoms (`AcdgBadge`, confirmado `AcdgIconButton` reutilizado)
+
+---
+
+## 8. CORRECOES ARQUITETURAIS (009.2)
+
+Apos rejeicao 009.2, tres violacoes comportamentais corrigidas:
+
+### 8.1 FamilyMemberModal — Entry externalizado
+- **ANTES:** `_entry = FamilyMemberEntry()` instanciado no `initState()` do Widget
+- **DEPOIS:** `FamilyMemberEntry entry` passado via construtor — o caller (`StepFamilyCompositionContent`) cria e configura o entry antes de abrir o modal
+- O modal agora e 100% burro: le de `widget.entry`, nao cria estado
+
+### 8.2 FamilyMemberModal — ScaffoldMessenger removido
+- **ANTES:** `ScaffoldMessenger.of(context).showSnackBar(...)` direto no modal para conflito de caregiver
+- **DEPOIS:** `VoidCallback? onCaregiverConflict` callback — o caller decide como notificar. O modal apenas chama `widget.onCaregiverConflict?.call()`
+
+### 8.3 HomePage — setState eliminado
+- **ANTES:** `String _activeTab` no State + `setState(() => _activeTab = tab)` + `onChanged: () => setState(() {})`
+- **DEPOIS:** `activeTab` e `onSearchChanged()` movidos para `HomeViewModel`. A page usa `viewModel.setActiveTab(tab)` e `viewModel.onSearchChanged`. Zero `setState` na page.
+
+### Verificacao
+| Check | Resultado |
+|-------|-----------|
+| `FamilyMemberEntry` no Widget State | **REMOVIDO** (via construtor) |
+| `ScaffoldMessenger` no modal | **REMOVIDO** (callback) |
+| `setState` na HomePage | **ZERO** |
+| `dart analyze` | **0 erros** |
+| Testes | **13/13 PASSED** |
+
+---
+
+## 9. CORRECOES SRP (009.3)
+
+### 9.1 Desmembramento do "God File" (1 Classe = 1 Arquivo)
+
+`family_composition_form_state.dart` (146 linhas, 3 classes) → 3 arquivos:
+
+| Arquivo | Classe | Responsabilidade | Linhas |
+|---------|--------|-----------------|--------|
+| `models/family_member_snapshot.dart` | `FamilyMemberSnapshot` | Data model imutavel | ~32 |
+| `forms/.../family_member_entry.dart` | `FamilyMemberEntry` | Controllers + validacao | ~98 |
+| `forms/.../family_composition_form_state.dart` | `FamilyCompositionFormState` | Lista de membros + factory methods | ~55 |
+
+Re-exports adicionados no `family_composition_form_state.dart` para backward compat:
+```dart
+export '../../../../models/family_member_snapshot.dart';
+export 'family_member_entry.dart';
+```
+
+### 9.2 Inversao de Controle no Modal
+
+**ANTES:** View criava e preenchia o `FamilyMemberEntry`:
+```dart
+final entry = FamilyMemberEntry();
+entry.name.text = existing.name; // View preenchendo dados!
+```
+
+**DEPOIS:** FormState cria o entry pre-preenchido:
+```dart
+final entry = existing != null
+    ? formState.createEntryFromSnapshot(existing)
+    : formState.createEntry();
+```
+
+O modal recebe o entry **pronto** — nao preenche nada.
+
+Factory method `FamilyMemberEntry.fromSnapshot(snapshot)` encapsula toda a logica de preenchimento.
+
+### 9.3 Verificacao
+
+| Check | Resultado |
+|-------|-----------|
+| Classes por arquivo em `family_composition_form_state.dart` | **1** (era 3) |
+| View preenche entry | **NAO** (FormState cria via factory) |
+| `dart analyze` | **0 erros** |
+| Testes | **13/13 PASSED** |
+
+---
+Aguardando Code Review final.

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
-import 'package:flutter/foundation.dart';
 import '../../logic/use_cases/auth_use_cases.dart';
 
 class AuthViewModel extends BaseViewModel {
@@ -22,8 +21,11 @@ class AuthViewModel extends BaseViewModel {
   final AuthRepository authRepository;
   StreamSubscription<AuthStatus>? _statusSubscription;
 
-  final ValueNotifier<AuthStatus> status = ValueNotifier(const AuthLoading());
-  final ValueNotifier<AuthUser?> user = ValueNotifier(null);
+  AuthStatus _status = const AuthLoading();
+  AuthUser? _user;
+
+  AuthStatus get status => _status;
+  AuthUser? get user => _user;
 
   late final Command0<void> login;
   late final Command0<void> logout;
@@ -41,8 +43,8 @@ class AuthViewModel extends BaseViewModel {
       _log.severe('Authentication error: ${newStatus.message}');
     }
 
-    status.value = newStatus;
-    user.value = switch (newStatus) {
+    _status = newStatus;
+    _user = switch (newStatus) {
       Authenticated(:final user) => user,
       _ => null,
     };
@@ -56,7 +58,5 @@ class AuthViewModel extends BaseViewModel {
     login.dispose();
     logout.dispose();
     restoreSession.dispose();
-    status.dispose();
-    user.dispose();
   }
 }

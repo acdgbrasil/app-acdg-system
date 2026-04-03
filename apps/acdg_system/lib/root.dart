@@ -2,10 +2,13 @@ import 'dart:async';
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:network/network.dart';
 
 import 'logic/di/app_providers.dart';
+import 'logic/di/auth_providers.dart';
 import 'logic/di/dependency_manager.dart';
+import 'logic/di/social_care_providers.dart';
 import 'ui/app_view.dart';
 import 'ui/widgets/boot_views.dart';
 
@@ -77,7 +80,15 @@ class _RootState extends State<Root> {
           _initialize();
         },
       ),
-      _BootStatus.ready => AppProviders(deps: _deps, child: const AppView()),
+      _BootStatus.ready => ProviderScope(
+        overrides: [
+          appDependencyManagerProvider.overrideWithValue(_deps),
+          patientRegistrationViewModelOverride,
+          familyCompositionViewModelOverride,
+          homeViewModelOverride,
+        ],
+        child: AppProviders(deps: _deps, child: const AppView()),
+      ),
     };
   }
 }

@@ -1,11 +1,14 @@
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' hide Consumer;
 import 'package:social_care/social_care.dart';
-import 'package:social_care_desktop/social_care_desktop.dart';
+import 'package:social_care/src/ui/family_composition/view/page/family_composition_page.dart';
 
+import '../di/infrastructure_providers.dart';
+import '../di/social_care_providers.dart';
 import '../../ui/atoms/sync_indicator.dart';
 import '../../ui/organisms/sync_detail_panel.dart';
 import '../../ui/pages/home_page.dart';
@@ -22,6 +25,7 @@ abstract final class AppRoutes {
   static const registrationStep1 = '/patient-registration/reference-person';
   static const registrationStep2 = '/patient-registration/family-composition';
   static const registrationStep3 = '/patient-registration/specificities';
+  static const familyComposition = '/family-composition';
 }
 
 class AppRouter {
@@ -40,7 +44,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => LoginPage(viewModel: authViewModel),
+        builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
         path: AppRoutes.home,
@@ -50,18 +54,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.socialCare,
         redirect: _requireAuth,
-        builder: (context, state) {
-          final listUseCase = context.read<ListPatientsUseCase>();
-          final getUseCase = context.read<GetPatientUseCase>();
-          final syncEngine = context.read<SyncEngine?>();
-          final queueService = context.read<SyncQueueService>();
-          final dbService = context.read<DriftDatabaseService>();
-          return ChangeNotifierProvider(
-            create: (_) => HomeViewModel(
-              listPatientsUseCase: listUseCase,
-              getPatientUseCase: getUseCase,
-            ),
-            child: SocialCareHomePage(
+        builder: (context, state) => Consumer(
+          builder: (context, ref, _) {
+            final syncEngine = ref.watch(syncEngineProvider);
+            final queueService = context.read<SyncQueueService>();
+            final dbService = context.read<DriftDatabaseService>();
+            return SocialCareHomePage(
               syncIndicator: syncEngine != null
                   ? Builder(
                       builder: (ctx) => SyncIndicator(
@@ -75,23 +73,21 @@ class AppRouter {
                       ),
                     )
                   : null,
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
       GoRoute(
         path: AppRoutes.patientRegistration,
         redirect: _requireAuth,
+        builder: (context, state) => const PatientRegistrationPage(),
+      ),
+      GoRoute(
+        path: '${AppRoutes.familyComposition}/:patientId',
+        redirect: _requireAuth,
         builder: (context, state) {
-          final useCase = context.read<RegisterPatientUseCase>();
-          final lookupRepo = context.read<LookupRepository>();
-          return ChangeNotifierProvider(
-            create: (_) => PatientRegistrationViewModel(
-              useCase: useCase,
-              lookupRepository: lookupRepo,
-            ),
-            child: const PatientRegistrationPage(),
-          );
+          final patientId = state.pathParameters['patientId']!;
+          return FamilyCompositionPage(patientId: patientId);
         },
       ),
     ],
@@ -101,7 +97,7 @@ class AppRouter {
   );
 
   String? _globalRedirect(BuildContext context, GoRouterState state) {
-    final status = authViewModel.status.value;
+    final status = authViewModel.status;
     final currentPath = state.uri.path;
     final isOnSplash = currentPath == AppRoutes.splash;
     final isOnLogin = currentPath == AppRoutes.login;
@@ -115,7 +111,7 @@ class AppRouter {
   }
 
   String? _requireAuth(BuildContext context, GoRouterState state) {
-    final status = authViewModel.status.value;
+    final status = authViewModel.status;
     if (status is! Authenticated) return AppRoutes.login;
     return null;
   }
@@ -124,7 +120,7 @@ class AppRouter {
     Set<AuthRole> roles,
   ) {
     return (context, state) {
-      final status = authViewModel.status.value;
+      final status = authViewModel.status;
       if (status is! Authenticated) return AppRoutes.login;
       if (!status.user.hasAnyRole(roles)) return AppRoutes.home;
       return null;

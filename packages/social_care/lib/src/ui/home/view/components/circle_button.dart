@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 enum CircleButtonVariant { normal, close }
@@ -27,11 +28,15 @@ class _CircleButtonState extends State<CircleButton> {
 
   Color get _background {
     if (!_hovered) return Colors.transparent;
-    return _isClose ? const Color(0x33A6290D) : const Color(0x1AF2E2C4);
+    return _isClose
+        ? AppColors.danger.withValues(alpha: 0.2)
+        : AppColors.background.withValues(alpha: 0.1);
   }
 
   Color get _borderColor {
-    return _isClose ? const Color(0x66F2E2C4) : const Color(0x40F2E2C4);
+    return _isClose
+        ? AppColors.background.withValues(alpha: 0.4)
+        : AppColors.background.withValues(alpha: 0.25);
   }
 
   @override
@@ -55,7 +60,7 @@ class _CircleButtonState extends State<CircleButton> {
           child: IconTheme(
             data: IconThemeData(
               size: 18,
-              color: _isClose ? const Color(0xFFA6290D) : const Color(0xFFF2E2C4),
+              color: _isClose ? AppColors.danger : AppColors.background,
             ),
             child: widget.child,
           ),

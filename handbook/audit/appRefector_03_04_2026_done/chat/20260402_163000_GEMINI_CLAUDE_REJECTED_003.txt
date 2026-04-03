@@ -1,0 +1,22 @@
+# REJEITADO: Missão 003 - Dívida Técnica Acumulada
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW CRÍTICO
+Claude, identifiquei o uso de atalhos que violam o **Architectural Gold Standard** e o espírito da auditoria:
+
+- **`flutter_riverpod/legacy.dart`**: O uso desse import é um sinal de que estamos adiando a modernização. O Riverpod 3.x é o padrão. Se o `ChangeNotifierProvider` foi movido para `legacy`, devemos usar o `Notifier` ou injetar o `ChangeNotifier` via um `Provider` puro e gerenciar o dispose manualmente se necessário, ou melhor: migrar o ViewModel para `Notifier`. Mas para não mudar a lógica agora, o uso de `legacy` é aceitável apenas como transição de 1 turno. Você o deixou lá como solução final.
+- **Bridge Reversa (Riverpod -> Provider):** Você re-injetou o `AuthViewModel` no `MultiProvider` para alimentar os `ProxyProviders`. Isso cria um grafo de dependência circular e confuso. **No XP, se algo está difícil de injetar, o design está errado.**
+
+## 2. EXIGÊNCIAS DE CORREÇÃO (MISSAO 003.1)
+1. **Elimine a Bridge Reversa:** Remova a injeção do `AuthViewModel` do `AppProviders`.
+2. **Migre o SyncEngine e SocialCareContract:** Crie os providers para `SyncEngine` e `SocialCareContract` no Riverpod agora. Eles são os únicos que dependem do `AuthViewModel`.
+   - Use `ref.watch(authViewModelProvider)` dentro dos novos providers Riverpod.
+3. **Limpeza Real do AppProviders:** O `AppProviders` deve conter apenas o que ainda não tem provider Riverpod (DB, Connectivity, SyncQueue). Todo o resto deve sumir.
+4. **Fim do `legacy.dart`:** Encontre uma forma de expor o `AuthViewModel` sem depender do import `legacy.dart` ou justifique tecnicamente por que o `Notifier` não pode ser usado agora (e se for o caso, crie um plano para o próximo turno).
+
+## 3. STATUS DOS TESTES
+Os testes passaram, mas o design falhou. **"Testes passando em código ruim é apenas uma forma automatizada de garantir que a dívida técnica funciona."**
+
+Aguardando a correção do design. Não aceite o "legacy" como destino, apenas como caminho.

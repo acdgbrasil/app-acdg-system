@@ -12,15 +12,19 @@ import 'family_composition_form_state.dart';
 /// Design: dark blue (#172D48) background, 2-column layout (1fr + 260px),
 /// collapses to single column on mobile. Matches the Figma specification.
 class FamilyMemberModal extends StatefulWidget {
+  final FamilyMemberEntry entry;
   final FamilyMemberSnapshot? existingMember;
   final void Function(FamilyMemberSnapshot snapshot) onSave;
+  final VoidCallback? onCaregiverConflict;
   final bool hasPrimaryCaregiver;
   final List<LookupItem> parentescoLookup;
 
   const FamilyMemberModal({
     super.key,
+    required this.entry,
     this.existingMember,
     required this.onSave,
+    this.onCaregiverConflict,
     this.hasPrimaryCaregiver = false,
     this.parentescoLookup = const [],
   });
@@ -30,29 +34,15 @@ class FamilyMemberModal extends StatefulWidget {
 }
 
 class _FamilyMemberModalState extends State<FamilyMemberModal> {
-  late final FamilyMemberEntry _entry;
+  FamilyMemberEntry get _entry => widget.entry;
   bool _showErrors = false;
 
-  static const _deepBlue = Color(0xFF172D48);
-  static const _offWhite = Color(0xFFF2E2C4);
-  static const _red = Color(0xFFA6290D);
+  static const _deepBlue = AppColors.backgroundDark;
+  static const _offWhite = AppColors.textOnDark;
+  static const _red = AppColors.danger;
 
   List<(String, String)> get _parentescoOptions {
-    if (widget.parentescoLookup.isEmpty) {
-      // Fallback if lookups not loaded yet
-      return const [
-        ('02', '02 - Cônjuge / companheiro(a)'),
-        ('03', '03 - Filho(a)'),
-        ('04', '04 - Enteado(a)'),
-        ('05', '05 - Neto(a) / Bisneto(a)'),
-        ('06', '06 - Pai / Mãe'),
-        ('07', '07 - Sogro(a)'),
-        ('08', '08 - Irmão / Irmã'),
-        ('09', '09 - Genro / Nora'),
-        ('10', '10 - Outro parente'),
-        ('11', '11 - Não parente'),
-      ];
-    }
+    if (widget.parentescoLookup.isEmpty) return const [];
     return widget.parentescoLookup
         .where((item) => item.codigo != 'PESSOA_REFERENCIA')
         .map((item) => (item.codigo, '${item.codigo} - ${item.descricao}'))
@@ -60,32 +50,6 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
   }
 
   static const _docOptions = ['CN', 'RG', 'CTPS', 'CPF', 'TE', 'CNS'];
-
-  @override
-  void initState() {
-    super.initState();
-    _entry = FamilyMemberEntry();
-    final existing = widget.existingMember;
-    if (existing != null) {
-      _entry.name.text = existing.name;
-      // Format date as DD/MM/YYYY for the masked input
-      final d = existing.birthDate;
-      _entry.birthDate.text =
-          '${d.day.toString().padLeft(2, '0')}${d.month.toString().padLeft(2, '0')}${d.year}';
-      _entry.sex.value = existing.sex;
-      _entry.relationship.value = existing.relationshipCode;
-      _entry.hasDisability.value = existing.hasDisability;
-      _entry.isResiding.value = existing.isResiding;
-      _entry.isCaregiver.value = existing.isCaregiver;
-      _entry.requiredDocuments.value = {...existing.requiredDocuments};
-    }
-  }
-
-  @override
-  void dispose() {
-    _entry.dispose();
-    super.dispose();
-  }
 
   void _handleSave() {
     if (!_entry.isValid) {
@@ -97,14 +61,9 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
     final isEditingSameCaregiver =
         widget.existingMember?.isCaregiver == true;
 
-    // Prevent multiple primary caregivers
+    // Prevent multiple primary caregivers — delegate to parent
     if (wantsCaregiver && widget.hasPrimaryCaregiver && !isEditingSameCaregiver) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(ReferencePersonLn10.errorCaregiverExists),
-          duration: Duration(seconds: 3),
-        ),
-      );
+      widget.onCaregiverConflict?.call();
       return;
     }
 
@@ -137,12 +96,12 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
             decoration: BoxDecoration(
               color: _deepBlue,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(color: Color(0x0A000000), offset: Offset(-9, 9), blurRadius: 9),
-                BoxShadow(color: Color(0x14000000), offset: Offset(-18, 18), blurRadius: 18),
-                BoxShadow(color: Color(0x29000000), offset: Offset(-37, 37), blurRadius: 37),
-                BoxShadow(color: Color(0x3D000000), offset: Offset(-75, 75), blurRadius: 75),
-                BoxShadow(color: Color(0x7A000000), offset: Offset(-150, 150), blurRadius: 150),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.04), offset: const Offset(-9, 9), blurRadius: 9),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.08), offset: const Offset(-18, 18), blurRadius: 18),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.16), offset: const Offset(-37, 37), blurRadius: 37),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.24), offset: const Offset(-75, 75), blurRadius: 75),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.48), offset: const Offset(-150, 150), blurRadius: 150),
               ],
             ),
             child: ConstrainedBox(
@@ -157,7 +116,7 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
                     const SizedBox(height: 28),
                     _buildBody(),
                     const SizedBox(height: 24),
-                    const Divider(color: Color(0x26F2E2C4)),
+                    Divider(color: AppColors.textOnDark.withValues(alpha: 0.15)),
                     const SizedBox(height: 16),
                     _buildFooter(),
                   ],
@@ -282,40 +241,54 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
       children: [
         _buildLabel(ReferencePersonLn10.memberRelationshipLabel, required: true),
         const SizedBox(height: 8),
-        ValueListenableBuilder<String?>(
-          valueListenable: _entry.relationship,
-          builder: (context, selected, _) {
-            return Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: _offWhite),
-                borderRadius: BorderRadius.circular(8),
+        if (_parentescoOptions.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            alignment: Alignment.center,
+            child: Text(
+              ReferencePersonLn10.loadingRelationship,
+              style: TextStyle(
+                color: _offWhite.withValues(alpha: 0.6),
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (code, label) in _parentescoOptions)
-                    InkWell(
-                      onTap: () => _entry.relationship.value = code,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        color: selected == code
-                            ? _offWhite.withValues(alpha: 0.1)
-                            : Colors.transparent,
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: _offWhite,
-                            fontSize: 14,
-                            fontWeight: selected == code ? FontWeight.w600 : FontWeight.w400,
+            ),
+          )
+        else
+          ValueListenableBuilder<String?>(
+            valueListenable: _entry.relationship,
+            builder: (context, selected, _) {
+              return Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: _offWhite),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (code, label) in _parentescoOptions)
+                      InkWell(
+                        onTap: () => _entry.relationship.value = code,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          color: selected == code
+                              ? _offWhite.withValues(alpha: 0.1)
+                              : Colors.transparent,
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: _offWhite,
+                              fontSize: 14,
+                              fontWeight: selected == code ? FontWeight.w600 : FontWeight.w400,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
+                  ],
+                ),
+              );
+            },
+          ),
         if (_showErrors && _entry.relationshipError != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -455,29 +428,11 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 18,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: _offWhite.withValues(alpha: selected == value ? 1.0 : 0.5),
-                                width: 1.5,
-                              ),
-                              color: selected == value ? _offWhite : Colors.transparent,
-                            ),
-                            child: selected == value
-                                ? Center(
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: _deepBlue,
-                                      ),
-                                    ),
-                                  )
-                                : null,
+                          AcdgRadioButton<T>(
+                            value: value,
+                            groupValue: selected,
+                            onChanged: (v) => notifier.value = v,
+                            activeColor: AppColors.surface,
                           ),
                           const SizedBox(width: 7),
                           Text(
@@ -529,31 +484,19 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          border: Border.all(
-                            color: selected.contains(doc)
-                                ? _offWhite
-                                : _offWhite.withValues(alpha: 0.3),
-                            width: 1.5,
-                          ),
-                          color: selected.contains(doc) ? _offWhite : Colors.transparent,
-                        ),
-                        child: selected.contains(doc)
-                            ? const Center(
-                                child: Text(
-                                  '✓',
-                                  style: TextStyle(
-                                    color: _deepBlue,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              )
-                            : null,
+                      AcdgCheckbox(
+                        value: selected.contains(doc),
+                        onChanged: (_) {
+                          final current = {...selected};
+                          if (current.contains(doc)) {
+                            current.remove(doc);
+                          } else {
+                            current.add(doc);
+                          }
+                          _entry.requiredDocuments.value = current;
+                        },
+                        activeColor: AppColors.surface,
+                        checkColor: AppColors.backgroundDark,
                       ),
                       const SizedBox(width: 6),
                       Text(

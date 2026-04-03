@@ -41,7 +41,7 @@ class LocalSocialCareRepository implements SocialCareContract {
       final currentJson =
           jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
       final Patient patient;
-      switch (PatientMapper.fromJson(currentJson)) {
+      switch (PatientTranslator.fromJson(currentJson)) {
         case Success(:final value): patient = value;
         case Failure(:final error): return Failure(error);
       }
@@ -52,7 +52,7 @@ class LocalSocialCareRepository implements SocialCareContract {
           .write(
         CachedPatientsCompanion(
           fullRecordJson:
-              Value(jsonEncode(PatientMapper.toJson(updatedPatient))),
+              Value(jsonEncode(PatientTranslator.toJson(updatedPatient))),
           version: Value(cached.version + 1),
           isDirty: const Value(true),
           lastSyncAt: Value(DateTime.now().toUtc()),
@@ -98,9 +98,9 @@ class LocalSocialCareRepository implements SocialCareContract {
   /// Updates the local cache without enqueuing a sync action.
   /// Used by OfflineFirstRepository when fresh data comes from remote.
   Future<void> updateCache(Patient patient) async {
-    final fullJson = PatientMapper.toJson(patient);
+    final fullJson = PatientTranslator.toJson(patient);
 
-    await _db.into(_db.cachedPatients).insertOnConflictUpdate(
+    await _db.into(_db.cachedPatients).insert(
           CachedPatientsCompanion.insert(
             patientId: patient.id.value,
             personId: patient.personId.value,
@@ -111,6 +111,19 @@ class LocalSocialCareRepository implements SocialCareContract {
             version: Value(patient.version),
             isDirty: const Value(false),
             lastSyncAt: DateTime.now().toUtc(),
+          ),
+          onConflict: DoUpdate(
+            (old) => CachedPatientsCompanion(
+              personId: Value(patient.personId.value),
+              firstName: Value(patient.personalData?.firstName ?? ''),
+              lastName: Value(patient.personalData?.lastName ?? ''),
+              cpf: Value(patient.civilDocuments?.cpf?.value ?? ''),
+              fullRecordJson: Value(jsonEncode(fullJson)),
+              version: Value(patient.version),
+              isDirty: const Value(false),
+              lastSyncAt: Value(DateTime.now().toUtc()),
+            ),
+            target: [_db.cachedPatients.patientId],
           ),
         );
   }
@@ -169,7 +182,7 @@ class LocalSocialCareRepository implements SocialCareContract {
 
   /// Bulk-updates local cache from server summaries without enqueuing sync actions.
   Future<void> updateCacheFromSummaries(
-      List<Map<String, dynamic>> summaries) async {
+      List<PatientOverview> summaries) async {
     final existingPatients = await _db.select(_db.cachedPatients).get();
     final existingMap = {
       for (final c in existingPatients) c.patientId: c,
@@ -177,7 +190,7 @@ class LocalSocialCareRepository implements SocialCareContract {
 
     await _db.batch((batch) {
       for (final item in summaries) {
-        final id = item['patientId'] as String;
+        final id = item.patientId;
         final existing = existingMap[id];
         final shouldPreserveRecord =
             existing != null && _isFullRecord(existing.fullRecordJson);
@@ -186,32 +199,67 @@ class LocalSocialCareRepository implements SocialCareContract {
           _db.cachedPatients,
           CachedPatientsCompanion.insert(
             patientId: id,
-            personId: item['personId'] as String? ?? existing?.personId ?? '',
-            firstName: Value(item['firstName'] as String? ?? ''),
-            lastName: Value(item['lastName'] as String? ?? ''),
+            personId: item.personId.isNotEmpty
+                ? item.personId
+                : existing?.personId ?? '',
+            firstName: Value(item.firstName ?? ''),
+            lastName: Value(item.lastName ?? ''),
             cpf: Value(existing?.cpf ?? ''),
             fullRecordJson: shouldPreserveRecord
                 ? existing!.fullRecordJson
-                : jsonEncode(item),
+                : jsonEncode(item.toJson()),
             version: Value(existing?.version ?? 0),
             isDirty: Value(existing?.isDirty ?? false),
             lastSyncAt: DateTime.now().toUtc(),
           ),
           onConflict: DoUpdate(
             (old) => CachedPatientsCompanion(
-              personId: Value(
-                  item['personId'] as String? ?? existing?.personId ?? ''),
-              firstName: Value(item['firstName'] as String? ?? ''),
-              lastName: Value(item['lastName'] as String? ?? ''),
+              personId: Value(item.personId.isNotEmpty
+                  ? item.personId
+                  : existing?.personId ?? ''),
+              firstName: Value(item.firstName ?? ''),
+              lastName: Value(item.lastName ?? ''),
               fullRecordJson: shouldPreserveRecord
                   ? Value(existing!.fullRecordJson)
-                  : Value(jsonEncode(item)),
+                  : Value(jsonEncode(item.toJson())),
               lastSyncAt: Value(DateTime.now().toUtc()),
             ),
           ),
         );
       }
     });
+  }
+
+  /// Updates the local cache from a [PatientRemote] without enqueuing a sync action.
+  Future<void> updateCacheFromRemote(PatientRemote dto) async {
+    final fullJson = dto.toJson();
+    final pd = dto.personalData;
+
+    await _db.into(_db.cachedPatients).insert(
+          CachedPatientsCompanion.insert(
+            patientId: dto.patientId,
+            personId: dto.personId,
+            firstName: Value(pd?['firstName'] as String? ?? ''),
+            lastName: Value(pd?['lastName'] as String? ?? ''),
+            cpf: Value(''),
+            fullRecordJson: jsonEncode(fullJson),
+            version: Value(dto.version),
+            isDirty: const Value(false),
+            lastSyncAt: DateTime.now().toUtc(),
+          ),
+          onConflict: DoUpdate(
+            (old) => CachedPatientsCompanion(
+              personId: Value(dto.personId),
+              firstName: Value(pd?['firstName'] as String? ?? ''),
+              lastName: Value(pd?['lastName'] as String? ?? ''),
+              fullRecordJson: Value(jsonEncode(fullJson)),
+              version: Value(dto.version),
+              isDirty: const Value(false),
+              lastSyncAt: Value(DateTime.now().toUtc()),
+            ),
+            target: [_db.cachedPatients.patientId],
+          ),
+        );
   }
 
   bool _isFullRecord(String json) {
@@ -228,62 +276,62 @@ class LocalSocialCareRepository implements SocialCareContract {
   // ==========================================
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> listPatients() async {
+  Future<Result<List<PatientOverview>>> fetchPatients() async {
     try {
       final allCached = await _db.select(_db.cachedPatients).get();
-      final summaries = allCached.map(_extractSummary).toList();
+      final summaries = allCached.map(_toSummaryDTO).toList();
       return Success(summaries);
     } catch (e) {
       return Failure(e);
     }
   }
 
-  Map<String, dynamic> _extractSummary(CachedPatient c) {
+  PatientOverview _toSummaryDTO(CachedPatient c) {
     try {
       final json = jsonDecode(c.fullRecordJson) as Map<String, dynamic>;
 
       if (json.containsKey('prRelationshipId')) {
         final pd = json['personalData'] as Map<String, dynamic>?;
-        final diagnoses = (json['initialDiagnoses'] as List?) ??
-            (json['diagnoses'] as List?) ??
+        final diagnoses = (json['diagnoses'] as List?) ??
+            (json['initialDiagnoses'] as List?) ??
             [];
         final members = (json['familyMembers'] as List?) ?? [];
+        final firstName = pd?['firstName'] as String? ?? c.firstName;
+        final lastName = pd?['lastName'] as String? ?? c.lastName;
 
-        return <String, dynamic>{
-          'patientId': json['patientId'] ?? c.patientId,
-          'personId': json['personId'] ?? c.personId,
-          'firstName': pd?['firstName'] ?? c.firstName,
-          'lastName': pd?['lastName'] ?? c.lastName,
-          'fullName':
-              '${pd?['firstName'] ?? c.firstName} ${pd?['lastName'] ?? c.lastName}'
-                  .trim(),
-          'primaryDiagnosis': diagnoses.isNotEmpty
+        return PatientOverview(
+          patientId: json['patientId'] as String? ?? c.patientId,
+          personId: json['personId'] as String? ?? c.personId,
+          firstName: firstName,
+          lastName: lastName,
+          fullName: '$firstName $lastName'.trim(),
+          primaryDiagnosis: diagnoses.isNotEmpty
               ? (diagnoses.first as Map<String, dynamic>)['description']
+                  as String?
               : null,
-          'memberCount': members.length,
-        };
+          memberCount: members.length,
+        );
       }
 
-      return json;
+      return PatientOverview.fromJson(json);
     } catch (_) {
-      return <String, dynamic>{
-        'patientId': c.patientId,
-        'personId': c.personId,
-        'firstName': c.firstName.isEmpty ? null : c.firstName,
-        'lastName': c.lastName.isEmpty ? null : c.lastName,
-        'fullName': '${c.firstName} ${c.lastName}'.trim(),
-        'primaryDiagnosis': null,
-        'memberCount': 0,
-      };
+      return PatientOverview(
+        patientId: c.patientId,
+        personId: c.personId,
+        firstName: c.firstName.isEmpty ? null : c.firstName,
+        lastName: c.lastName.isEmpty ? null : c.lastName,
+        fullName: '${c.firstName} ${c.lastName}'.trim(),
+        memberCount: 0,
+      );
     }
   }
 
   @override
   Future<Result<PatientId>> registerPatient(Patient patient) async {
     try {
-      final fullJson = PatientMapper.toJson(patient);
+      final fullJson = PatientTranslator.toJson(patient);
 
-      await _db.into(_db.cachedPatients).insertOnConflictUpdate(
+      await _db.into(_db.cachedPatients).insert(
             CachedPatientsCompanion.insert(
               patientId: patient.id.value,
               personId: patient.personId.value,
@@ -294,6 +342,19 @@ class LocalSocialCareRepository implements SocialCareContract {
               version: Value(patient.version),
               isDirty: const Value(true),
               lastSyncAt: DateTime.now().toUtc(),
+            ),
+            onConflict: DoUpdate(
+              (old) => CachedPatientsCompanion(
+                personId: Value(patient.personId.value),
+                firstName: Value(patient.personalData?.firstName ?? ''),
+                lastName: Value(patient.personalData?.lastName ?? ''),
+                cpf: Value(patient.civilDocuments?.cpf?.value ?? ''),
+                fullRecordJson: Value(jsonEncode(fullJson)),
+                version: Value(patient.version),
+                isDirty: const Value(true),
+                lastSyncAt: Value(DateTime.now().toUtc()),
+              ),
+              target: [_db.cachedPatients.patientId],
             ),
           );
 
@@ -310,7 +371,7 @@ class LocalSocialCareRepository implements SocialCareContract {
   }
 
   @override
-  Future<Result<Patient>> getPatient(PatientId id) async {
+  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
     try {
       final cached = await (_db.select(_db.cachedPatients)
             ..where((t) => t.patientId.equals(id.value)))
@@ -320,16 +381,15 @@ class LocalSocialCareRepository implements SocialCareContract {
         return Failure(_notFoundError('Patient not found in local cache'));
       }
 
-      return PatientMapper.fromJson(
-        jsonDecode(cached.fullRecordJson) as Map<String, dynamic>,
-      );
+      final json = jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
+      return Success(PatientRemote.fromJson(json));
     } catch (e) {
       return Failure(e);
     }
   }
 
   @override
-  Future<Result<Patient>> getPatientByPersonId(PersonId personId) async {
+  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async {
     try {
       final cached = await (_db.select(_db.cachedPatients)
             ..where((t) => t.personId.equals(personId.value)))
@@ -340,9 +400,8 @@ class LocalSocialCareRepository implements SocialCareContract {
             _notFoundError('Patient not found in local cache by personId'));
       }
 
-      return PatientMapper.fromJson(
-        jsonDecode(cached.fullRecordJson) as Map<String, dynamic>,
-      );
+      final json = jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
+      return Success(PatientRemote.fromJson(json));
     } catch (e) {
       return Failure(e);
     }
@@ -359,7 +418,7 @@ class LocalSocialCareRepository implements SocialCareContract {
       'ADD_FAMILY_MEMBER',
       {
         'patientId': patientId.value,
-        'member': PatientMapper.familyMemberToJson(member),
+        'member': PatientTranslator.familyMemberToJson(member),
         'prRelationshipId': prRelationshipId.value,
       },
       (p) => p.copyWith(familyMembers: [...p.familyMembers, member]),
@@ -421,7 +480,7 @@ class LocalSocialCareRepository implements SocialCareContract {
       'UPDATE_SOCIAL_IDENTITY',
       {
         'patientId': patientId.value,
-        'identity': PatientMapper.socialIdentityToJson(identity),
+        'identity': PatientTranslator.socialIdentityToJson(identity),
       },
       (p) => p.copyWith(socialIdentity: () => identity),
     );
@@ -450,7 +509,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_HOUSING',
-      PatientMapper.housingConditionToJson(condition),
+      PatientTranslator.housingConditionToJson(condition),
       (p) => p.copyWith(housingCondition: () => condition),
     );
 
@@ -466,7 +525,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_SOCIOECONOMIC',
-      PatientMapper.socioEconomicToJson(situation),
+      PatientTranslator.socioEconomicToJson(situation),
       (p) => p.copyWith(socioeconomicSituation: () => situation),
     );
 
@@ -482,7 +541,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_WORK_INCOME',
-      PatientMapper.workAndIncomeToJson(data),
+      PatientTranslator.workAndIncomeToJson(data),
       (p) => p.copyWith(workAndIncome: () => data),
     );
 
@@ -498,7 +557,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_EDUCATION',
-      PatientMapper.educationalStatusToJson(status),
+      PatientTranslator.educationalStatusToJson(status),
       (p) => p.copyWith(educationalStatus: () => status),
     );
 
@@ -514,7 +573,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_HEALTH',
-      PatientMapper.healthStatusToJson(status),
+      PatientTranslator.healthStatusToJson(status),
       (p) => p.copyWith(healthStatus: () => status),
     );
 
@@ -530,7 +589,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_COMMUNITY_SUPPORT',
-      PatientMapper.communitySupportToJson(network),
+      PatientTranslator.communitySupportToJson(network),
       (p) => p.copyWith(communitySupportNetwork: () => network),
     );
 
@@ -546,7 +605,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_SOCIAL_HEALTH',
-      PatientMapper.socialHealthSummaryToJson(summary),
+      PatientTranslator.socialHealthSummaryToJson(summary),
       (p) => p.copyWith(socialHealthSummary: () => summary),
     );
 
@@ -568,7 +627,7 @@ class LocalSocialCareRepository implements SocialCareContract {
       'REGISTER_APPOINTMENT',
       {
         'patientId': patientId.value,
-        'appointment': PatientMapper.appointmentToJson(appointment),
+        'appointment': PatientTranslator.appointmentToJson(appointment),
       },
       (p) => p.copyWith(appointments: [...p.appointments, appointment]),
     );
@@ -584,7 +643,7 @@ class LocalSocialCareRepository implements SocialCareContract {
   ) async {
     final result = await _mutatePatient(patientId, 'UPDATE_INTAKE', {
       'patientId': patientId.value,
-      'info': PatientMapper.intakeInfoToJson(info),
+      'info': PatientTranslator.intakeInfoToJson(info),
     }, (p) => p.copyWith(intakeInfo: () => info));
 
     if (result case Failure(:final error)) return Failure(error);
@@ -603,7 +662,7 @@ class LocalSocialCareRepository implements SocialCareContract {
     final result = await _mutatePatient(
       patientId,
       'UPDATE_PLACEMENT',
-      PatientMapper.placementHistoryToJson(history),
+      PatientTranslator.placementHistoryToJson(history),
       (p) => p.copyWith(placementHistory: () => history),
     );
 
@@ -621,7 +680,7 @@ class LocalSocialCareRepository implements SocialCareContract {
       'REPORT_VIOLATION',
       {
         'patientId': patientId.value,
-        'report': PatientMapper.violationReportToJson(report),
+        'report': PatientTranslator.violationReportToJson(report),
       },
       (p) => p.copyWith(violationReports: [...p.violationReports, report]),
     );
@@ -640,7 +699,7 @@ class LocalSocialCareRepository implements SocialCareContract {
       'CREATE_REFERRAL',
       {
         'patientId': patientId.value,
-        'referral': PatientMapper.referralToJson(referral),
+        'referral': PatientTranslator.referralToJson(referral),
       },
       (p) => p.copyWith(referrals: [...p.referrals, referral]),
     );

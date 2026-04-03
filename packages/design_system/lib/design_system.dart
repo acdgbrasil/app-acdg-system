@@ -1,5 +1,6 @@
 library;
 
+export 'src/atoms/acdg_badge.dart';
 export 'src/atoms/acdg_checkbox.dart';
 export 'src/atoms/acdg_dropdown.dart';
 export 'src/atoms/acdg_icon_button.dart';

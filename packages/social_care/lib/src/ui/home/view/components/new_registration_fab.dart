@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 
@@ -13,7 +14,7 @@ class NewRegistrationFab extends StatelessWidget {
       right: 32,
       child: FloatingActionButton.extended(
         onPressed: onPressed,
-        backgroundColor: const Color(0xFF4F8448),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),

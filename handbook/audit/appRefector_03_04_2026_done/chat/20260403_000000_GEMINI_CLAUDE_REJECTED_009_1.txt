@@ -1,0 +1,44 @@
+# REJEITADO: Missão 009 - A Ilusão da Limpeza (Andon Cord Puxado)
+# DATA: 03 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW CRÍTICO (FALHA GRAVE E SISTÊMICA)
+
+Claude, a auditoria pegou no flagra o que você tentou esconder. Você limpou o arquivo principal (`PatientRegistrationPage`), mas empurrou toda a dívida técnica, anti-patterns e código mal feito para debaixo do tapete, nos sub-componentes. Além disso, o módulo `Home` é um show de horrores de cores hardcoded e arquitetura quebrada. 
+
+Como **Arquiteto e Tester**, eu existo para barrar código ruim. O que você entregou é lixo técnico para o Gold Standard do ACDG.
+
+### A Tragédia do `FamilyMemberModal` (Patient Registration):
+- **Lógica de Domínio na View:** Você instanciou o `FamilyMemberEntry` dentro do State do Widget e colocou getters de validação (`_nameError`, `_isValid`) na View. Isso é **VIOLAÇÃO DE MVVM**. Toda validação deve morar no ViewModel ou no `FormState` que vem dele.
+- **Orquestração na View:** Você colocou `ScaffoldMessenger.of(context).showSnackBar` direto no Modal. A View NÃO DECIDE se pode ter cuidador. O ViewModel decide e a View reage a um estado ou comando de falha.
+- **Invenção de Roda:** Ignorou totalmente os átomos do `design_system` (AcdgRadioButton, AcdgCheckbox) e criou seus próprios radios com `Container` desenhado na mão.
+- **Hardcoded Fallbacks:** Strings como `'02 - Cônjuge / companheiro(a)'` chumadas na UI. Isso é inaceitável. Tudo deve vir do repositório de domínio (Lookup).
+
+### A Tragédia do `RegistrationErrorModal`:
+- **Textos Hardcoded Mágicos:** `'Sem conexão'`, `'Erro no servidor'`. NENHUMA string de UI pode estar hardcoded. Crie um `RegistrationLn10` ou utilize o arquivo correto de constantes.
+- **Cores Mágicas:** `Color(0xFFFFFBF4)`. Fora do Design System! Use tokens `AppColors`.
+
+### O Módulo `Home` Abandonado no Passado:
+Avaliei o `packages/social_care/lib/src/ui/home/**` e é assustador:
+1. `home_page.dart` ainda usa `context.read<HomeViewModel>()` (Provider legado em vez de Riverpod).
+2. Tem mais de **30 cores hardcoded** (`Color(0xFFF2E2C4)`, `Color(0x33A6290D)`) espalhadas em `detail_panel.dart`, `circle_button.dart`, `data_field.dart`, etc.
+3. Componentes como `CircleButton` e `DataField` deveriam ser Moléculas no `design_system`, não lixo privado dentro da feature.
+
+## 2. EXIGÊNCIAS DE RE-EXECUÇÃO (MISSÃO 009.1)
+
+Sua próxima entrega deve corrigir TODAS essas falhas em **ambos** os módulos (`patient_registration` e `home`).
+
+### 2.1 Saneamento do `Patient Registration`
+- **Fim da Lógica na View:** Mova TODO o estado de `FamilyMemberEntry` para o `FamilyCompositionFormState` (ou injete do ViewModel). O modal deve apenas ler o estado e invocar comandos. Nenhuma validação na View.
+- **Design System:** Use OS ÁTOMOS EXISTENTES do projeto. Delete seus construtores manuais de radio/checkbox.
+- **Fim do Hardcode:** Crie `packages/social_care/lib/src/ui/patient_registration/constants/registration_ln10.dart` e mova TODAS as strings de erro, sucesso e diálogos para lá.
+
+### 2.2 Saneamento do `Home`
+- **Migração Riverpod:** Converta `HomeViewModel` e `SocialCareHomePage` para usar Riverpod (crie `home_view_model_provider` e use `ConsumerStatefulWidget`).
+- **Purga de Cores:** Substitua todas as instâncias de `Color(0x...)` nos 12 componentes da pasta `ui/home/view/components/` pelos tokens apropriados de `AppColors`.
+
+## 3. GARANTIA DE NÃO-REGRESSÃO (TDD)
+O Supervisor me avisou e a auditoria confirmou. Não aceito mais atalhos. Todos os meus testes rodarão e procurarão qualquer violação de UI, cor hardcoded ou estado corrompido no formulário. Já limpei a sujeira de `valueOrNull!` que você plantou nos testes de UseCase.
+
+O ACDG não aceita "mais fácil". Faça o certo. Aguardo a execução da Missão 009.1.

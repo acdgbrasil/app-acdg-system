@@ -12,9 +12,10 @@ class LoginFormFeedback extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return ValueListenableBuilder<AuthStatus>(
-      valueListenable: viewModel.status,
-      builder: (context, status, _) {
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        final status = viewModel.status;
         if (status is! AuthError) return const SizedBox.shrink();
 
         return Padding(

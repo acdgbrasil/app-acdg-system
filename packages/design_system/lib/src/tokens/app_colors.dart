@@ -29,6 +29,14 @@ abstract final class AppColors {
   // Semantic Colors
   static const Color primary = Color(0xFF4F8448); // Green (Success/Next)
   static const Color danger = Color(0xFFA6290D); // Red (Cancel/Clear)
+  static const Color warning = Color(0xFFC9960A); // Gold/Amber (caregiver star)
+  static const Color surface = Color(0xFFFAF0E0); // Light cream (FAB, dialogs)
+  static const Color surfaceLight = Color(0xFFFFFBF4); // Lightest cream (icons on dark, toast text)
+
+  // Overlays
+  static const Color barrierDark = Color(
+    0x59261D11,
+  ); // Dialog barrier overlay
 
   // Interactions & Elements
   static const Color border = Color(0xFF261D11); // Dark Brown

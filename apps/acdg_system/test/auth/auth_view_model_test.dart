@@ -32,7 +32,7 @@ void main() {
 
   group('AuthViewModel (Layered)', () {
     test('initial status is AuthLoading', () {
-      expect(viewModel.status.value, isA<AuthLoading>());
+      expect(viewModel.status, isA<AuthLoading>());
     });
 
     test('init calls restoreSessionUseCase', () async {
@@ -42,13 +42,13 @@ void main() {
 
     test('login calls loginUseCase and updates status', () async {
       await viewModel.login.execute();
-      expect(viewModel.status.value, isA<Authenticated>());
+      expect(viewModel.status, isA<Authenticated>());
     });
 
     test('logout calls logoutUseCase and clears status', () async {
       await viewModel.login.execute();
       await viewModel.logout.execute();
-      expect(viewModel.status.value, isA<Unauthenticated>());
+      expect(viewModel.status, isA<Unauthenticated>());
     });
   });
 }

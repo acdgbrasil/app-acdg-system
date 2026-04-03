@@ -35,8 +35,12 @@ export 'src/domain/assessment/health_status.dart';
 export 'src/domain/assessment/social_health_summary.dart';
 export 'src/domain/assessment/work_and_income.dart';
 
-// Mapper
-export 'src/infrastructure/patient_mapper.dart';
+// Remote Models
+export 'src/infrastructure/dtos/patient_remote.dart';
+export 'src/infrastructure/dtos/patient_overview.dart';
+
+// Translator
+export 'src/infrastructure/patient_translator.dart';
 
 // Care
 export 'src/domain/care/care_vos.dart';
