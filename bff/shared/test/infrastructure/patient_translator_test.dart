@@ -25,7 +25,7 @@ void main() {
       ).valueOrNull!;
 
       final docs = CivilDocuments.create(cns: cns).valueOrNull!;
-      final json = PatientMapper.civilDocumentsToJson(docs);
+      final json = PatientTranslator.civilDocumentsToJson(docs);
 
       expect(json.containsKey('cns'), isTrue,
           reason: 'civilDocumentsToJson deve incluir o campo cns');
@@ -48,7 +48,7 @@ void main() {
         },
       };
 
-      final result = PatientMapper.civilDocumentsFromJson(json);
+      final result = PatientTranslator.civilDocumentsFromJson(json);
       expect(result.isSuccess, isTrue, reason: 'fromJson should succeed');
       final docs = result.valueOrNull!;
 
@@ -69,8 +69,8 @@ void main() {
         cpf: Cpf.create('12345678909').valueOrNull,
       ).valueOrNull!;
 
-      final json = PatientMapper.civilDocumentsToJson(original);
-      final result = PatientMapper.civilDocumentsFromJson(json);
+      final json = PatientTranslator.civilDocumentsToJson(original);
+      final result = PatientTranslator.civilDocumentsFromJson(json);
       expect(result.isSuccess, isTrue);
       final restored = result.valueOrNull!;
 
@@ -84,7 +84,7 @@ void main() {
         cpf: Cpf.create('12345678909').valueOrNull,
       ).valueOrNull!;
 
-      final json = PatientMapper.civilDocumentsToJson(docs);
+      final json = PatientTranslator.civilDocumentsToJson(docs);
 
       expect(json['cns'], isNull);
     });
@@ -106,7 +106,7 @@ void main() {
         actionPlan: 'Plano',
       ).valueOrNull!;
 
-      final json = PatientMapper.appointmentToJson(appointment);
+      final json = PatientTranslator.appointmentToJson(appointment);
 
       expect(json['id'], appointmentId.value,
           reason: 'appointmentToJson deve incluir id');
@@ -126,7 +126,7 @@ void main() {
         descriptionOfFact: 'Descrição do fato',
       ).valueOrNull!;
 
-      final json = PatientMapper.violationReportToJson(report);
+      final json = PatientTranslator.violationReportToJson(report);
 
       expect(json['id'], reportId.value,
           reason: 'violationReportToJson deve incluir id');
@@ -153,7 +153,7 @@ void main() {
         ),
       );
 
-      final json = PatientMapper.placementHistoryToJson(history);
+      final json = PatientTranslator.placementHistoryToJson(history);
       final registries = json['registries'] as List;
 
       expect(registries.first['id'], registry.id,
@@ -175,7 +175,7 @@ void main() {
         reason: 'Motivo',
       ).valueOrNull!;
 
-      final json = PatientMapper.referralToJson(referral);
+      final json = PatientTranslator.referralToJson(referral);
 
       expect(json['id'], referralId.value,
           reason: 'referralToJson deve incluir id');
@@ -223,7 +223,7 @@ void main() {
         descriptionOfFact: 'Descrição do fato',
       ).valueOrNull!;
 
-      final json = PatientMapper.violationReportToJson(report);
+      final json = PatientTranslator.violationReportToJson(report);
 
       expect(json['violationTypeId'], violationTypeId.value);
     });
@@ -238,7 +238,7 @@ void main() {
         'descriptionOfFact': 'Descrição do fato',
       };
 
-      final result = PatientMapper.violationReportFromJson(json);
+      final result = PatientTranslator.violationReportFromJson(json);
       expect(result.isSuccess, isTrue);
       final report = result.valueOrNull!;
 
@@ -264,7 +264,7 @@ void main() {
 
       expect(report.violationTypeId, isNull);
 
-      final json = PatientMapper.violationReportToJson(report);
+      final json = PatientTranslator.violationReportToJson(report);
       expect(json.containsKey('violationTypeId'), isTrue);
       expect(json['violationTypeId'], isNull);
     });
@@ -272,7 +272,7 @@ void main() {
 
   // ─── Full round-trip through Patient aggregate ──────────────────────
 
-  group('PatientMapper.toJson / fromJson — round-trip completo', () {
+  group('PatientTranslator.toJson / fromJson — round-trip completo', () {
     test('Deve preservar IDs de appointments no round-trip', () {
       final appointmentId =
           AppointmentId.create('550e8400-e29b-41d4-a716-000000000030')
@@ -295,8 +295,8 @@ void main() {
         appointments: [appointment],
       );
 
-      final json = PatientMapper.toJson(patient);
-      final result = PatientMapper.fromJson(json);
+      final json = PatientTranslator.toJson(patient);
+      final result = PatientTranslator.fromJson(json);
       expect(result.isSuccess, isTrue);
       final restored = result.valueOrNull!;
 
@@ -326,8 +326,8 @@ void main() {
         referrals: [referral],
       );
 
-      final json = PatientMapper.toJson(patient);
-      final result = PatientMapper.fromJson(json);
+      final json = PatientTranslator.toJson(patient);
+      final result = PatientTranslator.fromJson(json);
       expect(result.isSuccess, isTrue);
       final restored = result.valueOrNull!;
 

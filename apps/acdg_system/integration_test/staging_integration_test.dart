@@ -166,9 +166,9 @@ void main() {
       expect(regResult.isSuccess, isTrue);
 
       log.info('Fetching patient back from staging...');
-      final getResult = await bff.getPatient(patientId);
+      final getResult = await bff.fetchPatient(patientId);
       expect(getResult.isSuccess, isTrue);
-      expect(getResult.valueOrNull?.id, patientId);
+      expect(getResult.valueOrNull?.patientId, patientId.value);
       log.info('Integration test success: Patient registered and retrieved.');
     });
 

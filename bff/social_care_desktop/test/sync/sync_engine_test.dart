@@ -26,7 +26,16 @@ void main() {
   ).valueOrNull!;
 
   setUpAll(() {
-    registerFallbackValue(SyncAction());
+    registerFallbackValue(SyncAction(
+      id: 0,
+      actionId: '',
+      patientId: '',
+      actionType: '',
+      payloadJson: '',
+      timestamp: DateTime.now(),
+      status: 'PENDING',
+      retryCount: 0,
+    ));
     registerFallbackValue(testPatientId);
 
     registerFallbackValue(
@@ -94,14 +103,18 @@ void main() {
         hasDiagnosticObservations: false,
       ).valueOrNull!;
 
-      final action1 = SyncAction()
-        ..id = 1
-        ..actionId = 'A1'
-        ..patientId = testPatientId.value
-        ..actionType = 'UPDATE_HOUSING'
-        ..payloadJson = jsonEncode(
-          PatientMapper.housingConditionToJson(condition),
-        );
+      final action1 = SyncAction(
+        id: 1,
+        actionId: 'A1',
+        patientId: testPatientId.value,
+        actionType: 'UPDATE_HOUSING',
+        payloadJson: jsonEncode(
+          PatientTranslator.housingConditionToJson(condition),
+        ),
+        timestamp: DateTime.now(),
+        status: 'PENDING',
+        retryCount: 0,
+      );
 
       when(() => queue.getPendingActions()).thenAnswer((_) async => [action1]);
       when(
@@ -122,13 +135,13 @@ void main() {
     });
 
     test('processQueue should stop on network error', () async {
-      final action1 = SyncAction()
-        ..id = 1
-        ..actionId = 'A1'
-        ..patientId = testPatientId.value
-        ..actionType = 'UPDATE_HOUSING'
-        ..payloadJson = jsonEncode(
-          PatientMapper.housingConditionToJson(
+      final action1 = SyncAction(
+        id: 1,
+        actionId: 'A1',
+        patientId: testPatientId.value,
+        actionType: 'UPDATE_HOUSING',
+        payloadJson: jsonEncode(
+          PatientTranslator.housingConditionToJson(
             HousingCondition.create(
               type: ConditionType.owned,
               wallMaterial: WallMaterial.masonry,
@@ -147,12 +160,21 @@ void main() {
               hasDiagnosticObservations: false,
             ).valueOrNull!,
           ),
-        );
-      final action2 = SyncAction()
-        ..id = 2
-        ..actionId = 'A2'
-        ..patientId = testPatientId.value
-        ..payloadJson = '{}';
+        ),
+        timestamp: DateTime.now(),
+        status: 'PENDING',
+        retryCount: 0,
+      );
+      final action2 = SyncAction(
+        id: 2,
+        actionId: 'A2',
+        patientId: testPatientId.value,
+        actionType: 'UPDATE_UNKNOWN',
+        payloadJson: '{}',
+        timestamp: DateTime.now(),
+        status: 'PENDING',
+        retryCount: 0,
+      );
 
       when(
         () => queue.getPendingActions(),
@@ -172,13 +194,13 @@ void main() {
     });
 
     test('processQueue should mark CONFLICT and continue on 409', () async {
-      final action1 = SyncAction()
-        ..id = 1
-        ..actionId = 'A1'
-        ..patientId = testPatientId.value
-        ..actionType = 'UPDATE_HOUSING'
-        ..payloadJson = jsonEncode(
-          PatientMapper.housingConditionToJson(
+      final action1 = SyncAction(
+        id: 1,
+        actionId: 'A1',
+        patientId: testPatientId.value,
+        actionType: 'UPDATE_HOUSING',
+        payloadJson: jsonEncode(
+          PatientTranslator.housingConditionToJson(
             HousingCondition.create(
               type: ConditionType.owned,
               wallMaterial: WallMaterial.masonry,
@@ -197,21 +219,29 @@ void main() {
               hasDiagnosticObservations: false,
             ).valueOrNull!,
           ),
-        );
-      final action2 = SyncAction()
-        ..id = 2
-        ..actionId = 'A2'
-        ..patientId = testPatientId.value
-        ..actionType = 'UPDATE_EDUCATION'
-        ..payloadJson = jsonEncode(
-          PatientMapper.educationalStatusToJson(
+        ),
+        timestamp: DateTime.now(),
+        status: 'PENDING',
+        retryCount: 0,
+      );
+      final action2 = SyncAction(
+        id: 2,
+        actionId: 'A2',
+        patientId: testPatientId.value,
+        actionType: 'UPDATE_EDUCATION',
+        payloadJson: jsonEncode(
+          PatientTranslator.educationalStatusToJson(
             EducationalStatus(
               familyId: testPatientId,
               memberProfiles: [],
               programOccurrences: [],
             ),
           ),
-        );
+        ),
+        timestamp: DateTime.now(),
+        status: 'PENDING',
+        retryCount: 0,
+      );
 
       when(
         () => queue.getPendingActions(),

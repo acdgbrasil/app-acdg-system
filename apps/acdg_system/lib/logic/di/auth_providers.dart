@@ -27,11 +27,7 @@ final restoreSessionUseCaseProvider = Provider<RestoreSessionUseCase>((ref) {
   return RestoreSessionUseCase(ref.watch(authRepositoryProvider));
 });
 
-/// Provides the [AuthViewModel] as a cached instance.
-///
-/// Widgets that need reactive updates from the ViewModel should use
-/// [ListenableBuilder] — Riverpod manages the instance lifecycle,
-/// Flutter's listener mechanism handles the reactivity.
+/// Provides the [AuthViewModel] as a singleton managed by Riverpod.
 final authViewModelProvider = Provider<AuthViewModel>((ref) {
   final vm = AuthViewModel(
     authRepository: ref.watch(authRepositoryProvider),
@@ -39,13 +35,23 @@ final authViewModelProvider = Provider<AuthViewModel>((ref) {
     logoutUseCase: ref.watch(logoutUseCaseProvider),
     restoreSessionUseCase: ref.watch(restoreSessionUseCaseProvider),
   );
+  
+  // Ensure the VM is disposed when the provider is destroyed
   ref.onDispose(() => vm.dispose());
   return vm;
 });
 
+/// A provider that ensures [AuthViewModel.init] is called exactly once.
+/// Use this in the Splash or Root to await initialization.
+final authInitializationProvider = FutureProvider<void>((ref) async {
+  final vm = ref.watch(authViewModelProvider);
+  await vm.init();
+});
+
 /// Provides the [AppRouter] wired with the Riverpod-managed [AuthViewModel].
 final appRouterProvider = Provider<AppRouter>((ref) {
-  return AppRouter(authViewModel: ref.read(authViewModelProvider));
+  final authVM = ref.watch(authViewModelProvider);
+  return AppRouter(authViewModel: authVM);
 });
 
 /// Exposes the [AppDependencyManager] so Riverpod providers can read

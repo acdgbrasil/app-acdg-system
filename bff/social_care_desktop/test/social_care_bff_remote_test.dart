@@ -358,6 +358,7 @@ void main() {
       ).valueOrNull!;
       final benefit = SocialBenefit.create(
         benefitName: 'BPC',
+        benefitTypeId: LookupId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!,
         amount: 1412.0,
         beneficiaryId: memberId,
       ).valueOrNull!;
@@ -461,11 +462,11 @@ void main() {
           },
         };
 
-        final result = await bff.getPatient(patientId);
+        final result = await bff.fetchPatient(patientId);
 
         expect(result.isSuccess, isTrue);
         final patient = result.valueOrNull!;
-        expect(patient.id, equals(patientId));
+        expect(patient.patientId, equals(patientId.value));
       },
     );
 
