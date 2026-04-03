@@ -2,8 +2,8 @@ import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
+import 'package:social_care/src/ui/home/models/patient_detail_translator.dart';
 import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
-import 'package:social_care/src/ui/home/models/ficha_status.dart';
 
 import '../../../testing/social_care_testing.dart';
 
@@ -68,12 +68,13 @@ void main() {
       final result = await repository.getPatient(patient.id);
 
       // Assert
-      final PatientDetailResult detailResult;
+      final Patient domainPatient;
       switch (result) {
-        case Success(:final value): detailResult = value;
+        case Success(:final value): domainPatient = value;
         case Failure(:final error): fail('getPatient failed: $error');
       }
 
+      final detailResult = PatientDetailTranslator.toDetailResult(domainPatient);
       final detail = detailResult.patientDetail;
       expect(detail.referrals, isNotEmpty);
 
@@ -123,12 +124,13 @@ void main() {
       final result = await repository.getPatient(patient.id);
 
       // Assert
-      final PatientDetailResult detailResult;
+      final Patient domainPatient;
       switch (result) {
-        case Success(:final value): detailResult = value;
+        case Success(:final value): domainPatient = value;
         case Failure(:final error): fail('getPatient failed: $error');
       }
 
+      final detailResult = PatientDetailTranslator.toDetailResult(domainPatient);
       final detail = detailResult.patientDetail;
       expect(detail.violationReports, isNotEmpty);
 
@@ -173,12 +175,13 @@ void main() {
       final result = await repository.getPatient(patient.id);
 
       // Assert
-      final PatientDetailResult detailResult;
+      final Patient domainPatient;
       switch (result) {
-        case Success(:final value): detailResult = value;
+        case Success(:final value): domainPatient = value;
         case Failure(:final error): fail('getPatient failed: $error');
       }
 
+      final detailResult = PatientDetailTranslator.toDetailResult(domainPatient);
       final detail = detailResult.patientDetail;
       final expectedAge = now.year - 2000 - 1;
       expect(detail.age, expectedAge, reason: 'Age should be $expectedAge because birthday has not passed yet');
@@ -193,12 +196,13 @@ void main() {
       final result = await repository.getPatient(patient.id);
 
       // Assert
-      final PatientDetailResult detailResult;
+      final Patient domainPatient;
       switch (result) {
-        case Success(:final value): detailResult = value;
+        case Success(:final value): domainPatient = value;
         case Failure(:final error): fail('getPatient failed: $error');
       }
 
+      final detailResult = PatientDetailTranslator.toDetailResult(domainPatient);
       final fichas = detailResult.fichas;
       final housingFicha = fichas.where(
         (f) => f.name.contains('habita') || f.name.contains('convivência'),

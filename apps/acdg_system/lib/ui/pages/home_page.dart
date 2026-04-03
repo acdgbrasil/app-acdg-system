@@ -1,60 +1,53 @@
-import 'package:auth/auth.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:social_care_desktop/social_care_desktop.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../logic/di/auth_providers.dart';
+import '../../logic/di/infrastructure_providers.dart';
 import '../atoms/sync_indicator.dart';
 import '../molecules/user_menu_button.dart';
 import '../organisms/home_content.dart';
-import '../view_models/auth_view_model.dart';
 
 /// The home screen of the application.
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final viewModel = context.read<AuthViewModel>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewModel = ref.read(authViewModelProvider);
+    final syncEngine = ref.watch(syncEngineProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const AcdgText(
-          'ACDG System',
-          variant: AcdgTextVariant.headingSmall,
-          color: AppColors.textPrimary,
-        ),
-        actions: [
-          Consumer<SyncEngine?>(
-            builder: (context, syncEngine, _) {
-              if (syncEngine == null) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: SyncIndicator(status: syncEngine.status),
-              );
-            },
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        final user = viewModel.user;
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            title: const AcdgText(
+              'ACDG System',
+              variant: AcdgTextVariant.headingSmall,
+              color: AppColors.textPrimary,
+            ),
+            actions: [
+              if (syncEngine != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: SyncIndicator(status: syncEngine.status),
+                ),
+              if (user != null)
+                UserMenuButton(
+                  user: user,
+                  onLogout: viewModel.logout.execute,
+                ),
+            ],
           ),
-          ValueListenableBuilder<AuthUser?>(
-            valueListenable: viewModel.user,
-            builder: (context, user, _) {
-              if (user == null) return const SizedBox.shrink();
-              return UserMenuButton(
-                user: user,
-                onLogout: viewModel.logout.execute,
-              );
-            },
-          ),
-        ],
-      ),
-      body: ValueListenableBuilder<AuthUser?>(
-        valueListenable: viewModel.user,
-        builder: (context, user, _) {
-          if (user == null) return const SizedBox.shrink();
-          return HomeContent(user: user);
-        },
-      ),
+          body:
+              user != null ? HomeContent(user: user) : const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

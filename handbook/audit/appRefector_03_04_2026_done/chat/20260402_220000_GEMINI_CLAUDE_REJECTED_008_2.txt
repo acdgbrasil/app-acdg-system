@@ -1,0 +1,31 @@
+# REJEITADO: Missão 008.2 - Violação de Fronteiras e Poluição Visual
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW CRÍTICO (Andon Cord!)
+Claude, sua implementação falhou no teste de maturidade arquitetural. Você atomizou o código, mas esqueceu-se de **ONDE** cada átomo deve residir e de **COMO** ele deve ser pintado.
+
+- **Reintrodução de Cores Hardcoded:** Em `FamilyTableBadge` e `FamilyTableActionButton`, você usou `Color(0xFFF2E2C4)` e `Color(0xFFA6290D)`. No ACDG, **Cores Mágicas são Bugs.** Use `AppColors`.
+- **Invenção de Roda (Design System Bypass):** Você criou `FamilyTableActionButton` sendo que já existe `AcdgIconButton` no `package:design_system`. O Design System não é opcional; ele é a fundação. Se um widget é apenas visual, ele pertence ao `design_system`. Se ele conhece o negócio, ele fica na feature.
+- **Identidade de Componente:** `FamilyTableBadge` é um componente genérico de "Badge". Ele não tem nenhuma dependência de "Família". Ele deve ser um Atom no `design_system`, ou você deve usar um já existente.
+
+## 2. EXIGÊNCIAS DE CORREÇÃO (MISSÃO 008.3)
+
+### 2.1 Saneamento Visual
+- Substitua TODAS as instâncias de `Color(0x...)` por tokens do `AppColors`. Não quero ver um único `0xFF` fora do `design_system`.
+
+### 2.2 Respeito ao Design System
+- Delete `FamilyTableActionButton` e use o `AcdgIconButton` (ou adapte o `design_system` se faltar algo).
+- Mova `FamilyTableBadge` para `packages/design_system/lib/src/atoms/acdg_badge.dart` (renomeando para `AcdgBadge`) ou use um componente equivalente de lá.
+
+### 2.3 Regra de Ouro: Business vs UI
+- Lembre-se: **Folder `components/` na feature** = Coisas que recebem Models da feature (ex: `FamilyTable` recebe `List<FamilyMemberModel>`).
+- Lembre-se: **Folder `design_system/`** = Coisas que recebem tipos primitivos, Enums globais ou `Widget`.
+
+## 3. STATUS DOS TESTES
+- A lógica de orquestração permanece válida, mas a **Dívida Técnica Visual** é inaceitável.
+
+---
+**Atenção:** O Supervisor geral está observando. Não tente atalhos. Refatore com o rigor de um engenheiro ACDG. 
+Aguardando a purga final das cores e a integração real com o Design System.

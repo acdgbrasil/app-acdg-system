@@ -141,7 +141,7 @@ class SyncEngine {
   Future<void> pullPatients() async {
     if (_localRepo == null || !_isOnline) return;
     try {
-      final result = await _remoteBff.listPatients();
+      final result = await _remoteBff.fetchPatients();
       if (result case Success(:final value)) {
         await _localRepo.updateCacheFromSummaries(value);
       }
@@ -268,7 +268,7 @@ class SyncEngine {
     switch (action.actionType) {
       case 'REGISTER_PATIENT':
         final Patient patient;
-        switch (PatientMapper.fromJson(payload)) {
+        switch (PatientTranslator.fromJson(payload)) {
           case Success(:final value): patient = value;
           case Failure(:final error): return Failure(error);
         }
@@ -281,7 +281,7 @@ class SyncEngine {
           case Failure(:final error): return Failure(error);
         }
         final FamilyMember member;
-        switch (PatientMapper.familyMemberFromJson(payload['member'] as Map<String, dynamic>)) {
+        switch (PatientTranslator.familyMemberFromJson(payload['member'] as Map<String, dynamic>)) {
           case Success(:final value): member = value;
           case Failure(:final error): return Failure(error);
         }
@@ -305,7 +305,7 @@ class SyncEngine {
 
       case 'UPDATE_SOCIAL_IDENTITY':
         final SocialIdentity identity;
-        switch (PatientMapper.socialIdentityFromJson(payload['identity'] as Map<String, dynamic>)) {
+        switch (PatientTranslator.socialIdentityFromJson(payload['identity'] as Map<String, dynamic>)) {
           case Success(:final value): identity = value;
           case Failure(:final error): return Failure(error);
         }
@@ -313,7 +313,7 @@ class SyncEngine {
 
       case 'UPDATE_HOUSING':
         final HousingCondition condition;
-        switch (PatientMapper.housingConditionFromJson(payload)) {
+        switch (PatientTranslator.housingConditionFromJson(payload)) {
           case Success(:final value): condition = value;
           case Failure(:final error): return Failure(error);
         }
@@ -321,7 +321,7 @@ class SyncEngine {
 
       case 'UPDATE_SOCIOECONOMIC':
         final SocioEconomicSituation situation;
-        switch (PatientMapper.socioEconomicFromJson(payload)) {
+        switch (PatientTranslator.socioEconomicFromJson(payload)) {
           case Success(:final value): situation = value;
           case Failure(:final error): return Failure(error);
         }
@@ -329,7 +329,7 @@ class SyncEngine {
 
       case 'UPDATE_WORK_INCOME':
         final WorkAndIncome data;
-        switch (PatientMapper.workAndIncomeFromJson(payload)) {
+        switch (PatientTranslator.workAndIncomeFromJson(payload)) {
           case Success(:final value): data = value;
           case Failure(:final error): return Failure(error);
         }
@@ -337,7 +337,7 @@ class SyncEngine {
 
       case 'UPDATE_EDUCATION':
         final EducationalStatus status;
-        switch (PatientMapper.educationalStatusFromJson(payload)) {
+        switch (PatientTranslator.educationalStatusFromJson(payload)) {
           case Success(:final value): status = value;
           case Failure(:final error): return Failure(error);
         }
@@ -345,7 +345,7 @@ class SyncEngine {
 
       case 'UPDATE_HEALTH':
         final HealthStatus status;
-        switch (PatientMapper.healthStatusFromJson(payload)) {
+        switch (PatientTranslator.healthStatusFromJson(payload)) {
           case Success(:final value): status = value;
           case Failure(:final error): return Failure(error);
         }
@@ -353,7 +353,7 @@ class SyncEngine {
 
       case 'UPDATE_COMMUNITY_SUPPORT':
         final CommunitySupportNetwork network;
-        switch (PatientMapper.communitySupportFromJson(payload)) {
+        switch (PatientTranslator.communitySupportFromJson(payload)) {
           case Success(:final value): network = value;
           case Failure(:final error): return Failure(error);
         }
@@ -361,7 +361,7 @@ class SyncEngine {
 
       case 'UPDATE_SOCIAL_HEALTH':
         final SocialHealthSummary summary;
-        switch (PatientMapper.socialHealthSummaryFromJson(payload)) {
+        switch (PatientTranslator.socialHealthSummaryFromJson(payload)) {
           case Success(:final value): summary = value;
           case Failure(:final error): return Failure(error);
         }
@@ -369,7 +369,7 @@ class SyncEngine {
 
       case 'REGISTER_APPOINTMENT':
         final SocialCareAppointment appointment;
-        switch (PatientMapper.appointmentFromJson(payload['appointment'] as Map<String, dynamic>)) {
+        switch (PatientTranslator.appointmentFromJson(payload['appointment'] as Map<String, dynamic>)) {
           case Success(:final value): appointment = value;
           case Failure(:final error): return Failure(error);
         }
@@ -377,7 +377,7 @@ class SyncEngine {
 
       case 'UPDATE_INTAKE':
         final IngressInfo info;
-        switch (PatientMapper.intakeInfoFromJson(payload['info'] as Map<String, dynamic>)) {
+        switch (PatientTranslator.intakeInfoFromJson(payload['info'] as Map<String, dynamic>)) {
           case Success(:final value): info = value;
           case Failure(:final error): return Failure(error);
         }
@@ -385,7 +385,7 @@ class SyncEngine {
 
       case 'UPDATE_PLACEMENT':
         final PlacementHistory history;
-        switch (PatientMapper.placementHistoryFromJson(payload)) {
+        switch (PatientTranslator.placementHistoryFromJson(payload)) {
           case Success(:final value): history = value;
           case Failure(:final error): return Failure(error);
         }
@@ -393,7 +393,7 @@ class SyncEngine {
 
       case 'REPORT_VIOLATION':
         final RightsViolationReport report;
-        switch (PatientMapper.violationReportFromJson(payload['report'] as Map<String, dynamic>)) {
+        switch (PatientTranslator.violationReportFromJson(payload['report'] as Map<String, dynamic>)) {
           case Success(:final value): report = value;
           case Failure(:final error): return Failure(error);
         }
@@ -401,7 +401,7 @@ class SyncEngine {
 
       case 'CREATE_REFERRAL':
         final Referral referral;
-        switch (PatientMapper.referralFromJson(payload['referral'] as Map<String, dynamic>)) {
+        switch (PatientTranslator.referralFromJson(payload['referral'] as Map<String, dynamic>)) {
           case Success(:final value): referral = value;
           case Failure(:final error): return Failure(error);
         }

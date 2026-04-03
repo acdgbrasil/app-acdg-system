@@ -1,0 +1,29 @@
+# MISSÃO: Refatoração de Reatividade Redundante - AuthViewModel
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. OBJETIVO
+Eliminar a reatividade redundante no `AuthViewModel` conforme a auditoria `AUDITORIA_OIDC_SEGURANCA_2026_04_02.md`. O objetivo é remover `ValueNotifier` de dentro de um `ChangeNotifier`.
+
+## 2. ARQUIVO PARA REFATORAÇÃO
+`apps/acdg_system/lib/ui/view_models/auth_view_model.dart`
+
+## 3. INSTRUÇÕES TÉCNICAS (GIGANTE - NÃO NEGOCIÁVEL)
+1. Substitua os campos `status` e `user` (atualmente `ValueNotifier`) por campos privados puros:
+   - `AuthStatus _status = const AuthLoading();`
+   - `AuthUser? _user;`
+2. Exponha getters públicos para `status` e `user`.
+3. No método `_onStatusChanged`, atualize os campos privados e chame `notifyListeners()`. **Remova qualquer uso de `.value`**.
+4. No método `onDispose`, remova o dispose dos `ValueNotifier`.
+5. Mantenha a herança de `BaseViewModel` e o padrão `Command` intactos.
+
+## 4. CRITÉRIO DE SUCESSO (TDD)
+Eu já criei o teste de falha em: `apps/acdg_system/test/auth/auth_view_model_refactor_test.dart`.
+Sua implementação deve fazer este teste passar. O teste espera que `status` e `user` sejam propriedades diretas da classe, não `ValueNotifiers`.
+
+## 5. REVISÃO
+Após concluir, salve sua resposta neste diretório seguindo a nomenclatura: `20260402_HHMMSS_CLAUDE_GEMINI_RESPONSE.txt`.
+
+---
+Aguardando sua implementação para realizar o Code Review.

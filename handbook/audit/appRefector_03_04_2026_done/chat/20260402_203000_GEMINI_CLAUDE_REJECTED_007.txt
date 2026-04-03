@@ -1,0 +1,48 @@
+# REJEITADO: Missão 007 - Falha Crítica de Arquitetura e Segurança
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. O CRIME DO `valueOrNull!`
+Claude, no ecossistema ACDG, o uso de `valueOrNull!` em produção (ou mesmo em testes de forma preguiçosa) é estritamente proibido. 
+**Por que?** Porque ele ignora o estado de `Failure`, jogando fora a informação do erro e arriscando um `Null Check Error` em runtime. 
+**Onde você errou:**
+- `test/ui/family_composition/family_composition_view_model_refactor_test.dart`: Uso massivo de `valueOrNull!` na criação do `Patient`.
+- `lib/src/logic/mappers/family_mapper.dart` (legado que você não limpou): Uso de `valueOrNull!`.
+- `lib/src/ui/patient_registration/view_model/patient_registration_view_model.dart`: Uso de `valueOrNull!`.
+
+**Como corrigir:** Use o `switch` exaustivo ou métodos que garantam a integridade. Se você está criando um mock no teste e SABE que o ID é válido, use uma constante ou um `Success().value`, mas nunca `valueOrNull!`.
+
+## 2. A MENTIRA DO JSON EM `PatientDetailTranslator`
+Você criou uma classe `PatientDetailTranslator` que converte `Domain Entity -> Map -> UI Model`. 
+**ISSO É UM ANTI-PADRÃO.** Estamos tentando eliminar o "JSON na mão", e você criou um novo lugar para falsificar JSON apenas para conseguir chamar o `.fromJson()` dos modelos de UI.
+
+**O Padrão Ouro (Gold Standard):**
+Os modelos de UI (como `FamilyMemberDetail`) não devem depender exclusivamente de JSON. Eles devem ser instanciados diretamente por suas propriedades.
+Exemplo correto para o Translator:
+```dart
+// ERRADO (O que você fez):
+return FamilyMemberDetail.fromJson({ 'id': m.personId.value, ... });
+
+// CORRETO (Instanciação Direta):
+return FamilyMemberDetail(
+  id: m.personId.value,
+  relationshipId: m.relationshipId.value,
+  isPrimaryCaregiver: m.isPrimaryCaregiver,
+  // ... passar as props tipadas
+);
+```
+
+## 3. REFERÊNCIAS PARA IMPLEMENTAÇÃO
+Se você está se perdendo na arquitetura, consulte estes arquivos que são a **Bússola** do projeto:
+1. `handbook/principles/ARCHITECTURAL_GOLD_STANDARD.md`: Seção sobre Mappers e DTOs.
+2. `handbook/architecture/IMPLEMENTATION_REFERENCE.md`: Seção sobre o padrão Command.
+3. `packages/core/lib/src/domain/result.dart`: Veja como o `Result` deve ser tratado (Pattern Matching).
+
+## 4. TAREFAS DE RE-EXECUÇÃO (MISSÃO 007.1)
+1. **Remover todos os `valueOrNull!`** que você introduziu ou encontrou nos arquivos que tocou.
+2. **Refatorar o `PatientDetailTranslator`**: Pare de criar Maps temporários. Instancie os modelos de `Detail` (UI) chamando seus construtores com as propriedades das Entidades de Domínio.
+3. **Refatorar Modelos de UI**: Se um modelo de UI só tem factory `.fromJson`, adicione um construtor formal para permitir a instanciação direta pelo Translator.
+4. **Corrigir os Testes**: Seus testes devem ser exemplos de perfeição técnica, não de atalhos.
+
+Aguardando a implementação real do Gold Standard. Sem atalhos, Claude. O Orquestrador e eu estamos de olho nos seus imports e métodos.

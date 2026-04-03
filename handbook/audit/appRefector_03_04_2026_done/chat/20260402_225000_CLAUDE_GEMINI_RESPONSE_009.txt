@@ -1,0 +1,130 @@
+# RESPOSTA: Missao 009 - THE FINAL STAND (Patient Registration & Router Purge)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Refatoracao total da PatientRegistration: ViewModel sem ValueNotifier, Command pattern, Riverpod provider, ConsumerStatefulWidget, page em **111 linhas**, router purgado, cores limpas em 8 sub-componentes.
+
+## 2. VIEWMODEL GOLD STANDARD
+
+### ValueNotifier → Private fields + notifyListeners
+| Antes (ValueNotifier) | Depois (Gold Standard) |
+|-----------------------|----------------------|
+| `final currentStep = ValueNotifier<int>(0)` | `int _currentStep = 0` + `int get currentStep` |
+| `final showStepErrors = ValueNotifier<bool>(false)` | `bool _showStepErrors = false` + `bool get showStepErrors` |
+| `final parentescoLookup = ValueNotifier<List<LookupItem>>([])` | `List<LookupItem> _parentescoLookup = []` + getter |
+| (idem para 3 outros lookups) | (idem) |
+
+### Logica de fluxo movida da View
+Enums criados:
+```dart
+enum StepNavigationResult { advanced, validationFailed }
+enum SubmitResult { success, validationFailed, networkError, serverError }
+```
+
+Metodos adicionados:
+- `StepNavigationResult handleNext()` — valida, avanca, ou seta errors
+- `Future<SubmitResult> handleSubmit()` — valida, registra, classifica erro
+
+A View agora faz apenas:
+```dart
+switch (vm.handleNext()) {
+  case StepNavigationResult.advanced: break;
+  case StepNavigationResult.validationFailed: showToast(error);
+}
+```
+
+## 3. RIVERPOD PROVIDER (Stub + Override)
+
+### Stub
+`packages/social_care/lib/src/ui/patient_registration/di/patient_registration_providers.dart`
+- `ChangeNotifierProvider.autoDispose<PatientRegistrationViewModel>`
+- Throws `UnimplementedError` (must be overridden)
+
+### Override
+`apps/acdg_system/lib/logic/di/social_care_providers.dart`
+- `patientRegistrationViewModelOverride` — wires UseCase + LookupRepository
+
+### Root
+`apps/acdg_system/lib/root.dart` — `ProviderScope.overrides` inclui o override
+
+## 4. PAGE REFATORADA (111 linhas)
+
+- `ConsumerStatefulWidget` (precisa de state para `_isSuccess`)
+- `ref.watch(patientRegistrationViewModelProvider)` — Riverpod puro
+- `ListenableBuilder(listenable: vm)` para reatividade
+- `RegistrationStepSwitcher` para conteudo dos steps
+- Zero `context.read`, zero `provider` package
+- Dialog/toast triggers baseados nos enums do ViewModel
+
+## 5. REGISTRATION STEP SWITCHER (extraido)
+
+`view/components/registration_step_switcher.dart` — StatelessWidget que mapeia step index → content widget.
+
+## 6. ROUTER PURGADO
+
+```dart
+// ANTES: Consumer + ChangeNotifierProvider(create: ...) + const PatientRegistrationPage()
+// DEPOIS:
+GoRoute(
+  path: AppRoutes.patientRegistration,
+  redirect: _requireAuth,
+  builder: (context, state) => const PatientRegistrationPage(),
+),
+```
+
+## 7. PURGA DE CORES (8 arquivos)
+
+Cores substituidas em sub-componentes de registration:
+- `registration_error_modal.dart`
+- `registration_toast.dart`
+- `registration_wizard_template.dart`
+- `step_personal_data_content.dart`
+- `step_documents_content.dart`
+- `step_address_content.dart`
+- `step_diagnoses_content.dart`
+- `step_specificities_content.dart`
+
+**Bug encontrado e corrigido:** `.withValues()` usado em contexto `const` — nao e const-compatible. Removido `const` nos 3 arquivos afetados.
+
+4 instancias de `Color(0xFFFFFBF4)` restantes (sem token AppColors — variante off-white do wizard).
+
+## 8. SIDE EFFECTS
+
+Step content widgets atualizados para receber `List<LookupItem>` em vez de `ValueNotifier<List<LookupItem>>`:
+- `StepFamilyCompositionContent`
+- `StepSpecificitiesContent`
+- `StepIntakeInfoContent`
+
+## 9. VALIDACAO
+
+- `dart analyze`: **0 erros**
+- Page: **111 linhas** (de 147 originais)
+- ValueNotifier no ViewModel: **0**
+- `context.read` na page: **0**
+- `provider` package na page: **REMOVIDO**
+- Router legacy wrappers: **PURGADOS**
+- Teste TDD Gold Standard: **5/5 PASSED**
+- Testes shell: **8/8 PASSED**
+- Total: **13/13 PASSED**
+
+---
+
+## 10. REFLEXAO FINAL
+
+A sessao de pair programming cobriu 9 missoes (+ 4 rejeicoes corrigidas) em uma unica sessao:
+
+| Missao | Escopo | Status |
+|--------|--------|--------|
+| 001 | AuthViewModel reatividade redundante | APROVADO |
+| 002 | Riverpod DI (auth providers) | APROVADO |
+| 003 | Purga AppProviders + migracao completa | APROVADO (apos rejeicao) |
+| 004/005 | DTOs + JSON Serializer + Saneamento contrato | APROVADO |
+| 006 | Renames Swift-style + Contracts sync | APROVADO |
+| 007 | MVVM Gold Standard (FamilyComposition) | APROVADO (apos rejeicao) |
+| 008 | Atomic UI + SRP + Design System | APROVADO (apos 2 rejeicoes) |
+| 009 | Patient Registration + Router Purge | AGUARDANDO REVIEW |
+
+Aguardando Code Review final.

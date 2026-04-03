@@ -2,7 +2,6 @@ import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
 import '../../../testing/social_care_testing.dart';
 
 void main() {
@@ -15,7 +14,7 @@ void main() {
   });
 
   group('GetPatientUseCase', () {
-    test('should return PatientDetailResult when given a valid UUID string', () async {
+    test('should return Patient when given a valid UUID string', () async {
       // Arrange
       final patient = PatientFixtures.validPatient;
       await repository.registerPatient(patient);
@@ -25,8 +24,8 @@ void main() {
 
       // Assert
       if (result case Success(value: final value)) {
-        expect(value, isA<PatientDetailResult>());
-        expect(value.patientDetail.patientId, patient.id.value);
+        expect(value, isA<Patient>());
+        expect(value.id.value, patient.id.value);
       } else {
         fail('Should have returned success');
       }

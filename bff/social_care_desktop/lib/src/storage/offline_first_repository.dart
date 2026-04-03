@@ -79,16 +79,16 @@ class OfflineFirstRepository implements SocialCareContract {
   // ==========================================
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> listPatients() async {
+  Future<Result<List<PatientOverview>>> fetchPatients() async {
     // Local-first for listing — the SyncEngine pull keeps cache fresh in background.
     // This avoids blocking the UI with a remote call every time the Home loads.
-    final localResult = await _local.listPatients();
+    final localResult = await _local.fetchPatients();
     if (localResult case Success(value: final items) when items.isNotEmpty) {
       return localResult;
     }
     // If local is empty and online, try remote
     if (_isOnline) {
-      final remoteResult = await _remote.listPatients();
+      final remoteResult = await _remote.fetchPatients();
       if (remoteResult case Success(:final value)) {
         unawaited(_local.updateCacheFromSummaries(value));
         return remoteResult;
@@ -102,18 +102,18 @@ class OfflineFirstRepository implements SocialCareContract {
       _handleWrite(() => _local.registerPatient(patient));
 
   @override
-  Future<Result<Patient>> getPatient(PatientId id) => _handleRead(
-    remoteCall: () => _remote.getPatient(id),
-    localCall: () => _local.getPatient(id),
-    onRemoteSuccess: (p) => _local.updateCache(p),
+  Future<Result<PatientRemote>> fetchPatient(PatientId id) => _handleRead(
+    remoteCall: () => _remote.fetchPatient(id),
+    localCall: () => _local.fetchPatient(id),
+    onRemoteSuccess: (dto) => _local.updateCacheFromRemote(dto),
   );
 
   @override
-  Future<Result<Patient>> getPatientByPersonId(PersonId personId) =>
+  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) =>
       _handleRead(
-        remoteCall: () => _remote.getPatientByPersonId(personId),
-        localCall: () => _local.getPatientByPersonId(personId),
-        onRemoteSuccess: (p) => _local.updateCache(p),
+        remoteCall: () => _remote.fetchPatientByPersonId(personId),
+        localCall: () => _local.fetchPatientByPersonId(personId),
+        onRemoteSuccess: (dto) => _local.updateCacheFromRemote(dto),
       );
 
   @override

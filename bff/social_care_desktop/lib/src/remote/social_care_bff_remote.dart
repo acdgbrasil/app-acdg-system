@@ -61,7 +61,7 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> listPatients() async {
+  Future<Result<List<PatientOverview>>> fetchPatients() async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/patients',
@@ -71,7 +71,11 @@ class SocialCareBffRemote implements SocialCareContract {
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as List<dynamic>;
-        return Success(data.cast<Map<String, dynamic>>());
+        final summaries = data
+            .cast<Map<String, dynamic>>()
+            .map(PatientOverview.fromJson)
+            .toList();
+        return Success(summaries);
       }
       return Failure(response.data ?? 'Failed to list patients');
     } catch (e) {
@@ -84,7 +88,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients',
-        data: PatientMapper.toJson(patient),
+        data: PatientTranslator.toJson(patient),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -99,7 +103,7 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<Patient>> getPatient(PatientId id) async {
+  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
     try {
       final url = '/api/v1/patients/${id.value}';
       final response = await _dio.get<Map<String, dynamic>>(
@@ -109,7 +113,7 @@ class SocialCareBffRemote implements SocialCareContract {
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as Map<String, dynamic>;
-        return PatientMapper.fromJson(data);
+        return Success(PatientRemote.fromJson(data));
       }
       return Failure(response.data ?? 'Patient not found');
     } catch (e) {
@@ -118,7 +122,7 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<Patient>> getPatientByPersonId(PersonId personId) async {
+  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/patients/by-person/${personId.value}',
@@ -127,7 +131,7 @@ class SocialCareBffRemote implements SocialCareContract {
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as Map<String, dynamic>;
-        return PatientMapper.fromJson(data);
+        return Success(PatientRemote.fromJson(data));
       }
       return Failure(response.data ?? 'Patient not found');
     } catch (e) {
@@ -143,7 +147,7 @@ class SocialCareBffRemote implements SocialCareContract {
   ) async {
     try {
       final payload = {
-        ...PatientMapper.familyMemberToJson(member),
+        ...PatientTranslator.familyMemberToJson(member),
         'prRelationshipId': prRelationshipId.value,
       };
 
@@ -213,7 +217,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/social-identity',
-        data: PatientMapper.socialIdentityToJson(identity),
+        data: PatientTranslator.socialIdentityToJson(identity),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -268,7 +272,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/housing-condition',
-        data: PatientMapper.housingConditionToJson(condition),
+        data: PatientTranslator.housingConditionToJson(condition),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -289,7 +293,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/socioeconomic-situation',
-        data: PatientMapper.socioEconomicToJson(situation),
+        data: PatientTranslator.socioEconomicToJson(situation),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -312,7 +316,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/work-and-income',
-        data: PatientMapper.workAndIncomeToJson(data),
+        data: PatientTranslator.workAndIncomeToJson(data),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -333,7 +337,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/educational-status',
-        data: PatientMapper.educationalStatusToJson(status),
+        data: PatientTranslator.educationalStatusToJson(status),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -354,7 +358,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/health-status',
-        data: PatientMapper.healthStatusToJson(status),
+        data: PatientTranslator.healthStatusToJson(status),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -375,7 +379,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/community-support-network',
-        data: PatientMapper.communitySupportToJson(network),
+        data: PatientTranslator.communitySupportToJson(network),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -398,7 +402,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/social-health-summary',
-        data: PatientMapper.socialHealthSummaryToJson(summary),
+        data: PatientTranslator.socialHealthSummaryToJson(summary),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -419,7 +423,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/appointments',
-        data: PatientMapper.appointmentToJson(appointment),
+        data: PatientTranslator.appointmentToJson(appointment),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -441,7 +445,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/intake-info',
-        data: PatientMapper.intakeInfoToJson(info),
+        data: PatientTranslator.intakeInfoToJson(info),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -462,7 +466,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.put(
         '/api/v1/patients/${patientId.value}/placement-history',
-        data: PatientMapper.placementHistoryToJson(history),
+        data: PatientTranslator.placementHistoryToJson(history),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -483,7 +487,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/violation-reports',
-        data: PatientMapper.violationReportToJson(report),
+        data: PatientTranslator.violationReportToJson(report),
         options: Options(validateStatus: (status) => true),
       );
 
@@ -505,7 +509,7 @@ class SocialCareBffRemote implements SocialCareContract {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients/${patientId.value}/referrals',
-        data: PatientMapper.referralToJson(referral),
+        data: PatientTranslator.referralToJson(referral),
         options: Options(validateStatus: (status) => true),
       );
 

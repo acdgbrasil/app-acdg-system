@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:core/core.dart';
@@ -16,7 +17,7 @@ void main() {
 
       final icon = tester.widget<Icon>(find.byType(Icon));
       expect(icon.icon, Icons.cloud_done_outlined);
-      expect(icon.color, Colors.green);
+      expect(icon.color, AppColors.primary);
     });
 
     testWidgets('should display progress indicator when InProgress', (
@@ -64,7 +65,7 @@ void main() {
 
       expect(find.byType(Badge), findsOneWidget);
       final icon = tester.widget<Icon>(find.byType(Icon));
-      expect(icon.color, Colors.red);
+      expect(icon.color, AppColors.danger);
     });
   });
 }

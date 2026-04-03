@@ -1,0 +1,52 @@
+# RESPOSTA: Missao 002 - Transicao para Riverpod (Auth Providers)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Criados os providers Riverpod para o modulo de Auth e envolvido o app com `ProviderScope`. A estrategia adotada foi uma **bridge incremental**: o `AppDependencyManager` existente e injetado como override no `ProviderScope`, permitindo que os novos providers Riverpod consumam dependencias ja inicializadas enquanto a migracao avanca gradualmente.
+
+## 2. ARQUIVOS CRIADOS/MODIFICADOS
+
+### 2.1 CRIADO: `apps/acdg_system/lib/logic/di/auth_providers.dart`
+
+Providers declarativos manuais (sem `build_runner`):
+
+| Provider | Tipo | Descricao |
+|----------|------|-----------|
+| `appDependencyManagerProvider` | `Provider<AppDependencyManager>` | Bridge — deve ser overridden no ProviderScope com a instancia real |
+| `authRepositoryProvider` | `Provider<AuthRepository>` | Le do AppDependencyManager (bridge temporaria) |
+| `loginUseCaseProvider` | `Provider<LoginUseCase>` | Factory via authRepositoryProvider |
+| `logoutUseCaseProvider` | `Provider<LogoutUseCase>` | Factory via authRepositoryProvider |
+| `restoreSessionUseCaseProvider` | `Provider<RestoreSessionUseCase>` | Factory via authRepositoryProvider |
+| `authViewModelProvider` | `ChangeNotifierProvider<AuthViewModel>` | Wired com todos os use cases e repository |
+
+### 2.2 MODIFICADO: `apps/acdg_system/lib/root.dart`
+
+- Adicionados imports: `flutter_riverpod` e `auth_providers.dart`
+- Envolvido `AppProviders` com `ProviderScope` no estado `_BootStatus.ready`
+- Override: `appDependencyManagerProvider.overrideWithValue(_deps)`
+
+## 3. DECISOES TECNICAS
+
+1. **Bridge Pattern:** O `appDependencyManagerProvider` usa `throw UnimplementedError` como default — forca o override no `ProviderScope`, evitando uso acidental sem a instancia real. Isso e temporario ate que cada dependencia tenha seu proprio provider Riverpod puro.
+
+2. **Coexistencia Provider + Riverpod:** O `AppProviders` (MultiProvider) continua ativo em paralelo. Os consumers existentes nao quebram. A migracao pode acontecer widget por widget: trocar `context.read<AuthViewModel>()` por `ref.watch(authViewModelProvider)` incrementalmente.
+
+3. **Sem build_runner:** Conforme instruido, todos os providers sao manuais. Quando a migracao estabilizar, podemos considerar `riverpod_annotation` + codegen.
+
+4. **Sem alteracao no AppDependencyManager:** Mantido intacto. O lifecycle (init/dispose) continua gerenciado pelo `_RootState`. Os providers Riverpod apenas leem do manager — nao competem pelo lifecycle.
+
+## 4. VALIDACAO
+
+- `dart analyze` em `auth_providers.dart` e `root.dart`: **0 erros, 0 warnings**
+- Testes de auth: **7/7 PASSED**
+- Dependencias `flutter_riverpod` e `riverpod_annotation` ja estavam no `pubspec.yaml`
+
+## 5. PROXIMO PASSO SUGERIDO
+
+O `AppProviders` agora pode comecar a encolher. O candidato natural seria remover os providers de Auth do `MultiProvider` e migrar os consumers (ex: `AppRouter`, widgets que fazem `context.watch<AuthViewModel>()`) para usar `ref.watch(authViewModelProvider)`. Isso exigiria que esses widgets se tornem `ConsumerWidget` ou usem `Consumer`.
+
+---
+Aguardando Code Review.

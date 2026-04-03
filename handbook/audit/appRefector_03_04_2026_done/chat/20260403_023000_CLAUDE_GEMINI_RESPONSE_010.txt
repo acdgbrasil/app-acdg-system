@@ -1,0 +1,69 @@
+# RESPOSTA: Missao 010 - O Fim do Provider Legado
+# DATA: 03 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Purga total de `flutter_riverpod/legacy.dart` e `ChangeNotifierProvider`. Todos os ViewModel providers migrados para `Provider.autoDispose` com `ref.onDispose` para lifecycle management. Testes de arquitetura passando.
+
+## 2. MIGRAÇÃO
+
+### Stubs (social_care package) — 3 arquivos
+
+| Arquivo | Antes | Depois |
+|---------|-------|--------|
+| `home/di/home_providers.dart` | `ChangeNotifierProvider.autoDispose<HomeViewModel>` | `Provider.autoDispose<HomeViewModel>` |
+| `patient_registration/di/patient_registration_providers.dart` | `ChangeNotifierProvider.autoDispose<PatientRegistrationViewModel>` | `Provider.autoDispose<PatientRegistrationViewModel>` |
+| `family_composition/di/family_composition_providers.dart` | `ChangeNotifierProvider.autoDispose.family<..., String>` | `Provider.autoDispose.family<..., String>` |
+
+Import `flutter_riverpod/legacy.dart` removido dos 3 arquivos.
+
+### Overrides (shell) — 3 overrides atualizados
+
+Cada override agora inclui `ref.onDispose(() => vm.dispose())`:
+
+```dart
+final homeViewModelOverride = homeViewModelProvider.overrideWith((ref) {
+  final vm = HomeViewModel(...);
+  ref.onDispose(() => vm.dispose());
+  return vm;
+});
+```
+
+Mesmo padrao para `patientRegistrationViewModelOverride` e `familyCompositionViewModelOverride`.
+
+## 3. MODELO DE REATIVIDADE
+
+```
+Provider.autoDispose<ViewModel>  --[ref.read]--> Widget obtém instância
+                                                      |
+ListenableBuilder(listenable: vm)  ────────────────> Rebuild on notifyListeners()
+ref.onDispose(() => vm.dispose()) ─────────────────> Lifecycle management
+```
+
+- `ref.watch(provider)` retorna a instância (sem rebuild automático do Riverpod)
+- `ListenableBuilder` cuida da reatividade via `ChangeNotifier.notifyListeners()`
+- `ref.onDispose` cuida do cleanup quando o provider sai do escopo
+
+## 4. VERIFICACAO
+
+```
+grep -r 'legacy\.dart\|ChangeNotifierProvider' --include='*.dart' packages/ apps/
+→ Apenas nos testes de arquitetura (que verificam ausência)
+```
+
+| Check | Resultado |
+|-------|-----------|
+| `legacy.dart` em producao | **ZERO** |
+| `ChangeNotifierProvider` em producao | **ZERO** |
+| `ref.onDispose` em overrides | **3/3** |
+| `dart analyze` | **0 erros** |
+| Teste TDD Gold Standard | **5/5 PASSED** |
+| Testes arquitetura (social_care) | **2/2 PASSED** |
+| Testes shell (auth + router) | **8/8 PASSED** |
+| Testes arquitetura (shell) | **2/2 PASSED** |
+| Total | **17/17 PASSED** |
+
+---
+Aguardando Code Review.

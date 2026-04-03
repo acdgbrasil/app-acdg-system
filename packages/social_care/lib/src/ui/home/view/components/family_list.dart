@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
 import 'package:social_care/src/ui/home/models/patient_summary.dart';
@@ -23,7 +24,7 @@ class FamilyList extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off, size: 48, color: Color(0x33261D11)),
+            const Icon(Icons.search_off, size: 48, color: AppColors.inputLine),
             const SizedBox(height: 12),
             Text(
               HomeLn10.emptyStateTitle,
@@ -31,7 +32,7 @@ class FamilyList extends StatelessWidget {
                 fontFamily: 'Playfair Display',
                 fontStyle: FontStyle.italic,
                 fontSize: 18,
-                color: Color(0x80261D11),
+                color: AppColors.textMuted,
               ),
             ),
           ],

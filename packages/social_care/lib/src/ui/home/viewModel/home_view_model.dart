@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/logic/use_case/registry/list_patients_use_case.dart';
+import 'package:social_care/src/ui/home/models/patient_detail_translator.dart';
 import 'package:social_care/src/ui/home/models/patient_summary.dart';
 import 'package:social_care/src/ui/home/view/components/detail_panel_state.dart';
 import 'package:social_care/src/ui/home/view/components/home_form_state.dart';
@@ -13,7 +13,6 @@ class HomeViewModel extends BaseViewModel {
        _getPatientUseCase = getPatientUseCase {
     load = Command0<List<PatientSummary>>(_loadPatients);
     select = Command1<void, String>(_selectPatient);
-    load.execute();
   }
 
   final ListPatientsUseCase _listPatientsUseCase;
@@ -22,6 +21,17 @@ class HomeViewModel extends BaseViewModel {
   // ── Commands ─────────────────────────────────────────────────
   late final Command0<List<PatientSummary>> load;
   late final Command1<void, String> select;
+
+  // ── UI State ──────────────────────────────────────────────────
+  String _activeTab = 'familias';
+  String get activeTab => _activeTab;
+
+  void setActiveTab(String tab) {
+    _activeTab = tab;
+    notifyListeners();
+  }
+
+  void onSearchChanged() => notifyListeners();
 
   // ── FormsHolds ───────────────────────────────────────────────
   final homeFormState = HomeFormState();
@@ -51,9 +61,10 @@ class HomeViewModel extends BaseViewModel {
       return const Success(null);
     }
 
-    if (result case Success(value: final bundle)) {
-      detailPanelState.patientDetail.value = bundle.patientDetail;
-      detailPanelState.fichas.value = bundle.fichas;
+    if (result case Success(value: final patient)) {
+      final detailResult = PatientDetailTranslator.toDetailResult(patient);
+      detailPanelState.patientDetail.value = detailResult.patientDetail;
+      detailPanelState.fichas.value = detailResult.fichas;
       return const Success(null);
     }
 

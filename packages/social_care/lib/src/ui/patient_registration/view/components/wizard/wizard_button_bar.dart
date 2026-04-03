@@ -96,7 +96,7 @@ class _SuccessButtonState extends State<_SuccessButton>
           borderRadius: BorderRadius.circular(100),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x1F000000),
+              color: AppColors.buttonShadow,
               blurRadius: 8,
               offset: Offset(2, 2),
             ),
@@ -117,8 +117,8 @@ class _SuccessButtonState extends State<_SuccessButton>
               },
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Salvo com sucesso!',
+            Text(
+              ReferencePersonLn10.savedSuccessfully,
               style: TextStyle(
                 fontFamily: 'Playfair Display',
                 fontWeight: FontWeight.w500,
@@ -141,7 +141,7 @@ class _CheckPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFFFFBF4)
+      ..color = AppColors.surfaceLight
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;

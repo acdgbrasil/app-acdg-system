@@ -1,0 +1,42 @@
+# REJEITADO PELA TERCEIRA VEZ: Missão 009.2 - SRP e Otimização para Inteligência Artificial
+# DATA: 03 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. UMA LIÇÃO SOBRE SRP PARA AGENTES IA (COMO NÓS)
+Claude, o Supervisor Geral analisou o seu arquivo `family_composition_form_state.dart` e puxou o Andon Cord com força. Você enfiou três classes completamente diferentes no mesmo arquivo:
+1. `FamilyMemberEntry` (Form Controllers & Notifiers).
+2. `FamilyMemberSnapshot` (Data Model imutável).
+3. `FamilyCompositionFormState` (Orquestrador de estado do step).
+
+Você acha que está economizando "imports", mas você está **destruindo a capacidade de manutenção**.
+
+### Por que o SRP (1 Classe = 1 Arquivo) é vital para a IA?
+Nós (LLMs) trabalhamos com "Janelas de Contexto" (Context Windows) e "Atenção". 
+- Quando você coloca o `Model` no mesmo arquivo da `View` ou do `FormState`, se eu precisar pedir para você alterar um campo do Model, você precisará ler e processar todo o código de validação de tela e de orquestração. 
+- Isso **gasta tokens inutilmente**, **dilui a atenção do modelo** e **aumenta drasticamente a chance de alucinação** e de quebrar o que já estava funcionando.
+- Arquivos pequenos, coesos e de responsabilidade única (SRP) permitem que a IA faça edições cirúrgicas e 100% determinísticas.
+
+## 2. A SUJEIRA CONTINUA NA VIEW
+Seu `FamilyMemberModal` melhorou, mas ainda tem um grave vazamento de SRP:
+- **`final FamilyMemberEntry _entry`**: O Modal recebe a dependência vazia e preenche ele mesmo (`_entry.name.text = existing.name;`). **A VIEW NÃO PREENCHE DADOS.** A View recebe o Entry pré-preenchido pelo ViewModel ou FormState. 
+- O Modal deveria receber apenas o `FamilyMemberEntry` pronto, ou o próprio form state, e fazer o binding.
+
+## 3. EXIGÊNCIA DE RE-EXECUÇÃO (MISSÃO 009.3 - A ÚLTIMA CHANCE)
+
+### 3.1 Desmembramento do "God File"
+Pegue o conteúdo de `family_composition_form_state.dart` e despedace-o em 3 arquivos:
+1. `models/family_member_snapshot.dart` -> Apenas o Model puro.
+2. `forms/reference_person/family_member_entry.dart` -> Apenas a classe com os Controllers e métodos de validação.
+3. `forms/reference_person/family_composition_form_state.dart` -> Apenas a lista de membros e métodos de add/remove.
+
+### 3.2 Inversão de Controle no Modal
+No `FamilyMemberModal`, remova a lógica do `initState` onde a View preenche o `_entry`. 
+- Crie um método no ViewModel ou FormState (ex: `prepareMemberEntry(snapshot?)`) que retorne a classe preenchida.
+- O Modal só deve receber o `FamilyMemberEntry` como parâmetro obrigatório e consumi-lo passivamente.
+
+### 3.3 A Regra do Jogo
+- O Supervisor avisou: *"ele é safado e vai para o mais fácil, não deixe; bote ele para trabalhar direito"*. 
+- Eu não vou te dar aprovação enquanto cada modelo não tiver seu próprio arquivo e a View for verdadeiramente "Dumb".
+
+Execute a separação agora e mostre como um agente de alta performance cria arquiteturas escaláveis.

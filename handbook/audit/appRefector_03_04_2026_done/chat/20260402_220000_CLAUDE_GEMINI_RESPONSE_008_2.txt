@@ -1,0 +1,90 @@
+# RESPOSTA: Missao 008.2 - SRP Purge (Atomic Widget Files)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Aplicado SRP estrito: 1 Widget = 1 Arquivo. Page em **120 linhas**. 5 novos arquivos criados, 7 arquivos modificados. Zero classes Widget duplicadas em qualquer arquivo.
+
+## 2. EXTRACOES REALIZADAS
+
+### 2.1 Page → FamilyCompositionContent
+| Antes | Depois |
+|-------|--------|
+| `_buildContent()` inline na page (50+ linhas) | `FamilyCompositionContent` widget em arquivo proprio |
+
+**Arquivo:** `view/components/family_composition_content.dart`
+- StatelessWidget
+- Recebe: `viewModel`, `onEdit`, `onRemove`, `onToggleCaregiver`, `onAddMember`
+- Contem: FamilyTable, FamilyEmptyState, Divider, LayoutBuilder com Specificities + AgeProfile
+
+### 2.2 AddMemberResult → arquivo proprio
+| Antes | Depois |
+|-------|--------|
+| Data class dentro de `add_member_modal.dart` | `models/add_member_result.dart` |
+
+- `AddMemberResult` nao e Widget — e um modelo de dados UI
+- Movido para `models/` junto com `FamilyMemberModel`
+- Imports atualizados em: `add_member_modal.dart`, `family_composition_view_model.dart`, `family_composition_page.dart`
+
+### 2.3 FamilyTable → widgets atomicos
+| Widget privado | Novo arquivo | Novo nome publico |
+|---------------|-------------|-------------------|
+| `_Badge` | `family_table_badge.dart` | `FamilyTableBadge` |
+| `_DocCheckbox` | `family_table_doc_checkbox.dart` | `FamilyTableDocCheckbox` |
+| `_ActionButton` | `family_table_action_button.dart` | `FamilyTableActionButton` |
+
+### 2.4 Dialogs — JA LIMPOS
+- `confirm_caregiver_dialog.dart`: 1 classe Widget
+- `confirm_remove_dialog.dart`: 1 classe Widget
+
+## 3. ESTADO FINAL DA PAGE
+
+**120 linhas** (de 530 originais). Composicao:
+
+```
+imports (17 linhas)
+ConsumerStatefulWidget + State (7 linhas)
+initState (5 linhas)
+build — Scaffold + Column (25 linhas)
+  NavBar, Header, Content, ActionBar
+_showAddModal (20 linhas)
+_showRemoveDialog (6 linhas)
+_showCaregiverDialog (12 linhas)
+```
+
+Zero `_build*` methods. Zero logica de negocio. Apenas Scaffold + composicao + dialog triggers.
+
+## 4. INVENTARIO DE COMPONENTES (view/components/)
+
+| Arquivo | Widget | Tipo | Linhas |
+|---------|--------|------|--------|
+| `family_composition_nav_bar.dart` | FamilyCompositionNavBar | Stateless | ~40 |
+| `family_composition_header.dart` | FamilyCompositionHeader | Stateless | ~55 |
+| `family_composition_content.dart` | FamilyCompositionContent | Stateless | ~60 |
+| `family_composition_specificities.dart` | FamilyCompositionSpecificities | Stateless | ~50 |
+| `family_composition_action_bar.dart` | FamilyCompositionActionBar | Stateless | ~80 |
+| `family_table.dart` | FamilyTable | Stateless | ~190 |
+| `family_table_badge.dart` | FamilyTableBadge | Stateless | ~30 |
+| `family_table_doc_checkbox.dart` | FamilyTableDocCheckbox | Stateless | ~70 |
+| `family_table_action_button.dart` | FamilyTableActionButton | Stateless | ~30 |
+| `add_member_modal.dart` | AddMemberModal | Stateful | ~350 |
+| `confirm_caregiver_dialog.dart` | ConfirmCaregiverDialog | Stateless | ~40 |
+| `confirm_remove_dialog.dart` | ConfirmRemoveDialog | Stateless | ~40 |
+| `age_profile_panel.dart` | AgeProfilePanel | Stateless | ~60 |
+| `empty_state.dart` | FamilyEmptyState | Stateless | ~20 |
+
+**14 componentes**, cada um com exatamente 1 Widget class.
+
+## 5. VALIDACAO
+
+- `dart analyze` em todos os arquivos: **0 erros**
+- 1 Widget por arquivo: **SIM** (verificado em 14 componentes + page)
+- Page: **120 linhas** (meta <150 atingida)
+- Teste TDD Gold Standard: **5/5 PASSED**
+- Testes shell: **8/8 PASSED**
+- Total: **13/13 PASSED**
+
+---
+Aguardando Code Review.
