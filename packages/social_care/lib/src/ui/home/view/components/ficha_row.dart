@@ -1,11 +1,13 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/models/ficha_status.dart';
 
 class FichaRow extends StatefulWidget {
   final FichaStatus ficha;
   final bool isLast;
+  final VoidCallback? onTap;
 
-  const FichaRow({super.key, required this.ficha, this.isLast = false});
+  const FichaRow({super.key, required this.ficha, this.isLast = false, this.onTap});
 
   @override
   State<FichaRow> createState() => _FichaRowState();
@@ -22,7 +24,7 @@ class _FichaRowState extends State<FichaRow> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {},
+        onTap: widget.onTap,
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 150),
           opacity: _hovered ? 1.0 : (widget.ficha.filled ? 0.9 : 0.5),
@@ -31,8 +33,10 @@ class _FichaRowState extends State<FichaRow> {
             decoration: BoxDecoration(
               border: widget.isLast
                   ? null
-                  : const Border(
-                      bottom: BorderSide(color: Color(0x26F2E2C4)),
+                  : Border(
+                      bottom: BorderSide(
+                        color: AppColors.background.withValues(alpha: 0.15),
+                      ),
                     ),
             ),
             child: Row(
@@ -44,14 +48,14 @@ class _FichaRowState extends State<FichaRow> {
                       fontFamily: 'Satoshi',
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
-                      color: Color(0xFFF2E2C4),
+                      color: AppColors.background,
                     ),
                   ),
                 ),
                 Icon(
                   widget.ficha.filled ? Icons.chevron_right : Icons.add,
                   size: 20,
-                  color: const Color(0x99F2E2C4),
+                  color: AppColors.background.withValues(alpha: 0.6),
                 ),
               ],
             ),

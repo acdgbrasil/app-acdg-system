@@ -32,7 +32,7 @@ void main() {
       final getResult = await repository.getPatient(patient.id);
       if (getResult case Success(value: final updated)) {
         // Verify total members: 1 (auto-PR from registration) + 1 (new member)
-        expect(updated.patientDetail.familyMembers.length, 2);
+        expect(updated.familyMembers.length, 2);
       } else {
         fail('Should have found patient');
       }
@@ -69,7 +69,7 @@ void main() {
         expect(result.isSuccess, isTrue);
         final getResult = await repository.getPatient(patient.id);
         if (getResult case Success(value: final updated)) {
-          expect(updated.patientDetail.housingCondition?.type, equals(ConditionType.owned.name));
+          expect(updated.housingCondition?.type, equals(ConditionType.owned));
         } else {
           fail('Should have found patient');
         }
@@ -80,13 +80,20 @@ void main() {
       final useCase = UpdateSocialIdentityUseCase(
         patientRepository: repository,
       );
-      final identity = SocialIdentity.create(
-        typeId: LookupId.create(
-          '550e8400-e29b-41d4-a716-000000000001',
-        ).valueOrNull!,
+      
+      final lookupId = switch (LookupId.create('550e8400-e29b-41d4-a716-000000000001')) {
+        Success(:final value) => value,
+        Failure(:final error) => throw StateError('LookupId creation failed: $error'),
+      };
+
+      final identity = switch (SocialIdentity.create(
+        typeId: lookupId,
         otherDescription: 'Other',
         isOtherType: true,
-      ).valueOrNull!;
+      )) {
+        Success(:final value) => value,
+        Failure(:final error) => throw StateError('SocialIdentity creation failed: $error'),
+      };
 
       final intent = UpdateSocialIdentityIntent(
         patientId: patient.id,
@@ -98,7 +105,7 @@ void main() {
       expect(result.isSuccess, isTrue);
       final getResult = await repository.getPatient(patient.id);
       if (getResult case Success(value: final updated)) {
-        expect(updated.patientDetail.socialIdentity?.typeId, equals(identity.typeId.value));
+        expect(updated.socialIdentity?.typeId.value, equals(identity.typeId.value));
       } else {
         fail('Should have found patient');
       }

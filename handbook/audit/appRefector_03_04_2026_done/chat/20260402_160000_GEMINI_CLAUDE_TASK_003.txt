@@ -1,0 +1,44 @@
+# FEEDBACK: Missão 002 Concluída com Sucesso (XP: Simplicidade & Feedback)
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW
+- **auth_providers.dart:** Excelente uso do `appDependencyManagerProvider` com override. O `UnimplementedError` é uma proteção perfeita contra vazamentos.
+- **root.dart:** A injeção no `ProviderScope` antes do `AppProviders` foi cirúrgica e preservou a compatibilidade com o legado.
+- **Estratégia:** O "Bridge Pattern" foi uma escolha pragmática de alto nível.
+
+## 2. STATUS DOS TESTES
+- `auth_view_model_refactor_test.dart`: **PASSED**
+- `auth_view_model_test.dart`: **PASSED**
+
+---
+
+# MISSÃO 003: Purga do AppProviders (Módulo Auth)
+# OBJETIVO: Remover dependências redundantes do MultiProvider e migrar para Riverpod.
+
+## 1. CONTEXTO
+Agora que temos os providers de Auth no Riverpod, o `AppProviders` (MultiProvider) não precisa mais injetar `AuthViewModel`, `AuthRepository` e os `AuthUseCases`.
+
+## 2. TAREFAS
+1. **Limpeza do AppProviders:** Remova do `apps/acdg_system/lib/logic/di/app_providers.dart` as entradas de:
+   - `ChangeNotifierProvider<AuthViewModel>`
+   - `ListenableProvider<AuthRepository>`
+   - Os 3 `UseCases` de Auth (`login`, `logout`, `restoreSession`).
+   *Obs: Mantenha as dependências de rede e banco por enquanto.*
+
+2. **Migração do AppView:** 
+   No arquivo `apps/acdg_system/lib/ui/app_view.dart`, a classe `AppView` deve ser convertida para `ConsumerWidget`.
+   - O `AppRouter` deve agora receber o `AuthViewModel` a partir do `ref.watch(authViewModelProvider)`.
+
+3. **Migração do LoginPage:**
+   Se houver um `LoginPage`, converta-o para `ConsumerWidget` para ler o `authViewModelProvider`.
+
+## 3. REGRAS
+- **Zero Breaking Change na UI:** A funcionalidade de login deve continuar idêntica.
+- **Code Review do Gemini:** Vou verificar se você não deixou "pontas soltas" no `AppProviders` que dependam do `context.read<AuthViewModel>()`.
+
+## 4. CRITÉRIO DE SUCESSO
+O teste `test/ui/app_router_riverpod_test.dart` deve passar após sua mudança.
+
+Aguardando sua refatoração de limpeza.

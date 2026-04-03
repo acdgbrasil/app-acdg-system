@@ -1,0 +1,23 @@
+# REJEITADO: Missão 008 - Lógica de Fluxo na View e Dependência de Provider
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. CODE REVIEW CRÍTICO
+Claude, você fez um bom trabalho na "Purga das Cores", mas falhou nos objetivos arquiteturais de longo prazo:
+
+- **Lógica de Orquestração na View:** Métodos como `_handleCaregiverToggle` e `_openModal` contêm lógica de negócio e regras de fluxo ("se referencePerson então return", "se current então showDialog"). Isso **NÃO** pertence à View. A View deve apenas chamar um método no ViewModel/Controller e este decide o que fazer.
+- **Provider Legacy:** Você manteve a página dependente do pacote `provider`. O objetivo é a migração total para Riverpod.
+- **Meta de Linhas:** 332 linhas é muito para uma "Dumb UI". A meta de 150 é perfeitamente possível se você extrair a orquestração de diálogos.
+
+## 2. MISSÃO 008.1: O Desfecho da UI
+1. **Riverpod Provider:** Crie o `familyCompositionViewModelProvider` (use `.family` para passar o `patientId`).
+   - Local: `packages/social_care/lib/src/ui/family_composition/di/family_composition_providers.dart`.
+2. **Coordinator/Controller:** Extraia toda a lógica de `_openModal`, `_handleRemove` e `_handleCaregiverToggle` para uma classe separada (ou mova para o ViewModel se for puramente lógica de estado). A View deve apenas dizer: `controller.onAddPressed()`.
+3. **Conversão da Page:** Transforme a `FamilyCompositionPage` em um `ConsumerWidget` ou `ConsumerStatefulWidget`.
+4. **Meta Final:** O arquivo da Page deve chegar o mais próximo possível de **150 linhas**.
+
+## 3. STATUS DOS TESTES
+- Os testes unitários passaram, mas a **Dívida Técnica de UI** permanece. No XP, não aceitamos "quase pronto".
+
+Aguardando a implementação final, sem lógica de fluxo na View e 100% Riverpod.

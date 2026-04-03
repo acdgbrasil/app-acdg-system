@@ -1,0 +1,57 @@
+# RESPOSTA: Missao 004 - Infrastructure Foundation (DTOs & JSON Serializer)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Configuradas as dependencias de code generation, criado o `PatientDTO` com `@JsonSerializable`, e refatorado o `PatientMapper` para expor `toDomain(PatientDTO)` como entry point principal. O `fromJson(Map)` foi mantido como convenience wrapper para backward compatibility.
+
+## 2. ALTERACOES
+
+### 2.1 `bff/shared/pubspec.yaml`
+- Adicionado `json_annotation: ^4.9.0` em dependencies
+- Adicionado `json_serializable: ^6.9.0` e `build_runner: ^2.4.11` em dev_dependencies
+
+### 2.2 CRIADO: `bff/shared/lib/src/infrastructure/dtos/patient_dto.dart`
+- `@JsonSerializable()` (sem `fieldRename` — ver feedback secao 5)
+- Campos tipados: `patientId` (String), `personId` (String), `version` (int), `prRelationshipId` (String?)
+- Campos nested como `Map<String, dynamic>?` / `List<Map<String, dynamic>>` (sub-DTOs serao criados incrementalmente)
+- Factory `fromJson` e metodo `toJson` gerados
+
+### 2.3 CRIADO: `bff/shared/lib/src/infrastructure/dtos/patient_dto.g.dart`
+- Codigo gerado manualmente (ver bloqueio secao 4)
+- Segue o padrao exato do `json_serializable` para os tipos declarados
+
+### 2.4 REFATORADO: `bff/shared/lib/src/infrastructure/patient_mapper.dart`
+- **Novo metodo:** `toDomain(PatientDTO dto)` — entry point principal, type-safe
+- **Mantido:** `fromJson(Map<String, dynamic> json)` — delega para `PatientDTO.fromJson(json)` + `toDomain(dto)`. Backward compatible — ZERO callers precisam mudar
+- Todas as referencias internas agora usam `dto.patientId`, `dto.personId`, `dto.version` etc. em vez de `json['key'] as Type`
+- Campos nested continuam passando `dto.personalData` etc. (que sao `Map<String, dynamic>?`) para os sub-mappers existentes
+
+## 3. VALIDACAO
+
+- `dart analyze` em `patient_dto.dart`, `patient_mapper.dart`: **0 erros, 0 warnings**
+- `dart analyze` em 3 callers (`local_social_care_repository.dart`, `sync_engine.dart`, `social_care_bff_remote.dart`): **0 erros** — backward compat confirmada
+- Testes `apps/acdg_system` (auth + router): **8/8 PASSED**
+
+## 4. BLOQUEIO: Testes do `bff/shared` nao rodam
+
+O `dart test` no `bff/shared` falha com erro do package `objective_c` (dependencia transitiva). O build hook tenta usar `swiftly` (Swift version manager em `/Users/gabriel_aderaldo/.swiftly/bin/swiftly`) como compilador C, mas `swiftly` nao e `clang`.
+
+**Causa:** O Dart SDK detecta `swiftly` no PATH e o confunde com um C compiler. Isso e um problema de ambiente pre-existente — nao causado pelas nossas mudancas.
+
+**Workaround necessario:** Renomear/remover `swiftly` do PATH ou configurar `CC=/usr/bin/clang` de uma forma que o hook do `objective_c` respeite (tentei `CC=` env var mas o hook ignora).
+
+**Nota:** Os testes do `apps/acdg_system` rodam normalmente via `flutter test` (nao aciona o hook nativo).
+
+## 5. FEEDBACK TECNICO PARA O GEMINI
+
+1. **`FieldRename.snake` esta INCORRETO para este projeto.** A API do BFF usa **camelCase** (`patientId`, `personId`, `personalData`), conforme visivel nos mappers existentes (`json['patientId']`, `json['personId']`). Usar `FieldRename.snake` faria o DTO esperar `patient_id` no JSON, causando deserializacao silenciosamente incorreta (campos null). Criei o DTO com `@JsonSerializable()` sem `fieldRename`.
+
+2. **`build_runner` nao roda neste ambiente** devido ao conflito `swiftly`/`objective_c`. O `.g.dart` foi escrito manualmente seguindo o padrao exato do `json_serializable`. Quando o ambiente for corrigido, `dart run build_runner build` regenerara o mesmo conteudo.
+
+3. **O `fromJson` antigo NAO foi removido** — foi mantido como wrapper para `toDomain(PatientDTO.fromJson(json))`. Todos os 7 callers existentes (3 no BFF desktop, 1 no test, 3 em docs) continuam funcionando sem alteracao. Isso segue o principio XP de "baby steps".
+
+---
+Aguardando Code Review.

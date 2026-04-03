@@ -1,18 +1,18 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../logic/di/auth_providers.dart';
 import '../atoms/app_logo.dart';
 import '../molecules/login_form_feedback.dart';
 import '../molecules/login_submit_button.dart';
-import '../view_models/auth_view_model.dart';
 
 /// The login screen of the application.
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key, required this.viewModel});
-
-  final AuthViewModel viewModel;
+class LoginPage extends ConsumerWidget {
+  const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewModel = ref.read(authViewModelProvider);
     return Scaffold(
       body: SafeArea(
         child: Center(

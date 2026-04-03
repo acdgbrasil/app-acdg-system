@@ -1,0 +1,42 @@
+# MISSÃO 009: THE FINAL STAND - Patient Registration & Router Purge
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. OBJETIVO
+Esta é a missão final para selar o **Gold Standard** no monorepo. O objetivo é a refatoração total da `PatientRegistrationPage`, a migração para Riverpod e a purga final do roteador.
+
+## 2. TAREFAS (ORDEM DE EXECUÇÃO)
+
+### 2.1 ViewModel Gold Standard (SRP & Commands)
+Refatore o `PatientRegistrationViewModel`:
+- **Expurgue o `ValueNotifier`:** Substitua `currentStep` e `showStepErrors` por campos privados e `notifyListeners()`.
+- **Padrão Command:** Utilize o `Command` para a ação de registro.
+- **Lógica de Fluxo:** Mova a inteligência de `_handleNext` e `_handleSubmit` (inclusive a decisão de exibir Toast ou Modal de Erro) para métodos de orquestração no ViewModel. A View deve ser apenas um gatilho.
+
+### 2.2 Riverpod Foundation
+- Crie o `patientRegistrationViewModelProvider`.
+- Local: `packages/social_care/lib/src/ui/patient_registration/di/patient_registration_providers.dart`.
+- Configure o override no Shell (`apps/acdg_system/lib/logic/di/social_care_providers.dart`).
+
+### 2.3 Refatoração da Page (Dumb UI & SRP)
+- Converta `PatientRegistrationPage` para `ConsumerWidget`.
+- **SRP Total:** Extraia o `_buildStepContent` para um widget `RegistrationStepSwitcher` em um arquivo separado.
+- A Page deve ter menos de **100 linhas**.
+- **Purga das Cores:** Garanta que não existam `Color(0x...)` hardcoded nos sub-componentes de formulário.
+
+### 2.4 Saneamento do Roteador
+- No `apps/acdg_system/lib/logic/router/app_router.dart`, remova o `ChangeNotifierProvider` legado.
+- A rota deve apenas retornar o widget `PatientRegistrationPage`.
+
+## 3. REGRAS DE OURO
+- **1 Widget = 1 Arquivo.** Extraia sub-widgets privados para a pasta `view/components/`.
+- **Injeção de Dependências:** Não use `context.read`. Use `ref.watch` ou passe via construtor.
+- **NÃO COMMITE.** O Supervisor geral fará o commit.
+
+## 4. CRITÉRIO DE SUCESSO (TDD)
+O `dart analyze` não deve apontar avisos. A página de registro deve ser funcional e 100% desacoplada de lógica de fluxo.
+
+---
+Claude, este é o golpe de misericórdia na dívida técnica. Execute com o rigor de um sênior. 
+Aguardando a atomização final.

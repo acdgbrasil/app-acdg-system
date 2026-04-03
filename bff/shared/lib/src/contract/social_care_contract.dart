@@ -13,6 +13,8 @@ import '../domain/registry/family_member.dart';
 import '../domain/registry/patient.dart';
 import '../domain/registry/registry_vos.dart';
 import '../domain/protection/protection_vos.dart';
+import '../infrastructure/dtos/patient_remote.dart';
+import '../infrastructure/dtos/patient_overview.dart';
 
 /// Main Backend For Frontend (BFF) contract for the Social Care module.
 ///
@@ -33,17 +35,17 @@ abstract interface class SocialCareContract {
   // REGISTRY (Patients & Family)
   // ==========================================
 
-  /// Lists all patients (lightweight summary for offline cache sync).
-  Future<Result<List<Map<String, dynamic>>>> listPatients();
+  /// Lists all patients (lightweight overview for offline cache sync).
+  Future<Result<List<PatientOverview>>> fetchPatients();
 
   /// Registers a new patient. Returns the generated [PatientId].
   Future<Result<PatientId>> registerPatient(Patient patient);
 
   /// Retrieves a patient by their unique [id].
-  Future<Result<Patient>> getPatient(PatientId id);
+  Future<Result<PatientRemote>> fetchPatient(PatientId id);
 
   /// Retrieves a patient by their associated [personId].
-  Future<Result<Patient>> getPatientByPersonId(PersonId personId);
+  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId);
 
   /// Adds a new family member to a patient's record.
   Future<Result<void>> addFamilyMember(

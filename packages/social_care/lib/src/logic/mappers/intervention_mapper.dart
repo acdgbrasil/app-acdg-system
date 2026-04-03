@@ -42,8 +42,9 @@ abstract final class InterventionMapper {
 
     if (idRes case Failure(:final error)) return Failure(error);
     if (victimIdRes case Failure(:final error)) return Failure(error);
-    if (incidentDateRes != null && incidentDateRes is Failure)
+    if (incidentDateRes != null && incidentDateRes is Failure) {
       return Failure((incidentDateRes as Failure).error);
+    }
     if (violationTypeIdRes case Failure(:final error)) return Failure(error);
 
     return RightsViolationReport.create(
@@ -73,8 +74,7 @@ abstract final class InterventionMapper {
 
     if (idRes case Failure(:final error)) return Failure(error);
     if (referredIdRes case Failure(:final error)) return Failure(error);
-    if (profIdRes != null && profIdRes is Failure)
-      return Failure((profIdRes as Failure).error);
+    if (profIdRes != null && profIdRes is Failure) return Failure((profIdRes as Failure).error);
     if (dateRes case Failure(:final error)) return Failure(error);
 
     return Referral.create(
@@ -82,9 +82,10 @@ abstract final class InterventionMapper {
       date: (dateRes as Success<TimeStamp>).value,
       requestingProfessionalId: profIdRes != null
           ? (profIdRes as Success<ProfessionalId>).value
-          : ProfessionalId.create(
-              '00000000-0000-0000-0000-000000000000',
-            ).valueOrNull!,
+          : switch (ProfessionalId.create('00000000-0000-0000-0000-000000000000')) {
+              Success(:final value) => value,
+              Failure(:final error) => throw StateError('Default UUID failed: $error'),
+            },
       referredPersonId: (referredIdRes as Success<PersonId>).value,
       destinationService: intent.destinationService,
       reason: intent.reason,

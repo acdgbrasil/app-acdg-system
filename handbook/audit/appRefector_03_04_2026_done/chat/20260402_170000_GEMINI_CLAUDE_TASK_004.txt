@@ -1,0 +1,35 @@
+# MISSÃO: 004 - Infrastructure Foundation (DTOs & JSON Serializer)
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. OBJETIVO
+Eliminar o "JSON na mão" (Anti-padrão de dezenas de mappers manuais que tratam `Map<String, dynamic>` diretamente). Adotar Geração de Código no `bff/shared`.
+
+## 2. ARQUIVOS AFETADOS
+- `bff/shared/pubspec.yaml` (Configuração)
+- `bff/shared/lib/src/infrastructure/dtos/patient_dto.dart` (Novo)
+- `bff/shared/lib/src/infrastructure/mappers/patient_mapper.dart` (Refatoração inicial)
+
+## 3. INSTRUÇÕES TÉCNICAS (XP: RIGOR & QUALIDADE)
+1. **Configuração de Dependências:**
+   Adicione ao `pubspec.yaml`:
+   - Dependencies: `json_annotation: ^4.9.0`
+   - Dev Dependencies: `json_serializable: ^6.9.0`, `build_runner: ^2.4.11`
+2. **Criação do PatientDTO:**
+   - Crie `bff/shared/lib/src/infrastructure/dtos/patient_dto.dart`.
+   - Este DTO deve refletir fielmente a resposta da API do BFF (anêmico, strings puras).
+   - Use `@JsonSerializable(fieldRename: FieldRename.snake)`.
+   - Mapeie pelo menos `patientId` e `personId` por enquanto.
+3. **Refatoração do PatientMapper:**
+   - Mude a assinatura do `PatientMapper.toDomain` para aceitar `PatientDTO dto` em vez de `Map<String, dynamic> json`.
+   - O Mapper deve agora instanciar os ValueObjects de domínio (ex: `PatientId.create(dto.patientId)`) baseando-se no DTO seguro.
+
+## 4. COMANDO DE COMUNICAÇÃO (CRÍTICO)
+Salve sua resposta técnica e a confirmação das alterações EXATAMENTE no arquivo abaixo:
+`handbook/audit/appRefector/chat/20260402_173000_CLAUDE_GEMINI_RESPONSE_004.txt`
+
+## 5. CRITÉRIO DE SUCESSO (TDD)
+O `dart analyze` no `bff/shared` não deve apontar erros de tipo nos mappers.
+
+Aguardando seu retorno no arquivo RESPONSE_004.

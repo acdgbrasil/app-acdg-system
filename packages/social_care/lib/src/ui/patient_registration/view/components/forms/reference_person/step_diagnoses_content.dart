@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/diagnoses_form_state.dart';
@@ -73,9 +74,9 @@ class _CidCallout extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF4F8448).withValues(alpha: 0.07),
+        color: AppColors.primary.withValues(alpha: 0.07),
         border: Border.all(
-          color: const Color(0xFF4F8448).withValues(alpha: 0.25),
+          color: AppColors.primary.withValues(alpha: 0.25),
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -84,7 +85,7 @@ class _CidCallout extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(right: 12, top: 2),
-            child: Icon(Icons.lightbulb_outline, color: Color(0xFF4F8448), size: 20),
+            child: Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 20),
           ),
           Expanded(
             child: Column(
@@ -95,7 +96,7 @@ class _CidCallout extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
-                    color: Color(0xFF4F8448),
+                    color: AppColors.primary,
                     letterSpacing: 1,
                   ),
                 ),
@@ -125,7 +126,7 @@ class _CidCallout extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 11,
-                            color: Color(0xFF4F8448),
+                            color: AppColors.primary,
                           ),
                         ),
                         SizedBox(width: 6),

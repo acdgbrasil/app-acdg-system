@@ -176,6 +176,7 @@ abstract final class ReferencePersonLn10 {
   static const String memberResidingLabel = 'Reside com o paciente?';
   static const String memberCaregiverLabel = 'Cuidador principal?';
   static const String memberDocsLabel = 'Documentos necessários';
+  static const String loadingRelationship = 'Carregando parentesco...';
 
   // ── Step 5: Especificidades ─────────────────────────────────
 
@@ -285,4 +286,25 @@ abstract final class ReferencePersonLn10 {
   static const String programBpc = 'BPC';
   static const String programPeti = 'PETI';
   static const String programOutros = 'Outros';
+
+  // ── Error Modal ─────────────────────────────────────────────
+
+  static const String errorNetworkTitle = 'Sem conexão';
+  static const String errorServerTitle = 'Erro no servidor';
+  static const String errorNetworkDescription =
+      'Verifique sua internet e tente novamente. Seus dados não foram perdidos.';
+  static const String errorServerDescription =
+      'Algo deu errado ao salvar o cadastro. Seus dados estão seguros, tente novamente.';
+  static const String errorNetworkCode = 'ERR_NETWORK_TIMEOUT';
+  static const String errorServerCode = 'HTTP 500 — Internal Server Error';
+  static const String btnClose = 'Fechar';
+  static const String btnRetry = 'Tentar novamente';
+
+  // ── Error Banner ────────────────────────────────────────────
+
+  static const String bannerFieldsNeedAttention = 'campos precisam de atenção';
+
+  // ── Success ─────────────────────────────────────────────────
+
+  static const String savedSuccessfully = 'Salvo com sucesso!';
 }

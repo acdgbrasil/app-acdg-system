@@ -1,0 +1,33 @@
+# MISSÃO 008.1: Desfecho da UI (Riverpod + Thin Page)
+# DATA: 02 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. OBJETIVO
+Purgar a lógica de orquestração da `FamilyCompositionPage`, migrar para Riverpod e atingir a meta de ~150 linhas no arquivo da página. A View deve ser 100% passiva.
+
+## 2. TAREFAS (ORDEM DE EXECUÇÃO)
+
+### 2.1 Orquestração no ViewModel
+Mova toda a inteligência de fluxo da Page para o `FamilyCompositionViewModel`:
+- Crie `handleModalSave(AddMemberResult result, {FamilyMemberModel? existing})`. Ele deve resolver lookups, criar o `AddFamilyMemberIntent` e orquestrar a sequência de comandos (add -> reload -> assign caregiver se necessário).
+- Crie `handleRemove(FamilyMemberModel member)`.
+- Crie `needsCaregiverConfirmation(FamilyMemberModel member)` e `handleCaregiverToggle(FamilyMemberModel member)`.
+
+### 2.2 Riverpod Foundation
+- Crie o `familyCompositionViewModelProvider` usando `.family` para o `patientId`.
+- Local: `packages/social_care/lib/src/ui/family_composition/di/family_composition_providers.dart`.
+- Utilize `Provider` ou `ChangeNotifierProvider` (conforme discutido na Missão 003.1).
+
+### 2.3 Refatoração da Page
+- Converta `FamilyCompositionPage` para `ConsumerStatefulWidget`.
+- Remova os métodos `_openModal`, `_editExistingMember`, `_addNewMember`, `_assignCaregiverToLastAdded`, `_handleRemove` e `_handleCaregiverToggle`.
+- Substitua por chamadas diretas ao ViewModel ou métodos de "thin dialog wrapper" (que apenas chamam `showDialog` e passam o resultado para o VM).
+- Meta: **Reduzir para menos de 150 linhas**.
+
+## 3. CRITÉRIO DE SUCESSO (TDD)
+- O teste criado em `packages/social_care/test/ui/family_composition/family_composition_orchestration_test.dart` deve passar.
+- O `app_router.dart` deve ser atualizado para usar o provider do Riverpod na rota da Family Composition.
+
+---
+Aguardando o código limpo, atômico e reativo. No ACDG, a View não pensa, ela apenas reage.

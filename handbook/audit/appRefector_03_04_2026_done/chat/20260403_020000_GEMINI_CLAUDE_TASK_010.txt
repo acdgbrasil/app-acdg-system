@@ -1,0 +1,66 @@
+# MISSÃO 010: O Fim do Provider Legado (Ataque ao Ponto 01)
+# DATA: 03 de Abril de 2026
+# DE: GEMINI (Architect/Tester)
+# PARA: CLAUDE (Implementor)
+
+## 1. OBJETIVO (ATACANDO O PONTO 01 DA AUDITORIA)
+O Supervisor ordenou e o TDD foi armado: **"TDD em primeiro lugar, nada de legado"**.
+Nosso alvo é o uso do `ChangeNotifierProvider` importado de `flutter_riverpod/legacy.dart`. O Riverpod 3.x desencoraja esse provider, e nós não aceitamos "código legado" em um projeto novo.
+
+## 2. A TAREFA (O QUE VOCÊ DEVE FAZER)
+Você deve varrer todo o projeto (`packages/social_care` e `apps/acdg_system`) e remover QUALQUER ocorrência de `legacy.dart` e `ChangeNotifierProvider`.
+
+### O Padrão Ouro (Gold Standard) para ViewModels:
+Como nossos ViewModels (que estendem `BaseViewModel`) usam `ChangeNotifier` para se comunicar via `Command`, a migração correta para Riverpod 3.x é usar um `Provider` puro e gerenciar o ciclo de vida manualmente.
+
+**ANTES (O que está errado e gera erro no teste):**
+```dart
+import 'package:flutter_riverpod/legacy.dart'; // PROIBIDO!
+
+final myViewModelProvider = ChangeNotifierProvider.autoDispose<MyViewModel>((ref) {
+  return MyViewModel();
+});
+```
+
+**DEPOIS (O que você DEVE implementar):**
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final myViewModelProvider = Provider.autoDispose<MyViewModel>((ref) {
+  final viewModel = MyViewModel(
+     // dependencias...
+  );
+  
+  // O Riverpod 3.x gerencia o ciclo de vida e chama o dispose do ChangeNotifier
+  ref.onDispose(() {
+    viewModel.dispose();
+  });
+  
+  return viewModel;
+});
+```
+
+### O Impacto na UI:
+Como a UI já usa `ConsumerWidget` ou `ConsumerStatefulWidget`, você apenas fará `final vm = ref.watch(myViewModelProvider)`. Como o provedor agora é um `Provider` comum, o `ref.watch` **NÃO** reconstruirá a tela quando `notifyListeners` for chamado (isso é o comportamento correto e desejado). 
+A reatividade deve acontecer de forma cirúrgica na tela utilizando `ListenableBuilder(listenable: vm, builder: ...)` em torno dos componentes que precisam atualizar.
+Você já aplicou isso na `HomePage`! O modelo mental é o mesmo para as outras telas.
+
+## 3. ARQUIVOS CONHECIDOS COM O PROBLEMA
+1. `packages/social_care/lib/src/ui/home/di/home_providers.dart`
+2. `packages/social_care/lib/src/ui/patient_registration/di/patient_registration_providers.dart`
+3. `packages/social_care/lib/src/ui/family_composition/di/family_composition_providers.dart`
+4. `apps/acdg_system/lib/logic/di/social_care_providers.dart` (Overrides!)
+
+*(Pode haver mais. Cace todos.)*
+
+## 4. CRITÉRIOS DE SUCESSO (TDD ARQUITETURAL)
+Eu já criei os testes que bloqueiam você:
+- `packages/social_care/test/architecture/legacy_provider_arch_test.dart`
+- `apps/acdg_system/test/architecture/legacy_provider_arch_test.dart`
+
+**Regras:**
+- ZERO imports de `flutter_riverpod/legacy.dart`.
+- ZERO chamadas de `ChangeNotifierProvider`.
+- A aplicação deve continuar rodando e reativa (use `ListenableBuilder` onde necessário).
+
+Aguardando a purga final do legado.

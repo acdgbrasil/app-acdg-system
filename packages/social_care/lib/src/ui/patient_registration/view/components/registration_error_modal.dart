@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 enum RegistrationErrorType { network, server }
 
@@ -17,26 +19,29 @@ class RegistrationErrorModal extends StatelessWidget {
     required this.onClose,
   });
 
-  static const _brown = Color(0xFF261D11);
-  static const _brown50 = Color(0x80261D11);
-  static const _brown20 = Color(0x33261D11);
-  static const _brown10 = Color(0x1A261D11);
-  static const _bg = Color(0xFFF2E2C4);
-  static const _bgWhite = Color(0xFFFFFBF4);
-  static const _green = Color(0xFF4F8448);
-  static const _red = Color(0xFFA6290D);
-  static const _redBg2 = Color(0x1FA6290D);
+  static const _brown = AppColors.textPrimary;
+  static const _brown50 = AppColors.textMuted;
+  static const _brown20 = AppColors.inputLine;
+  static final _brown10 = AppColors.textPrimary.withValues(alpha: 0.1);
+  static const _bg = AppColors.background;
+  static const _bgWhite = AppColors.surfaceLight;
+  static const _green = AppColors.primary;
+  static const _red = AppColors.danger;
+  static final _redBg2 = AppColors.danger.withValues(alpha: 0.12);
 
   bool get _isNetwork => type == RegistrationErrorType.network;
 
-  String get _title => _isNetwork ? 'Sem conexão' : 'Erro no servidor';
+  String get _title => _isNetwork
+      ? ReferencePersonLn10.errorNetworkTitle
+      : ReferencePersonLn10.errorServerTitle;
 
   String get _description => _isNetwork
-      ? 'Verifique sua internet e tente novamente. Seus dados não foram perdidos.'
-      : 'Algo deu errado ao salvar o cadastro. Seus dados estão seguros, tente novamente.';
+      ? ReferencePersonLn10.errorNetworkDescription
+      : ReferencePersonLn10.errorServerDescription;
 
-  String get _defaultCode =>
-      _isNetwork ? 'ERR_NETWORK_TIMEOUT' : 'HTTP 500 — Internal Server Error';
+  String get _defaultCode => _isNetwork
+      ? ReferencePersonLn10.errorNetworkCode
+      : ReferencePersonLn10.errorServerCode;
 
   static Future<void> show(
     BuildContext context, {
@@ -48,7 +53,7 @@ class RegistrationErrorModal extends StatelessWidget {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: const Color(0x73261D11),
+      barrierColor: AppColors.textPrimary.withValues(alpha: 0.45),
       builder: (_) => RegistrationErrorModal(
         type: type,
         errorCode: errorCode,
@@ -72,11 +77,11 @@ class RegistrationErrorModal extends StatelessWidget {
             decoration: BoxDecoration(
               color: _bg,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x4D261D11),
+                  color: AppColors.textPrimary.withValues(alpha: 0.3),
                   blurRadius: 64,
-                  offset: Offset(0, 24),
+                  offset: const Offset(0, 24),
                 ),
               ],
             ),
@@ -87,7 +92,7 @@ class RegistrationErrorModal extends StatelessWidget {
                 Container(
                   width: 72,
                   height: 72,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _redBg2,
                   ),
@@ -159,7 +164,7 @@ class RegistrationErrorModal extends StatelessWidget {
                         side: const BorderSide(color: _brown20, width: 1.5),
                       ),
                       child: const Text(
-                        'Fechar',
+                        ReferencePersonLn10.btnClose,
                         style: TextStyle(
                           fontFamily: 'Playfair Display',
                           fontStyle: FontStyle.italic,
@@ -184,7 +189,7 @@ class RegistrationErrorModal extends StatelessWidget {
                       ),
                       icon: const Icon(Icons.refresh_rounded, size: 16),
                       label: const Text(
-                        'Tentar novamente',
+                        ReferencePersonLn10.btnRetry,
                         style: TextStyle(
                           fontFamily: 'Playfair Display',
                           fontStyle: FontStyle.italic,

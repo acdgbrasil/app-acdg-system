@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
 import 'package:social_care/src/ui/patient_registration/models/enums/gender.dart';
@@ -10,6 +10,12 @@ import 'package:social_care/src/ui/patient_registration/view/components/forms/re
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/intake_info_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/personal_data_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/specificities_form_state.dart';
+
+/// Result of a step navigation attempt.
+enum StepNavigationResult { advanced, validationFailed }
+
+/// Result of a submit attempt.
+enum SubmitResult { success, validationFailed, networkError, serverError }
 
 class PatientRegistrationViewModel extends BaseViewModel {
   PatientRegistrationViewModel({
@@ -29,10 +35,17 @@ class PatientRegistrationViewModel extends BaseViewModel {
   static const _totalSteps = 7;
 
   // ── Lookup tables (loaded on init) ──────────────────────────
-  final parentescoLookup = ValueNotifier<List<LookupItem>>([]);
-  final identityTypeLookup = ValueNotifier<List<LookupItem>>([]);
-  final ingressTypeLookup = ValueNotifier<List<LookupItem>>([]);
-  final socialProgramsLookup = ValueNotifier<List<LookupItem>>([]);
+  List<LookupItem> _parentescoLookup = [];
+  List<LookupItem> get parentescoLookup => _parentescoLookup;
+
+  List<LookupItem> _identityTypeLookup = [];
+  List<LookupItem> get identityTypeLookup => _identityTypeLookup;
+
+  List<LookupItem> _ingressTypeLookup = [];
+  List<LookupItem> get ingressTypeLookup => _ingressTypeLookup;
+
+  List<LookupItem> _socialProgramsLookup = [];
+  List<LookupItem> get socialProgramsLookup => _socialProgramsLookup;
 
   Future<void> _loadLookups() async {
     // Load all lookups in parallel
@@ -44,7 +57,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
     ]);
 
     if (results[0] case Success(:final value)) {
-      parentescoLookup.value = value;
+      _parentescoLookup = value;
       final pessoaRef = value.where((item) => item.codigo == 'PESSOA_REFERENCIA');
       if (pessoaRef.isNotEmpty) {
         _prRelationshipId = pessoaRef.first.id;
@@ -52,16 +65,18 @@ class PatientRegistrationViewModel extends BaseViewModel {
     }
 
     if (results[1] case Success(:final value)) {
-      identityTypeLookup.value = value;
+      _identityTypeLookup = value;
     }
 
     if (results[2] case Success(:final value)) {
-      ingressTypeLookup.value = value;
+      _ingressTypeLookup = value;
     }
 
     if (results[3] case Success(:final value)) {
-      socialProgramsLookup.value = value;
+      _socialProgramsLookup = value;
     }
+
+    notifyListeners();
   }
 
   // ── FormsHolds (um por step) ─────────────────────────────────
@@ -74,12 +89,15 @@ class PatientRegistrationViewModel extends BaseViewModel {
   final intakeInfoFormState = IntakeInfoFormState();
 
   // ── Estado global do wizard ──────────────────────────────────
-  final currentStep = ValueNotifier<int>(0);
-  final showStepErrors = ValueNotifier<bool>(false);
+  int _currentStep = 0;
+  int get currentStep => _currentStep;
 
-  bool get isLastStep => currentStep.value == _totalSteps - 1;
+  bool _showStepErrors = false;
+  bool get showStepErrors => _showStepErrors;
 
-  List<String> get currentStepErrors => switch (currentStep.value) {
+  bool get isLastStep => _currentStep == _totalSteps - 1;
+
+  List<String> get currentStepErrors => switch (_currentStep) {
     0 => referencePersonFormState.validationErrors,
     1 => documentsFormState.validationErrors,
     2 => addressFormState.validationErrors,
@@ -92,7 +110,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
 
   // ── Navegação ────────────────────────────────────────────────
   bool validateCurrentStep() {
-    return switch (currentStep.value) {
+    return switch (_currentStep) {
       0 => referencePersonFormState.isValidForNextStep,
       1 => documentsFormState.isValidForNextStep,
       2 => addressFormState.isValidForNextStep,
@@ -105,20 +123,51 @@ class PatientRegistrationViewModel extends BaseViewModel {
   }
 
   void nextStep() {
-    if (currentStep.value >= _totalSteps - 1) return;
+    if (_currentStep >= _totalSteps - 1) return;
     if (!validateCurrentStep()) {
-      showStepErrors.value = true;
+      _showStepErrors = true;
       notifyListeners();
       return;
     }
-    showStepErrors.value = false;
-    currentStep.value = currentStep.value + 1;
+    _showStepErrors = false;
+    _currentStep = _currentStep + 1;
+    notifyListeners();
   }
 
   void previousStep() {
-    if (currentStep.value <= 0) return;
-    showStepErrors.value = false;
-    currentStep.value = currentStep.value - 1;
+    if (_currentStep <= 0) return;
+    _showStepErrors = false;
+    _currentStep = _currentStep - 1;
+    notifyListeners();
+  }
+
+  /// Validates and advances to the next step.
+  StepNavigationResult handleNext() {
+    if (validateCurrentStep()) {
+      nextStep();
+      return StepNavigationResult.advanced;
+    }
+    _showStepErrors = true;
+    notifyListeners();
+    return StepNavigationResult.validationFailed;
+  }
+
+  /// Validates and submits the registration.
+  Future<SubmitResult> handleSubmit() async {
+    if (!validateCurrentStep()) {
+      _showStepErrors = true;
+      notifyListeners();
+      return SubmitResult.validationFailed;
+    }
+    await registerPatient();
+
+    if (registerPatientCommand.completed) return SubmitResult.success;
+
+    final errorMsg = errorMessage ?? '';
+    final isNetwork = errorMsg.contains('SocketException') ||
+        errorMsg.contains('TimeoutException') ||
+        errorMsg.contains('network');
+    return isNetwork ? SubmitResult.networkError : SubmitResult.serverError;
   }
 
   // ── Build intent final ───────────────────────────────────────
@@ -190,13 +239,27 @@ class PatientRegistrationViewModel extends BaseViewModel {
       // Step 3 — Diagnósticos
       diagnoses: diagnosesFormState.entries.value
           .where((e) => e.isComplete)
-          .map((e) => Diagnosis.create(
-                id: IcdCode.create(e.icdCode.text.trim()).valueOrNull!,
-                date: TimeStamp.fromDate(e.dateParsed!).valueOrNull,
-                description: e.description.text.trim(),
-              ))
+          .map((e) {
+            final IcdCode icdCode;
+            switch (IcdCode.create(e.icdCode.text.trim())) {
+              case Success(:final value): icdCode = value;
+              case Failure(): return null;
+            }
+            return Diagnosis.create(
+              id: icdCode,
+              date: switch (TimeStamp.fromDate(e.dateParsed!)) {
+                Success(:final value) => value,
+                Failure() => null,
+              },
+              description: e.description.text.trim(),
+            );
+          })
+          .whereType<Result<Diagnosis>>()
           .where((r) => r.isSuccess)
-          .map((r) => r.valueOrNull!)
+          .map((r) => switch (r) {
+            Success(:final value) => value,
+            Failure() => throw StateError('Unreachable'),
+          })
           .toList(),
 
       // Step 4 — Composição Familiar
@@ -243,7 +306,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
       final personId = (personIdRes as Success<PersonId>).value;
 
       // Resolve relationship code → lookup UUID
-      final relItem = parentescoLookup.value
+      final relItem = _parentescoLookup
           .where((item) => item.codigo == snap.relationshipCode)
           .firstOrNull;
       final relIdStr = relItem?.id ?? snap.relationshipCode;
@@ -290,7 +353,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
     };
     final codigo = codigoMap[key];
     if (codigo == null) return null;
-    final item = identityTypeLookup.value
+    final item = _identityTypeLookup
         .where((i) => i.codigo == codigo)
         .firstOrNull;
     return item?.id;
@@ -299,7 +362,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
   /// Resolves an ingress key → lookup UUID.
   String? _resolveIngressTypeId(String? key) {
     if (key == null) return null;
-    final item = ingressTypeLookup.value
+    final item = _ingressTypeLookup
         .where((i) => i.codigo.toUpperCase() == key.toUpperCase())
         .firstOrNull;
     return item?.id ?? key;
@@ -309,7 +372,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
   List<String> _resolveProgramIds(Set<String> programNames) {
     final ids = <String>[];
     for (final name in programNames) {
-      final item = socialProgramsLookup.value
+      final item = _socialProgramsLookup
           .where((i) => i.descricao.toUpperCase().contains(name.toUpperCase()))
           .firstOrNull;
       if (item != null) ids.add(item.id);
@@ -333,12 +396,6 @@ class PatientRegistrationViewModel extends BaseViewModel {
     familyCompositionFormState.dispose();
     specificitiesFormState.dispose();
     intakeInfoFormState.dispose();
-    currentStep.dispose();
-    showStepErrors.dispose();
-    parentescoLookup.dispose();
-    identityTypeLookup.dispose();
-    ingressTypeLookup.dispose();
-    socialProgramsLookup.dispose();
     super.dispose();
   }
 }

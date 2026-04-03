@@ -1,0 +1,87 @@
+# RESPOSTA: Missao 007 - MVVM Gold Standard (Family Composition)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Refatoracao completa do `FamilyCompositionViewModel` para o Gold Standard. Eliminados: flag `isLoading`, parsing de JSON na UI, dependencia de `PatientDetailResult`. Adotados: Command0 para loadPatient, mapeamento direto de entidades de dominio, pasta `view_models/`.
+
+## 2. REFATORACOES DO VIEWMODEL
+
+### 2.1 Command Pattern
+- **REMOVIDO:** `Future<void> loadPatient()` com `_isLoading = true/false`
+- **ADICIONADO:** `late final Command0<void> loadPatientCommand`
+- UI usa `loadPatientCommand.running` em vez de `isLoading`
+- Acoes (`addMember`, `removeMember`, `assignCaregiver`) agora chamam `loadPatientCommand.execute()` para refresh
+
+### 2.2 Fim do JSON na UI
+- **REMOVIDO:** `_extractMembers(PatientDetailResult)` — parseava `json['key']` de `FamilyMemberDetail.json`
+- **ADICIONADO:** `_translateMembers(Patient)` — le diretamente de `FamilyMember` domain entity:
+  - `fm.personId.value` em vez de `json['personId'] as String?`
+  - `fm.birthDate.date` em vez de `DateTime.tryParse(json['birthDate'])`
+  - `fm.isPrimaryCaregiver` em vez de `json['isPrimaryCaregiver'] as bool?`
+  - `fm.requiredDocuments.map((d) => d.value).toSet()` em vez de `(json['requiredDocuments'] as List?)`
+
+### 2.3 Reatividade Limpa
+- **REMOVIDO:** `bool _isLoading` + `bool get isLoading`
+- **MANTIDOS:** campos privados + getters + `notifyListeners()` (padrao do BaseViewModel)
+- Zero `ValueNotifier` no ViewModel
+
+### 2.4 Age Profile
+- Mantido como computed getter no VM (agrega de `FamilyMemberModel.age`)
+- Refatorado com Dart 3 switch expression em vez de if-else chain
+- O calculo de idade ja estava delegado ao `FamilyMemberModel.age` — o VM so agrega
+
+### 2.5 Pasta Renomeada
+- `viewModel/` → `view_models/` (snake_case plural, padrao Dart)
+
+## 3. CASCATA: GetPatientUseCase → Patient (nao PatientDetailResult)
+
+Para que o ViewModel receba `Patient` diretamente, mudei a cadeia inteira:
+
+| Camada | Antes | Depois |
+|--------|-------|--------|
+| `PatientRepository.getPatient()` | `Result<PatientDetailResult>` | `Result<Patient>` |
+| `GetPatientUseCase` | `BaseUseCase<String, PatientDetailResult>` | `BaseUseCase<String, Patient>` |
+| `BffPatientRepository.getPatient()` | `PatientRemote → Patient → PatientDetailResult` | `PatientRemote → Patient` |
+| `HomeViewModel._selectPatient()` | Usa `bundle.patientDetail` diretamente | Converte via `PatientDetailTranslator.toDetailResult(patient)` |
+| `InMemoryPatientRepository.getPatient()` | Retorna `PatientDetailResult` | Retorna `Patient` |
+
+### Arquivo criado: `PatientDetailTranslator`
+- `packages/social_care/lib/src/ui/home/models/patient_detail_translator.dart`
+- Contem a logica `Patient → PatientDetailResult` extraida do `BffPatientRepository`
+- Usado pelo `HomeViewModel` para converter na camada de UI
+
+### Fakes criados: `FakePatientRepository` / `FakeLookupRepository`
+- Typedefs em `testing/fakes/fake_aliases.dart`
+- `FakePatientRepository = InMemoryPatientRepository`
+- `FakeLookupRepository = InMemoryLookupRepository`
+
+## 4. CORRECOES NO TESTE TDD DO GEMINI
+
+O teste original tinha erros de API que impediram compilacao:
+1. Use cases usam **named params** (`{required PatientRepository patientRepository}`), nao positional
+2. `TimeStamp.create()` nao existe — correto e `TimeStamp.fromIso()`
+3. `Patient.reconstitute()` requer `prRelationshipId` e `version`
+4. `PatientId.create('test-id')` falha — UUIDs devem ser validos
+
+Corrigi o teste mantendo a intencao dos 5 assertions originais.
+
+## 5. VALIDACAO
+
+- `dart analyze` em todos os arquivos afetados: **0 erros**
+- Teste TDD Gold Standard: **5/5 PASSED**
+- Testes shell (auth + router): **8/8 PASSED**
+- Total: **13/13 PASSED**
+
+## 6. FEEDBACK TECNICO
+
+1. **Teste TDD do Gemini tinha 5 erros de compilacao.** Sempre validar que o teste compila antes de entregar como spec. APIs do projeto usam named params e factory methods com validacao (UUIDs, TimeStamp.fromIso).
+
+2. **A cascata `GetPatientUseCase → Patient` foi necessaria mas invasiva** — tocou 7 arquivos de producao + 5 de teste. Em futuras missoes, considerar o impacto cascata ao mudar return types de use cases.
+
+3. **`FamilyCompositionPage` usava `loadPatient()` e `isLoading`** — atualizei para `loadPatientCommand.execute()` e `loadPatientCommand.running`. Sem isso, a UI nao compilaria.
+
+---
+Aguardando Code Review.

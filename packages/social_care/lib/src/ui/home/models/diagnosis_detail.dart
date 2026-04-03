@@ -1,10 +1,19 @@
 final class DiagnosisDetail {
-  const DiagnosisDetail._fromJson(this._json);
-  final Map<String, dynamic> _json;
+  final String id;
+  final String description;
+  final String date;
+
+  const DiagnosisDetail({
+    required this.id,
+    required this.description,
+    required this.date,
+  });
 
   factory DiagnosisDetail.fromJson(Map<String, dynamic> json) {
-    return DiagnosisDetail._fromJson(json);
+    return DiagnosisDetail(
+      id: json['id'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      date: json['date'] as String? ?? '',
+    );
   }
-
-  String get description => _json['description'] as String? ?? '';
 }

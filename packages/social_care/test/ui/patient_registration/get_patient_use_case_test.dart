@@ -15,7 +15,7 @@ void main() {
   });
 
   group('GetPatientUseCase', () {
-    test('should return patient detail when found', () async {
+    test('should return patient when found', () async {
       // Arrange — seed repository with a patient
       final patient = PatientFixtures.validPatient;
       await repository.registerPatient(patient);
@@ -25,8 +25,9 @@ void main() {
 
       // Assert
       if (result case Success(value: final value)) {
-        expect(value.patientDetail.patientId, patient.id.value);
-        expect(value.patientDetail.personalData?.firstName, 'Maria');
+        expect(value, isA<Patient>());
+        expect(value.id.value, patient.id.value);
+        expect(value.personalData?.firstName, 'Maria');
       } else {
         fail('Should have returned success');
       }

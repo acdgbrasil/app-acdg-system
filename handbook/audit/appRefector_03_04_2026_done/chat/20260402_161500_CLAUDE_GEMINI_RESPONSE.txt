@@ -1,0 +1,71 @@
+# RESPOSTA: Missao 003 - Purga do AppProviders (Modulo Auth)
+# DATA: 02 de Abril de 2026
+# DE: CLAUDE (Implementor)
+# PARA: GEMINI (Architect/Tester)
+
+## 1. RESUMO
+
+Removidas as dependencias de Auth do MultiProvider e migrados todos os consumers para Riverpod. O `AppProviders` agora faz bridge do `AuthViewModel` Riverpod -> Provider tree para os ProxyProviders legados (SyncEngine, SocialCareContract) que ainda nao foram migrados.
+
+## 2. ARQUIVOS MODIFICADOS
+
+### 2.1 `lib/logic/di/auth_providers.dart`
+- Adicionado import `flutter_riverpod/legacy.dart` (necessario para `ChangeNotifierProvider` no Riverpod 3.x)
+- Adicionado `appRouterProvider` — cria `AppRouter` com `authViewModelProvider`
+
+### 2.2 `lib/logic/di/app_providers.dart`
+- **Removidos:** `ChangeNotifierProvider<AuthViewModel>`, `ListenableProvider<AuthRepository>`, 3x `Provider.value` dos UseCases
+- **Convertido** para `ConsumerWidget` — le `authViewModelProvider` via Riverpod
+- **Bridge:** re-injeta `AuthViewModel` no Provider tree via `ChangeNotifierProvider.value` para ProxyProviders legados (SyncEngine, SocialCareContract)
+
+### 2.3 `lib/ui/app_view.dart`
+- Convertido de `StatelessWidget` para `ConsumerWidget`
+- Router obtido via `ref.watch(appRouterProvider).router`
+- Removidos imports de `provider` e `dependency_manager`
+
+### 2.4 `lib/ui/pages/login_page.dart`
+- Convertido para `ConsumerWidget`
+- Removido parametro `viewModel` do construtor — agora le via `ref.watch(authViewModelProvider)`
+
+### 2.5 `lib/ui/pages/home_page.dart`
+- Convertido para `ConsumerWidget`
+- `context.read<AuthViewModel>()` substituido por `ref.watch(authViewModelProvider)`
+- `ValueListenableBuilder<AuthUser?>` (quebrado desde Missao 001) substituido por acesso direto `viewModel.user` — rebuild garantido pelo `ref.watch`
+- Import `provider` prefixado (`as provider`) para resolver conflito `Consumer` entre `flutter_riverpod` e `provider`
+
+### 2.6 `lib/ui/molecules/login_form_feedback.dart`
+- `ValueListenableBuilder<AuthStatus>` substituido por `ListenableBuilder` — `viewModel.status` nao e mais `ValueNotifier`
+
+### 2.7 `lib/logic/router/app_router.dart`
+- `LoginPage(viewModel: authViewModel)` -> `const LoginPage()` (LoginPage agora le do Riverpod)
+
+## 3. PROBLEMAS ENCONTRADOS E RESOLVIDOS
+
+| Problema | Causa | Solucao |
+|----------|-------|---------|
+| `ChangeNotifierProvider` not found | Riverpod 3.x moveu para `legacy.dart` | Import `flutter_riverpod/legacy.dart` |
+| `Consumer` ambiguity | Ambos `flutter_riverpod` e `provider` exportam `Consumer` | Prefixo `provider.Consumer` em `home_page.dart` |
+| `ValueListenable<AuthStatus>` type error | `viewModel.status` e plain getter desde Missao 001 | `ListenableBuilder` em `login_form_feedback.dart` |
+
+## 4. VALIDACAO
+
+- `dart analyze` em todos os 7 arquivos: **0 erros, 0 warnings**
+- Testes auth: **7/7 PASSED**
+- Teste `app_router_riverpod_test.dart`: **1/1 PASSED**
+- Total: **8/8 PASSED**
+
+## 5. ESTADO ATUAL DO AppProviders
+
+Entradas restantes no MultiProvider (candidatas a migracao futura):
+- `Provider<AppDependencyManager>` (bridge)
+- `ChangeNotifierProvider<AuthViewModel>` (bridge Riverpod -> Provider)
+- `Provider<DriftDatabaseService>`
+- `Provider<ConnectivityService>`
+- `Provider<SyncQueueService>`
+- `Provider<LocalSocialCareRepository>`
+- `ProxyProvider<AuthViewModel, SyncEngine?>`
+- `ProxyProvider2<AuthViewModel, SyncEngine?, SocialCareContract>`
+- 8x ProxyProviders do Social Care (Repositories, UseCases)
+
+---
+Aguardando Code Review.
