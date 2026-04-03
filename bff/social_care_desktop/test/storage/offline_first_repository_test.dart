@@ -40,6 +40,12 @@ void main() {
         version: 1,
       ),
     );
+    registerFallbackValue(
+      PatientRemote(
+        patientId: '550e8400-e29b-41d4-a716-446655440000',
+        personId: '550e8400-e29b-41d4-a716-446655440001',
+      ),
+    );
   });
 
   setUp(() {
@@ -50,7 +56,7 @@ void main() {
     onlineNotifier = ValueNotifier<bool>(true);
 
     when(() => connectivity.isOnline).thenReturn(onlineNotifier);
-    when(() => syncEngine.processQueue()).thenAnswer((_) async {});
+    when(() => syncEngine.scheduleProcessQueue()).thenReturn(null);
 
     repository = OfflineFirstRepository(
       local: local,
@@ -83,7 +89,7 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       verify(() => local.registerPatient(patient)).called(1);
-      verify(() => syncEngine.processQueue()).called(1);
+      verify(() => syncEngine.scheduleProcessQueue()).called(1);
     });
 
     test('registerPatient should NOT trigger sync if offline', () async {
@@ -109,7 +115,7 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       verify(() => local.registerPatient(patient)).called(1);
-      verifyNever(() => syncEngine.processQueue());
+      verifyNever(() => syncEngine.scheduleProcessQueue());
     });
   });
 
@@ -127,53 +133,54 @@ void main() {
       ).valueOrNull!,
       version: 1,
     );
+    final patientRemote = PatientRemote.fromJson(PatientTranslator.toJson(patient));
 
-    test('getPatient should try remote and update cache if online', () async {
+    test('fetchPatient should try remote and update cache if online', () async {
       onlineNotifier.value = true;
       when(
-        () => remote.getPatient(patientId),
-      ).thenAnswer((_) async => Success(patient));
-      when(() => local.updateCache(any())).thenAnswer((_) async {});
+        () => remote.fetchPatient(patientId),
+      ).thenAnswer((_) async => Success(patientRemote));
+      when(() => local.updateCacheFromRemote(any())).thenAnswer((_) async {});
 
-      final result = await repository.getPatient(patientId);
+      final result = await repository.fetchPatient(patientId);
 
       expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull, patient);
-      verify(() => remote.getPatient(patientId)).called(1);
+      expect(result.valueOrNull!.patientId, patientRemote.patientId);
+      verify(() => remote.fetchPatient(patientId)).called(1);
     });
 
     test(
-      'getPatient should fallback to local if remote fails and online',
+      'fetchPatient should fallback to local if remote fails and online',
       () async {
         onlineNotifier.value = true;
         when(
-          () => remote.getPatient(patientId),
+          () => remote.fetchPatient(patientId),
         ).thenAnswer((_) async => const Failure('Network error'));
         when(
-          () => local.getPatient(patientId),
-        ).thenAnswer((_) async => Success(patient));
+          () => local.fetchPatient(patientId),
+        ).thenAnswer((_) async => Success(patientRemote));
 
-        final result = await repository.getPatient(patientId);
+        final result = await repository.fetchPatient(patientId);
 
         expect(result.isSuccess, isTrue);
-        expect(result.valueOrNull, patient);
-        verify(() => remote.getPatient(patientId)).called(1);
-        verify(() => local.getPatient(patientId)).called(1);
+        expect(result.valueOrNull!.patientId, patientRemote.patientId);
+        verify(() => remote.fetchPatient(patientId)).called(1);
+        verify(() => local.fetchPatient(patientId)).called(1);
       },
     );
 
-    test('getPatient should go straight to local if offline', () async {
+    test('fetchPatient should go straight to local if offline', () async {
       onlineNotifier.value = false;
       when(
-        () => local.getPatient(patientId),
-      ).thenAnswer((_) async => Success(patient));
+        () => local.fetchPatient(patientId),
+      ).thenAnswer((_) async => Success(patientRemote));
 
-      final result = await repository.getPatient(patientId);
+      final result = await repository.fetchPatient(patientId);
 
       expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull, patient);
-      verifyNever(() => remote.getPatient(patientId));
-      verify(() => local.getPatient(patientId)).called(1);
+      expect(result.valueOrNull!.patientId, patientRemote.patientId);
+      verifyNever(() => remote.fetchPatient(patientId));
+      verify(() => local.fetchPatient(patientId)).called(1);
     });
   });
 }

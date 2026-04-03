@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:oidc/oidc.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
@@ -52,7 +53,9 @@ class OidcAuthService implements AuthService {
 
     _userSubscription = _manager.userChanges().listen(_onUserChanged);
 
+    debugPrint('[OidcAuthService] About to call _manager.init()...');
     await _manager.init();
+    debugPrint('[OidcAuthService] _manager.init() completed');
     _log.info('OIDC Manager initialized successfully');
     _initialized = true;
   }
@@ -152,12 +155,14 @@ class OidcAuthService implements AuthService {
 
   @override
   Future<void> tryRestoreSession() async {
-    _log.info('Attempting to restore session...');
+    debugPrint('[OidcAuth] tryRestoreSession — currentUser: ${_manager.currentUser?.uid}');
+    debugPrint('[OidcAuth] tryRestoreSession — currentStatus: ${_currentStatus.runtimeType}');
     if (_manager.currentUser == null) {
-      _log.info('No session found to restore');
+      debugPrint('[OidcAuth] No session → calling _clearSession()');
       _clearSession();
+      debugPrint('[OidcAuth] _clearSession() done — status now: ${_currentStatus.runtimeType}');
     } else {
-      _log.info('Session found for user: ${_manager.currentUser!.uid}');
+      debugPrint('[OidcAuth] Session found for user: ${_manager.currentUser!.uid}');
     }
   }
 
