@@ -1,26 +1,19 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import 'package:persistence/persistence.dart';
 import 'package:social_care_desktop/src/storage/local_social_care_repository.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:drift/native.dart';
 
 class MockSyncQueueService extends Mock implements SyncQueueService {}
 
-class TestIsarService extends Mock implements IsarService {
-  final Isar _isar;
-  TestIsarService(this._isar);
-  @override
-  Isar get db => _isar;
-}
-
 void main() {
   late LocalSocialCareRepository repository;
-  late Isar isar;
+  late AcdgDatabase db;
   late MockSyncQueueService mockQueue;
-  late TestIsarService testIsarService;
+  late DriftDatabaseService dbService;
 
   // Helper para falhar o teste se o Result for erro
   T ensureSuccess<T>(Result<T> result) => switch (result) {
@@ -42,30 +35,15 @@ void main() {
     testPrRelationshipId = ensureSuccess(
       LookupId.create('550e8400-e29b-41d4-a716-446655440002'),
     );
-
-    final dir = await Directory.systemTemp.createTemp('isar_test');
-    try {
-      await Isar.initializeIsarCore(download: true);
-    } catch (_) {}
-
-    isar = await Isar.open(
-      IsarSchemas.all,
-      directory: dir.path,
-      inspector: false,
-    );
-  });
-
-  tearDownAll(() async {
-    await isar.close();
   });
 
   setUp(() async {
+    db = AcdgDatabase(NativeDatabase.memory());
+    dbService = DriftDatabaseService()..initWith(db);
     mockQueue = MockSyncQueueService();
-    testIsarService = TestIsarService(isar);
-    await isar.writeTxn(() => isar.clear());
 
     repository = LocalSocialCareRepository(
-      isarService: testIsarService,
+      dbService: dbService,
       queueService: mockQueue,
     );
 
@@ -78,8 +56,12 @@ void main() {
     ).thenAnswer((_) async => const Success(null));
   });
 
+  tearDown(() async {
+    await db.close();
+  });
+
   group('LocalSocialCareRepository Tests', () {
-    test('registerPatient should save to Isar and enqueue action', () async {
+    test('registerPatient should save to Drift and enqueue action', () async {
       final personalData = ensureSuccess(
         PersonalData.create(
           firstName: 'João',
@@ -103,10 +85,10 @@ void main() {
 
       expect(result.isSuccess, isTrue);
 
-      final cached = await isar.cachedPatients
-          .filter()
-          .patientIdEqualTo(testPatientId.value)
-          .findFirst();
+      final cached = await (db.select(db.cachedPatients)
+            ..where((t) => t.patientId.equals(testPatientId.value)))
+          .getSingleOrNull();
+      
       expect(cached, isNotNull);
       expect(cached!.personId, testPersonId.value);
       expect(cached.isDirty, isTrue);
@@ -121,65 +103,69 @@ void main() {
     });
 
     test(
-      'getPatient should retrieve from local cache using Pattern Matching',
+      'fetchPatient should retrieve from local cache using Pattern Matching',
       () async {
         final now = DateTime.now();
-        final cached = CachedPatient()
-          ..patientId = testPatientId.value
-          ..personId = testPersonId.value
-          ..firstName = 'João'
-          ..lastName = 'Silva'
-          ..cpf = '123'
-          ..version = 1
-          ..isDirty = false
-          ..lastSyncAt = now
-          ..fullRecordJson = jsonEncode({
-            'patientId': testPatientId.value,
-            'personId': testPersonId.value,
-            'version': 1,
-            'prRelationshipId': testPrRelationshipId.value,
-            'personalData': {
-              'firstName': 'João',
-              'lastName': 'Silva',
-              'motherName': 'Maria',
-              'nationality': 'BR',
-              'sex': 'masculino',
-              'birthDate': DateTime.now().toIso8601String(),
-            },
-          });
+        final fullRecordJson = jsonEncode({
+          'patientId': testPatientId.value,
+          'personId': testPersonId.value,
+          'version': 1,
+          'prRelationshipId': testPrRelationshipId.value,
+          'personalData': {
+            'firstName': 'João',
+            'lastName': 'Silva',
+            'motherName': 'Maria',
+            'nationality': 'BR',
+            'sex': 'masculino',
+            'birthDate': DateTime.now().toIso8601String(),
+          },
+        });
 
-        await isar.writeTxn(() => isar.cachedPatients.put(cached));
+        await db.into(db.cachedPatients).insert(
+          CachedPatientsCompanion.insert(
+            patientId: testPatientId.value,
+            personId: testPersonId.value,
+            firstName: const Value('João'),
+            lastName: const Value('Silva'),
+            cpf: const Value('123'),
+            fullRecordJson: fullRecordJson,
+            version: const Value(1),
+            isDirty: const Value(false),
+            lastSyncAt: now,
+          ),
+        );
 
-        final result = await repository.getPatient(testPatientId);
+        final result = await repository.fetchPatient(testPatientId);
 
-        final patient = switch (result) {
+        final patientDto = switch (result) {
           Success(:final value) => value,
           Failure(:final error) => fail('Should be success, got: $error'),
         };
-        expect(patient.id, testPatientId);
+        expect(patientDto.patientId, testPatientId.value);
       },
     );
 
     test(
       'updateHousingCondition should update cache, increment version and enqueue',
       () async {
-        final cached = CachedPatient()
-          ..patientId = testPatientId.value
-          ..personId = testPersonId.value
-          ..firstName = 'João'
-          ..lastName = 'Silva'
-          ..cpf = '123'
-          ..version = 1
-          ..isDirty = false
-          ..lastSyncAt = DateTime.now()
-          ..fullRecordJson = jsonEncode({
-            'patientId': testPatientId.value,
-            'personId': testPersonId.value,
-            'version': 1,
-            'prRelationshipId': testPrRelationshipId.value,
-          });
-
-        await isar.writeTxn(() => isar.cachedPatients.put(cached));
+        final now = DateTime.now();
+        await db.into(db.cachedPatients).insert(
+          CachedPatientsCompanion.insert(
+            patientId: testPatientId.value,
+            personId: testPersonId.value,
+            firstName: const Value('João'),
+            lastName: const Value('Silva'),
+            fullRecordJson: jsonEncode({
+              'patientId': testPatientId.value,
+              'personId': testPersonId.value,
+              'version': 1,
+              'prRelationshipId': testPrRelationshipId.value,
+            }),
+            version: const Value(1),
+            isDirty: const Value(false),
+            lastSyncAt: now,
+          ),
+        );
 
         final condition = ensureSuccess(
           HousingCondition.create(
@@ -208,10 +194,10 @@ void main() {
 
         expect(result.isSuccess, isTrue);
 
-        final updated = await isar.cachedPatients
-            .filter()
-            .patientIdEqualTo(testPatientId.value)
-            .findFirst();
+        final updated = await (db.select(db.cachedPatients)
+              ..where((t) => t.patientId.equals(testPatientId.value)))
+            .getSingleOrNull();
+        
         expect(updated!.version, 2);
         expect(updated.isDirty, isTrue);
 
@@ -226,18 +212,21 @@ void main() {
     );
 
     test('getLookupTable should return items from CachedLookup', () async {
-      final lookup = CachedLookup()
-        ..tableName = 'dominio_parentesco'
-        ..itemsJson = jsonEncode([
-          {
-            'id': '550e8400-e29b-41d4-a716-446655440003',
-            'codigo': 'P',
-            'descricao': 'Pai',
-          },
-        ])
-        ..lastFetchedAt = DateTime.now();
+      final itemsJson = jsonEncode([
+        {
+          'id': '550e8400-e29b-41d4-a716-446655440003',
+          'codigo': 'P',
+          'descricao': 'Pai',
+        },
+      ]);
 
-      await isar.writeTxn(() => isar.cachedLookups.put(lookup));
+      await db.into(db.cachedLookups).insert(
+        CachedLookupsCompanion.insert(
+          lookupName: 'dominio_parentesco',
+          itemsJson: itemsJson,
+          lastFetchedAt: DateTime.now(),
+        ),
+      );
 
       final result = await repository.getLookupTable('dominio_parentesco');
 
