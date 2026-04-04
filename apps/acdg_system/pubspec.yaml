@@ -45,6 +45,7 @@ dev_dependencies:
   build_runner: ^2.13.1
   custom_lint: ^0.8.1
   riverpod_lint: ^3.1.0
+  msix: ^3.16.13
 
 flutter:
   uses-material-design: true
@@ -72,3 +73,10 @@ flutter:
         - asset: assets/fonts/erode/Erode-MediumItalic.ttf
           weight: 500
           style: italic
+
+msix_config:
+  display_name: "ACDG System"
+  publisher_display_name: "ACDG Technology"
+  identity_name: "com.acdgbrasil.acdgSystem"
+  msix_version: "0.1.0.0"
+  capabilities: "internetClient, location"
