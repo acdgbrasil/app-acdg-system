@@ -1,0 +1,47 @@
+name: Windows MSIX Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger build on any tag starting with v (e.g., v0.1.0)
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4' # Usando a versão do flutter do seu ambiente
+          channel: 'stable'
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      # O projeto usa workspace do Dart/Melos, podemos rodar o pub get na pasta root também,
+      # Mas o msix exige que estejamos na pasta do app
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: apps/acdg_system
+
+      - name: Build Windows App
+        run: flutter build windows --release
+        working-directory: apps/acdg_system
+
+      - name: Create MSIX Installer
+        run: dart run msix:create
+        working-directory: apps/acdg_system
+
+      - name: Release to GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/acdg_system/build/windows/x64/runner/Release/*.msix
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
