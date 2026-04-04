@@ -24,16 +24,32 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
+      - name: Fetch secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.ACDG_ORG_BW_SM_ACCESS_TOKEN_PROD }}
+          secrets: |
+            e384ef43-978c-4f04-b50e-b42201380a4c > OIDC_ISSUER
+            29ebaaa5-bcad-4db9-90f4-b4220138173b > OIDC_CLIENT_ID
+
+      - name: Create .env file
+        run: |
+          echo "OIDC_ISSUER=${{ env.OIDC_ISSUER }}" >> apps/acdg_system/.env
+          echo "OIDC_CLIENT_ID=${{ env.OIDC_CLIENT_ID }}" >> apps/acdg_system/.env
+
       # O projeto usa workspace do Dart/Melos, podemos rodar o pub get na pasta root também,
       # Mas o msix exige que estejamos na pasta do app
       - name: Install dependencies
         run: dart pub get
 
-      - name: Run code generation
-        run: dart run melos exec --depends-on="build_runner" -- "dart run build_runner build --delete-conflicting-outputs"
+      - name: Run code generation (persistence first, then dependents)
+        run: |
+          cd packages/persistence && dart run build_runner build --delete-conflicting-outputs
+          cd ../../bff/shared && dart run build_runner build --delete-conflicting-outputs
+          cd ../../apps/acdg_system && dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows App
-        run: flutter build windows --release
+        run: flutter build windows --release --dart-define-from-file=apps/acdg_system/.env
         working-directory: apps/acdg_system
 
       - name: Create MSIX Installer
