@@ -61,6 +61,13 @@ final updatePrimaryCaregiverUseCaseProvider =
   );
 });
 
+final updateSocialIdentityUseCaseProvider =
+    Provider<UpdateSocialIdentityUseCase>((ref) {
+  return UpdateSocialIdentityUseCase(
+    patientRepository: ref.watch(patientRepositoryProvider),
+  );
+});
+
 /// Override for the [patientRegistrationViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case and repository providers.
 final patientRegistrationViewModelOverride =
@@ -85,6 +92,8 @@ final familyCompositionViewModelOverride =
     removeFamilyMemberUseCase: ref.watch(removeFamilyMemberUseCaseProvider),
     updatePrimaryCaregiverUseCase:
         ref.watch(updatePrimaryCaregiverUseCaseProvider),
+    updateSocialIdentityUseCase:
+        ref.watch(updateSocialIdentityUseCaseProvider),
     lookupRepository: ref.watch(lookupRepositoryProvider),
   );
   ref.onDispose(() => vm.dispose());

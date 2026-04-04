@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
@@ -151,11 +152,17 @@ class SocialCareBffRemote implements SocialCareContract {
         'prRelationshipId': prRelationshipId.value,
       };
 
+      debugPrint('[BFF Remote] addFamilyMember POST: /api/v1/patients/${patientId.value}/family-members');
+      debugPrint('[BFF Remote] Payload: $payload');
+
       final response = await _dio.post(
         '/api/v1/patients/${patientId.value}/family-members',
         data: payload,
         options: Options(validateStatus: (status) => true),
       );
+
+      debugPrint('[BFF Remote] Response status: ${response.statusCode}');
+      debugPrint('[BFF Remote] Response data: ${response.data}');
 
       if (response.statusCode == 204 ||
           response.statusCode == 201 ||
@@ -164,6 +171,7 @@ class SocialCareBffRemote implements SocialCareContract {
       }
       return Failure(response.data ?? 'Failed to add family member');
     } catch (e) {
+      debugPrint('[BFF Remote] CRITICAL ERROR: $e');
       return Failure(e);
     }
   }
