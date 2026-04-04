@@ -6,6 +6,7 @@ import 'package:social_care/src/logic/use_case/registry/get_patient_use_case.dar
 import 'package:social_care/src/logic/use_case/family/add_family_member_use_case.dart';
 import 'package:social_care/src/logic/use_case/family/remove_family_member_use_case.dart';
 import 'package:social_care/src/logic/use_case/family/update_primary_caregiver_use_case.dart';
+import 'package:social_care/src/logic/use_case/registry/update_social_identity_use_case.dart';
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
@@ -73,6 +74,7 @@ void main() {
         addFamilyMemberUseCase: AddFamilyMemberUseCase(patientRepository: fakeRepo),
         removeFamilyMemberUseCase: RemoveFamilyMemberUseCase(patientRepository: fakeRepo),
         updatePrimaryCaregiverUseCase: UpdatePrimaryCaregiverUseCase(patientRepository: fakeRepo),
+        updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(patientRepository: fakeRepo),
         lookupRepository: fakeLookup,
       );
 

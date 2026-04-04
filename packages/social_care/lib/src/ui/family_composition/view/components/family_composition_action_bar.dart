@@ -9,6 +9,7 @@ class FamilyCompositionActionBar extends StatelessWidget {
     super.key,
     required this.onCancel,
     required this.onSave,
+    this.canSave = true,
   });
 
   /// Called when the user taps "Cancelar".
@@ -16,6 +17,9 @@ class FamilyCompositionActionBar extends StatelessWidget {
 
   /// Called when the user taps "Salvar Cadastro".
   final VoidCallback onSave;
+
+  /// Whether the save button should be enabled.
+  final bool canSave;
 
   @override
   Widget build(BuildContext context) {
@@ -74,9 +78,10 @@ class FamilyCompositionActionBar extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               FilledButton(
-                onPressed: onSave,
+                onPressed: canSave ? onSave : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,

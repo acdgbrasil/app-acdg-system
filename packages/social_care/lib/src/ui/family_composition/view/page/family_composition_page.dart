@@ -19,6 +19,10 @@ import '../components/family_composition_nav_bar.dart';
 ///
 /// Thin UI shell — all business logic lives in [FamilyCompositionViewModel].
 /// Receives [patientId] via route param and reads the VM from Riverpod.
+///
+/// Follows Selectors & Connectors: [ListenableBuilder] wraps only the
+/// subtrees that actually change (Content + ActionBar), leaving NavBar
+/// and Header static.
 class FamilyCompositionPage extends ConsumerStatefulWidget {
   const FamilyCompositionPage({super.key, required this.patientId});
 
@@ -50,27 +54,68 @@ class _FamilyCompositionPageState
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: ListenableBuilder(
-          listenable: vm,
+          listenable: vm.loadPatientCommand,
           builder: (context, _) {
             if (vm.loadPatientCommand.running) {
               return const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               );
             }
+            if (vm.loadPatientCommand.error) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.danger, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Erro ao carregar dados do paciente',
+                      style: TextStyle(
+                        fontFamily: 'Satoshi',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => vm.loadPatientCommand.execute(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar novamente'),
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                    ),
+                  ],
+                ),
+              );
+            }
             return Column(
               children: [
                 const FamilyCompositionNavBar(),
                 FamilyCompositionHeader(onAddMember: () => _showAddModal(vm)),
-                Expanded(child: FamilyCompositionContent(
-                  viewModel: vm,
-                  onEdit: (m) => _showAddModal(vm, existing: m),
-                  onRemove: (m) => _showRemoveDialog(vm, m),
-                  onToggleCaregiver: (m) => _showCaregiverDialog(vm, m),
-                  onAddMember: () => _showAddModal(vm),
-                )),
-                FamilyCompositionActionBar(
-                  onCancel: () => context.go('/social-care'),
-                  onSave: () => context.go('/social-care'),
+                Expanded(
+                  child: ListenableBuilder(
+                    listenable: vm,
+                    builder: (context, _) => FamilyCompositionContent(
+                      viewModel: vm,
+                      onEdit: (m) => _showAddModal(vm, existing: m),
+                      onRemove: (m) => _showRemoveDialog(vm, m),
+                      onToggleCaregiver: (m) => _showCaregiverDialog(vm, m),
+                      onAddMember: () => _showAddModal(vm),
+                    ),
+                  ),
+                ),
+                ListenableBuilder(
+                  listenable: vm,
+                  builder: (context, _) => FamilyCompositionActionBar(
+                    canSave: vm.canSave,
+                    onCancel: () => context.go('/social-care'),
+                    onSave: () async {
+                      await vm.saveChangesCommand.execute();
+                      if (context.mounted && vm.saveChangesCommand.completed) {
+                        context.go('/social-care');
+                      }
+                    },
+                  ),
                 ),
               ],
             );

@@ -1,22 +1,39 @@
 import 'package:design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
+import 'package:social_care/social_care.dart';
 
 import '../../constants/family_composition_ln10.dart';
+import 'specificity_tile.dart';
 
-/// Read-only "Especificidades" checklist derived from the patient's
-/// social identity (cigana, quilombola, ribeirinha, homeless).
+/// Clickable "Especificidades" radio list driven by lookup data.
+///
+/// Follows the Selectors & Connectors pattern:
+/// receives only the data it needs (items, selectedId) and a callback.
 class FamilyCompositionSpecificities extends StatelessWidget {
-  const FamilyCompositionSpecificities({super.key});
+  const FamilyCompositionSpecificities({
+    super.key,
+    required this.items,
+    required this.selectedId,
+    required this.onSelected,
+  });
 
-  static const _labels = [
-    FamilyCompositionLn10.specCigana,
-    FamilyCompositionLn10.specQuilombola,
-    FamilyCompositionLn10.specRibeirinha,
-    FamilyCompositionLn10.specHomeless,
-  ];
+  /// Available specificity options from lookup.
+  final List<LookupItem> items;
+
+  /// Currently selected specificity ID, or null.
+  final String? selectedId;
+
+  /// Called when the user taps an option.
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('[UI] Building FamilyCompositionSpecificities');
+    debugPrint('[UI] Items count: ${items.length}');
+    debugPrint('[UI] Selected ID: $selectedId');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -33,31 +50,17 @@ class FamilyCompositionSpecificities extends StatelessWidget {
         const SizedBox(height: 7),
         const Divider(height: 1, color: AppColors.inputLine),
         const SizedBox(height: 14),
-        for (final label in _labels)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 17,
-                  height: 17,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.inputLine, width: 1.5),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Satoshi',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+        if (items.isEmpty)
+          const Text('Nenhuma especificidade carregada (Lista Vazia)', 
+            style: TextStyle(color: Colors.red, fontSize: 12)),
+        for (final item in items)
+          SpecificityTile(
+            label: item.descricao,
+            selected: item.id == selectedId,
+            onTap: () {
+              debugPrint('[UI] Tapped specificity: ${item.descricao} (${item.id})');
+              onSelected(item.id);
+            },
           ),
       ],
     );
