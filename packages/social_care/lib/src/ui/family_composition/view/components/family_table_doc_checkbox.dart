@@ -6,14 +6,14 @@ class FamilyTableDocCheckbox extends StatelessWidget {
   final String label;
   final bool checked;
   final bool enabled;
-  final void Function(bool) onChanged;
+  final void Function(bool)? onChanged;
 
   const FamilyTableDocCheckbox({
     super.key,
     required this.label,
     required this.checked,
-    required this.enabled,
-    required this.onChanged,
+    this.enabled = true,
+    this.onChanged,
   });
 
   @override
@@ -21,7 +21,7 @@ class FamilyTableDocCheckbox extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: GestureDetector(
-        onTap: enabled ? () => onChanged(!checked) : null,
+        onTap: enabled && onChanged != null ? () => onChanged!(!checked) : null,
         child: MouseRegion(
           cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
           child: Opacity(

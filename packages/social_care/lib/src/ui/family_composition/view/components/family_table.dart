@@ -150,8 +150,7 @@ class FamilyTable extends StatelessWidget {
                 FamilyTableDocCheckbox(
                   label: doc,
                   checked: member.requiredDocuments.contains(doc),
-                  enabled: !isPr,
-                  onChanged: (checked) => onToggleDoc(index, doc, checked),
+                  enabled: false,
                 ),
           ],
         )),

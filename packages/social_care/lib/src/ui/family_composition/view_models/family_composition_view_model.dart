@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
@@ -18,10 +20,13 @@ class FamilyCompositionViewModel extends BaseViewModel {
     required AddFamilyMemberUseCase addFamilyMemberUseCase,
     required RemoveFamilyMemberUseCase removeFamilyMemberUseCase,
     required UpdatePrimaryCaregiverUseCase updatePrimaryCaregiverUseCase,
+    required UpdateSocialIdentityUseCase updateSocialIdentityUseCase,
     required LookupRepository lookupRepository,
   })  : _getPatientUseCase = getPatientUseCase,
+        _updateSocialIdentityUseCase = updateSocialIdentityUseCase,
         _lookupRepository = lookupRepository {
     loadPatientCommand = Command0<void>(_loadPatient);
+    saveChangesCommand = Command0<void>(_saveChanges);
     addMemberCommand = Command1<void, AddFamilyMemberIntent>(
       (intent) => addFamilyMemberUseCase.execute(intent),
     );
@@ -36,10 +41,12 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
+  final UpdateSocialIdentityUseCase _updateSocialIdentityUseCase;
   final LookupRepository _lookupRepository;
 
   // ── Commands ────────────────────────────────────────────────
   late final Command0<void> loadPatientCommand;
+  late final Command0<void> saveChangesCommand;
   late final Command1<void, AddFamilyMemberIntent> addMemberCommand;
   late final Command1<void, RemoveFamilyMemberIntent> removeMemberCommand;
   late final Command1<void, UpdatePrimaryCaregiverIntent> assignCaregiverCommand;
@@ -51,7 +58,26 @@ class FamilyCompositionViewModel extends BaseViewModel {
   List<LookupItem> _parentescoLookup = [];
   List<LookupItem> get parentescoLookup => _parentescoLookup;
 
+  List<LookupItem> _specificityLookup = [];
+  List<LookupItem> get specificityLookup => _specificityLookup;
+
+  bool _lookupsLoaded = false;
+  bool get lookupsLoaded => _lookupsLoaded;
+
   String? _prRelationshipId;
+
+  String? _selectedSpecificityId;
+  String? get selectedSpecificityId => _selectedSpecificityId;
+
+  String? _originalSpecificityId;
+
+  /// Whether the current state has unsaved modifications.
+  bool get canSave => _selectedSpecificityId != _originalSpecificityId;
+
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  Map<String, int>? _ageProfileCache;
 
   // ── Computed getters ────────────────────────────────────────
 
@@ -66,8 +92,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
   bool get isEmpty => _members.where((m) => !m.isReferencePerson).isEmpty;
 
   /// Age profile: 8 ranges computed from member ages.
-  /// Delegated to [FamilyMemberModel.age] — the VM only aggregates.
-  Map<String, int> get ageProfile {
+  /// Memoized — recomputed only when members change.
+  Map<String, int> get ageProfile => _ageProfileCache ??= _computeAgeProfile();
+
+  Map<String, int> _computeAgeProfile() {
     final profile = <String, int>{
       '0-6': 0, '7-14': 0, '15-17': 0, '18-29': 0,
       '30-59': 0, '60-64': 0, '65-69': 0, '70+': 0,
@@ -94,37 +122,116 @@ class FamilyCompositionViewModel extends BaseViewModel {
   // ── Load ────────────────────────────────────────────────────
 
   Future<void> _loadLookups() async {
+    debugPrint('[ViewModel] Loading lookups for patient: $patientId');
+    final errors = <String>[];
+
     final result = await _lookupRepository.getLookupTable('dominio_parentesco');
     switch (result) {
       case Success(:final value):
-        _parentescoLookup = value;
-        final pessoaRef = value.where((i) => i.codigo == 'PESSOA_REFERENCIA');
+        debugPrint('[ViewModel] Parentesco lookups loaded: ${value.length} items');
+        _parentescoLookup = value
+            .map((i) => i.copyWith(id: i.id.toLowerCase()))
+            .toList();
+        final pessoaRef = _parentescoLookup.where((i) => i.codigo == 'PESSOA_REFERENCIA');
         if (pessoaRef.isNotEmpty) _prRelationshipId = pessoaRef.first.id;
-      case Failure():
-        break;
+      case Failure(:final error):
+        debugPrint('[ViewModel] FAILED to load parentesco lookups: $error');
+        errors.add('Falha ao carregar parentescos');
     }
+
+    final specResult = await _lookupRepository.getLookupTable('dominio_tipo_identidade');
+    switch (specResult) {
+      case Success(:final value):
+        debugPrint('[ViewModel] Especificidade lookups loaded: ${value.length} items');
+        _specificityLookup = value
+            .map((i) => i.copyWith(id: i.id.toLowerCase()))
+            .toList();
+      case Failure(:final error):
+        debugPrint('[ViewModel] FAILED to load especificidade lookups: $error');
+        errors.add('Falha ao carregar especificidades');
+    }
+
+    if (errors.isNotEmpty) {
+      _errorMessage = errors.join('; ');
+    }
+
+    _lookupsLoaded = true;
     notifyListeners();
   }
 
   Future<Result<void>> _loadPatient() async {
+    debugPrint('[ViewModel] _loadPatient start for id: $patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
       case Success(:final value):
+        debugPrint('[ViewModel] _loadPatient SUCCESS. Members count: ${value.familyMembers.length}');
         _members = _translateMembers(value);
-      case Failure():
+        _ageProfileCache = null;
+        final specId = value.socialIdentity?.typeId.value;
+        debugPrint('[ViewModel] Current Specificity from DB: $specId');
+        _selectedSpecificityId = specId;
+        _originalSpecificityId = specId;
+      case Failure(:final error):
+        debugPrint('[ViewModel] _loadPatient FAILURE: $error');
         _members = [];
+        _ageProfileCache = null;
     }
 
     notifyListeners();
     return const Success(null);
   }
 
+  /// Persists pending changes (social identity) to the repository.
+  Future<Result<void>> _saveChanges() async {
+    if (!canSave) return const Success(null);
+
+    final PatientId patId;
+    switch (PatientId.create(patientId)) {
+      case Success(:final value): patId = value;
+      case Failure(:final error): return Failure(error);
+    }
+
+    final LookupId typeId;
+    switch (LookupId.create(_selectedSpecificityId!)) {
+      case Success(:final value): typeId = value;
+      case Failure(:final error): return Failure(error);
+    }
+
+    final Result<SocialIdentity> identityResult = SocialIdentity.create(typeId: typeId);
+    switch (identityResult) {
+      case Success(:final value):
+        final result = await _updateSocialIdentityUseCase.execute(
+          UpdateSocialIdentityIntent(patientId: patId, identity: value),
+        );
+        if (result.isSuccess) {
+          _originalSpecificityId = _selectedSpecificityId;
+          notifyListeners();
+        }
+        return result;
+      case Failure(:final error):
+        return Failure(error);
+    }
+  }
+
+  /// Selects a single family specificity (single choice).
+  void updateSpecificity(String specificityId) {
+    debugPrint('[ViewModel] updateSpecificity called with: $specificityId');
+    _selectedSpecificityId = specificityId.toLowerCase();
+    debugPrint('[ViewModel] canSave is now: $canSave');
+    notifyListeners();
+  }
+
   // ── Actions ─────────────────────────────────────────────────
 
   Future<void> addMember(AddFamilyMemberIntent intent) async {
+    debugPrint('[ViewModel] addMember intent for: ${intent.firstName}');
     await addMemberCommand.execute(intent);
-    if (addMemberCommand.completed) await loadPatientCommand.execute();
+    debugPrint('[ViewModel] addMemberCommand completed: ${addMemberCommand.completed}');
+    if (addMemberCommand.completed) {
+      debugPrint('[ViewModel] Triggering reload after add...');
+      await loadPatientCommand.execute();
+    }
   }
 
   Future<void> removeMember(PersonId memberId) async {
@@ -174,7 +281,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
       lastName: result.name.split(' ').skip(1).join(' '),
       relationshipId: lookupItem?.id ?? result.relationshipCode,
       birthDate: result.birthDate,
-      prRelationshipId: lookupItem?.id ?? result.relationshipCode,
+      prRelationshipId: _prRelationshipId!,
       isPrimaryCaregiver: false,
       residesWithPatient: result.residesWithPatient,
       hasDisability: result.hasDisability,
@@ -263,6 +370,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
         if (i == memberIndex) member.copyWith(requiredDocuments: docs)
         else _members[i],
     ];
+    _ageProfileCache = null;
     notifyListeners();
   }
 

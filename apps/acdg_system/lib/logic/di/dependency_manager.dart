@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
 import 'package:network/network.dart';
@@ -52,15 +51,10 @@ class AppDependencyManager {
 
   /// Performs the initial asynchronous setup of services.
   Future<void> initialize() async {
-    debugPrint('[Boot] Starting initialize...');
     if (!_dbService.isOpen) {
-      debugPrint('[Boot] Initializing DB...');
       await _dbService.init();
-      debugPrint('[Boot] DB initialized');
     }
-    debugPrint('[Boot] Initializing connectivity...');
     await _connectivityService.initialize();
-    debugPrint('[Boot] Connectivity initialized');
 
     _syncQueueService = SyncQueueService(_dbService);
     _localSocialCareRepository = LocalSocialCareRepository(
@@ -72,9 +66,7 @@ class AppDependencyManager {
     _logoutUseCase = LogoutUseCase(_authRepository);
     _restoreSessionUseCase = RestoreSessionUseCase(_authRepository);
 
-    debugPrint('[Boot] Initializing authRepository...');
     await _authRepository.init();
-    debugPrint('[Boot] authRepository initialized — BOOT COMPLETE');
   }
 
   Future<void> dispose() async {

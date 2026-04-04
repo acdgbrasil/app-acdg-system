@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import '../../constants/family_composition_ln10.dart';
 import '../../models/add_member_result.dart';
+import 'relationship_selection_list.dart';
 
 /// Modal for adding or editing a family member.
 /// Dark blue (#172D48) background, 2-column layout, matching Figma spec.
@@ -207,22 +208,31 @@ class _AddMemberModalState extends State<AddMemberModal> {
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final isWide = constraints.maxWidth > 500;
+                        final relationshipList = RelationshipSelectionList(
+                          parentescoLookup: widget.parentescoLookup,
+                          selectedRelationship: _relationship,
+                          onChanged: (val) => setState(() => _relationship = val),
+                          error: _relationshipError,
+                          showErrors: _showErrors,
+                          enabled: !isEditing,
+                        );
+
                         if (isWide) {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: _buildLeftColumn()),
+                              Expanded(child: _buildLeftColumn(isEditing: isEditing)),
                               const SizedBox(width: 40),
-                              SizedBox(width: 240, child: _buildRightColumn()),
+                              SizedBox(width: 240, child: relationshipList),
                             ],
                           );
                         }
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLeftColumn(),
+                            _buildLeftColumn(isEditing: isEditing),
                             const SizedBox(height: 22),
-                            _buildRightColumn(),
+                            relationshipList,
                           ],
                         );
                       },
@@ -274,22 +284,25 @@ class _AddMemberModalState extends State<AddMemberModal> {
     );
   }
 
-  Widget _buildLeftColumn() {
+  Widget _buildLeftColumn({required bool isEditing}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _field(FamilyCompositionLn10.fieldName, required: true,
             error: _showErrors ? _nameError : null,
-            child: _textInput(_name, FamilyCompositionLn10.fieldNamePlaceholder)),
+            child: _textInput(_name, FamilyCompositionLn10.fieldNamePlaceholder,
+                enabled: !isEditing)),
         _field(FamilyCompositionLn10.fieldBirthDate, required: true,
             error: _showErrors ? _birthDateError : null,
             child: _textInput(_birthDate, FamilyCompositionLn10.fieldBirthDatePlaceholder,
-                formatters: AppMasks.date, keyboardType: TextInputType.number)),
+                formatters: AppMasks.date, keyboardType: TextInputType.number,
+                enabled: !isEditing)),
         _field(FamilyCompositionLn10.fieldSex, required: true,
             error: _showErrors ? _sexError : null,
             child: _radioGroup(['masculino', 'feminino', 'outro'],
                 [FamilyCompositionLn10.sexMale, FamilyCompositionLn10.sexFemale, FamilyCompositionLn10.sexOther],
-                _sex, (v) => setState(() => _sex = v))),
+                _sex, (v) => setState(() => _sex = v),
+                enabled: !isEditing)),
         _field(FamilyCompositionLn10.fieldResiding, required: true,
             error: _showErrors ? _residingError : null,
             child: _radioGroup(['true', 'false'],
@@ -309,44 +322,7 @@ class _AddMemberModalState extends State<AddMemberModal> {
     );
   }
 
-  Widget _buildRightColumn() {
-    final items = widget.parentescoLookup
-        .where((i) => i.codigo != 'PESSOA_REFERENCIA')
-        .toList();
 
-    return _field(FamilyCompositionLn10.fieldRelationship, required: true,
-        error: _showErrors ? _relationshipError : null,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.background.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final item in items)
-                InkWell(
-                  onTap: () => setState(() => _relationship = item.codigo),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    color: _relationship == item.codigo
-                        ? AppColors.background.withValues(alpha: 0.1)
-                        : Colors.transparent,
-                    child: Text(
-                      item.descricao,
-                      style: TextStyle(
-                        color: AppColors.background,
-                        fontSize: 14,
-                        fontWeight:
-                            _relationship == item.codigo ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ));
-  }
 
   // ── Building blocks ──
 
@@ -386,11 +362,12 @@ class _AddMemberModalState extends State<AddMemberModal> {
   }
 
   Widget _textInput(TextEditingController controller, String placeholder,
-      {List<dynamic>? formatters, TextInputType? keyboardType}) {
+      {List<dynamic>? formatters, TextInputType? keyboardType, bool enabled = true}) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: formatters?.cast(),
+      readOnly: !enabled,
       style: const TextStyle(
         color: AppColors.background,
         fontSize: 14,
@@ -411,16 +388,18 @@ class _AddMemberModalState extends State<AddMemberModal> {
   }
 
   Widget _radioGroup(List<String> values, List<String> labels, String? selected,
-      void Function(String) onChanged) {
-    return Wrap(
+      void Function(String) onChanged, {bool enabled = true}) {
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.5,
+      child: Wrap(
       spacing: 20,
       runSpacing: 8,
       children: [
         for (var i = 0; i < values.length; i++)
           GestureDetector(
-            onTap: () => onChanged(values[i]),
+            onTap: enabled ? () => onChanged(values[i]) : null,
             child: MouseRegion(
-              cursor: SystemMouseCursors.click,
+              cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -459,6 +438,7 @@ class _AddMemberModalState extends State<AddMemberModal> {
             ),
           ),
       ],
+    ),
     );
   }
 

@@ -52,9 +52,10 @@ abstract final class RegistryMapper {
 
   static Map<String, dynamic> familyMemberToJson(FamilyMember m) => {
         'personId': m.personId.value,
-        'relationshipId': m.relationshipId.value,
-        'residesWithPatient': m.residesWithPatient,
-        'isPrimaryCaregiver': m.isPrimaryCaregiver,
+        'memberPersonId': m.personId.value,
+        'relationship': m.relationshipId.value,
+        'isResiding': m.residesWithPatient,
+        'isCaregiver': m.isPrimaryCaregiver,
         'hasDisability': m.hasDisability,
         'requiredDocuments': m.requiredDocuments.map((d) => d.value).toList(),
         'birthDate': m.birthDate.toIso8601(),
@@ -198,10 +199,10 @@ abstract final class RegistryMapper {
     }
 
     final LookupId relationshipId;
-    switch (LookupId.create(j['relationshipId'])) {
+    switch (LookupId.create(j['relationship'] ?? j['relationshipId'])) {
       case Success(:final value): relationshipId = value;
       case Failure(:final error):
-        return Failure('familyMember.relationshipId: $error');
+        return Failure('familyMember.relationship: $error');
     }
 
     final TimeStamp birthDate;
@@ -214,8 +215,8 @@ abstract final class RegistryMapper {
     return Success(FamilyMember.reconstitute(
       personId: personId,
       relationshipId: relationshipId,
-      residesWithPatient: j['residesWithPatient'],
-      isPrimaryCaregiver: j['isPrimaryCaregiver'],
+      residesWithPatient: j['isResiding'] ?? j['residesWithPatient'] ?? false,
+      isPrimaryCaregiver: j['isCaregiver'] ?? j['isPrimaryCaregiver'] ?? false,
       hasDisability: j['hasDisability'] ?? false,
       requiredDocuments: (j['requiredDocuments'] as List? ?? [])
           .map((d) => RequiredDocument.values.firstWhere((v) => v.value == d))

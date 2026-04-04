@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:drift/drift.dart';
 import 'package:persistence/persistence.dart';
@@ -29,12 +30,14 @@ class LocalSocialCareRepository implements SocialCareContract {
     Map<String, dynamic> actionPayload,
     Patient Function(Patient) mutator,
   ) async {
+    debugPrint('[Local Repo] _mutatePatient: $actionType for ${patientId.value}');
     try {
       final cached = await (_db.select(_db.cachedPatients)
             ..where((t) => t.patientId.equals(patientId.value)))
           .getSingleOrNull();
 
       if (cached == null) {
+        debugPrint('[Local Repo] Patient NOT FOUND in cache.');
         return Failure(_notFoundError('Patient not found in local cache'));
       }
 
@@ -42,11 +45,16 @@ class LocalSocialCareRepository implements SocialCareContract {
           jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
       final Patient patient;
       switch (PatientTranslator.fromJson(currentJson)) {
-        case Success(:final value): patient = value;
-        case Failure(:final error): return Failure(error);
+        case Success(:final value): 
+          debugPrint('[Local Repo] Patient decoded from cache.');
+          patient = value;
+        case Failure(:final error): 
+          debugPrint('[Local Repo] FAILED to decode patient: $error');
+          return Failure(error);
       }
       final updatedPatient = mutator(patient);
 
+      debugPrint('[Local Repo] Updating Drift record...');
       await (_db.update(_db.cachedPatients)
             ..where((t) => t.patientId.equals(patientId.value)))
           .write(
@@ -59,14 +67,18 @@ class LocalSocialCareRepository implements SocialCareContract {
         ),
       );
 
+      debugPrint('[Local Repo] Enqueueing sync action: $actionType');
+      debugPrint('[Local Repo] Payload: $actionPayload');
       await _queueService.enqueue(
         patientId: patientId.value,
         actionType: actionType,
         payload: actionPayload,
       );
+      debugPrint('[Local Repo] Mutation and Queue COMPLETE.');
 
       return Success(updatedPatient);
     } catch (e) {
+      debugPrint('[Local Repo] CRITICAL ERROR in _mutatePatient: $e');
       return Failure(AppError(
         code: 'LOC-500',
         message: 'Failed to mutate patient locally: $e',
@@ -228,6 +240,12 @@ class LocalSocialCareRepository implements SocialCareContract {
         );
       }
     });
+  }
+
+  /// Checks whether there are pending sync actions for a given patient.
+  Future<bool> hasPendingActions(PatientId patientId) async {
+    final actions = await _queueService.getPendingActions();
+    return actions.any((a) => a.patientId == patientId.value);
   }
 
   /// Updates the local cache from a [PatientRemote] without enqueuing a sync action.

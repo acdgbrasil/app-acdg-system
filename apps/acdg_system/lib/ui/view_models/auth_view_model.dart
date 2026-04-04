@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
 import '../../logic/use_cases/auth_use_cases.dart';
@@ -34,13 +33,12 @@ class AuthViewModel extends BaseViewModel {
   late final Command0<void> restoreSession;
 
   Future<void> init() async {
-    debugPrint('[AuthVM] init — current status: ${_status.runtimeType}');
+    _log.info('Initializing AuthViewModel...');
     await restoreSession.execute();
-    debugPrint('[AuthVM] init complete — status after restore: ${_status.runtimeType}');
   }
 
   void _onStatusChanged(AuthStatus newStatus) {
-    debugPrint('[AuthVM] _onStatusChanged: ${newStatus.runtimeType}');
+    _log.info('Auth status changed: ${newStatus.runtimeType}');
 
     if (newStatus is AuthError) {
       _log.severe('Authentication error: ${newStatus.message}');
