@@ -1,6 +1,5 @@
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -103,14 +102,12 @@ class AppRouter {
     final isOnSplash = currentPath == AppRoutes.splash;
     final isOnLogin = currentPath == AppRoutes.login;
 
-    final result = switch (status) {
+    return switch (status) {
       AuthLoading() => isOnSplash ? null : AppRoutes.splash,
       Unauthenticated() => isOnLogin ? null : AppRoutes.login,
       AuthError() => isOnLogin ? null : AppRoutes.login,
       Authenticated() => (isOnSplash || isOnLogin) ? AppRoutes.home : null,
     };
-    debugPrint('[Router] redirect: status=${status.runtimeType}, path=$currentPath → $result');
-    return result;
   }
 
   String? _requireAuth(BuildContext context, GoRouterState state) {

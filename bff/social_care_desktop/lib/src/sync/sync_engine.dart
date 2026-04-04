@@ -212,18 +212,21 @@ class SyncEngine {
   }
 
   Future<bool> _syncAction(SyncAction action) async {
+    debugPrint('[Sync Engine] Syncing Action ${action.id}: ${action.actionType}');
     await _queueService.updateStatus(action.id, 'IN_PROGRESS');
 
     try {
       final result = await _dispatchAction(action);
 
       if (result case Success()) {
+        debugPrint('[Sync Engine] Action ${action.id} SUCCESS. Removing.');
         await _queueService.removeAction(action.id);
         return true;
       }
 
       if (result case Failure(:final error)) {
         final errorStr = error.toString().toLowerCase();
+        debugPrint('[Sync Engine] Action ${action.id} FAILED: $error');
 
         if (errorStr.contains('409') || errorStr.contains('conflict')) {
           await _queueService.markConflict(action.id, error.toString());
@@ -247,6 +250,7 @@ class SyncEngine {
 
       return true;
     } catch (e) {
+      debugPrint('[Sync Engine] Action ${action.id} CRITICAL EXCEPTION: $e');
       await _queueService.updateStatus(
         action.id,
         'FAILED',
@@ -258,6 +262,7 @@ class SyncEngine {
 
   Future<Result<void>> _dispatchAction(SyncAction action) async {
     final payload = jsonDecode(action.payloadJson) as Map<String, dynamic>;
+    debugPrint('[Sync Engine] Dispatching ${action.actionType} with payload: $payload');
 
     final PatientId patientId;
     switch (PatientId.create(action.patientId)) {

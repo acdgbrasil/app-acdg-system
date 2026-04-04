@@ -38,6 +38,9 @@ void main() {
       updatePrimaryCaregiverUseCase: UpdatePrimaryCaregiverUseCase(
         patientRepository: FakePatientRepository(),
       ),
+      updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(
+        patientRepository: FakePatientRepository(),
+      ),
       lookupRepository: FakeLookupRepository(),
     );
   });
