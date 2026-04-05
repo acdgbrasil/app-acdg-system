@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:core/core.dart';
+import 'package:core/core_offline.dart';
 import 'package:shared/shared.dart';
 import 'package:persistence/persistence.dart';
 import 'package:social_care_desktop/src/storage/local_social_care_repository.dart';

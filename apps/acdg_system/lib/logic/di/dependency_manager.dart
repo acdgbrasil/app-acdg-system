@@ -1,5 +1,6 @@
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
+import 'package:core/core_offline.dart';
 import 'package:network/network.dart';
 import 'package:social_care_desktop/social_care_desktop.dart';
 import '../../data/config/oidc_config_factory.dart';
