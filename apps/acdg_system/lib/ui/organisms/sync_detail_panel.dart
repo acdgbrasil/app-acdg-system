@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:core/core.dart';
+import 'package:core/core_offline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:persistence/persistence.dart';
