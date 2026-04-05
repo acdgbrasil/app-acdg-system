@@ -12,11 +12,6 @@ export 'src/base/command.dart';
 // Platform
 export 'src/platform/platform_resolver.dart';
 
-// Offline
-export 'src/offline/drift_database_service.dart';
-export 'src/offline/sync_queue_service.dart';
-export 'src/offline/sync_status.dart';
-
 // Utils
 export 'src/utils/env.dart';
 export 'src/utils/acdg_logger.dart';

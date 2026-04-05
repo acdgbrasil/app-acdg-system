@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'package:core/core_offline.dart';
 import 'package:flutter/material.dart';
 import 'package:network/network.dart';
 import 'package:provider/provider.dart';

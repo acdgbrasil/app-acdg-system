@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:core/core.dart';
+import 'package:core/core_offline.dart';
 import 'package:flutter/foundation.dart';
 import 'package:network/network.dart';
 import 'package:persistence/persistence.dart';
