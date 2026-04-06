@@ -51,12 +51,21 @@ class RegistryHandler {
 
   Future<Response> _fetchPatients(Request request) async {
     final session = getSession(request);
+    final hasToken = session.accessToken.isNotEmpty;
+    final tokenPrefix = hasToken
+        ? '${session.accessToken.substring(0, 10)}...'
+        : 'EMPTY';
+    print('[BFF] fetchPatients — userId=${session.userId}, '
+        'token=$tokenPrefix, expired=${session.isExpired()}');
     final contract = _contractFactory(session);
     final result = await contract.fetchPatients();
 
     return switch (result) {
       Success(:final value) => jsonOk(value.map((p) => p.toJson()).toList()),
-      Failure(:final error) => jsonError(500, error.toString()),
+      Failure(:final error) => () {
+        print('[BFF] fetchPatients FAILED: $error');
+        return jsonError(500, error.toString());
+      }(),
     };
   }
 
