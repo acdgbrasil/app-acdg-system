@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ── Stage 1: Compile Dart AOT ──
-FROM dart:3.8 AS build
+FROM dart:3.11 AS build
 WORKDIR /app
 
 # Copy BFF and its local dependencies
