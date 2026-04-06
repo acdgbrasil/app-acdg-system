@@ -36,9 +36,12 @@ class PeopleContextClient {
     String? cpf,
   }) async {
     try {
+      final dateOnly = birthDate.contains('T')
+          ? birthDate.split('T')[0]
+          : birthDate;
       final body = <String, dynamic>{
         'fullName': fullName,
-        'birthDate': birthDate,
+        'birthDate': dateOnly,
       };
       if (cpf != null && cpf.isNotEmpty) {
         body['cpf'] = cpf;
