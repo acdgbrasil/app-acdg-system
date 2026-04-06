@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'result.dart';
+import 'package:core_contracts/core_contracts.dart';
 
 /// Base class for all commands.
 ///

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 

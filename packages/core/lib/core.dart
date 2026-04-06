@@ -1,22 +1,17 @@
 /// Core package for ACDG frontend ecosystem.
 ///
 /// Provides base classes and platform resolution shared across all packages.
+/// Pure Dart contracts are re-exported from [core_contracts].
 library;
 
-// Base
-export 'src/base/result.dart';
+// Pure Dart (from core_contracts — no Flutter dependency)
+export 'package:core_contracts/core_contracts.dart';
+
+// Flutter-dependent (local)
 export 'src/base/base_view_model.dart';
-export 'src/base/base_use_case.dart';
 export 'src/base/command.dart';
-
-// Platform
 export 'src/platform/platform_resolver.dart';
-
-// Utils
 export 'src/utils/env.dart';
 export 'src/utils/acdg_logger.dart';
-export 'src/utils/uuid_util.dart';
 export 'src/utils/hml_auth_helper.dart';
-export 'src/utils/equatable/equatable.dart';
-export 'src/utils/equatable/equatable_config.dart';
 export 'src/utils/custom_masks.dart';

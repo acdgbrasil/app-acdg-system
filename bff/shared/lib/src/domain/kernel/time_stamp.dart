@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../../utils/app_error.dart';
 
 /// Value Object que representa um timestamp em UTC, garantindo formatação ISO8601.

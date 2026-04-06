@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../contract/social_care_contract.dart';
 import '../infrastructure/dtos/patient_remote.dart';
 import '../infrastructure/dtos/patient_overview.dart';

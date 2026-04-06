@@ -11,8 +11,8 @@ environment:
 dependencies:
   shared:
     path: ../shared
-  core:
-    path: ../../packages/core
+  core_contracts:
+    path: ../../packages/core_contracts
 
   # HTTP server
   shelf: ^1.4.2

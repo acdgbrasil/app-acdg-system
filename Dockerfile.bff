@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
-# ── Stage 1: Compile Dart AOT ──
+# ── Stage 1: Resolve + Compile AOT ──
 FROM ghcr.io/cirruslabs/flutter:3.41.4 AS build
+ENV CI=true
 WORKDIR /app
 
-# Copy full workspace (all packages depend on Flutter SDK)
+# Copy workspace (Flutter image needed for workspace resolution of Flutter packages)
 COPY pubspec.yaml ./
 COPY bff/ ./bff/
 COPY packages/ ./packages/
@@ -13,8 +14,17 @@ COPY apps/acdg_system/pubspec.yaml ./apps/acdg_system/pubspec.yaml
 # Resolve dependencies
 RUN dart pub get --directory=bff/social_care_web
 
-# Code generation for shared package
+# Code generation for shared package (json_serializable)
 RUN cd bff/shared && dart run build_runner build --delete-conflicting-outputs
+
+# AOT compile (works because bff/social_care_web depends on core_contracts, not core)
+RUN dart compile exe bff/social_care_web/bin/server.dart -o /app/server
+
+# ── Stage 2: Distroless runtime (~20MB) ──
+FROM gcr.io/distroless/base-debian12:nonroot
+LABEL org.opencontainers.image.source="https://github.com/acdgbrasil/app-acdg-system"
+LABEL org.opencontainers.image.description="ACDG Social Care BFF — Web Server"
+LABEL org.opencontainers.image.licenses="Proprietary"
 
 # ── Runtime environment variables (injected via Kubernetes/Docker) ──
 # Required:
@@ -29,6 +39,7 @@ RUN cd bff/shared && dart run build_runner build --delete-conflicting-outputs
 #   HOST                — Bind address (default: 0.0.0.0)
 #   SESSION_TTL_MINUTES — Session lifetime (default: 60)
 
+COPY --from=build /app/server /app/server
+
 EXPOSE 8081
-WORKDIR /app
-CMD ["dart", "run", "bff/social_care_web/bin/server.dart"]
+ENTRYPOINT ["/app/server"]

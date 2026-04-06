@@ -1,5 +1,5 @@
-import 'package:core/src/utils/equatable/equatable.dart';
-import 'package:core/src/utils/equatable/equatable_utils.dart';
+import 'package:core_contracts/src/utils/equatable/equatable.dart';
+import 'package:core_contracts/src/utils/equatable/equatable_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _SimpleEquatable extends Equatable {

@@ -1,4 +1,4 @@
-import '../utils/equatable/equatable.dart';
+import 'package:core_contracts/core_contracts.dart';
 
 /// Represents the possible states of the synchronization engine.
 sealed class SyncStatus with Equatable {

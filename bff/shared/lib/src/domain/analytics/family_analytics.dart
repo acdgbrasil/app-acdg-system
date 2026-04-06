@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../registry/family_member.dart';
 import '../kernel/time_stamp.dart';
 
