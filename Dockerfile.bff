@@ -24,6 +24,19 @@ LABEL org.opencontainers.image.source="https://github.com/acdgbrasil/app-acdg-sy
 LABEL org.opencontainers.image.description="ACDG Social Care BFF — Web Server"
 LABEL org.opencontainers.image.licenses="Proprietary"
 
+# ── Runtime environment variables (injected via Kubernetes/Docker) ──
+# Required:
+#   API_BASE_URL        — Backend API (e.g. https://social-care.acdgbrasil.com.br)
+#   OIDC_ISSUER         — Zitadel issuer URL
+#   OIDC_CLIENT_ID      — Confidential Client ID
+#   OIDC_CLIENT_SECRET  — Confidential Client Secret
+#   OIDC_REDIRECT_URI   — BFF callback URL (e.g. https://conecta.acdgbrasil.com.br/api/auth/callback)
+#   SESSION_SECRET      — HMAC key for session cookies (min 32 hex chars)
+# Optional:
+#   PORT                — HTTP port (default: 8081)
+#   HOST                — Bind address (default: 0.0.0.0)
+#   SESSION_TTL_MINUTES — Session lifetime (default: 60)
+
 COPY --from=build /app/bff/social_care_web/server /app/server
 
 EXPOSE 8081

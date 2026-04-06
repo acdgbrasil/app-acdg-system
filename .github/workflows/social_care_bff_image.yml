@@ -67,6 +67,48 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      - name: Fetch BFF secrets from Bitwarden (HML)
+        if: github.event_name != 'pull_request'
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.ACDG_ORG_BW_SM_ACCESS_TOKEN_PROD }}
+          secrets: |
+            0a82890b-0fb4-49d6-bbc6-b42400d47c5e > BFF_HML_OIDC_CLIENT_ID
+            4189ce3a-c21f-406e-bf8a-b42400d48aed > BFF_HML_OIDC_CLIENT_SECRET
+            95c92038-0fd5-4c7d-ba7a-b42400d49e45 > BFF_HML_SESSION_SECRET
+            c6d5f9c6-5f91-4187-b2a0-b42400d4aef8 > BFF_HML_API_BASE_URL
+            ae4cf597-d304-4f78-860e-b42400d4bcd9 > BFF_HML_OIDC_REDIRECT_URI
+
+      - name: Fetch BFF secrets from Bitwarden (PROD)
+        if: github.event_name != 'pull_request'
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.ACDG_ORG_BW_SM_ACCESS_TOKEN_PROD }}
+          secrets: |
+            21d3a3eb-086b-4f6e-94ff-b42400d4d1e9 > BFF_PROD_OIDC_CLIENT_ID
+            856655f7-add6-4333-b20b-b42400d4e578 > BFF_PROD_OIDC_CLIENT_SECRET
+            b3e598e4-7f38-4072-9e90-b42400d4f4ec > BFF_PROD_SESSION_SECRET
+            58961e6c-6a29-4b7a-aeec-b42400d501b2 > BFF_PROD_API_BASE_URL
+            c6561674-ad02-4bfc-8c3e-b42400d50f87 > BFF_PROD_OIDC_REDIRECT_URI
+
+      - name: Validate secrets loaded
+        if: github.event_name != 'pull_request'
+        run: |
+          missing=()
+          [ -z "$BFF_HML_OIDC_CLIENT_ID" ] && missing+=("BFF_HML_OIDC_CLIENT_ID")
+          [ -z "$BFF_HML_OIDC_CLIENT_SECRET" ] && missing+=("BFF_HML_OIDC_CLIENT_SECRET")
+          [ -z "$BFF_HML_SESSION_SECRET" ] && missing+=("BFF_HML_SESSION_SECRET")
+          [ -z "$BFF_HML_API_BASE_URL" ] && missing+=("BFF_HML_API_BASE_URL")
+          [ -z "$BFF_PROD_OIDC_CLIENT_ID" ] && missing+=("BFF_PROD_OIDC_CLIENT_ID")
+          [ -z "$BFF_PROD_OIDC_CLIENT_SECRET" ] && missing+=("BFF_PROD_OIDC_CLIENT_SECRET")
+          [ -z "$BFF_PROD_SESSION_SECRET" ] && missing+=("BFF_PROD_SESSION_SECRET")
+          [ -z "$BFF_PROD_API_BASE_URL" ] && missing+=("BFF_PROD_API_BASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing BFF secrets: ${missing[*]}"
+            exit 1
+          fi
+          echo "All BFF secrets loaded successfully."
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
