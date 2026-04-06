@@ -1,6 +1,6 @@
 name: design_system
 description: Acdg Technology — Design System (Atomic Design).
-version: 0.1.0
+version: 0.1.1
 publish_to: 'none'
 
 resolution: workspace

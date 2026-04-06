@@ -1,6 +1,6 @@
 name: social_care
 description: Social Care module — domain, data, and UI layers for patient management.
-version: 0.1.0
+version: 0.1.1
 publish_to: 'none'
 
 resolution: workspace

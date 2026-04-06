@@ -1,6 +1,6 @@
 name: persistence
 description: Isolated persistence package with Drift database tables and logic.
-version: 0.2.0
+version: 0.2.1
 publish_to: 'none'
 
 resolution: workspace
