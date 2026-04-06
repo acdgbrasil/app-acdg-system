@@ -9,6 +9,8 @@ import 'package:social_care_web/src/auth/session_store.dart';
 import 'package:social_care_web/src/config/server_config.dart';
 import 'package:social_care_web/src/server/app_router.dart';
 
+import '../handlers/test_helpers.dart';
+
 /// Fake OIDC client that returns predictable values without HTTP calls.
 class _FakeOidcServerClient extends OidcServerClient {
   _FakeOidcServerClient() : super(config: _testConfig);
@@ -20,6 +22,7 @@ FakeSocialCareBff _fakeContract(Session session) =>
 
 const _requiredEnv = {
   'API_BASE_URL': 'http://localhost:3000',
+  'PEOPLE_CONTEXT_BASE_URL': 'http://localhost:3001',
   'OIDC_ISSUER': 'https://auth.example.com',
   'OIDC_CLIENT_ID': 'test-client',
   'OIDC_CLIENT_SECRET': 'test-secret',
@@ -41,6 +44,7 @@ void main() {
       sessionStore: sessionStore,
       oidcClient: _FakeOidcServerClient(),
       contractFactory: _fakeContract,
+      peopleContextFactory: (_) => FakePeopleContextClient(),
     );
     handler = appRouter.handler;
   });

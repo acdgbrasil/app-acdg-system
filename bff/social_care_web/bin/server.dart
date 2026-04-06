@@ -18,11 +18,20 @@ Future<void> main() async {
     );
   }
 
+  PeopleContextClient peopleContextFactory(Session session) {
+    return PeopleContextClient(
+      baseUrl: config.peopleContextBaseUrl,
+      accessToken: session.accessToken,
+      actorId: session.userId,
+    );
+  }
+
   final appRouter = AppRouter(
     config: config,
     sessionStore: sessionStore,
     oidcClient: oidcClient,
     contractFactory: contractFactory,
+    peopleContextFactory: peopleContextFactory,
   );
 
   final server = ShelfServer(config: config, appRouter: appRouter);
