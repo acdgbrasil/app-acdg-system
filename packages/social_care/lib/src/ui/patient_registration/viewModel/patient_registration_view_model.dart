@@ -1,5 +1,4 @@
 import 'package:core/core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
 import 'package:social_care/src/ui/patient_registration/models/enums/gender.dart';

@@ -75,7 +75,6 @@ class _ToastOverlayState extends State<_ToastOverlay>
   late final Animation<Offset> _slideAnimation;
   Timer? _dismissTimer;
 
-  static const _brown = AppColors.textPrimary;
   static const _green = AppColors.primary;
   static const _red = AppColors.danger;
   static const _amber = AppColors.warning;

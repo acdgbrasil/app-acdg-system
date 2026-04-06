@@ -1,12 +1,12 @@
+import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
-import 'package:social_care/src/ui/family_composition/models/add_member_result.dart';
 import 'package:shared/shared.dart';
 import 'package:shared/src/infrastructure/mappers/registry_mapper.dart';
-import 'package:core/core.dart';
-import '../../../testing/fakes/in_memory_patient_repository.dart';
+import 'package:social_care/social_care.dart';
+import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
+
 import '../../../testing/fakes/in_memory_lookup_repository.dart';
+import '../../../testing/fakes/in_memory_patient_repository.dart';
 
 void main() {
   late FamilyCompositionViewModel viewModel;
@@ -21,11 +21,11 @@ void main() {
     fakeLookup = InMemoryLookupRepository();
     
     fakeLookup.seed('dominio_parentesco', [
-      LookupItem(id: '00000000-0000-0000-0000-000000000001', codigo: 'FILHO', descricao: 'Filho'),
+      const LookupItem(id: '00000000-0000-0000-0000-000000000001', codigo: 'FILHO', descricao: 'Filho'),
     ]);
 
     fakeLookup.seed('dominio_tipo_identidade', [
-      LookupItem(id: specificityId, codigo: 'QUILOMBOLA', descricao: 'Quilombola'),
+      const LookupItem(id: specificityId, codigo: 'QUILOMBOLA', descricao: 'Quilombola'),
     ]);
 
     final pId = switch (PatientId.create(patientIdStr)) {
@@ -52,11 +52,10 @@ void main() {
       updatePrimaryCaregiverUseCase: UpdatePrimaryCaregiverUseCase(patientRepository: fakeRepo),
       updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(patientRepository: fakeRepo),
       lookupRepository: fakeLookup,
-    );
-    
-    await Future.delayed(Duration.zero);
-  });
+      );
 
+      await Future<void>.delayed(Duration.zero);
+      });
   group('ACDG Gold Standard: Contract & Performance Regression', () {
     
     test('BUG 1 & 9: canSave MUST be false after load and true only after change', () async {

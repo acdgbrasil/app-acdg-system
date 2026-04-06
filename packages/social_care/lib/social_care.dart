@@ -7,13 +7,14 @@ export 'src/data/commands/family_intents.dart';
 export 'src/data/commands/intervention_intents.dart';
 export 'src/data/commands/register_patient_intent.dart';
 export 'src/data/commands/registry_intents.dart';
-// Services
-export 'src/data/services/patient_service.dart';
 // Repositories
 export 'src/data/repositories/bff_lookup_repository.dart';
 export 'src/data/repositories/bff_patient_repository.dart';
 export 'src/data/repositories/lookup_repository.dart';
 export 'src/data/repositories/patient_repository.dart';
+// Services
+export 'src/data/services/patient_service.dart';
+export 'src/data/services/http_social_care_client.dart';
 // Errors
 export 'src/domain/errors/social_care_errors.dart';
 // Use Cases
@@ -37,11 +38,15 @@ export 'src/logic/use_case/registry/get_patient_use_case.dart';
 export 'src/logic/use_case/registry/list_patients_use_case.dart';
 export 'src/logic/use_case/registry/register_patient_use_case.dart';
 export 'src/logic/use_case/registry/update_social_identity_use_case.dart';
-// UI — Patient Registration
-export 'src/ui/patient_registration/di/patient_registration_providers.dart';
-export 'src/ui/patient_registration/view/page/patient_registration_page.dart';
-export 'src/ui/patient_registration/viewModel/patient_registration_view_model.dart';
+// UI — Family Composition
+export 'src/ui/family_composition/di/family_composition_providers.dart';
+export 'src/ui/family_composition/view/page/family_composition_page.dart';
+export 'src/ui/family_composition/view_models/family_composition_view_model.dart';
 // UI — Home
 export 'src/ui/home/di/home_providers.dart';
 export 'src/ui/home/view/page/home_page.dart';
 export 'src/ui/home/viewModel/home_view_model.dart';
+// UI — Patient Registration
+export 'src/ui/patient_registration/di/patient_registration_providers.dart';
+export 'src/ui/patient_registration/view/page/patient_registration_page.dart';
+export 'src/ui/patient_registration/viewModel/patient_registration_view_model.dart';

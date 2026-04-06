@@ -51,11 +51,11 @@ class FamilyMemberEntry {
       hasDisabilityError == null;
 
   List<String> get validationErrors => [
-        if (nameError != null) nameError!,
-        if (birthDateError != null) birthDateError!,
-        if (sexError != null) sexError!,
-        if (relationshipError != null) relationshipError!,
-        if (hasDisabilityError != null) hasDisabilityError!,
+        ?nameError,
+        ?birthDateError,
+        ?sexError,
+        ?relationshipError,
+        ?hasDisabilityError,
       ];
 
   DateTime? get dateParsed {

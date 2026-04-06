@@ -1,4 +1,5 @@
 import 'package:design_system/design_system.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -65,7 +66,7 @@ void main() {
 
       // Spec: Interactive elements must have a "glow" effect on hover
       // We check if the shadows include the glow color or increased blur
-      final hasGlow = decoration.boxShadow!.any((s) => s.color.opacity < 0.3 && s.blurRadius >= 5);
+      final hasGlow = decoration.boxShadow!.any((s) => s.color.a < 0.3 && s.blurRadius >= 5);
       expect(hasGlow, isTrue, reason: 'Button must show a glow effect when hovered');
 
       addTearDown(tester.view.resetPhysicalSize);

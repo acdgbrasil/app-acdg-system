@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:core/core.dart';
 import 'package:core/core_offline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -304,7 +303,7 @@ class _SyncDetailPanelState extends State<SyncDetailPanel> {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(32, 16, 32, 32),
         itemCount: sorted.length,
-        separatorBuilder: (_, __) => const Divider(color: Color(0x15F2E2C4), height: 1),
+        separatorBuilder: (_, _) => const Divider(color: Color(0x15F2E2C4), height: 1),
         itemBuilder: (context, index) {
           final action = sorted[index];
           return _ActionRow(

@@ -20,15 +20,15 @@ class FamilyList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (families.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off, size: 48, color: AppColors.inputLine),
-            const SizedBox(height: 12),
+            Icon(Icons.search_off, size: 48, color: AppColors.inputLine),
+            SizedBox(height: 12),
             Text(
               HomeLn10.emptyStateTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Playfair Display',
                 fontStyle: FontStyle.italic,
                 fontSize: 18,

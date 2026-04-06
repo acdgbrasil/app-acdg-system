@@ -75,27 +75,32 @@ final class PersonalData with Equatable {
     TimeStamp? now,
   }) {
     final fn = firstName?.nullIfEmptyNormalized();
-    if (fn == null)
+    if (fn == null) {
       return Failure(_buildError('PDT-001', 'Nome não pode ser vazio.'));
+    }
 
     final ln = lastName?.nullIfEmptyNormalized();
-    if (ln == null)
+    if (ln == null) {
       return Failure(_buildError('PDT-002', 'Sobrenome não pode ser vazio.'));
+    }
 
     final mn = motherName?.nullIfEmptyNormalized();
-    if (mn == null)
+    if (mn == null) {
       return Failure(_buildError('PDT-003', 'Nome da mãe não pode ser vazio.'));
+    }
 
     final nat = nationality?.nullIfEmptyNormalized();
-    if (nat == null)
+    if (nat == null) {
       return Failure(
         _buildError('PDT-005', 'Nacionalidade não pode ser vazia.'),
       );
+    }
 
-    if (birthDate == null)
+    if (birthDate == null) {
       return Failure(
         _buildError('PDT-004', 'Data de nascimento é obrigatória.'),
       );
+    }
 
     final refNow = now ?? TimeStamp.now;
     if (birthDate.date.isAfter(refNow.date)) {

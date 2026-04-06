@@ -1,7 +1,6 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:core/core.dart';
 import 'package:core/core_offline.dart';
 import 'package:acdg_system/ui/atoms/sync_indicator.dart';
 

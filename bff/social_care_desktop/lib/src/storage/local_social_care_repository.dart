@@ -219,7 +219,7 @@ class LocalSocialCareRepository implements SocialCareContract {
             lastName: Value(item.lastName ?? ''),
             cpf: Value(existing?.cpf ?? ''),
             fullRecordJson: shouldPreserveRecord
-                ? existing!.fullRecordJson
+                ? existing.fullRecordJson
                 : jsonEncode(item.toJson()),
             version: Value(existing?.version ?? 0),
             isDirty: Value(existing?.isDirty ?? false),
@@ -233,7 +233,7 @@ class LocalSocialCareRepository implements SocialCareContract {
               firstName: Value(item.firstName ?? ''),
               lastName: Value(item.lastName ?? ''),
               fullRecordJson: shouldPreserveRecord
-                  ? Value(existing!.fullRecordJson)
+                  ? Value(existing.fullRecordJson)
                   : Value(jsonEncode(item.toJson())),
               lastSyncAt: Value(DateTime.now().toUtc()),
             ),

@@ -1,0 +1,79 @@
+# syntax=docker/dockerfile:1.7
+
+# ── Stage 1: Build Flutter Web WASM ──
+FROM ghcr.io/cirruslabs/flutter:3.41.4 AS build
+WORKDIR /app
+
+# Copy workspace (melos needs all packages)
+COPY pubspec.yaml pubspec.lock melos.yaml ./
+COPY apps/ ./apps/
+COPY packages/ ./packages/
+COPY bff/ ./bff/
+
+# Resolve dependencies
+RUN dart pub get --directory=apps/acdg_system
+
+# Code generation (persistence first, then dependents)
+RUN cd packages/persistence && dart run build_runner build --delete-conflicting-outputs
+RUN cd bff/shared && dart run build_runner build --delete-conflicting-outputs
+RUN cd apps/acdg_system && dart run build_runner build --delete-conflicting-outputs
+
+# Build args for --dart-define-from-file
+ARG OIDC_ISSUER
+ARG OIDC_CLIENT_ID
+ARG OIDC_SCOPES=openid\ profile\ email\ offline_access\ urn:zitadel:iam:org:project:roles
+ARG OIDC_WEB_REDIRECT_URI
+ARG OIDC_WEB_POST_LOGOUT_URI
+ARG BFF_BASE_URL=/api
+
+# Generate .env at build-time
+RUN printf 'OIDC_ISSUER=%s\nOIDC_CLIENT_ID=%s\nOIDC_SCOPES=%s\nOIDC_WEB_REDIRECT_URI=%s\nOIDC_WEB_POST_LOGOUT_URI=%s\nBFF_BASE_URL=%s\n' \
+    "$OIDC_ISSUER" "$OIDC_CLIENT_ID" "$OIDC_SCOPES" \
+    "$OIDC_WEB_REDIRECT_URI" "$OIDC_WEB_POST_LOGOUT_URI" "$BFF_BASE_URL" \
+    > apps/acdg_system/.env
+
+RUN cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=.env
+
+# ── Stage 2: Serve with nginx ──
+FROM nginx:1.27-alpine
+LABEL org.opencontainers.image.source="https://github.com/acdgbrasil/app-acdg-system"
+LABEL org.opencontainers.image.description="ACDG Conecta Raros — Web Frontend"
+LABEL org.opencontainers.image.licenses="Proprietary"
+
+# Copy built WASM files
+COPY --from=build /app/apps/acdg_system/build/web /usr/share/nginx/html
+
+# nginx config for SPA (fallback to index.html)
+RUN cat > /etc/nginx/conf.d/default.conf <<'NGINX'
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Gzip for WASM and JS
+    gzip on;
+    gzip_types application/wasm application/javascript text/css text/html;
+    gzip_min_length 1024;
+
+    # Aggressive cache for hashed assets
+    location ~* \.(wasm|js|css|png|jpg|svg|ico|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Health check
+    location /healthz {
+        access_log off;
+        return 200 'ok';
+        add_header Content-Type text/plain;
+    }
+}
+NGINX
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

@@ -8,8 +8,8 @@ void main() {
   const otherCode = 'FILHO';
 
   final lookups = [
-    LookupItem(id: '1', codigo: prCode, descricao: 'Pessoa de Referência'),
-    LookupItem(id: '2', codigo: otherCode, descricao: 'Filho(a)'),
+    const LookupItem(id: '1', codigo: prCode, descricao: 'Pessoa de Referência'),
+    const LookupItem(id: '2', codigo: otherCode, descricao: 'Filho(a)'),
   ];
 
   testWidgets('TDD: Reference Person relationship MUST NOT appear in the add member modal', (tester) async {

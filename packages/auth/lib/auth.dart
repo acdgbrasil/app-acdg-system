@@ -9,6 +9,8 @@ export 'src/models/auth_token.dart';
 export 'src/models/auth_user.dart';
 export 'src/repositories/auth_repository.dart';
 export 'src/services/auth_service.dart';
+export 'src/services/bff/bff_auth_config.dart';
+export 'src/services/bff/bff_auth_service.dart';
 export 'src/services/oidc/oidc_auth_config.dart';
 export 'src/services/oidc/oidc_auth_service.dart';
 export 'src/services/oidc/oidc_claims_parser.dart';

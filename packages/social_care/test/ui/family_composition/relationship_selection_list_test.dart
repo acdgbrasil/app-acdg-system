@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
-import 'package:social_care/src/ui/family_composition/view/components/relationship_selection_list.dart';
 import 'package:social_care/src/ui/family_composition/view/components/hoverable_relationship_item.dart';
+import 'package:social_care/src/ui/family_composition/view/components/relationship_selection_list.dart';
 
 void main() {
   group('RelationshipSelectionList', () {
     final testLookup = <LookupItem>[
-      LookupItem(id: '1', codigo: 'MAE', descricao: 'Mãe'),
-      LookupItem(id: '2', codigo: 'PAI', descricao: 'Pai'),
-      LookupItem(id: '3', codigo: 'PESSOA_REFERENCIA', descricao: 'Pessoa de Referência'),
+      const LookupItem(id: '1', codigo: 'MAE', descricao: 'Mãe'),
+      const LookupItem(id: '2', codigo: 'PAI', descricao: 'Pai'),
+      const LookupItem(id: '3', codigo: 'PESSOA_REFERENCIA', descricao: 'Pessoa de Referência'),
     ];
 
     testWidgets('renders items excluding PESSOA_REFERENCIA', (tester) async {

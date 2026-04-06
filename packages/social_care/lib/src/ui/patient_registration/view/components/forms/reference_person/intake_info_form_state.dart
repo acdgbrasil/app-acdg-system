@@ -54,8 +54,8 @@ class IntakeInfoFormState {
       ingressTypeError == null && serviceReasonError == null;
 
   List<String> get validationErrors => [
-        if (ingressTypeError != null) ingressTypeError!,
-        if (serviceReasonError != null) serviceReasonError!,
+        ?ingressTypeError,
+        ?serviceReasonError,
       ];
 
   void dispose() {

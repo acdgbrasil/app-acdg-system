@@ -103,8 +103,9 @@ final class Diagnosis with Equatable {
     required String? description,
     TimeStamp? now,
   }) {
-    if (date == null)
+    if (date == null) {
       return Failure(_buildDiagError('DIA-001', 'Data não pode ser nula'));
+    }
 
     final refNow = now ?? TimeStamp.now;
     if (date.date.isAfter(refNow.date)) {
@@ -332,17 +333,19 @@ final class SocialCareAppointment with Equatable {
       ); // Adjusted code SCA-002 -> SCA-003 in logic
     }
 
-    if (s != null && s.length > 500)
+    if (s != null && s.length > 500) {
       return Failure(
         _buildApptError('SCA-004', 'Resumo não pode exceder 500 caracteres'),
       );
-    if (ap != null && ap.length > 2000)
+    }
+    if (ap != null && ap.length > 2000) {
       return Failure(
         _buildApptError(
           'SCA-005',
           'Plano de ação não pode exceder 2000 caracteres',
         ),
       );
+    }
 
     return Success(
       SocialCareAppointment._(

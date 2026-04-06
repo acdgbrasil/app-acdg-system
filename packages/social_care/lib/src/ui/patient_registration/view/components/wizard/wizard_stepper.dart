@@ -14,7 +14,6 @@ class WizardStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
     final steps = [
       ReferencePersonLn10.stepPersonalData,
       ReferencePersonLn10.stepDocuments,

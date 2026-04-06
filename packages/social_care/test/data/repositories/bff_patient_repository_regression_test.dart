@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
 import 'package:social_care/src/ui/home/models/patient_detail_translator.dart';
-import 'package:social_care/src/ui/home/models/patient_detail_result.dart';
 
 import '../../../testing/social_care_testing.dart';
 

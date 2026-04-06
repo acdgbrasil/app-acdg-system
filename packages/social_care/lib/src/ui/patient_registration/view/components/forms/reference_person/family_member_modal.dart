@@ -327,7 +327,7 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
                 ),
               ],
             ),
-            child: Text(
+            child: const Text(
               ReferencePersonLn10.memberModalSave,
               style: TextStyle(
                 color: _offWhite,

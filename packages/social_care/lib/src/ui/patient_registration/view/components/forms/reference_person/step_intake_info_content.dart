@@ -24,17 +24,17 @@ class StepIntakeInfoContent extends StatelessWidget {
   });
 
   static final _ingressOptions = [
-    _IngressOption('espontaneo', ReferencePersonLn10.ingressEspontaneo),
-    _IngressOption('busca_ativa', ReferencePersonLn10.ingressBuscaAtiva),
-    _IngressOption('enc_saude', ReferencePersonLn10.ingressEncSaude),
-    _IngressOption('enc_judiciario', ReferencePersonLn10.ingressEncJudiciario),
-    _IngressOption('enc_conselho', ReferencePersonLn10.ingressEncConselho),
-    _IngressOption('enc_educacao', ReferencePersonLn10.ingressEncEducacao),
-    _IngressOption('enc_setoriais', ReferencePersonLn10.ingressEncSetoriais),
-    _IngressOption('enc_psb', ReferencePersonLn10.ingressEncPsb),
-    _IngressOption('enc_pse', ReferencePersonLn10.ingressEncPse),
-    _IngressOption('enc_sgd', ReferencePersonLn10.ingressEncSgd),
-    _IngressOption('outros', ReferencePersonLn10.ingressOutros),
+    const _IngressOption('espontaneo', ReferencePersonLn10.ingressEspontaneo),
+    const _IngressOption('busca_ativa', ReferencePersonLn10.ingressBuscaAtiva),
+    const _IngressOption('enc_saude', ReferencePersonLn10.ingressEncSaude),
+    const _IngressOption('enc_judiciario', ReferencePersonLn10.ingressEncJudiciario),
+    const _IngressOption('enc_conselho', ReferencePersonLn10.ingressEncConselho),
+    const _IngressOption('enc_educacao', ReferencePersonLn10.ingressEncEducacao),
+    const _IngressOption('enc_setoriais', ReferencePersonLn10.ingressEncSetoriais),
+    const _IngressOption('enc_psb', ReferencePersonLn10.ingressEncPsb),
+    const _IngressOption('enc_pse', ReferencePersonLn10.ingressEncPse),
+    const _IngressOption('enc_sgd', ReferencePersonLn10.ingressEncSgd),
+    const _IngressOption('outros', ReferencePersonLn10.ingressOutros),
   ];
 
   static final _programOptions = [

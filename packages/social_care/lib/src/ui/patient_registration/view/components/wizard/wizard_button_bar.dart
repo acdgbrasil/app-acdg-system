@@ -117,7 +117,7 @@ class _SuccessButtonState extends State<_SuccessButton>
               },
             ),
             const SizedBox(width: 10),
-            Text(
+            const Text(
               ReferencePersonLn10.savedSuccessfully,
               style: TextStyle(
                 fontFamily: 'Playfair Display',

@@ -86,13 +86,13 @@ class PersonalDataFormState {
   }
 
   List<String> get validationErrors => [
-    if (firstNameError != null) firstNameError!,
-    if (lastNameError != null) lastNameError!,
-    if (motherNameError != null) motherNameError!,
-    if (socialNameError != null) socialNameError!,
+    ?firstNameError,
+    ?lastNameError,
+    ?motherNameError,
+    ?socialNameError,
     if (nationality.value == null) ReferencePersonLn10.errorSelectNationality,
     if (gender.value == null) ReferencePersonLn10.errorSelectGender,
-    if (phoneNumberError != null) phoneNumberError!,
+    ?phoneNumberError,
   ];
 
   // 6. Gerenciamento de Memória

@@ -2,9 +2,9 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/documents_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/family_composition_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/personal_data_form_state.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/documents_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_section_title.dart';
 
 import 'family_member_modal.dart';
@@ -108,12 +108,12 @@ class StepFamilyCompositionContent extends StatelessWidget {
       child: DataTable(
         columnSpacing: 16,
         columns: [
-          DataColumn(label: Text(ReferencePersonLn10.tableHeaderName)),
-          DataColumn(label: Text(ReferencePersonLn10.tableHeaderAge)),
-          DataColumn(label: Text(ReferencePersonLn10.tableHeaderSex)),
-          DataColumn(label: Text(ReferencePersonLn10.tableHeaderRelationship)),
-          DataColumn(label: Text(ReferencePersonLn10.tableHeaderPcd)),
-          DataColumn(label: Text(ReferencePersonLn10.tableHeaderDocs)),
+          const DataColumn(label: Text(ReferencePersonLn10.tableHeaderName)),
+          const DataColumn(label: Text(ReferencePersonLn10.tableHeaderAge)),
+          const DataColumn(label: Text(ReferencePersonLn10.tableHeaderSex)),
+          const DataColumn(label: Text(ReferencePersonLn10.tableHeaderRelationship)),
+          const DataColumn(label: Text(ReferencePersonLn10.tableHeaderPcd)),
+          const DataColumn(label: Text(ReferencePersonLn10.tableHeaderDocs)),
           const DataColumn(label: Text('')),
         ],
         rows: [
@@ -149,7 +149,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
               )),
               DataCell(Text(refAge != null ? '$refAge ${ReferencePersonLn10.ageYears}' : '–')),
               DataCell(Text(refSex != null ? _sexLabel(refSex) : '–')),
-              DataCell(Text(ReferencePersonLn10.tableRefPersonRelationship)),
+              const DataCell(Text(ReferencePersonLn10.tableRefPersonRelationship)),
               const DataCell(Text('–')),
               const DataCell(Text('–')),
               const DataCell(Icon(Icons.lock_outline, size: 14, color: Colors.black26)),
@@ -200,7 +200,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
         ? formState.createEntryFromSnapshot(existing)
         : formState.createEntry();
 
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black38,

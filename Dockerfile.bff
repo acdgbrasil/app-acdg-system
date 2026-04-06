@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1.7
+
+# ── Stage 1: Compile Dart AOT ──
+FROM dart:3.8 AS build
+WORKDIR /app
+
+# Copy workspace (BFF depends on shared, core)
+COPY pubspec.yaml pubspec.lock ./
+COPY bff/ ./bff/
+COPY packages/ ./packages/
+
+# Resolve dependencies
+RUN dart pub get --directory=bff/social_care_web
+
+# Code generation for shared package
+RUN cd bff/shared && dart run build_runner build --delete-conflicting-outputs
+
+# Compile AOT binary
+RUN dart compile exe bff/social_care_web/bin/server.dart -o bff/social_care_web/server
+
+# ── Stage 2: Runtime mínimo ──
+FROM gcr.io/distroless/cc-debian12
+LABEL org.opencontainers.image.source="https://github.com/acdgbrasil/app-acdg-system"
+LABEL org.opencontainers.image.description="ACDG Social Care BFF — Web Server"
+LABEL org.opencontainers.image.licenses="Proprietary"
+
+COPY --from=build /app/bff/social_care_web/server /app/server
+
+EXPOSE 8081
+CMD ["/app/server"]

@@ -1,15 +1,13 @@
 import 'package:auth/auth.dart';
-import 'package:core/core.dart';
 import 'package:core/core_offline.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart' hide Consumer;
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/view/page/family_composition_page.dart';
 
 import '../di/infrastructure_providers.dart';
-import '../di/social_care_providers.dart';
 import '../../ui/atoms/sync_indicator.dart';
 import '../../ui/organisms/sync_detail_panel.dart';
 import '../../ui/pages/home_page.dart';
@@ -57,6 +55,9 @@ class AppRouter {
         redirect: _requireAuth,
         builder: (context, state) => Consumer(
           builder: (context, ref, _) {
+            if (kIsWeb) {
+              return const SocialCareHomePage();
+            }
             final syncEngine = ref.watch(syncEngineProvider);
             final queueService = context.read<SyncQueueService>();
             final dbService = context.read<DriftDatabaseService>();
