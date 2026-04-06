@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Code generation (shared DTOs)
+        run: cd bff/shared && dart run build_runner build --delete-conflicting-outputs
+
       - name: Run BFF tests
         run: flutter test bff/social_care_desktop/test/ bff/social_care_web/test/
 

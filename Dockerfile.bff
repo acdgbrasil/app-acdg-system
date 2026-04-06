@@ -5,7 +5,7 @@ FROM dart:3.8 AS build
 WORKDIR /app
 
 # Copy workspace (BFF depends on shared, core)
-COPY pubspec.yaml pubspec.lock ./
+COPY pubspec.yaml ./
 COPY bff/ ./bff/
 COPY packages/ ./packages/
 
