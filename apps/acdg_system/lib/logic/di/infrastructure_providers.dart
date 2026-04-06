@@ -3,6 +3,7 @@ import 'package:auth/auth.dart';
 import 'package:core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
+import 'package:social_care/social_care.dart';
 import 'package:social_care_desktop/social_care_desktop.dart';
 
 import 'auth_providers.dart';
@@ -11,17 +12,20 @@ import 'auth_providers.dart';
 /// Riverpod providers watch this instead of the ChangeNotifier.
 final authStatusProvider = StreamProvider<AuthStatus>((ref) async* {
   final repo = ref.watch(authRepositoryProvider);
-  
+
   // Yield current state immediately
   yield repo.currentStatus;
-  
+
   // Then yield subsequent changes
   yield* repo.statusStream;
 });
 
 /// Builds or tears down the [SyncEngine] based on authentication state.
-/// Automatically stops the engine on dispose (logout or provider invalidation).
+/// Returns `null` on web (no offline sync) or when unauthenticated.
 final syncEngineProvider = Provider<SyncEngine?>((ref) {
+  final deps = ref.watch(appDependencyManagerProvider);
+  if (deps.isWeb) return null;
+
   final asyncStatus = ref.watch(authStatusProvider);
 
   return switch (asyncStatus) {
@@ -50,19 +54,32 @@ SyncEngine _buildSyncEngine(Ref ref, AuthUser user) {
   return engine;
 }
 
-/// Provides the [SocialCareContract] — [OfflineFirstRepository] when
-/// authenticated with a running [SyncEngine], or [LocalSocialCareRepository]
-/// as local-only fallback.
+/// Provides the [SocialCareContract].
+///
+/// - **Desktop:** [OfflineFirstRepository] when authenticated with a running
+///   [SyncEngine], or [LocalSocialCareRepository] as local-only fallback.
+/// - **Web:** [HttpSocialCareClient] that calls the BFF's
+///   `/api/patients/*`, `/api/lookups/*` endpoints via same-origin cookies.
 final socialCareContractProvider = Provider<SocialCareContract>((ref) {
+  final deps = ref.watch(appDependencyManagerProvider);
+
+  if (deps.isWeb) {
+    return _buildWebContract(ref);
+  }
+
   final asyncStatus = ref.watch(authStatusProvider);
   final syncEngine = ref.watch(syncEngineProvider);
 
   return switch (asyncStatus) {
     AsyncData(value: Authenticated(:final user)) when syncEngine != null =>
       _buildOfflineRepository(ref, user, syncEngine),
-    _ => ref.watch(appDependencyManagerProvider).localSocialCareRepository,
+    _ => deps.localSocialCareRepository,
   };
 });
+
+// ---------------------------------------------------------------------------
+// Desktop: offline-first
+// ---------------------------------------------------------------------------
 
 OfflineFirstRepository _buildOfflineRepository(
   Ref ref,
@@ -85,4 +102,17 @@ OfflineFirstRepository _buildOfflineRepository(
 
   unawaited(repo.prefetchLookupTables());
   return repo;
+}
+
+// ---------------------------------------------------------------------------
+// Web: direct BFF calls via HTTP (no offline layer)
+// ---------------------------------------------------------------------------
+
+/// Builds the web [SocialCareContract].
+///
+/// Uses [HttpSocialCareClient] that calls the BFF's REST endpoints.
+/// Cookies are sent automatically on same-origin requests so no
+/// Authorization header is needed.
+SocialCareContract _buildWebContract(Ref ref) {
+  return HttpSocialCareClient(baseUrl: Env.bffBaseUrl);
 }

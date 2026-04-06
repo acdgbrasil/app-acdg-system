@@ -1,18 +1,16 @@
+import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
-import 'package:social_care/src/ui/family_composition/models/family_member_model.dart';
-import 'package:social_care/src/ui/family_composition/models/add_member_result.dart';
-import 'package:social_care/src/logic/use_case/registry/get_patient_use_case.dart';
+import 'package:shared/shared.dart';
 import 'package:social_care/src/logic/use_case/family/add_family_member_use_case.dart';
 import 'package:social_care/src/logic/use_case/family/remove_family_member_use_case.dart';
 import 'package:social_care/src/logic/use_case/family/update_primary_caregiver_use_case.dart';
+import 'package:social_care/src/logic/use_case/registry/get_patient_use_case.dart';
 import 'package:social_care/src/logic/use_case/registry/update_social_identity_use_case.dart';
-import 'package:core/core.dart';
-import 'package:shared/shared.dart';
+import 'package:social_care/src/ui/family_composition/models/add_member_result.dart';
+import 'package:social_care/src/ui/family_composition/models/family_member_model.dart';
+import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
 
 import '../../../testing/social_care_testing.dart';
-import '../../../testing/fakes/in_memory_patient_repository.dart';
-import '../../../testing/fakes/in_memory_lookup_repository.dart';
 
 void main() {
   group('FamilyCompositionViewModel Orchestration (Mission 008.1)', () {
@@ -29,12 +27,12 @@ void main() {
       
       // Seed lookups FIRST
       fakeLookup.seed('dominio_parentesco', [
-        LookupItem(
+        const LookupItem(
           id: lookupIdStr,
           codigo: 'FILHO',
           descricao: 'Filho',
         ),
-        LookupItem(
+        const LookupItem(
           id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
           codigo: 'PESSOA_REFERENCIA',
           descricao: 'Pessoa de Referência',
@@ -79,7 +77,7 @@ void main() {
       );
 
       // Wait a bit for lookups to load (constructor call)
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('handleModalSave (New Member): should execute add command and reload', () async {
@@ -92,7 +90,7 @@ void main() {
     });
 
     test('handleModalSave (Edit Member): should remove old and add new', () async {
-      final existingIdStr = '11111111-1111-1111-1111-111111111111';
+      const existingIdStr = '11111111-1111-1111-1111-111111111111';
       final existing = _createMockMember(id: existingIdStr);
       
       final result = _createMockResult(isPrimaryCaregiver: false);

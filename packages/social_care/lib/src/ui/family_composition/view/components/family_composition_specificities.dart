@@ -1,8 +1,6 @@
 import 'package:design_system/design_system.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
-import 'package:social_care/social_care.dart';
 
 import '../../constants/family_composition_ln10.dart';
 import 'specificity_tile.dart';

@@ -78,22 +78,28 @@ abstract final class EducationAnalyticsService {
 
       // Not in school checks
       if (!member.attendsSchool) {
-        if (age <= 5)
+        if (age <= 5) {
           _inc(counts, VulnerabilityType.notInSchool, EduAgeRange.range0to5);
-        if (age >= 6 && age <= 14)
+        }
+        if (age >= 6 && age <= 14) {
           _inc(counts, VulnerabilityType.notInSchool, EduAgeRange.range6to14);
-        if (age >= 15 && age <= 17)
+        }
+        if (age >= 15 && age <= 17) {
           _inc(counts, VulnerabilityType.notInSchool, EduAgeRange.range15to17);
+        }
       }
 
       // Illiteracy checks
       if (!member.canReadWrite) {
-        if (age >= 10 && age <= 17)
+        if (age >= 10 && age <= 17) {
           _inc(counts, VulnerabilityType.illiteracy, EduAgeRange.range10to17);
-        if (age >= 18 && age <= 59)
+        }
+        if (age >= 18 && age <= 59) {
           _inc(counts, VulnerabilityType.illiteracy, EduAgeRange.range18to59);
-        if (age >= 60)
+        }
+        if (age >= 60) {
           _inc(counts, VulnerabilityType.illiteracy, EduAgeRange.range60Plus);
+        }
       }
     }
 

@@ -1,13 +1,14 @@
 import 'dart:ui';
+
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
-import 'package:design_system/design_system.dart';
 import 'package:social_care/src/ui/family_composition/view/components/hoverable_relationship_item.dart';
 
 void main() {
   group('HoverableRelationshipItem', () {
-    final testItem = LookupItem(id: '1', codigo: 'MAE', descricao: 'Mãe');
+    const testItem = LookupItem(id: '1', codigo: 'MAE', descricao: 'Mãe');
 
     testWidgets('renders text with correct unselected style', (tester) async {
       await tester.pumpWidget(

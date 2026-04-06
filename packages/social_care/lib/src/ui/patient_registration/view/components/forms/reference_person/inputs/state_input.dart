@@ -14,7 +14,7 @@ final class StateInput extends StatelessWidget {
       valueListenable: stateNotifier,
       builder: (context, currentState, _) {
         return DropdownButtonFormField<String>(
-          value: currentState,
+          initialValue: currentState,
           decoration: InputDecoration(
             label: RichText(
               text: const TextSpan(

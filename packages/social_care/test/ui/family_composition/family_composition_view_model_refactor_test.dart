@@ -2,8 +2,6 @@ import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
-import 'package:social_care/src/ui/family_composition/models/family_member_model.dart';
 
 import '../../../testing/social_care_testing.dart';
 
@@ -16,7 +14,7 @@ class FakeGetPatientUseCase extends GetPatientUseCase {
   @override
   Future<Result<Patient>> execute(String id) async {
     if (result != null) return Success(result!);
-    return Failure('Patient not found');
+    return const Failure('Patient not found');
   }
 }
 
@@ -52,7 +50,7 @@ void main() {
     });
 
     test('Refactor: isLoading property must be removed in favor of command state', () {
-      final future = viewModel.loadPatientCommand.execute();
+      final _ = viewModel.loadPatientCommand.execute();
       expect(viewModel.loadPatientCommand.running, isTrue);
     });
 

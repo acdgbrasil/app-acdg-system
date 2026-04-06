@@ -1,6 +1,5 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:core/core.dart';
 import 'package:core/core_offline.dart';
 
 /// An atomic widget that displays the current synchronization status.

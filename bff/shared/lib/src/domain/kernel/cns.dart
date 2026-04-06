@@ -77,9 +77,9 @@ final class Cns with Equatable {
         soma += 2;
         resto = soma % 11;
         dv = 11 - resto;
-        resultado = pis + "001" + dv.toString();
+        resultado = "${pis}001$dv";
       } else {
-        resultado = pis + "00" + dv.toString();
+        resultado = "${pis}00$dv";
       }
 
       return cns == resultado;

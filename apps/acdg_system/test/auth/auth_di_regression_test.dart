@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:acdg_system/logic/di/auth_providers.dart';
-import 'package:acdg_system/logic/router/app_router.dart';
-import 'package:acdg_system/ui/view_models/auth_view_model.dart';
 import 'package:auth/auth.dart';
 import 'fake_auth_repository.dart';
 

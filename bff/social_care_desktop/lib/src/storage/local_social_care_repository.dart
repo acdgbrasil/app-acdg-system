@@ -7,9 +7,11 @@ import 'package:drift/drift.dart';
 import 'package:persistence/persistence.dart';
 import 'package:shared/shared.dart';
 
-/// Implementation of [SocialCareContract] that uses Drift for local storage
+import 'local_cache_contract.dart';
+
+/// Implementation of [LocalCacheContract] that uses Drift for local storage
 /// and enqueues actions for synchronization.
-class LocalSocialCareRepository implements SocialCareContract {
+class LocalSocialCareRepository implements LocalCacheContract {
   final DriftDatabaseService _dbService;
   final SyncQueueService _queueService;
 
@@ -219,7 +221,7 @@ class LocalSocialCareRepository implements SocialCareContract {
             lastName: Value(item.lastName ?? ''),
             cpf: Value(existing?.cpf ?? ''),
             fullRecordJson: shouldPreserveRecord
-                ? existing!.fullRecordJson
+                ? existing.fullRecordJson
                 : jsonEncode(item.toJson()),
             version: Value(existing?.version ?? 0),
             isDirty: Value(existing?.isDirty ?? false),
@@ -233,7 +235,7 @@ class LocalSocialCareRepository implements SocialCareContract {
               firstName: Value(item.firstName ?? ''),
               lastName: Value(item.lastName ?? ''),
               fullRecordJson: shouldPreserveRecord
-                  ? Value(existing!.fullRecordJson)
+                  ? Value(existing.fullRecordJson)
                   : Value(jsonEncode(item.toJson())),
               lastSyncAt: Value(DateTime.now().toUtc()),
             ),

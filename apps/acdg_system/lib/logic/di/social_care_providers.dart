@@ -1,10 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/di/family_composition_providers.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
-import 'package:social_care/src/ui/home/di/home_providers.dart';
-import 'package:social_care/src/ui/patient_registration/di/patient_registration_providers.dart';
-import 'package:social_care/src/ui/patient_registration/viewModel/patient_registration_view_model.dart';
 
 import 'infrastructure_providers.dart';
 

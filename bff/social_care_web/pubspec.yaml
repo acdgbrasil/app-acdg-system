@@ -1,6 +1,6 @@
 name: social_care_web
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
+description: Web BFF for Social Care — shelf HTTP server with OIDC auth, session management, and API proxy.
+version: 1.1.0
 publish_to: 'none'
 
 resolution: workspace
@@ -11,8 +11,20 @@ environment:
 dependencies:
   shared:
     path: ../shared
-  network:
-    path: ../../packages/network
+  core:
+    path: ../../packages/core
+
+  # HTTP server
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+  # HTTP client (API backend calls)
+  dio: ^5.9.2
+
+  # OIDC / JWT
+  http: ^1.4.0
+  dart_jsonwebtoken: ^3.0.0
+  crypto: ^3.0.6
 
 dev_dependencies:
   lints: ^6.0.0

@@ -14,7 +14,7 @@ final class RgUfInput extends StatelessWidget {
       valueListenable: rgUfNotifier,
       builder: (context, currentUf, _) {
         return DropdownButtonFormField<String>(
-          value: currentUf,
+          initialValue: currentUf,
           decoration: InputDecoration(
             label: const Text(
               ReferencePersonLn10.rgUfLabel,

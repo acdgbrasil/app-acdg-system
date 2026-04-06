@@ -112,14 +112,14 @@ class DocumentsFormState {
   }
 
   List<String> get validationErrors => [
-    if (cpfError != null) cpfError!,
-    if (nisError != null) nisError!,
-    if (cnsError != null) cnsError!,
-    if (rgNumberError != null) rgNumberError!,
-    if (rgUfError != null) rgUfError!,
-    if (rgAgencyError != null) rgAgencyError!,
-    if (rgDateError != null) rgDateError!,
-    if (birthDateError != null) birthDateError!,
+    ?cpfError,
+    ?nisError,
+    ?cnsError,
+    ?rgNumberError,
+    ?rgUfError,
+    ?rgAgencyError,
+    ?rgDateError,
+    ?birthDateError,
   ];
 
   // 6. Acesso a valores parseados

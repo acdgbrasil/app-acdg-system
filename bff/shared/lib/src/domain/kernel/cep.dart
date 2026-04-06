@@ -45,8 +45,9 @@ final class Cep with Equatable {
     if (s >= 0 && s <= 899) return DistributionKind.streetRange;
     if (s >= 900 && s <= 959) return DistributionKind.specialCodes;
     if (s >= 960 && s <= 969) return DistributionKind.promotional;
-    if ((s >= 970 && s <= 989) || s == 999)
+    if ((s >= 970 && s <= 989) || s == 999) {
       return DistributionKind.postOfficeUnits;
+    }
     return DistributionKind.other;
   }
 

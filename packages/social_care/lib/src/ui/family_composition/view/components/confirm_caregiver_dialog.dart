@@ -59,9 +59,9 @@ class ConfirmCaregiverDialog extends StatelessWidget {
             children: [
               const Text('⚠️', style: TextStyle(fontSize: 28)),
               const SizedBox(height: 10),
-              Text(
+              const Text(
                 FamilyCompositionLn10.caregiverTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Satoshi',
                   fontWeight: FontWeight.w700,
                   fontSize: 17,
@@ -88,7 +88,7 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    TextSpan(text: ' ${FamilyCompositionLn10.caregiverCurrentIs}\n'),
+                    const TextSpan(text: ' ${FamilyCompositionLn10.caregiverCurrentIs}\n'),
                     const TextSpan(text: 'Ao confirmar, '),
                     TextSpan(
                       text: newCandidate.displayName,
@@ -97,7 +97,7 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    TextSpan(
+                    const TextSpan(
                       text: ' ${FamilyCompositionLn10.caregiverWillBecome} ${FamilyCompositionLn10.caregiverLoseStatus}',
                     ),
                   ],
@@ -111,15 +111,15 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                   border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
+                child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('ℹ', style: TextStyle(fontSize: 16)),
-                    const SizedBox(width: 10),
+                    Text('ℹ', style: TextStyle(fontSize: 16)),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         FamilyCompositionLn10.caregiverApiNote,
-                        style: const TextStyle(fontSize: 12, height: 1.5),
+                        style: TextStyle(fontSize: 12, height: 1.5),
                       ),
                     ),
                   ],

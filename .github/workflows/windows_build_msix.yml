@@ -24,6 +24,17 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
+      - name: Cache Flutter and Dart dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ github.workspace }}/.dart_tool
+            ${{ github.workspace }}/build
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
       - name: Fetch secrets from Bitwarden
         uses: bitwarden/sm-action@v2
         with:
@@ -33,23 +44,24 @@ jobs:
             29ebaaa5-bcad-4db9-90f4-b4220138173b > OIDC_CLIENT_ID
 
       - name: Create .env file
+        working-directory: apps/acdg_system
         run: |
-          echo "OIDC_ISSUER=${{ env.OIDC_ISSUER }}" >> apps/acdg_system/.env
-          echo "OIDC_CLIENT_ID=${{ env.OIDC_CLIENT_ID }}" >> apps/acdg_system/.env
+          echo "OIDC_ISSUER=${{ env.OIDC_ISSUER }}" > .env
+          echo "OIDC_CLIENT_ID=${{ env.OIDC_CLIENT_ID }}" >> .env
+          echo "OIDC_SCOPES=openid profile email offline_access urn:zitadel:iam:org:project:roles" >> .env
+          echo "CUSTOM_SCHEME=com.acdg.system" >> .env
+          echo "BFF_BASE_URL=https://bff.acdgbrasil.com.br" >> .env
 
-      # O projeto usa workspace do Dart/Melos, podemos rodar o pub get na pasta root também,
-      # Mas o msix exige que estejamos na pasta do app
       - name: Install dependencies
-        run: dart pub get
-
-      - name: Run code generation (persistence first, then dependents)
         run: |
-          cd packages/persistence && dart run build_runner build --delete-conflicting-outputs
-          cd ../../bff/shared && dart run build_runner build --delete-conflicting-outputs
-          cd ../../apps/acdg_system && dart run build_runner build --delete-conflicting-outputs
+          dart pub global activate melos
+          melos bootstrap
+
+      - name: Run code generation
+        run: melos run build_runner
 
       - name: Build Windows App
-        run: flutter build windows --release --dart-define-from-file=apps/acdg_system/.env
+        run: flutter build windows --release --dart-define-from-file=.env
         working-directory: apps/acdg_system
 
       - name: Create MSIX Installer

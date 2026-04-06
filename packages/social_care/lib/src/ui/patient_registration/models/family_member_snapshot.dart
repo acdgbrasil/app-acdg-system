@@ -1,6 +1,10 @@
+import 'dart:collection';
+
+import 'package:equatable/equatable.dart';
+
 /// Immutable snapshot of a saved family member (for display in table).
-class FamilyMemberSnapshot {
-  const FamilyMemberSnapshot({
+final class FamilyMemberSnapshot extends Equatable {
+  FamilyMemberSnapshot({
     required this.name,
     required this.birthDate,
     required this.sex,
@@ -8,8 +12,8 @@ class FamilyMemberSnapshot {
     required this.hasDisability,
     required this.isResiding,
     required this.isCaregiver,
-    required this.requiredDocuments,
-  });
+    required Set<String> requiredDocuments,
+  }) : requiredDocuments = UnmodifiableSetView(requiredDocuments);
 
   final String name;
   final DateTime birthDate;
@@ -20,13 +24,48 @@ class FamilyMemberSnapshot {
   final bool isCaregiver;
   final Set<String> requiredDocuments;
 
-  int get age {
-    final now = DateTime.now();
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month ||
-        (now.month == birthDate.month && now.day < birthDate.day)) {
+  /// Calculates the member's age relative to [referenceDate].
+  int ageAt(DateTime referenceDate) {
+    int age = referenceDate.year - birthDate.year;
+    if (referenceDate.month < birthDate.month ||
+        (referenceDate.month == birthDate.month &&
+            referenceDate.day < birthDate.day)) {
       age--;
     }
     return age;
   }
+
+  FamilyMemberSnapshot copyWith({
+    String? name,
+    DateTime? birthDate,
+    String? sex,
+    String? relationshipCode,
+    bool? hasDisability,
+    bool? isResiding,
+    bool? isCaregiver,
+    Set<String>? requiredDocuments,
+  }) {
+    return FamilyMemberSnapshot(
+      name: name ?? this.name,
+      birthDate: birthDate ?? this.birthDate,
+      sex: sex ?? this.sex,
+      relationshipCode: relationshipCode ?? this.relationshipCode,
+      hasDisability: hasDisability ?? this.hasDisability,
+      isResiding: isResiding ?? this.isResiding,
+      isCaregiver: isCaregiver ?? this.isCaregiver,
+      requiredDocuments: requiredDocuments ?? this.requiredDocuments,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    name,
+    birthDate,
+    sex,
+    relationshipCode,
+    hasDisability,
+    isResiding,
+    isCaregiver,
+    requiredDocuments,
+  ];
 }

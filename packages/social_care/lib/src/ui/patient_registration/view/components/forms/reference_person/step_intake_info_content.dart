@@ -1,12 +1,13 @@
-import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/intake_info_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/registration_error_banner.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/registration_section_title.dart';
 
+import 'ingress_type_selector.dart';
 import 'inputs/service_reason_input.dart';
+import 'referral_details_form.dart';
+import 'social_programs_selector.dart';
 
 /// Step 6 — Intake info (forma de ingresso).
 class StepIntakeInfoContent extends StatelessWidget {
@@ -24,17 +25,23 @@ class StepIntakeInfoContent extends StatelessWidget {
   });
 
   static final _ingressOptions = [
-    _IngressOption('espontaneo', ReferencePersonLn10.ingressEspontaneo),
-    _IngressOption('busca_ativa', ReferencePersonLn10.ingressBuscaAtiva),
-    _IngressOption('enc_saude', ReferencePersonLn10.ingressEncSaude),
-    _IngressOption('enc_judiciario', ReferencePersonLn10.ingressEncJudiciario),
-    _IngressOption('enc_conselho', ReferencePersonLn10.ingressEncConselho),
-    _IngressOption('enc_educacao', ReferencePersonLn10.ingressEncEducacao),
-    _IngressOption('enc_setoriais', ReferencePersonLn10.ingressEncSetoriais),
-    _IngressOption('enc_psb', ReferencePersonLn10.ingressEncPsb),
-    _IngressOption('enc_pse', ReferencePersonLn10.ingressEncPse),
-    _IngressOption('enc_sgd', ReferencePersonLn10.ingressEncSgd),
-    _IngressOption('outros', ReferencePersonLn10.ingressOutros),
+    const IngressOption('espontaneo', ReferencePersonLn10.ingressEspontaneo),
+    const IngressOption('busca_ativa', ReferencePersonLn10.ingressBuscaAtiva),
+    const IngressOption('enc_saude', ReferencePersonLn10.ingressEncSaude),
+    const IngressOption(
+      'enc_judiciario',
+      ReferencePersonLn10.ingressEncJudiciario,
+    ),
+    const IngressOption('enc_conselho', ReferencePersonLn10.ingressEncConselho),
+    const IngressOption('enc_educacao', ReferencePersonLn10.ingressEncEducacao),
+    const IngressOption(
+      'enc_setoriais',
+      ReferencePersonLn10.ingressEncSetoriais,
+    ),
+    const IngressOption('enc_psb', ReferencePersonLn10.ingressEncPsb),
+    const IngressOption('enc_pse', ReferencePersonLn10.ingressEncPse),
+    const IngressOption('enc_sgd', ReferencePersonLn10.ingressEncSgd),
+    const IngressOption('outros', ReferencePersonLn10.ingressOutros),
   ];
 
   static final _programOptions = [
@@ -59,9 +66,31 @@ class StepIntakeInfoContent extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _buildIngressColumn()),
+                  Expanded(
+                    child: IngressTypeSelector(
+                      selectedType: formState.ingressType,
+                      options: _ingressOptions,
+                      showErrors: showErrors,
+                      errorText: formState.ingressTypeError,
+                    ),
+                  ),
                   const SizedBox(width: 60),
-                  Expanded(child: _buildRightColumn()),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        ReferralDetailsForm(
+                          originNameController: formState.originName,
+                          originContactController: formState.originContact,
+                        ),
+                        const SizedBox(height: 28),
+                        SocialProgramsSelector(
+                          selectedPrograms: formState.selectedPrograms,
+                          options: _programOptions,
+                          onToggle: formState.toggleProgram,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             }
@@ -69,9 +98,23 @@ class StepIntakeInfoContent extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildIngressColumn(),
+                IngressTypeSelector(
+                  selectedType: formState.ingressType,
+                  options: _ingressOptions,
+                  showErrors: showErrors,
+                  errorText: formState.ingressTypeError,
+                ),
                 const SizedBox(height: 28),
-                _buildRightColumn(),
+                ReferralDetailsForm(
+                  originNameController: formState.originName,
+                  originContactController: formState.originContact,
+                ),
+                const SizedBox(height: 28),
+                SocialProgramsSelector(
+                  selectedPrograms: formState.selectedPrograms,
+                  options: _programOptions,
+                  onToggle: formState.toggleProgram,
+                ),
               ],
             );
           },
@@ -90,7 +133,9 @@ class StepIntakeInfoContent extends StatelessWidget {
                   Expanded(
                     child: ServiceReasonInput(
                       controller: formState.serviceReason,
-                      errorText: showErrors ? formState.serviceReasonError : null,
+                      errorText: showErrors
+                          ? formState.serviceReasonError
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 60),
@@ -132,98 +177,4 @@ class StepIntakeInfoContent extends StatelessWidget {
       ],
     );
   }
-
-  Widget _buildIngressColumn() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const RegistrationSectionTitle(ReferencePersonLn10.sectionIngressType),
-        ValueListenableBuilder<String?>(
-          valueListenable: formState.ingressType,
-          builder: (context, selected, _) {
-            return Column(
-              children: [
-                for (final opt in _ingressOptions)
-                  RadioListTile<String>(
-                    title: Text(opt.label, style: const TextStyle(fontSize: 14)),
-                    value: opt.key,
-                    groupValue: selected,
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    onChanged: (val) => formState.ingressType.value = val,
-                  ),
-              ],
-            );
-          },
-        ),
-        if (showErrors && formState.ingressTypeError != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 12, top: 4),
-            child: Text(
-              formState.ingressTypeError!,
-              style: const TextStyle(color: AppColors.danger, fontSize: 12),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildRightColumn() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const RegistrationSectionTitle(ReferencePersonLn10.sectionReferralDetails),
-        TextField(
-          controller: formState.originName,
-          decoration: const InputDecoration(
-            labelText: ReferencePersonLn10.originNameLabel,
-            hintText: ReferencePersonLn10.originNamePlaceholder,
-          ),
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          controller: formState.originContact,
-          decoration: const InputDecoration(
-            labelText: ReferencePersonLn10.originContactLabel,
-            hintText: ReferencePersonLn10.originContactPlaceholder,
-          ),
-        ),
-        const SizedBox(height: 28),
-        const RegistrationSectionTitle(ReferencePersonLn10.sectionSocialPrograms),
-        Text(
-          ReferencePersonLn10.socialProgramsHint,
-          style: TextStyle(
-            fontSize: 13,
-            fontStyle: FontStyle.italic,
-            color: Colors.black.withValues(alpha: 0.5),
-          ),
-        ),
-        const SizedBox(height: 14),
-        ValueListenableBuilder<Set<String>>(
-          valueListenable: formState.selectedPrograms,
-          builder: (context, selected, _) {
-            return Column(
-              children: [
-                for (final prog in _programOptions)
-                  CheckboxListTile(
-                    title: Text(prog, style: const TextStyle(fontSize: 15)),
-                    value: selected.contains(prog),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    onChanged: (_) => formState.toggleProgram(prog),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _IngressOption {
-  const _IngressOption(this.key, this.label);
-  final String key;
-  final String label;
 }

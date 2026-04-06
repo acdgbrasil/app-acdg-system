@@ -127,15 +127,17 @@ void main() {
       final personIdRes = PersonId.create(
         '550e8400-e29b-41d4-a716-$uniqueSuffix',
       );
-      if (personIdRes.isFailure)
+      if (personIdRes.isFailure) {
         fail('PersonId creation failed: ${(personIdRes as Failure).error}');
+      }
       final personId = personIdRes.valueOrNull!;
 
       final patientIdRes = PatientId.create(
         '550e8400-e29b-41d4-a716-${uniqueSuffix.replaceAll('0', '1')}',
       );
-      if (patientIdRes.isFailure)
+      if (patientIdRes.isFailure) {
         fail('PatientId creation failed: ${(patientIdRes as Failure).error}');
+      }
       final patientId = patientIdRes.valueOrNull!;
 
       final pDataResult = PersonalData.create(
@@ -146,8 +148,9 @@ void main() {
         sex: Sex.feminino,
         birthDate: TimeStamp.fromIso('1990-01-01T00:00:00.000Z').valueOrNull!,
       );
-      if (pDataResult.isFailure)
+      if (pDataResult.isFailure) {
         fail('PersonalData creation failed: ${(pDataResult as Failure).error}');
+      }
       final personalData = pDataResult.valueOrNull!;
 
       final patient = Patient.reconstitute(

@@ -68,11 +68,11 @@ class AddressFormState {
   }
 
   List<String> get validationErrors => [
-    if (housingSituationError != null) housingSituationError!,
-    if (residenceLocationError != null) residenceLocationError!,
-    if (cepError != null) cepError!,
-    if (stateError != null) stateError!,
-    if (cityError != null) cityError!,
+    ?housingSituationError,
+    ?residenceLocationError,
+    ?cepError,
+    ?stateError,
+    ?cityError,
   ];
 
   // 6. Acesso a valores

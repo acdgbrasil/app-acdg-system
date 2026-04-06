@@ -129,13 +129,13 @@ class _FieldConfig {
       validate: _validatePhone,
       nativeFormatters: [FilteringTextInputFormatter.digitsOnly],
     ),
-    MaskedFieldVariant.rg: _FieldConfig(
+    MaskedFieldVariant.rg: const _FieldConfig(
       mask: '##.###.###-#',
       defaultPlaceholder: '00.000.000-0',
       keyboardType: TextInputType.text,
       charPredicate: _isAlphaNumeric,
       validate: _validateRg,
-      nativeFormatters: const [],
+      nativeFormatters: [],
     ),
   };
 

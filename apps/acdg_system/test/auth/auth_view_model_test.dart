@@ -31,8 +31,8 @@ void main() {
   });
 
   group('AuthViewModel (Layered)', () {
-    test('initial status is AuthLoading', () {
-      expect(viewModel.status, isA<AuthLoading>());
+    test('initial status is Unauthenticated', () {
+      expect(viewModel.status, isA<Unauthenticated>());
     });
 
     test('init calls restoreSessionUseCase', () async {

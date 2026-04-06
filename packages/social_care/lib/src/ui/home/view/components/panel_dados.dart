@@ -59,9 +59,9 @@ class PanelDados extends StatelessWidget {
                       child: const Icon(Icons.description_outlined),
                     ),
                     const SizedBox(width: 8),
-                    CircleButton(
+                    const CircleButton(
                       tooltip: 'Editar',
-                      child: const Icon(Icons.edit_outlined),
+                      child: Icon(Icons.edit_outlined),
                     ),
                     const SizedBox(width: 8),
                     CircleButton(

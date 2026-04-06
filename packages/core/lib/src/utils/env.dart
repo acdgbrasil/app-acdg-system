@@ -1,3 +1,5 @@
+import '../platform/platform_resolver.dart';
+
 /// Utility to access environment variables.
 ///
 /// In a monorepo setup, environment variables are captured at the app level
@@ -48,7 +50,14 @@ abstract final class Env {
   }
 
   /// Validates mandatory environment variables.
+  ///
+  /// On **web** OIDC variables are optional because the BFF handles the
+  /// OIDC flow server-side; only `BFF_BASE_URL` is needed.
+  /// On **desktop** `OIDC_ISSUER` and `OIDC_CLIENT_ID` are required.
   static void validate() {
+    // Web delegates auth to the BFF — no OIDC client config needed.
+    if (PlatformResolver.isWeb) return;
+
     final missing = <String>[];
 
     if (_oidcIssuer.isEmpty) missing.add('OIDC_ISSUER');

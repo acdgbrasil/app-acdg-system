@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/family_composition_form_state.dart';
-import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/specificities_form_state.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/intake_info_form_state.dart';
+import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/specificities_form_state.dart';
 
 void main() {
   // ── FamilyCompositionFormState ────────────────────────────────
@@ -126,7 +126,7 @@ void main() {
         requiredDocuments: const {},
       );
 
-      expect(snapshot.age, 25);
+      expect(snapshot.ageAt(DateTime.now()), 25);
     });
   });
 

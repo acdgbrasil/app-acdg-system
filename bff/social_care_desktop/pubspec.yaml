@@ -1,6 +1,6 @@
 name: social_care_desktop
 description: A starting point for Dart libraries or applications.
-version: 1.0.0
+version: 1.1.0
 publish_to: 'none'
 
 resolution: workspace
@@ -20,6 +20,7 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^5.9.2
+  drift: ^2.31.0
 
 dev_dependencies:
   lints: ^6.0.0

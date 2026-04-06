@@ -3,26 +3,32 @@ import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import 'package:network/network.dart';
-import 'local_social_care_repository.dart';
-import '../remote/social_care_bff_remote.dart';
-import '../sync/sync_engine.dart';
+import 'local_cache_contract.dart';
 
 /// Orchestrator that implements [SocialCareContract] with an offline-first strategy.
 ///
 /// Rules:
 /// - Writes: Always local first, then trigger sync if online.
 /// - Reads: Remote first if online (with cache update), fallback to local.
+/// Minimal interface for scheduling sync queue processing.
+///
+/// Implemented by [SyncEngine] in production. Allows test doubles
+/// without pulling in the full sync infrastructure.
+abstract class SyncScheduler {
+  void scheduleProcessQueue();
+}
+
 class OfflineFirstRepository implements SocialCareContract {
-  final LocalSocialCareRepository _local;
-  final SocialCareBffRemote _remote;
+  final LocalCacheContract _local;
+  final SocialCareContract _remote;
   final ConnectivityService _connectivity;
-  final SyncEngine _syncEngine;
+  final SyncScheduler _syncEngine;
 
   OfflineFirstRepository({
-    required LocalSocialCareRepository local,
-    required SocialCareBffRemote remote,
+    required LocalCacheContract local,
+    required SocialCareContract remote,
     required ConnectivityService connectivity,
-    required SyncEngine syncEngine,
+    required SyncScheduler syncEngine,
   }) : _local = local,
        _remote = remote,
        _connectivity = connectivity,

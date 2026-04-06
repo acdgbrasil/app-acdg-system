@@ -99,7 +99,7 @@ final class Referral with Equatable {
   }
 
   Result<Referral> complete() {
-    if (status != ReferralStatus.pending)
+    if (status != ReferralStatus.pending) {
       return Failure(
         _buildRefError(
           'REF-003',
@@ -107,6 +107,7 @@ final class Referral with Equatable {
           severity: ErrorSeverity.error,
         ),
       );
+    }
     return Success(
       Referral._(
         id: id,
@@ -121,7 +122,7 @@ final class Referral with Equatable {
   }
 
   Result<Referral> cancel() {
-    if (status != ReferralStatus.pending)
+    if (status != ReferralStatus.pending) {
       return Failure(
         _buildRefError(
           'REF-003',
@@ -129,6 +130,7 @@ final class Referral with Equatable {
           severity: ErrorSeverity.error,
         ),
       );
+    }
     return Success(
       Referral._(
         id: id,

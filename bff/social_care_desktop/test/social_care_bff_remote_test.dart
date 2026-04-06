@@ -312,7 +312,7 @@ void main() {
         await bff.registerPatient(patient);
         final member = (mockDio.lastBody!['familyMembers'] as List).first;
         expect(member['personId'], equals(personId.value));
-        expect(member['isPrimaryCaregiver'], isTrue);
+        expect(member['isCaregiver'], isTrue);
         expect(member['requiredDocuments'], containsAll(['CPF', 'RG']));
       },
     );

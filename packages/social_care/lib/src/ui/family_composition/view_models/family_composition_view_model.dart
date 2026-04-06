@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+
 import 'package:core/core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
 
-import '../models/family_member_model.dart';
 import '../models/add_member_result.dart';
+import '../models/family_member_model.dart';
 
 /// ViewModel for the standalone Family Composition screen.
 ///

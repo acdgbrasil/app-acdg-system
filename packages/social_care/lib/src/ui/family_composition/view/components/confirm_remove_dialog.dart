@@ -52,9 +52,9 @@ class ConfirmRemoveDialog extends StatelessWidget {
             children: [
               const Text('🗑', style: TextStyle(fontSize: 28)),
               const SizedBox(height: 10),
-              Text(
+              const Text(
                 FamilyCompositionLn10.removeTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Satoshi',
                   fontWeight: FontWeight.w700,
                   fontSize: 17,
@@ -99,9 +99,9 @@ class ConfirmRemoveDialog extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 12),
-              Text(
+              const Text(
                 FamilyCompositionLn10.removeIrreversible,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Playfair Display',
                   fontStyle: FontStyle.italic,
                   fontSize: 11,

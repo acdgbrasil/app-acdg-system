@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
-import 'dtos/patient_remote.dart';
 import 'mappers/assessment_mapper.dart';
 import 'mappers/care_mapper.dart';
 import 'mappers/json_helpers.dart';

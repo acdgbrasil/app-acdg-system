@@ -1,0 +1,126 @@
+name: Social Care BFF — Build and Publish
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'bff/**'
+      - 'packages/core/**'
+      - 'packages/network/**'
+      - 'Dockerfile.bff'
+  push:
+    branches: [main]
+    paths:
+      - 'bff/**'
+      - 'packages/core/**'
+      - 'packages/network/**'
+      - 'Dockerfile.bff'
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: acdgbrasil/social-care-bff
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Code generation (shared DTOs)
+        run: cd bff/shared && dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run BFF tests
+        run: flutter test bff/social_care_desktop/test/ bff/social_care_web/test/
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Fetch BFF secrets from Bitwarden (HML)
+        if: github.event_name != 'pull_request'
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.ACDG_ORG_BW_SM_ACCESS_TOKEN_PROD }}
+          secrets: |
+            0a82890b-0fb4-49d6-bbc6-b42400d47c5e > BFF_HML_OIDC_CLIENT_ID
+            4189ce3a-c21f-406e-bf8a-b42400d48aed > BFF_HML_OIDC_CLIENT_SECRET
+            95c92038-0fd5-4c7d-ba7a-b42400d49e45 > BFF_HML_SESSION_SECRET
+            c6d5f9c6-5f91-4187-b2a0-b42400d4aef8 > BFF_HML_API_BASE_URL
+            ae4cf597-d304-4f78-860e-b42400d4bcd9 > BFF_HML_OIDC_REDIRECT_URI
+
+      - name: Fetch BFF secrets from Bitwarden (PROD)
+        if: github.event_name != 'pull_request'
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.ACDG_ORG_BW_SM_ACCESS_TOKEN_PROD }}
+          secrets: |
+            21d3a3eb-086b-4f6e-94ff-b42400d4d1e9 > BFF_PROD_OIDC_CLIENT_ID
+            856655f7-add6-4333-b20b-b42400d4e578 > BFF_PROD_OIDC_CLIENT_SECRET
+            b3e598e4-7f38-4072-9e90-b42400d4f4ec > BFF_PROD_SESSION_SECRET
+            58961e6c-6a29-4b7a-aeec-b42400d501b2 > BFF_PROD_API_BASE_URL
+            c6561674-ad02-4bfc-8c3e-b42400d50f87 > BFF_PROD_OIDC_REDIRECT_URI
+
+      - name: Validate secrets loaded
+        if: github.event_name != 'pull_request'
+        run: |
+          missing=()
+          [ -z "$BFF_HML_OIDC_CLIENT_ID" ] && missing+=("BFF_HML_OIDC_CLIENT_ID")
+          [ -z "$BFF_HML_OIDC_CLIENT_SECRET" ] && missing+=("BFF_HML_OIDC_CLIENT_SECRET")
+          [ -z "$BFF_HML_SESSION_SECRET" ] && missing+=("BFF_HML_SESSION_SECRET")
+          [ -z "$BFF_HML_API_BASE_URL" ] && missing+=("BFF_HML_API_BASE_URL")
+          [ -z "$BFF_PROD_OIDC_CLIENT_ID" ] && missing+=("BFF_PROD_OIDC_CLIENT_ID")
+          [ -z "$BFF_PROD_OIDC_CLIENT_SECRET" ] && missing+=("BFF_PROD_OIDC_CLIENT_SECRET")
+          [ -z "$BFF_PROD_SESSION_SECRET" ] && missing+=("BFF_PROD_SESSION_SECRET")
+          [ -z "$BFF_PROD_API_BASE_URL" ] && missing+=("BFF_PROD_API_BASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing BFF secrets: ${missing[*]}"
+            exit 1
+          fi
+          echo "All BFF secrets loaded successfully."
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=semver,pattern=v{{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.bff
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

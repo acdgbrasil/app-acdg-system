@@ -105,18 +105,21 @@ final class HousingCondition with Equatable {
     required bool isInSocialConflictArea,
     required bool hasDiagnosticObservations,
   }) {
-    if (numberOfRooms < 0)
+    if (numberOfRooms < 0) {
       return Failure(
         _buildError('HC-001', 'Número de cômodos não pode ser negativo'),
       );
-    if (numberOfBedrooms < 0)
+    }
+    if (numberOfBedrooms < 0) {
       return Failure(
         _buildError('HC-002', 'Número de quartos não pode ser negativo'),
       );
-    if (numberOfBathrooms < 0)
+    }
+    if (numberOfBathrooms < 0) {
       return Failure(
         _buildError('HC-003', 'Número de banheiros não pode ser negativo'),
       );
+    }
     if (numberOfBedrooms > numberOfRooms) {
       return Failure(
         _buildError(
@@ -261,17 +264,19 @@ final class SocialBenefit with Equatable {
     Cpf? deceasedCpf,
   }) {
     final bn = benefitName?.normalize();
-    if (bn == null || bn.isEmpty)
+    if (bn == null || bn.isEmpty) {
       return Failure(
         _buildBenefitError('SB-001', 'Nome do benefício não pode ser vazio'),
       );
-    if (amount <= 0)
+    }
+    if (amount <= 0) {
       return Failure(
         _buildBenefitError(
           'SB-002',
           'Valor do benefício deve ser maior que zero',
         ),
       );
+    }
 
     return Success(
       SocialBenefit._(
@@ -367,33 +372,37 @@ final class SocioEconomicSituation with Equatable {
     required String? mainSourceOfIncome,
     required bool hasUnemployed,
   }) {
-    if (totalFamilyIncome < 0)
+    if (totalFamilyIncome < 0) {
       return Failure(
         _buildSocioError(
           'SES-003',
           'Renda familiar total não pode ser negativa',
         ),
       );
-    if (incomePerCapita < 0)
+    }
+    if (incomePerCapita < 0) {
       return Failure(
         _buildSocioError('SES-004', 'Renda per capita não pode ser negativa'),
       );
-    if (incomePerCapita > totalFamilyIncome)
+    }
+    if (incomePerCapita > totalFamilyIncome) {
       return Failure(
         _buildSocioError(
           'SES-006',
           'Renda per capita não pode ser maior que a renda familiar total',
         ),
       );
+    }
 
     final source = mainSourceOfIncome?.normalizedTrim();
-    if (source == null || source.isEmpty)
+    if (source == null || source.isEmpty) {
       return Failure(
         _buildSocioError(
           'SES-005',
           'Fonte principal de renda não pode ser vazia',
         ),
       );
+    }
 
     if (!receivesSocialBenefit && !socialBenefits.isEmpty) {
       return Failure(

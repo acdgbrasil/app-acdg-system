@@ -1,6 +1,7 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/ui/home/constants/home_ln10.dart';
+import 'home_tab_button.dart';
 
 class HomeTopBar extends StatelessWidget {
   final String activeTab;
@@ -27,13 +28,13 @@ class HomeTopBar extends StatelessWidget {
             onPressed: () {},
           ),
           const SizedBox(width: 32),
-          _TabButton(
+          HomeTabButton(
             label: HomeLn10.tabFamilies,
             isActive: activeTab == 'familias',
             onTap: () => onTabChanged('familias'),
           ),
           const SizedBox(width: 4),
-          _TabButton(
+          HomeTabButton(
             label: HomeLn10.tabRegistration,
             isActive: activeTab == 'cadastro',
             onTap: () => onTabChanged('cadastro'),
@@ -54,37 +55,6 @@ class HomeTopBar extends StatelessWidget {
             syncIndicator!,
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _TabButton extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabButton({required this.label, required this.isActive, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.textPrimary.withValues(alpha: 0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Satoshi',
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 15,
-            color: AppColors.textPrimary,
-          ),
-        ),
       ),
     );
   }

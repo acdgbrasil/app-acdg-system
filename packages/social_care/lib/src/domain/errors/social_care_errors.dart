@@ -1,6 +1,11 @@
+import 'package:equatable/equatable.dart';
+
 /// Sealed class representing all possible domain errors in the Social Care module.
-sealed class SocialCareError implements Exception {
+sealed class SocialCareError extends Equatable implements Exception {
   const SocialCareError();
+
+  @override
+  List<Object?> get props => [];
 }
 
 // =============================================================================
@@ -14,6 +19,7 @@ sealed class PatientError extends SocialCareError {
 
 final class DuplicatePatientError extends PatientError {
   const DuplicatePatientError();
+
   @override
   String toString() => 'Este paciente já se encontra registrado no sistema.';
 }
@@ -21,6 +27,10 @@ final class DuplicatePatientError extends PatientError {
 final class PatientNotFoundError extends PatientError {
   const PatientNotFoundError(this.id);
   final String id;
+
+  @override
+  List<Object?> get props => [id];
+
   @override
   String toString() => 'Paciente não encontrado: $id';
 }
@@ -28,6 +38,10 @@ final class PatientNotFoundError extends PatientError {
 final class InvalidDataError extends PatientError {
   const InvalidDataError(this.message);
   final String message;
+
+  @override
+  List<Object?> get props => [message];
+
   @override
   String toString() => 'Dados inválidos: $message';
 }
@@ -44,6 +58,10 @@ sealed class AssessmentError extends SocialCareError {
 final class InconsistentAssessmentError extends AssessmentError {
   const InconsistentAssessmentError(this.message);
   final String message;
+
+  @override
+  List<Object?> get props => [message];
+
   @override
   String toString() => 'Inconsistência na avaliação: $message';
 }
@@ -59,12 +77,14 @@ sealed class FamilyError extends SocialCareError {
 
 final class MultiplePrimaryReferencesError extends FamilyError {
   const MultiplePrimaryReferencesError();
+
   @override
   String toString() => 'Não é permitido mais de uma Pessoa de Referência (PR).';
 }
 
 final class PrMemberRequiredError extends FamilyError {
   const PrMemberRequiredError();
+
   @override
   String toString() => 'É necessário exatamente uma Pessoa de Referência (PR).';
 }
@@ -77,6 +97,10 @@ final class PrMemberRequiredError extends FamilyError {
 final class NetworkSocialCareError extends SocialCareError {
   const NetworkSocialCareError(this.technicalMessage);
   final String technicalMessage;
+
+  @override
+  List<Object?> get props => [technicalMessage];
+
   @override
   String toString() => 'Erro de conexão. Verifique sua internet.';
 }
@@ -85,6 +109,10 @@ final class NetworkSocialCareError extends SocialCareError {
 final class UnexpectedSocialCareError extends SocialCareError {
   const UnexpectedSocialCareError(this.error);
   final Object error;
+
+  @override
+  List<Object?> get props => [error];
+
   @override
   String toString() =>
       'Ocorreu um erro inesperado. Tente novamente mais tarde.';

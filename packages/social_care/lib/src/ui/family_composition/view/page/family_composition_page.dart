@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../models/family_member_model.dart';
 import '../../di/family_composition_providers.dart';
+import '../../models/add_member_result.dart';
+import '../../models/family_member_model.dart';
 import '../../view_models/family_composition_view_model.dart';
 import '../components/add_member_modal.dart';
-import '../../models/add_member_result.dart';
 import '../components/confirm_caregiver_dialog.dart';
 import '../components/confirm_remove_dialog.dart';
 import '../components/family_composition_action_bar.dart';
