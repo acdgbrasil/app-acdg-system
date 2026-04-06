@@ -4,10 +4,11 @@
 FROM dart:3.8 AS build
 WORKDIR /app
 
-# Copy workspace (BFF depends on shared, core)
+# Copy BFF and its local dependencies
 COPY pubspec.yaml ./
 COPY bff/ ./bff/
 COPY packages/ ./packages/
+COPY apps/acdg_system/pubspec.yaml ./apps/acdg_system/pubspec.yaml
 
 # Resolve dependencies
 RUN dart pub get --directory=bff/social_care_web
