@@ -1,0 +1,74 @@
+name: Conecta Web — Build and Publish
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/acdg_system/**'
+      - 'packages/**'
+      - 'bff/shared/**'
+      - 'Dockerfile.web'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/acdg_system/**'
+      - 'packages/**'
+      - 'bff/shared/**'
+      - 'Dockerfile.web'
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: acdgbrasil/conecta-web
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=semver,pattern=v{{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Fetch secrets from Bitwarden
+        if: github.event_name != 'pull_request'
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.ACDG_ORG_BW_SM_ACCESS_TOKEN_PROD }}
+          secrets: |
+            e384ef43-978c-4f04-b50e-b42201380a4c > OIDC_ISSUER
+            29ebaaa5-bcad-4db9-90f4-b4220138173b > OIDC_CLIENT_ID
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.web
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            OIDC_ISSUER=${{ env.OIDC_ISSUER || 'http://localhost:8080' }}
+            OIDC_CLIENT_ID=${{ env.OIDC_CLIENT_ID || 'dummy-client-id' }}
+            BFF_BASE_URL=/api
