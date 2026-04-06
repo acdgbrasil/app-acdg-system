@@ -6,6 +6,7 @@ void main() {
     /// Minimal required env vars for a valid config.
     Map<String, String> requiredEnv() => {
       'API_BASE_URL': 'https://api.example.com',
+      'PEOPLE_CONTEXT_BASE_URL': 'https://people.example.com',
       'OIDC_ISSUER': 'https://auth.example.com',
       'OIDC_CLIENT_ID': 'web-client',
       'OIDC_CLIENT_SECRET': 'super-secret',

@@ -9,6 +9,7 @@ class ServerConfig {
     required this.port,
     required this.host,
     required this.apiBaseUrl,
+    required this.peopleContextBaseUrl,
     required this.oidcIssuer,
     required this.oidcClientId,
     required this.oidcClientSecret,
@@ -44,6 +45,7 @@ class ServerConfig {
       port: int.tryParse(e['PORT'] ?? '') ?? 8081,
       host: e['HOST'] ?? '0.0.0.0',
       apiBaseUrl: required('API_BASE_URL'),
+      peopleContextBaseUrl: required('PEOPLE_CONTEXT_BASE_URL'),
       oidcIssuer: required('OIDC_ISSUER'),
       oidcClientId: required('OIDC_CLIENT_ID'),
       oidcClientSecret: required('OIDC_CLIENT_SECRET'),
@@ -63,6 +65,9 @@ class ServerConfig {
 
   /// Backend API base URL (Swift/Vapor service).
   final String apiBaseUrl;
+
+  /// People Context service base URL.
+  final String peopleContextBaseUrl;
 
   /// OIDC issuer URL (Zitadel).
   final String oidcIssuer;

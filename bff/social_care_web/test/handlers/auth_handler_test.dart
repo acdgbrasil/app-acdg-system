@@ -33,6 +33,7 @@ ServerConfig _testConfig() {
     port: 8081,
     host: '0.0.0.0',
     apiBaseUrl: 'https://api.example.com',
+    peopleContextBaseUrl: 'https://people.example.com',
     oidcIssuer: 'https://auth.example.com',
     oidcClientId: 'test-client-id',
     oidcClientSecret: 'test-client-secret',

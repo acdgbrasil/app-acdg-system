@@ -13,6 +13,7 @@ import '../handlers/care_handler.dart';
 import '../handlers/lookup_handler.dart';
 import '../handlers/protection_handler.dart';
 import '../handlers/registry_handler.dart';
+import '../remote/people_context_client.dart';
 import '../middleware/auth_guard_middleware.dart';
 import '../middleware/session_middleware.dart';
 
@@ -30,19 +31,25 @@ import '../middleware/session_middleware.dart';
 /// Factory that creates a [SocialCareContract] for a given [Session].
 typedef AppContractFactory = SocialCareContract Function(Session session);
 
+/// Factory that creates a [PeopleContextClient] for a given [Session].
+typedef PeopleContextFactory = PeopleContextClient Function(Session session);
+
 class AppRouter {
   AppRouter({
     required ServerConfig config,
     required SessionStore sessionStore,
     required OidcServerClient oidcClient,
     required AppContractFactory contractFactory,
+    required PeopleContextFactory peopleContextFactory,
   }) : _sessionStore = sessionStore,
        _oidcClient = oidcClient,
-       _contractFactory = contractFactory;
+       _contractFactory = contractFactory,
+       _peopleContextFactory = peopleContextFactory;
 
   final SessionStore _sessionStore;
   final OidcServerClient _oidcClient;
   final AppContractFactory _contractFactory;
+  final PeopleContextFactory _peopleContextFactory;
 
   /// Returns the fully assembled shelf [Handler].
   ///
@@ -70,7 +77,10 @@ class AppRouter {
         .addHandler(authHandler.router.call);
 
     // --- Protected routes (session middleware + auth guard) ---
-    final registryHandler = RegistryHandler(contractFactory: _contractFactory);
+    final registryHandler = RegistryHandler(
+      contractFactory: _contractFactory,
+      peopleContextFactory: _peopleContextFactory,
+    );
 
     final assessmentHandler = AssessmentHandler(
       contractFactory: _contractFactory,

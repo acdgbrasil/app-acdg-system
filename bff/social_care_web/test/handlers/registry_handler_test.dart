@@ -55,7 +55,10 @@ void main() {
 
     setUp(() {
       fakeBff = FakeSocialCareBff(delay: Duration.zero);
-      handler = RegistryHandler(contractFactory: (_) => fakeBff);
+      handler = RegistryHandler(
+        contractFactory: (_) => fakeBff,
+        peopleContextFactory: (_) => FakePeopleContextClient(),
+      );
     });
 
     group('GET /patients', () {

@@ -28,6 +28,7 @@ export 'src/handlers/lookup_handler.dart';
 
 // Remote
 export 'src/remote/social_care_api_client.dart';
+export 'src/remote/people_context_client.dart';
 
 // Server
 export 'src/server/app_router.dart';

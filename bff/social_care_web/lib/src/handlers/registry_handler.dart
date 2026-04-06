@@ -4,10 +4,16 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
 import '../auth/session_store.dart';
+import '../remote/people_context_client.dart';
 import 'handler_utils.dart';
 
 /// Factory that creates a [SocialCareContract] for a given [Session].
 typedef RegistryContractFactory = SocialCareContract Function(Session session);
+
+/// Factory that creates a [PeopleContextClient] for a given [Session].
+typedef RegistryPeopleContextFactory = PeopleContextClient Function(
+  Session session,
+);
 
 /// Handles patient registry endpoints.
 ///
@@ -21,10 +27,14 @@ typedef RegistryContractFactory = SocialCareContract Function(Session session);
 /// - `PUT    /patients/<id>/social-identity`           — update social identity
 /// - `GET    /patients/<id>/audit-trail`               — get audit trail
 class RegistryHandler {
-  RegistryHandler({required RegistryContractFactory contractFactory})
-    : _contractFactory = contractFactory;
+  RegistryHandler({
+    required RegistryContractFactory contractFactory,
+    required RegistryPeopleContextFactory peopleContextFactory,
+  }) : _contractFactory = contractFactory,
+       _peopleContextFactory = peopleContextFactory;
 
   final RegistryContractFactory _contractFactory;
+  final RegistryPeopleContextFactory _peopleContextFactory;
 
   Router get router {
     final r = Router();
@@ -53,9 +63,58 @@ class RegistryHandler {
   Future<Response> _registerPatient(Request request) async {
     final session = getSession(request);
     final contract = _contractFactory(session);
+    final peopleContext = _peopleContextFactory(session);
 
     try {
       final body = await readJsonBody(request);
+
+      // Register the reference person in people-context
+      final firstName = body['firstName'] as String? ?? '';
+      final lastName = body['lastName'] as String? ?? '';
+      final fullName = '$firstName $lastName'.trim();
+      final birthDate = body['birthDate'] as String? ?? '';
+      final cpf = body['cpf'] as String?;
+
+      final personIdResult = await peopleContext.registerPerson(
+        fullName: fullName,
+        birthDate: birthDate,
+        cpf: cpf,
+      );
+
+      switch (personIdResult) {
+        case Failure(:final error):
+          return jsonError(
+            502,
+            'Failed to register person in people-context: $error',
+          );
+        case Success(value: final canonicalPersonId):
+          body['personId'] = canonicalPersonId;
+      }
+
+      // Register each family member in people-context
+      final familyMembers = body['familyMembers'] as List<dynamic>? ?? [];
+      for (final member in familyMembers) {
+        if (member is Map<String, dynamic>) {
+          final memberName = member['fullName'] as String? ?? '';
+          final memberBirth = member['birthDate'] as String? ?? '';
+          final memberCpf = member['cpf'] as String?;
+
+          final memberPersonId = await peopleContext.registerPerson(
+            fullName: memberName,
+            birthDate: memberBirth,
+            cpf: memberCpf,
+          );
+
+          switch (memberPersonId) {
+            case Success(value: final id):
+              member['personId'] = id;
+              member['memberPersonId'] = id;
+            case Failure():
+              break; // Non-blocking — member keeps generated ID
+          }
+        }
+      }
+
       final patientResult = PatientTranslator.fromJson(body);
 
       return switch (patientResult) {
@@ -89,43 +148,67 @@ class RegistryHandler {
   Future<Response> _addFamilyMember(Request request, String id) async {
     final session = getSession(request);
     final contract = _contractFactory(session);
+    final peopleContext = _peopleContextFactory(session);
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
 
-      return switch (patientIdResult) {
-        Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
-        Success(:final value) => () async {
-          final patientId = value;
-          final prRelationshipIdStr = body['prRelationshipId'] as String?;
-          if (prRelationshipIdStr == null) {
-            return jsonError(400, 'Missing prRelationshipId');
-          }
+      final PatientId patientId;
+      switch (PatientId.create(id)) {
+        case Success(:final value):
+          patientId = value;
+        case Failure(:final error):
+          return jsonError(400, 'Invalid patient ID: $error');
+      }
 
-          final prRelResult = LookupId.create(prRelationshipIdStr);
-          final memberResult = PatientTranslator.familyMemberFromJson(body);
+      final prRelationshipIdStr = body['prRelationshipId'] as String?;
+      if (prRelationshipIdStr == null) {
+        return jsonError(400, 'Missing prRelationshipId');
+      }
 
-          return switch ((prRelResult, memberResult)) {
-            (Success(:final value), Success(value: final member)) =>
-              switch (await contract.addFamilyMember(
-                patientId,
-                member,
-                value,
-              )) {
-                Success() => jsonNoContent(),
-                Failure(:final error) => jsonError(500, error.toString()),
-              },
-            (Failure(:final error), _) => jsonError(
-              400,
-              'Invalid prRelationshipId: $error',
-            ),
-            (_, Failure(:final error)) => jsonError(
-              400,
-              'Invalid family member: $error',
-            ),
-          };
-        }(),
+      // Register person in people-context first to get canonical PersonId
+      final fullName = body['fullName'] as String? ?? '';
+      final birthDate = body['birthDate'] as String? ?? '';
+      final cpf = body['cpf'] as String?;
+
+      switch (await peopleContext.registerPerson(
+        fullName: fullName,
+        birthDate: birthDate,
+        cpf: cpf,
+      )) {
+        case Success(value: final canonicalPersonId):
+          body['personId'] = canonicalPersonId;
+          body['memberPersonId'] = canonicalPersonId;
+        case Failure(:final error):
+          return jsonError(
+            502,
+            'Failed to register person in people-context: $error',
+          );
+      }
+
+      final LookupId prRelId;
+      switch (LookupId.create(prRelationshipIdStr)) {
+        case Success(:final value):
+          prRelId = value;
+        case Failure(:final error):
+          return jsonError(400, 'Invalid prRelationshipId: $error');
+      }
+
+      final FamilyMember member;
+      switch (PatientTranslator.familyMemberFromJson(body)) {
+        case Success(:final value):
+          member = value;
+        case Failure(:final error):
+          return jsonError(400, 'Invalid family member: $error');
+      }
+
+      return switch (await contract.addFamilyMember(
+        patientId,
+        member,
+        prRelId,
+      )) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => jsonError(500, error.toString()),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
