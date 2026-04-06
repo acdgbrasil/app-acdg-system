@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
@@ -81,12 +82,17 @@ abstract final class RegistryMapper {
       case Failure(:final error): return Failure('personalData.birthDate: $error');
     }
 
+    final sex = Sex.values.firstWhereOrNull((v) => v.name == j['sex']);
+    if (sex == null) {
+      return const Failure('personalData.sex: Valor inválido ou ausente');
+    }
+
     return PersonalData.create(
       firstName: j['firstName'],
       lastName: j['lastName'],
       motherName: j['motherName'],
       nationality: j['nationality'],
-      sex: Sex.values.firstWhere((v) => v.name == j['sex']),
+      sex: sex,
       socialName: j['socialName'],
       birthDate: birthDate,
       phone: j['phone'],
@@ -212,15 +218,18 @@ abstract final class RegistryMapper {
         return Failure('familyMember.birthDate: $error');
     }
 
+    final requiredDocs = (j['requiredDocuments'] as List? ?? [])
+        .map((d) => RequiredDocument.values.firstWhereOrNull((v) => v.value == d))
+        .nonNulls
+        .toList();
+
     return Success(FamilyMember.reconstitute(
       personId: personId,
       relationshipId: relationshipId,
       residesWithPatient: j['isResiding'] ?? j['residesWithPatient'] ?? false,
       isPrimaryCaregiver: j['isCaregiver'] ?? j['isPrimaryCaregiver'] ?? false,
       hasDisability: j['hasDisability'] ?? false,
-      requiredDocuments: (j['requiredDocuments'] as List? ?? [])
-          .map((d) => RequiredDocument.values.firstWhere((v) => v.value == d))
-          .toList(),
+      requiredDocuments: requiredDocs,
       birthDate: birthDate,
     ));
   }

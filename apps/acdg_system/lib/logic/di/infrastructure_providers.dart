@@ -58,9 +58,8 @@ SyncEngine _buildSyncEngine(Ref ref, AuthUser user) {
 ///
 /// - **Desktop:** [OfflineFirstRepository] when authenticated with a running
 ///   [SyncEngine], or [LocalSocialCareRepository] as local-only fallback.
-/// - **Web:** TODO — wire [HttpSocialCareClient] that calls the BFF's
-///   `/api/patients/*`, `/api/lookups/*` endpoints. For now returns a
-///   [_WebSocialCarePlaceholder] that throws on every call.
+/// - **Web:** [HttpSocialCareClient] that calls the BFF's
+///   `/api/patients/*`, `/api/lookups/*` endpoints via same-origin cookies.
 final socialCareContractProvider = Provider<SocialCareContract>((ref) {
   final deps = ref.watch(appDependencyManagerProvider);
 

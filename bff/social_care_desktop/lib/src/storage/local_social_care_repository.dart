@@ -7,9 +7,11 @@ import 'package:drift/drift.dart';
 import 'package:persistence/persistence.dart';
 import 'package:shared/shared.dart';
 
-/// Implementation of [SocialCareContract] that uses Drift for local storage
+import 'local_cache_contract.dart';
+
+/// Implementation of [LocalCacheContract] that uses Drift for local storage
 /// and enqueues actions for synchronization.
-class LocalSocialCareRepository implements SocialCareContract {
+class LocalSocialCareRepository implements LocalCacheContract {
   final DriftDatabaseService _dbService;
   final SyncQueueService _queueService;
 

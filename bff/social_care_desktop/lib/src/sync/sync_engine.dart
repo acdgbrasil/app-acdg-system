@@ -9,12 +9,13 @@ import 'package:persistence/persistence.dart';
 import 'package:shared/shared.dart';
 
 import '../storage/local_social_care_repository.dart';
+import '../storage/offline_first_repository.dart';
 
 /// Engine responsible for synchronizing local pending actions with the remote BFF.
 ///
 /// Uses reactive Drift [watchPendingActions] stream instead of periodic polling.
 /// When a new action enters the queue, the engine processes it immediately.
-class SyncEngine {
+class SyncEngine implements SyncScheduler {
   final SyncQueueService _queueService;
   final ConnectivityService _connectivityService;
   final SocialCareContract _remoteBff;
