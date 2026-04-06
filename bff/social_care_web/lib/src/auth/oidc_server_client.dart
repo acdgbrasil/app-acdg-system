@@ -80,7 +80,9 @@ class OidcServerClient {
         'client_id': _config.oidcClientId,
         'redirect_uri': _config.oidcRedirectUri,
         'response_type': 'code',
-        'scope': 'openid profile email offline_access',
+        'scope': 'openid profile email offline_access '
+            'urn:zitadel:iam:org:project:roles '
+            'urn:zitadel:iam:org:project:id:zitadel:aud',
         'state': state,
         'code_challenge': codeChallenge,
         'code_challenge_method': 'S256',
