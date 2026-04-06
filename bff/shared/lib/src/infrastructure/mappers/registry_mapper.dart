@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
 /// Mapper for the Registry bounded context:

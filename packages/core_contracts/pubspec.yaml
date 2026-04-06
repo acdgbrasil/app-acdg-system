@@ -1,0 +1,12 @@
+name: core_contracts
+description: Pure Dart contracts and utilities shared across Flutter and server packages.
+version: 0.1.0
+publish_to: 'none'
+
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  meta: ^1.11.0

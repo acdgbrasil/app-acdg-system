@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/src/domain/kernel/ids.dart';
 import 'package:shared/src/domain/kernel/time_stamp.dart';
 import 'package:shared/src/domain/registry/registry_vos.dart';

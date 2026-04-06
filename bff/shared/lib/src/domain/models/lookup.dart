@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 
 /// Represents an item from a domain (lookup) table.
 final class LookupItem with Equatable {

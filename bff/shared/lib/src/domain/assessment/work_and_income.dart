@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../../utils/app_error.dart';
 import '../kernel/ids.dart';
 import 'assessment_vos.dart'; // To get SocialBenefit

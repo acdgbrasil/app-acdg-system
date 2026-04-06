@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../../utils/app_error.dart';
 import '../assessment/assessment_vos.dart';
 import '../assessment/community_support.dart';

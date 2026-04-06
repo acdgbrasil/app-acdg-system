@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../assessment/assessment_vos.dart';
 import '../assessment/work_and_income.dart';
 

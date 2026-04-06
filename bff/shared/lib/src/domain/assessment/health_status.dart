@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../kernel/ids.dart';
 
 final class MemberDeficiency with Equatable {

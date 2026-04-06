@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
 /// Safely parses an enum from a SCREAMING_SNAKE_CASE JSON string.

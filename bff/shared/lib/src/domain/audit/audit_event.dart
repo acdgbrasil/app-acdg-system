@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../kernel/time_stamp.dart';
 
 /// Representa um evento de auditoria no histórico do paciente.

@@ -1,4 +1,4 @@
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import '../domain/assessment/assessment_vos.dart';
 import '../domain/assessment/community_support.dart';
 import '../domain/assessment/educational_status.dart';

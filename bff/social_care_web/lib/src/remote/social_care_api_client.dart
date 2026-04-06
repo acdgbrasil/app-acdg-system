@@ -1,6 +1,6 @@
 import 'dart:developer' as developer;
 
-import 'package:core/core.dart';
+import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
 
