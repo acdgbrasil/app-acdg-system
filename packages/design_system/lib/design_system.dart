@@ -11,6 +11,7 @@ export 'src/atoms/acdg_underline_input.dart';
 export 'src/molecules/acdg_documents_checkbox_row.dart';
 export 'src/molecules/acdg_form_field.dart';
 export 'src/molecules/acdg_masked_field.dart';
+export 'src/molecules/acdg_radio_group.dart';
 export 'src/organisms/acdg_action_row.dart';
 export 'src/organisms/acdg_member_card.dart';
 export 'src/organisms/acdg_member_list.dart';

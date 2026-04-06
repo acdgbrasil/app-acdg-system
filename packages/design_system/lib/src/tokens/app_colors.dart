@@ -31,12 +31,12 @@ abstract final class AppColors {
   static const Color danger = Color(0xFFA6290D); // Red (Cancel/Clear)
   static const Color warning = Color(0xFFC9960A); // Gold/Amber (caregiver star)
   static const Color surface = Color(0xFFFAF0E0); // Light cream (FAB, dialogs)
-  static const Color surfaceLight = Color(0xFFFFFBF4); // Lightest cream (icons on dark, toast text)
+  static const Color surfaceLight = Color(
+    0xFFFFFBF4,
+  ); // Lightest cream (icons on dark, toast text)
 
   // Overlays
-  static const Color barrierDark = Color(
-    0x59261D11,
-  ); // Dialog barrier overlay
+  static const Color barrierDark = Color(0x59261D11); // Dialog barrier overlay
 
   // Interactions & Elements
   static const Color border = Color(0xFF261D11); // Dark Brown
@@ -50,4 +50,27 @@ abstract final class AppColors {
   static const Color buttonShadow = Color(
     0x1F000000,
   ); // rgba(0,0,0,0.12) - button shadow
+
+  // Elevation & Glow Shadows
+  static const Color shadowSubtle = Color(
+    0x0F000000,
+  ); // rgba(0,0,0,0.06) - secondary button shadow layer
+  static const Color popupGlow = Color(
+    0x33F2E2C4,
+  ); // rgba(242,226,196,0.2) - popup save button glow
+  static const Color elevationXs = Color(
+    0x0A000000,
+  ); // rgba(0,0,0,0.04) - popup shadow layers 1-2
+  static const Color elevationSm = Color(
+    0x14000000,
+  ); // rgba(0,0,0,0.08) - popup shadow layer 3
+  static const Color elevationMd = Color(
+    0x29000000,
+  ); // rgba(0,0,0,0.16) - popup shadow layer 4
+  static const Color elevationLg = Color(
+    0x3D000000,
+  ); // rgba(0,0,0,0.24) - popup shadow layer 5
+  static const Color elevationXl = Color(
+    0x7A000000,
+  ); // rgba(0,0,0,0.48) - popup shadow layer 6
 }

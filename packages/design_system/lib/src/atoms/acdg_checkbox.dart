@@ -34,8 +34,8 @@ class AcdgCheckbox extends StatelessWidget {
           decoration: const BoxDecoration(color: Colors.transparent),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 18, // Visual adjustment to match 14.5px feeling with border
-            height: 18,
+            width: 14.5,
+            height: 14.5,
             decoration: BoxDecoration(
               color: value
                   ? (activeColor ?? AppColors.primary)
