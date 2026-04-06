@@ -137,11 +137,14 @@ class HttpSocialCareClient implements SocialCareContract {
     PatientId patientId,
     FamilyMember member,
     LookupId prRelationshipId,
-  ) async {
+   {
+    String? fullName,
+  }) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
         'prRelationshipId': prRelationshipId.value,
+        if (fullName != null) 'fullName': fullName,
       };
 
       final response = await _dio.post<dynamic>(

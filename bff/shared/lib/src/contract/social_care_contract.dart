@@ -48,11 +48,15 @@ abstract interface class SocialCareContract {
   Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId);
 
   /// Adds a new family member to a patient's record.
+  ///
+  /// [fullName] is optional metadata used by the BFF Web to register
+  /// the person in people-context. It is not stored in social-care.
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-  );
+    LookupId prRelationshipId, {
+    String? fullName,
+  });
 
   /// Removes a family member from a patient's record.
   Future<Result<void>> removeFamilyMember(

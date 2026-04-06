@@ -73,8 +73,15 @@ class BffPatientRepository implements PatientRepository {
     PatientId patientId,
     FamilyMember member,
     LookupId prRelationshipId,
-  ) {
-    return _bff.addFamilyMember(patientId, member, prRelationshipId);
+   {
+    String? fullName,
+  }) {
+    return _bff.addFamilyMember(
+      patientId,
+      member,
+      prRelationshipId,
+      fullName: fullName,
+    );
   }
 
   @override

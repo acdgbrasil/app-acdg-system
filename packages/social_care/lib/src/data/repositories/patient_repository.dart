@@ -24,7 +24,9 @@ abstract class PatientRepository {
     PatientId patientId,
     FamilyMember member,
     LookupId prRelationshipId,
-  );
+   {
+    String? fullName,
+  });
 
   /// Removes a family member from a patient's record.
   Future<Result<void>> removeFamilyMember(

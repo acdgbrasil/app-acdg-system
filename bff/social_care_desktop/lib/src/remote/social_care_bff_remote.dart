@@ -145,7 +145,9 @@ class SocialCareBffRemote implements SocialCareContract {
     PatientId patientId,
     FamilyMember member,
     LookupId prRelationshipId,
-  ) async {
+   {
+    String? fullName,
+  }) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),

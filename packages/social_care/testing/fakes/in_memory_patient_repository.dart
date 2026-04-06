@@ -91,7 +91,9 @@ class InMemoryPatientRepository implements PatientRepository {
     PatientId patientId,
     FamilyMember member,
     LookupId prRelationshipId,
-  ) async {
+   {
+    String? fullName,
+  }) async {
     final patient = _store[patientId.value];
     if (patient == null) {
       return Failure(

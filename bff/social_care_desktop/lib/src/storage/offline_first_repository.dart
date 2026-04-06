@@ -169,7 +169,9 @@ class OfflineFirstRepository implements SocialCareContract {
     PatientId patientId,
     FamilyMember member,
     LookupId prRelationshipId,
-  ) => _handleWrite(
+   {
+    String? fullName,
+  }) => _handleWrite(
     () => _local.addFamilyMember(patientId, member, prRelationshipId),
   );
 

@@ -70,14 +70,19 @@ class RegistryHandler {
       final body = await readJsonBody(request);
       _log('POST /patients', 'body keys: ${body.keys.toList()}');
 
-      // Register the reference person in people-context
-      final firstName = body['firstName'] as String? ?? '';
-      final lastName = body['lastName'] as String? ?? '';
+      // Extract person data from nested structure
+      final personalData =
+          body['personalData'] as Map<String, dynamic>? ?? {};
+      final civilDocs =
+          body['civilDocuments'] as Map<String, dynamic>? ?? {};
+      final firstName = personalData['firstName'] as String? ?? '';
+      final lastName = personalData['lastName'] as String? ?? '';
       final fullName = '$firstName $lastName'.trim();
-      final birthDate = body['birthDate'] as String? ?? '';
-      final cpf = body['cpf'] as String?;
+      final birthDate = personalData['birthDate'] as String? ??
+          civilDocs['birthDate'] as String? ?? '';
+      final cpf = civilDocs['cpf'] as String?;
 
-      _log('POST /patients', 'Registering person in people-context: $fullName');
+      _log('POST /patients', 'Registering person in people-context: $fullName, birthDate=$birthDate');
       final personIdResult = await peopleContext.registerPerson(
         fullName: fullName,
         birthDate: birthDate,
@@ -96,7 +101,7 @@ class RegistryHandler {
           body['personId'] = canonicalPersonId;
       }
 
-      // Register each family member in people-context
+      // Register each family member in people-context (if name available)
       final familyMembers = body['familyMembers'] as List<dynamic>? ?? [];
       _log('POST /patients', 'familyMembers count: ${familyMembers.length}');
       for (var i = 0; i < familyMembers.length; i++) {
@@ -106,20 +111,24 @@ class RegistryHandler {
           final memberBirth = member['birthDate'] as String? ?? '';
           final memberCpf = member['cpf'] as String?;
 
-          _log('POST /patients', 'Registering family member[$i] in people-context: $memberName');
-          final memberPersonId = await peopleContext.registerPerson(
-            fullName: memberName,
-            birthDate: memberBirth,
-            cpf: memberCpf,
-          );
+          if (memberName.isNotEmpty && memberBirth.isNotEmpty) {
+            _log('POST /patients', 'Registering family member[$i] in people-context: $memberName');
+            final memberPersonId = await peopleContext.registerPerson(
+              fullName: memberName,
+              birthDate: memberBirth,
+              cpf: memberCpf,
+            );
 
-          switch (memberPersonId) {
-            case Success(value: final id):
-              _log('POST /patients', 'family member[$i] people-context OK: personId=$id');
-              member['personId'] = id;
-              member['memberPersonId'] = id;
-            case Failure(:final error):
-              _log('POST /patients', 'family member[$i] people-context FAILED: $error (non-blocking)');
+            switch (memberPersonId) {
+              case Success(value: final id):
+                _log('POST /patients', 'family member[$i] people-context OK: personId=$id');
+                member['personId'] = id;
+                member['memberPersonId'] = id;
+              case Failure(:final error):
+                _log('POST /patients', 'family member[$i] people-context FAILED: $error (non-blocking)');
+            }
+          } else {
+            _log('POST /patients', 'family member[$i] skipping people-context — name or birthDate missing');
           }
         }
       }
@@ -201,30 +210,31 @@ class RegistryHandler {
         return jsonError(400, 'Missing prRelationshipId');
       }
 
-      // Register person in people-context first
+      // Register person in people-context if name is available
       final fullName = body['fullName'] as String? ?? '';
-      final birthDate = body['birthDate'] as String? ?? '';
+      final memberBirthDate = body['birthDate'] as String? ?? '';
       final cpf = body['cpf'] as String?;
 
-      _log('POST /patients/$id/family-members',
-          'Registering in people-context: $fullName');
-      switch (await peopleContext.registerPerson(
-        fullName: fullName,
-        birthDate: birthDate,
-        cpf: cpf,
-      )) {
-        case Success(value: final canonicalPersonId):
-          _log('POST /patients/$id/family-members',
-              'people-context OK: personId=$canonicalPersonId');
-          body['personId'] = canonicalPersonId;
-          body['memberPersonId'] = canonicalPersonId;
-        case Failure(:final error):
-          _log('POST /patients/$id/family-members',
-              'people-context FAILED: $error');
-          return jsonError(
-            502,
-            'Failed to register person in people-context: $error',
-          );
+      if (fullName.isNotEmpty && memberBirthDate.isNotEmpty) {
+        _log('POST /patients/$id/family-members',
+            'Registering in people-context: $fullName');
+        switch (await peopleContext.registerPerson(
+          fullName: fullName,
+          birthDate: memberBirthDate,
+          cpf: cpf,
+        )) {
+          case Success(value: final canonicalPersonId):
+            _log('POST /patients/$id/family-members',
+                'people-context OK: personId=$canonicalPersonId');
+            body['personId'] = canonicalPersonId;
+            body['memberPersonId'] = canonicalPersonId;
+          case Failure(:final error):
+            _log('POST /patients/$id/family-members',
+                'people-context FAILED: $error (non-blocking)');
+        }
+      } else {
+        _log('POST /patients/$id/family-members',
+            'Skipping people-context — fullName or birthDate missing');
       }
 
       final LookupId prRelId;
