@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 import 'package:shelf/shelf.dart';
@@ -7,25 +9,14 @@ import '../auth/session_store.dart';
 import '../remote/people_context_client.dart';
 import 'handler_utils.dart';
 
-/// Factory that creates a [SocialCareContract] for a given [Session].
 typedef RegistryContractFactory = SocialCareContract Function(Session session);
-
-/// Factory that creates a [PeopleContextClient] for a given [Session].
 typedef RegistryPeopleContextFactory = PeopleContextClient Function(
   Session session,
 );
 
-/// Handles patient registry endpoints.
-///
-/// Routes:
-/// - `GET    /patients`                              — list patients
-/// - `POST   /patients`                              — register patient
-/// - `GET    /patients/<id>`                          — get patient detail
-/// - `POST   /patients/<id>/family-members`           — add family member
-/// - `DELETE  /patients/<id>/family-members/<memberId>` — remove family member
-/// - `PUT    /patients/<id>/primary-caregiver`         — assign primary caregiver
-/// - `PUT    /patients/<id>/social-identity`           — update social identity
-/// - `GET    /patients/<id>/audit-trail`               — get audit trail
+void _log(String method, String msg) =>
+    print('[BFF:Registry] $method — $msg');
+
 class RegistryHandler {
   RegistryHandler({
     required RegistryContractFactory contractFactory,
@@ -49,33 +40,35 @@ class RegistryHandler {
     return r;
   }
 
+  String _tokenSnippet(Session s) =>
+      s.accessToken.isEmpty ? 'EMPTY' : '${s.accessToken.substring(0, 15)}...';
+
   Future<Response> _fetchPatients(Request request) async {
+    _log('GET /patients', 'ENTER');
     final session = getSession(request);
-    final hasToken = session.accessToken.isNotEmpty;
-    final tokenPrefix = hasToken
-        ? '${session.accessToken.substring(0, 10)}...'
-        : 'EMPTY';
-    print('[BFF] fetchPatients — userId=${session.userId}, '
-        'token=$tokenPrefix, expired=${session.isExpired()}');
+    _log('GET /patients',
+        'userId=${session.userId}, token=${_tokenSnippet(session)}, expired=${session.isExpired()}');
     final contract = _contractFactory(session);
     final result = await contract.fetchPatients();
-
+    _log('GET /patients',
+        'result=${result.isSuccess ? "SUCCESS(${(result as Success).value.length} items)" : "FAIL(${(result as Failure).error})"}');
     return switch (result) {
       Success(:final value) => jsonOk(value.map((p) => p.toJson()).toList()),
-      Failure(:final error) => () {
-        print('[BFF] fetchPatients FAILED: $error');
-        return jsonError(500, error.toString());
-      }(),
+      Failure(:final error) => jsonError(500, error.toString()),
     };
   }
 
   Future<Response> _registerPatient(Request request) async {
+    _log('POST /patients', 'ENTER');
     final session = getSession(request);
+    _log('POST /patients',
+        'userId=${session.userId}, token=${_tokenSnippet(session)}, expired=${session.isExpired()}');
     final contract = _contractFactory(session);
     final peopleContext = _peopleContextFactory(session);
 
     try {
       final body = await readJsonBody(request);
+      _log('POST /patients', 'body keys: ${body.keys.toList()}');
 
       // Register the reference person in people-context
       final firstName = body['firstName'] as String? ?? '';
@@ -84,6 +77,7 @@ class RegistryHandler {
       final birthDate = body['birthDate'] as String? ?? '';
       final cpf = body['cpf'] as String?;
 
+      _log('POST /patients', 'Registering person in people-context: $fullName');
       final personIdResult = await peopleContext.registerPerson(
         fullName: fullName,
         birthDate: birthDate,
@@ -92,22 +86,27 @@ class RegistryHandler {
 
       switch (personIdResult) {
         case Failure(:final error):
+          _log('POST /patients', 'people-context FAILED: $error');
           return jsonError(
             502,
             'Failed to register person in people-context: $error',
           );
         case Success(value: final canonicalPersonId):
+          _log('POST /patients', 'people-context OK: personId=$canonicalPersonId');
           body['personId'] = canonicalPersonId;
       }
 
       // Register each family member in people-context
       final familyMembers = body['familyMembers'] as List<dynamic>? ?? [];
-      for (final member in familyMembers) {
+      _log('POST /patients', 'familyMembers count: ${familyMembers.length}');
+      for (var i = 0; i < familyMembers.length; i++) {
+        final member = familyMembers[i];
         if (member is Map<String, dynamic>) {
           final memberName = member['fullName'] as String? ?? '';
           final memberBirth = member['birthDate'] as String? ?? '';
           final memberCpf = member['cpf'] as String?;
 
+          _log('POST /patients', 'Registering family member[$i] in people-context: $memberName');
           final memberPersonId = await peopleContext.registerPerson(
             fullName: memberName,
             birthDate: memberBirth,
@@ -116,79 +115,112 @@ class RegistryHandler {
 
           switch (memberPersonId) {
             case Success(value: final id):
+              _log('POST /patients', 'family member[$i] people-context OK: personId=$id');
               member['personId'] = id;
               member['memberPersonId'] = id;
-            case Failure():
-              break; // Non-blocking — member keeps generated ID
+            case Failure(:final error):
+              _log('POST /patients', 'family member[$i] people-context FAILED: $error (non-blocking)');
           }
         }
       }
 
+      _log('POST /patients', 'Calling PatientTranslator.fromJson...');
       final patientResult = PatientTranslator.fromJson(body);
 
       return switch (patientResult) {
-        Success(:final value) => switch (await contract.registerPatient(
-          value,
-        )) {
-          Success(:final value) => jsonOk({'id': value.value}),
-          Failure(:final error) => jsonError(500, error.toString()),
-        },
-        Failure(:final error) => jsonError(400, error.toString()),
+        Success(:final value) => () async {
+          _log('POST /patients', 'PatientTranslator OK. Calling backend registerPatient...');
+          final regResult = await contract.registerPatient(value);
+          _log('POST /patients',
+              'backend result=${regResult.isSuccess ? "SUCCESS" : "FAIL(${(regResult as Failure).error})"}');
+          return switch (regResult) {
+            Success(:final value) => jsonOk({'id': value.value}),
+            Failure(:final error) => jsonError(500, error.toString()),
+          };
+        }(),
+        Failure(:final error) => () {
+          _log('POST /patients', 'PatientTranslator FAILED: $error');
+          return jsonError(400, error.toString());
+        }(),
       };
-    } catch (e) {
+    } catch (e, st) {
+      _log('POST /patients', 'EXCEPTION: $e\n$st');
       return jsonError(400, 'Invalid request body: $e');
     }
   }
 
   Future<Response> _fetchPatient(Request request, String id) async {
+    _log('GET /patients/$id', 'ENTER');
     final session = getSession(request);
+    _log('GET /patients/$id',
+        'userId=${session.userId}, token=${_tokenSnippet(session)}');
     final contract = _contractFactory(session);
 
     final patientIdResult = PatientId.create(id);
     return switch (patientIdResult) {
-      Success(:final value) => switch (await contract.fetchPatient(value)) {
-        Success(:final value) => jsonOk(value.toJson()),
-        Failure(:final error) => jsonError(500, error.toString()),
-      },
-      Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
+      Success(:final value) => () async {
+        final result = await contract.fetchPatient(value);
+        _log('GET /patients/$id',
+            'result=${result.isSuccess ? "SUCCESS" : "FAIL(${(result as Failure).error})"}');
+        return switch (result) {
+          Success(:final value) => jsonOk(value.toJson()),
+          Failure(:final error) => jsonError(500, error.toString()),
+        };
+      }(),
+      Failure(:final error) => () {
+        _log('GET /patients/$id', 'Invalid ID: $error');
+        return jsonError(400, 'Invalid patient ID: $error');
+      }(),
     };
   }
 
   Future<Response> _addFamilyMember(Request request, String id) async {
+    _log('POST /patients/$id/family-members', 'ENTER');
     final session = getSession(request);
+    _log('POST /patients/$id/family-members',
+        'userId=${session.userId}, token=${_tokenSnippet(session)}, expired=${session.isExpired()}');
     final contract = _contractFactory(session);
     final peopleContext = _peopleContextFactory(session);
 
     try {
       final body = await readJsonBody(request);
+      _log('POST /patients/$id/family-members', 'body keys: ${body.keys.toList()}');
 
       final PatientId patientId;
       switch (PatientId.create(id)) {
         case Success(:final value):
           patientId = value;
         case Failure(:final error):
+          _log('POST /patients/$id/family-members', 'Invalid patient ID: $error');
           return jsonError(400, 'Invalid patient ID: $error');
       }
 
       final prRelationshipIdStr = body['prRelationshipId'] as String?;
       if (prRelationshipIdStr == null) {
+        _log('POST /patients/$id/family-members', 'Missing prRelationshipId');
         return jsonError(400, 'Missing prRelationshipId');
       }
 
-      // Register person in people-context first to get canonical PersonId
+      // Register person in people-context first
       final fullName = body['fullName'] as String? ?? '';
       final birthDate = body['birthDate'] as String? ?? '';
       final cpf = body['cpf'] as String?;
 
+      _log('POST /patients/$id/family-members',
+          'Registering in people-context: $fullName');
       switch (await peopleContext.registerPerson(
         fullName: fullName,
         birthDate: birthDate,
         cpf: cpf,
       )) {
         case Success(value: final canonicalPersonId):
+          _log('POST /patients/$id/family-members',
+              'people-context OK: personId=$canonicalPersonId');
           body['personId'] = canonicalPersonId;
           body['memberPersonId'] = canonicalPersonId;
         case Failure(:final error):
+          _log('POST /patients/$id/family-members',
+              'people-context FAILED: $error');
           return jsonError(
             502,
             'Failed to register person in people-context: $error',
@@ -200,26 +232,36 @@ class RegistryHandler {
         case Success(:final value):
           prRelId = value;
         case Failure(:final error):
+          _log('POST /patients/$id/family-members',
+              'Invalid prRelationshipId: $error');
           return jsonError(400, 'Invalid prRelationshipId: $error');
       }
 
+      _log('POST /patients/$id/family-members',
+          'Calling PatientTranslator.familyMemberFromJson...');
       final FamilyMember member;
       switch (PatientTranslator.familyMemberFromJson(body)) {
         case Success(:final value):
           member = value;
+          _log('POST /patients/$id/family-members', 'FamilyMember parsed OK');
         case Failure(:final error):
+          _log('POST /patients/$id/family-members',
+              'FamilyMember parse FAILED: $error');
           return jsonError(400, 'Invalid family member: $error');
       }
 
-      return switch (await contract.addFamilyMember(
-        patientId,
-        member,
-        prRelId,
-      )) {
+      _log('POST /patients/$id/family-members',
+          'Calling backend addFamilyMember...');
+      final result = await contract.addFamilyMember(patientId, member, prRelId);
+      _log('POST /patients/$id/family-members',
+          'backend result=${result.isSuccess ? "SUCCESS" : "FAIL(${(result as Failure).error})"}');
+
+      return switch (result) {
         Success() => jsonNoContent(),
         Failure(:final error) => jsonError(500, error.toString()),
       };
-    } catch (e) {
+    } catch (e, st) {
+      _log('POST /patients/$id/family-members', 'EXCEPTION: $e\n$st');
       return jsonError(400, 'Invalid request body: $e');
     }
   }
@@ -229,28 +271,35 @@ class RegistryHandler {
     String id,
     String memberId,
   ) async {
+    _log('DELETE /patients/$id/family-members/$memberId', 'ENTER');
     final session = getSession(request);
+    _log('DELETE /patients/$id/family-members/$memberId',
+        'token=${_tokenSnippet(session)}');
     final contract = _contractFactory(session);
 
     final patientIdResult = PatientId.create(id);
     final memberIdResult = PersonId.create(memberId);
 
     return switch ((patientIdResult, memberIdResult)) {
-      (Success(:final value), Success(value: final member)) =>
-        switch (await contract.removeFamilyMember(value, member)) {
+      (Success(:final value), Success(value: final member)) => () async {
+        final result = await contract.removeFamilyMember(value, member);
+        _log('DELETE /patients/$id/family-members/$memberId',
+            'result=${result.isSuccess ? "SUCCESS" : "FAIL"}');
+        return switch (result) {
           Success() => jsonNoContent(),
           Failure(:final error) => jsonError(500, error.toString()),
-        },
-      (Failure(:final error), _) => jsonError(
-        400,
-        'Invalid patient ID: $error',
-      ),
+        };
+      }(),
+      (Failure(:final error), _) => jsonError(400, 'Invalid patient ID: $error'),
       (_, Failure(:final error)) => jsonError(400, 'Invalid member ID: $error'),
     };
   }
 
   Future<Response> _assignPrimaryCaregiver(Request request, String id) async {
+    _log('PUT /patients/$id/primary-caregiver', 'ENTER');
     final session = getSession(request);
+    _log('PUT /patients/$id/primary-caregiver',
+        'token=${_tokenSnippet(session)}');
     final contract = _contractFactory(session);
 
     try {
@@ -265,27 +314,31 @@ class RegistryHandler {
       final memberIdResult = PersonId.create(memberPersonId);
 
       return switch ((patientIdResult, memberIdResult)) {
-        (Success(:final value), Success(value: final member)) =>
-          switch (await contract.assignPrimaryCaregiver(value, member)) {
+        (Success(:final value), Success(value: final member)) => () async {
+          final result = await contract.assignPrimaryCaregiver(value, member);
+          _log('PUT /patients/$id/primary-caregiver',
+              'result=${result.isSuccess ? "SUCCESS" : "FAIL"}');
+          return switch (result) {
             Success() => jsonNoContent(),
             Failure(:final error) => jsonError(500, error.toString()),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid member person ID: $error',
-        ),
+          };
+        }(),
+        (Failure(:final error), _) =>
+          jsonError(400, 'Invalid patient ID: $error'),
+        (_, Failure(:final error)) =>
+          jsonError(400, 'Invalid member person ID: $error'),
       };
-    } catch (e) {
+    } catch (e, st) {
+      _log('PUT /patients/$id/primary-caregiver', 'EXCEPTION: $e\n$st');
       return jsonError(400, 'Invalid request body: $e');
     }
   }
 
   Future<Response> _updateSocialIdentity(Request request, String id) async {
+    _log('PUT /patients/$id/social-identity', 'ENTER');
     final session = getSession(request);
+    _log('PUT /patients/$id/social-identity',
+        'token=${_tokenSnippet(session)}');
     final contract = _contractFactory(session);
 
     try {
@@ -294,54 +347,62 @@ class RegistryHandler {
       final identityResult = PatientTranslator.socialIdentityFromJson(body);
 
       return switch ((patientIdResult, identityResult)) {
-        (Success(:final value), Success(value: final identity)) =>
-          switch (await contract.updateSocialIdentity(value, identity)) {
+        (Success(:final value), Success(value: final identity)) => () async {
+          final result = await contract.updateSocialIdentity(value, identity);
+          _log('PUT /patients/$id/social-identity',
+              'result=${result.isSuccess ? "SUCCESS" : "FAIL"}');
+          return switch (result) {
             Success() => jsonNoContent(),
             Failure(:final error) => jsonError(500, error.toString()),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid social identity: $error',
-        ),
+          };
+        }(),
+        (Failure(:final error), _) =>
+          jsonError(400, 'Invalid patient ID: $error'),
+        (_, Failure(:final error)) =>
+          jsonError(400, 'Invalid social identity: $error'),
       };
-    } catch (e) {
+    } catch (e, st) {
+      _log('PUT /patients/$id/social-identity', 'EXCEPTION: $e\n$st');
       return jsonError(400, 'Invalid request body: $e');
     }
   }
 
   Future<Response> _getAuditTrail(Request request, String id) async {
+    _log('GET /patients/$id/audit-trail', 'ENTER');
     final session = getSession(request);
+    _log('GET /patients/$id/audit-trail', 'token=${_tokenSnippet(session)}');
     final contract = _contractFactory(session);
 
     final patientIdResult = PatientId.create(id);
     final eventType = request.requestedUri.queryParameters['eventType'];
 
     return switch (patientIdResult) {
-      Success(:final value) => switch (await contract.getAuditTrail(
-        value,
-        eventType: eventType,
-      )) {
-        Success(:final value) => jsonOk(
-          value
-              .map(
-                (e) => {
-                  'id': e.id,
-                  'aggregateId': e.aggregateId,
-                  'eventType': e.eventType,
-                  'actorId': e.actorId,
-                  'payload': e.payload,
-                  'occurredAt': e.occurredAt.toISOString(),
-                  'recordedAt': e.recordedAt.toISOString(),
-                },
-              )
-              .toList(),
-        ),
-        Failure(:final error) => jsonError(500, error.toString()),
-      },
+      Success(:final value) => () async {
+        final result = await contract.getAuditTrail(
+          value,
+          eventType: eventType,
+        );
+        _log('GET /patients/$id/audit-trail',
+            'result=${result.isSuccess ? "SUCCESS" : "FAIL"}');
+        return switch (result) {
+          Success(:final value) => jsonOk(
+            value
+                .map(
+                  (e) => {
+                    'id': e.id,
+                    'aggregateId': e.aggregateId,
+                    'eventType': e.eventType,
+                    'actorId': e.actorId,
+                    'payload': e.payload,
+                    'occurredAt': e.occurredAt.toISOString(),
+                    'recordedAt': e.recordedAt.toISOString(),
+                  },
+                )
+                .toList(),
+          ),
+          Failure(:final error) => jsonError(500, error.toString()),
+        };
+      }(),
       Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
     };
   }
