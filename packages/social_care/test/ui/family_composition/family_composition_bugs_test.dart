@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:shared/src/infrastructure/mappers/registry_mapper.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
 
 import '../../../testing/fakes/in_memory_lookup_repository.dart';
 import '../../../testing/fakes/in_memory_patient_repository.dart';

@@ -2,7 +2,6 @@ import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
 
 import '../../../testing/social_care_testing.dart';
 

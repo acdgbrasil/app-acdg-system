@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
 
 import '../../../testing/fakes/in_memory_lookup_repository.dart';
 import '../../../testing/fakes/in_memory_patient_repository.dart';
@@ -59,15 +58,12 @@ void main() {
       // 1. Carregar lookups e paciente
       // O ViewModel chama _loadLookups no construtor, mas é async. 
       // Precisamos garantir que terminou.
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
       await viewModel.loadPatientCommand.execute();
 
       final selectedId = viewModel.selectedSpecificityId;
       final lookupItems = viewModel.specificityLookup;
 
-      // Log para debug no console de testes se necessário
-      print('Selected ID: $selectedId');
-      print('Lookup IDs: ${lookupItems.map((e) => e.id).toList()}');
 
       // O teste de regressão: Deve existir um item na lista cujo ID seja IGUAL ao selecionado.
       // Se um for lower e outro upper, isso falha, quebrando o "check" na UI.

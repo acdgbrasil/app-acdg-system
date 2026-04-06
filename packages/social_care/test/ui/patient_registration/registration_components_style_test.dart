@@ -2,9 +2,29 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
+/// Resolves the package root for social_care regardless of CWD.
+String _packageRoot() {
+  final cwd = Directory.current.path;
+  if (File(p.join(cwd, 'pubspec.yaml')).existsSync() &&
+      File(p.join(cwd, 'pubspec.yaml'))
+          .readAsStringSync()
+          .contains('name: social_care')) {
+    return cwd;
+  }
+  return p.normalize(p.join(cwd, 'packages', 'social_care'));
+}
+
 void main() {
   group('Patient Registration Components Style & Architecture TDD', () {
-    final componentsDir = Directory(p.join('lib', 'src', 'ui', 'patient_registration', 'view', 'components'));
+    final componentsDir = Directory(p.join(
+      _packageRoot(),
+      'lib',
+      'src',
+      'ui',
+      'patient_registration',
+      'view',
+      'components',
+    ));
 
     test('FamilyMemberModal should not contain ScaffoldMessenger (View Logic Leak)', () {
       final file = File(p.join(componentsDir.path, 'forms', 'reference_person', 'family_member_modal.dart'));

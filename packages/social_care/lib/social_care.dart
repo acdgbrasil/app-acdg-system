@@ -12,9 +12,9 @@ export 'src/data/repositories/bff_lookup_repository.dart';
 export 'src/data/repositories/bff_patient_repository.dart';
 export 'src/data/repositories/lookup_repository.dart';
 export 'src/data/repositories/patient_repository.dart';
+export 'src/data/services/http_social_care_client.dart';
 // Services
 export 'src/data/services/patient_service.dart';
-export 'src/data/services/http_social_care_client.dart';
 // Errors
 export 'src/domain/errors/social_care_errors.dart';
 // Use Cases

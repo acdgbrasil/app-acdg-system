@@ -57,7 +57,9 @@ class PatientRegistrationViewModel extends BaseViewModel {
 
     if (results[0] case Success(:final value)) {
       _parentescoLookup = value;
-      final pessoaRef = value.where((item) => item.codigo == 'PESSOA_REFERENCIA');
+      final pessoaRef = value.where(
+        (item) => item.codigo == 'PESSOA_REFERENCIA',
+      );
       if (pessoaRef.isNotEmpty) {
         _prRelationshipId = pessoaRef.first.id;
       }
@@ -77,6 +79,27 @@ class PatientRegistrationViewModel extends BaseViewModel {
 
     notifyListeners();
   }
+
+  // ── Derived data for Step 4 (family composition table header) ─
+  String get refPersonName {
+    final first = referencePersonFormState.firstName.text.trim();
+    final last = referencePersonFormState.lastName.text.trim();
+    return [first, last].where((s) => s.isNotEmpty).join(' ');
+  }
+
+  int? get refPersonAge {
+    final parsed = documentsFormState.birthDateParsed;
+    if (parsed == null) return null;
+    final now = DateTime.now();
+    int age = now.year - parsed.year;
+    if (now.month < parsed.month ||
+        (now.month == parsed.month && now.day < parsed.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  String? get refPersonSex => referencePersonFormState.gender.value?.name;
 
   // ── FormsHolds (um por step) ─────────────────────────────────
   final referencePersonFormState = PersonalDataFormState();
@@ -163,7 +186,8 @@ class PatientRegistrationViewModel extends BaseViewModel {
     if (registerPatientCommand.completed) return SubmitResult.success;
 
     final errorMsg = errorMessage ?? '';
-    final isNetwork = errorMsg.contains('SocketException') ||
+    final isNetwork =
+        errorMsg.contains('SocketException') ||
         errorMsg.contains('TimeoutException') ||
         errorMsg.contains('network');
     return isNetwork ? SubmitResult.networkError : SubmitResult.serverError;
@@ -186,8 +210,8 @@ class PatientRegistrationViewModel extends BaseViewModel {
     final residenceLocation = addr.residenceLocation.value == 'urbano'
         ? ResidenceLocation.urbano
         : addr.residenceLocation.value == 'rural'
-            ? ResidenceLocation.rural
-            : null;
+        ? ResidenceLocation.rural
+        : null;
 
     // Step 4 — Build family members from snapshots
     final familyMembers = _buildFamilyMembers();
@@ -241,8 +265,10 @@ class PatientRegistrationViewModel extends BaseViewModel {
           .map((e) {
             final IcdCode icdCode;
             switch (IcdCode.create(e.icdCode.text.trim())) {
-              case Success(:final value): icdCode = value;
-              case Failure(): return null;
+              case Success(:final value):
+                icdCode = value;
+              case Failure():
+                return null;
             }
             return Diagnosis.create(
               id: icdCode,
@@ -255,10 +281,12 @@ class PatientRegistrationViewModel extends BaseViewModel {
           })
           .whereType<Result<Diagnosis>>()
           .where((r) => r.isSuccess)
-          .map((r) => switch (r) {
-            Success(:final value) => value,
-            Failure() => throw StateError('Unreachable'),
-          })
+          .map(
+            (r) => switch (r) {
+              Success(:final value) => value,
+              Failure() => throw StateError('Unreachable'),
+            },
+          )
           .toList(),
 
       // Step 4 — Composição Familiar
@@ -266,8 +294,9 @@ class PatientRegistrationViewModel extends BaseViewModel {
 
       // Step 5 — Especificidades
       socialIdentityTypeId: identityTypeId,
-      socialIdentityDescription:
-          spec.isDescriptionEnabled ? _nullIfEmpty(spec.identityDescription.text) : null,
+      socialIdentityDescription: spec.isDescriptionEnabled
+          ? _nullIfEmpty(spec.identityDescription.text)
+          : null,
 
       // Step 6 — Forma de Ingresso
       ingressTypeId: ingressTypeId,
@@ -325,9 +354,11 @@ class PatientRegistrationViewModel extends BaseViewModel {
         hasDisability: snap.hasDisability,
         birthDate: birthTs,
         requiredDocuments: snap.requiredDocuments
-            .map((d) => RequiredDocument.values
-                .where((v) => v.value == d)
-                .firstOrNull)
+            .map(
+              (d) => RequiredDocument.values
+                  .where((v) => v.value == d)
+                  .firstOrNull,
+            )
             .whereType<RequiredDocument>()
             .toList(),
       );

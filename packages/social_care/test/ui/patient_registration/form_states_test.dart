@@ -126,7 +126,7 @@ void main() {
         requiredDocuments: const {},
       );
 
-      expect(snapshot.age, 25);
+      expect(snapshot.ageAt(DateTime.now()), 25);
     });
   });
 

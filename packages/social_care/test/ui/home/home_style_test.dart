@@ -2,9 +2,25 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
+/// Resolves the package root for social_care regardless of CWD.
+String _packageRoot() {
+  // When run from monorepo root, CWD won't contain pubspec.yaml for social_care.
+  final cwd = Directory.current.path;
+  if (File(p.join(cwd, 'pubspec.yaml')).existsSync() &&
+      File(p.join(cwd, 'pubspec.yaml'))
+          .readAsStringSync()
+          .contains('name: social_care')) {
+    return cwd;
+  }
+  // Fallback: resolve from this test file's known location.
+  return p.normalize(p.join(cwd, 'packages', 'social_care'));
+}
+
 void main() {
   group('Home Components Style & Architecture TDD', () {
-    final homeDir = Directory(p.join('lib', 'src', 'ui', 'home'));
+    final homeDir = Directory(
+      p.join(_packageRoot(), 'lib', 'src', 'ui', 'home'),
+    );
 
     test('Home components should not use hardcoded Colors', () {
       final files = homeDir.listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
