@@ -4,8 +4,8 @@
 FROM ghcr.io/cirruslabs/flutter:3.41.4 AS build
 WORKDIR /app
 
-# Copy workspace (melos needs all packages)
-COPY pubspec.yaml pubspec.lock melos.yaml ./
+# Copy workspace
+COPY pubspec.yaml pubspec.lock ./
 COPY apps/ ./apps/
 COPY packages/ ./packages/
 COPY bff/ ./bff/
