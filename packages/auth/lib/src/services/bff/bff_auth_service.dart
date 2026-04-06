@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:web/web.dart' as web;
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/auth_role.dart';
 import '../../models/auth_status.dart';
@@ -54,7 +54,7 @@ class BffAuthService implements AuthService {
     // then redirects back to the BFF callback, which sets the session
     // cookie and redirects to /. The app reloads and tryRestoreSession()
     // picks up the authenticated session.
-    web.window.location.href = loginUrl;
+    await launchUrl(Uri.parse(loginUrl), webOnlyWindowName: '_self');
   }
 
   /// Returns the URL the browser should navigate to for login.
