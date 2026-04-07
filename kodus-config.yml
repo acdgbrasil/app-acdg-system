@@ -1,0 +1,53 @@
+version: '1.2'
+
+summary:
+  generatePRSummary: true
+  customInstructions: >
+    Summarize changes by package (shell, core, design_system, social_care, BFF).
+    Highlight architecture layer violations, new features, and design system changes.
+  behaviourForExistingDescription: concatenate
+
+ignorePaths:
+  - '*.lock'
+  - .env
+  - .env.*
+  - .dart_tool/
+  - build/
+  - .flutter-plugins
+  - .flutter-plugins-dependencies
+  - '*.g.dart'
+  - '*.freezed.dart'
+  - pubspec.lock
+  - coverage/
+  - handbook/
+  - .melos/
+
+baseBranches: []
+
+reviewOptions:
+  security: true
+  code_style: true
+  kody_rules: true
+  refactoring: true
+  error_handling: true
+  maintainability: true
+  potential_issues: true
+  documentation_and_comments: false
+  performance_and_optimization: true
+  business_logic: true
+
+suggestionControl:
+  groupingMode: full
+  limitationType: pr
+  maxSuggestions: 9
+  severityLevelFilter: medium
+
+ignoredTitleKeywords:
+  - chore
+  - docs
+  - ci
+
+automatedReviewActive: true
+pullRequestApprovalActive: false
+isRequestChangesActive: false
+llmGeneratedMemoriesRequireApproval: false
