@@ -28,11 +28,7 @@ void main() {
   });
 
   Request makeRequest({Map<String, String>? headers}) {
-    return Request(
-      'GET',
-      Uri.parse('http://localhost/test'),
-      headers: headers,
-    );
+    return Request('GET', Uri.parse('http://localhost/test'), headers: headers);
   }
 
   group('AuthGuardMiddleware', () {
@@ -41,9 +37,9 @@ void main() {
           .addMiddleware(sessionMiddleware(store))
           .addMiddleware(authGuardMiddleware())
           .addHandler((request) {
-        final session = request.context[sessionContextKey] as Session;
-        return Response.ok('hello ${session.userId}');
-      });
+            final session = request.context[sessionContextKey] as Session;
+            return Response.ok('hello ${session.userId}');
+          });
 
       final response = await handler(
         makeRequest(headers: {'Cookie': '__session=$validSessionId'}),
@@ -58,8 +54,8 @@ void main() {
           .addMiddleware(sessionMiddleware(store))
           .addMiddleware(authGuardMiddleware())
           .addHandler((request) {
-        return Response.ok('should not reach');
-      });
+            return Response.ok('should not reach');
+          });
 
       final response = await handler(makeRequest());
 
@@ -72,11 +68,12 @@ void main() {
           .addMiddleware(sessionMiddleware(store))
           .addMiddleware(authGuardMiddleware())
           .addHandler((request) {
-        return Response.ok('should not reach');
-      });
+            return Response.ok('should not reach');
+          });
 
       final response = await handler(makeRequest());
-      final body = jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final body =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
 
       expect(body, containsPair('error', 'Unauthorized'));
       expect(body, containsPair('message', 'Valid session required'));
@@ -87,8 +84,8 @@ void main() {
           .addMiddleware(sessionMiddleware(store))
           .addMiddleware(authGuardMiddleware())
           .addHandler((request) {
-        return Response.ok('should not reach');
-      });
+            return Response.ok('should not reach');
+          });
 
       final response = await handler(
         makeRequest(headers: {'Cookie': '__session=bad-id'}),
@@ -97,25 +94,28 @@ void main() {
       expect(response.statusCode, equals(401));
     });
 
-    test('handler response is returned unchanged when session is valid', () async {
-      final handler = const Pipeline()
-          .addMiddleware(sessionMiddleware(store))
-          .addMiddleware(authGuardMiddleware())
-          .addHandler((request) {
-        return Response(
-          201,
-          body: 'created',
-          headers: {'x-custom': 'value'},
+    test(
+      'handler response is returned unchanged when session is valid',
+      () async {
+        final handler = const Pipeline()
+            .addMiddleware(sessionMiddleware(store))
+            .addMiddleware(authGuardMiddleware())
+            .addHandler((request) {
+              return Response(
+                201,
+                body: 'created',
+                headers: {'x-custom': 'value'},
+              );
+            });
+
+        final response = await handler(
+          makeRequest(headers: {'Cookie': '__session=$validSessionId'}),
         );
-      });
 
-      final response = await handler(
-        makeRequest(headers: {'Cookie': '__session=$validSessionId'}),
-      );
-
-      expect(response.statusCode, equals(201));
-      expect(await response.readAsString(), equals('created'));
-      expect(response.headers['x-custom'], equals('value'));
-    });
+        expect(response.statusCode, equals(201));
+        expect(await response.readAsString(), equals('created'));
+        expect(response.headers['x-custom'], equals('value'));
+      },
+    );
   });
 }

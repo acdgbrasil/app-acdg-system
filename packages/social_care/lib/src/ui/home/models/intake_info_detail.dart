@@ -20,9 +20,7 @@ final class IntakeInfoDetail {
       originContact: json['originContact'] as String?,
       serviceReason: json['serviceReason'] as String,
       linkedSocialPrograms: (json['linkedSocialPrograms'] as List)
-          .map(
-            (e) => LinkedProgramDetail.fromJson(e as Map<String, dynamic>),
-          )
+          .map((e) => LinkedProgramDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }

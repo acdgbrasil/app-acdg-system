@@ -23,14 +23,14 @@ class FamilyEmptyState extends StatelessWidget {
         children: <Widget>[
           Text(
             FamilyCompositionLn10.emptyTitle,
-            style:  TextStyle(
+            style: TextStyle(
               fontFamily: 'Playfair Display',
               fontStyle: FontStyle.italic,
               fontSize: 13,
               color: AppColors.textMuted,
             ),
           ),
-           SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             FamilyCompositionLn10.emptySubtitle,
             style: TextStyle(

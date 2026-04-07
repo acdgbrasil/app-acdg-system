@@ -136,7 +136,8 @@ class HttpSocialCareClient implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) async {
+    LookupId prRelationshipId,
+  ) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
@@ -172,7 +173,9 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(response.data as Object? ?? 'Failed to remove family member');
+      return Failure(
+        response.data as Object? ?? 'Failed to remove family member',
+      );
     } catch (e) {
       return Failure(e);
     }
@@ -193,7 +196,9 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(response.data as Object? ?? 'Failed to assign primary caregiver');
+      return Failure(
+        response.data as Object? ?? 'Failed to assign primary caregiver',
+      );
     } catch (e) {
       return Failure(e);
     }
@@ -214,7 +219,9 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(response.data as Object? ?? 'Failed to update social identity');
+      return Failure(
+        response.data as Object? ?? 'Failed to update social identity',
+      );
     } catch (e) {
       return Failure(e);
     }

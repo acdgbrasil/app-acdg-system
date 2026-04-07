@@ -23,7 +23,7 @@ class SyncEngine implements SyncScheduler {
 
   bool _isProcessing = false;
   StreamSubscription<({List<SyncAction> ready, DateTime? nextRetryAt})>?
-      _watchSubscription;
+  _watchSubscription;
   Timer? _retryTimer;
   Timer? _debounceTimer;
 
@@ -35,10 +35,10 @@ class SyncEngine implements SyncScheduler {
     required ConnectivityService connectivityService,
     required SocialCareContract remoteBff,
     LocalSocialCareRepository? localRepo,
-  })  : _queueService = queueService,
-        _connectivityService = connectivityService,
-        _remoteBff = remoteBff,
-        _localRepo = localRepo;
+  }) : _queueService = queueService,
+       _connectivityService = connectivityService,
+       _remoteBff = remoteBff,
+       _localRepo = localRepo;
 
   bool get _isOnline => _connectivityService.isOnline.value;
 
@@ -51,15 +51,13 @@ class SyncEngine implements SyncScheduler {
 
     // Reactive subscription: fires when sync_actions table changes.
     // Time filtering is done in Dart (fresh DateTime.now() each emission).
-    _watchSubscription = _queueService.watchPendingActions().listen(
-      (pending) {
-        if (pending.ready.isNotEmpty && _isOnline) {
-          scheduleProcessQueue();
-        }
-        _scheduleRetry(pending.nextRetryAt);
-        unawaited(refreshStatus());
-      },
-    );
+    _watchSubscription = _queueService.watchPendingActions().listen((pending) {
+      if (pending.ready.isNotEmpty && _isOnline) {
+        scheduleProcessQueue();
+      }
+      _scheduleRetry(pending.nextRetryAt);
+      unawaited(refreshStatus());
+    });
 
     // Initial pull when starting online
     if (_isOnline) unawaited(pullPatients());
@@ -215,7 +213,9 @@ class SyncEngine implements SyncScheduler {
   }
 
   Future<bool> _syncAction(SyncAction action) async {
-    debugPrint('[Sync Engine] Syncing Action ${action.id}: ${action.actionType}');
+    debugPrint(
+      '[Sync Engine] Syncing Action ${action.id}: ${action.actionType}',
+    );
     await _queueService.updateStatus(action.id, 'IN_PROGRESS');
 
     try {
@@ -265,167 +265,221 @@ class SyncEngine implements SyncScheduler {
 
   Future<Result<void>> _dispatchAction(SyncAction action) async {
     final payload = jsonDecode(action.payloadJson) as Map<String, dynamic>;
-    debugPrint('[Sync Engine] Dispatching ${action.actionType} with payload: $payload');
+    debugPrint(
+      '[Sync Engine] Dispatching ${action.actionType} with payload: $payload',
+    );
 
     final PatientId patientId;
     switch (PatientId.create(action.patientId)) {
-      case Success(:final value): patientId = value;
-      case Failure(:final error): return Failure(error);
+      case Success(:final value):
+        patientId = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     switch (action.actionType) {
       case 'REGISTER_PATIENT':
         final Patient patient;
         switch (PatientTranslator.fromJson(payload)) {
-          case Success(:final value): patient = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            patient = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.registerPatient(patient);
 
       case 'ADD_FAMILY_MEMBER':
         final LookupId relId;
         switch (LookupId.create(payload['prRelationshipId'])) {
-          case Success(:final value): relId = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            relId = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         final FamilyMember member;
-        switch (PatientTranslator.familyMemberFromJson(payload['member'] as Map<String, dynamic>)) {
-          case Success(:final value): member = value;
-          case Failure(:final error): return Failure(error);
+        switch (PatientTranslator.familyMemberFromJson(
+          payload['member'] as Map<String, dynamic>,
+        )) {
+          case Success(:final value):
+            member = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.addFamilyMember(patientId, member, relId);
 
       case 'REMOVE_FAMILY_MEMBER':
         final PersonId memberId;
         switch (PersonId.create(payload['memberId'])) {
-          case Success(:final value): memberId = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            memberId = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.removeFamilyMember(patientId, memberId);
 
       case 'ASSIGN_CAREGIVER':
         final PersonId memberId;
         switch (PersonId.create(payload['memberId'])) {
-          case Success(:final value): memberId = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            memberId = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.assignPrimaryCaregiver(patientId, memberId);
 
       case 'UPDATE_SOCIAL_IDENTITY':
         final SocialIdentity identity;
-        switch (PatientTranslator.socialIdentityFromJson(payload['identity'] as Map<String, dynamic>)) {
-          case Success(:final value): identity = value;
-          case Failure(:final error): return Failure(error);
+        switch (PatientTranslator.socialIdentityFromJson(
+          payload['identity'] as Map<String, dynamic>,
+        )) {
+          case Success(:final value):
+            identity = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateSocialIdentity(patientId, identity);
 
       case 'UPDATE_HOUSING':
         final HousingCondition condition;
         switch (PatientTranslator.housingConditionFromJson(payload)) {
-          case Success(:final value): condition = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            condition = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateHousingCondition(patientId, condition);
 
       case 'UPDATE_SOCIOECONOMIC':
         final SocioEconomicSituation situation;
         switch (PatientTranslator.socioEconomicFromJson(payload)) {
-          case Success(:final value): situation = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            situation = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateSocioEconomicSituation(patientId, situation);
 
       case 'UPDATE_WORK_INCOME':
         final WorkAndIncome data;
         switch (PatientTranslator.workAndIncomeFromJson(payload)) {
-          case Success(:final value): data = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            data = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateWorkAndIncome(patientId, data);
 
       case 'UPDATE_EDUCATION':
         final EducationalStatus status;
         switch (PatientTranslator.educationalStatusFromJson(payload)) {
-          case Success(:final value): status = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            status = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateEducationalStatus(patientId, status);
 
       case 'UPDATE_HEALTH':
         final HealthStatus status;
         switch (PatientTranslator.healthStatusFromJson(payload)) {
-          case Success(:final value): status = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            status = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateHealthStatus(patientId, status);
 
       case 'UPDATE_COMMUNITY_SUPPORT':
         final CommunitySupportNetwork network;
         switch (PatientTranslator.communitySupportFromJson(payload)) {
-          case Success(:final value): network = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            network = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateCommunitySupportNetwork(patientId, network);
 
       case 'UPDATE_SOCIAL_HEALTH':
         final SocialHealthSummary summary;
         switch (PatientTranslator.socialHealthSummaryFromJson(payload)) {
-          case Success(:final value): summary = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            summary = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateSocialHealthSummary(patientId, summary);
 
       case 'REGISTER_APPOINTMENT':
         final SocialCareAppointment appointment;
-        switch (PatientTranslator.appointmentFromJson(payload['appointment'] as Map<String, dynamic>)) {
-          case Success(:final value): appointment = value;
-          case Failure(:final error): return Failure(error);
+        switch (PatientTranslator.appointmentFromJson(
+          payload['appointment'] as Map<String, dynamic>,
+        )) {
+          case Success(:final value):
+            appointment = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.registerAppointment(patientId, appointment);
 
       case 'UPDATE_INTAKE':
         final IngressInfo info;
-        switch (PatientTranslator.intakeInfoFromJson(payload['info'] as Map<String, dynamic>)) {
-          case Success(:final value): info = value;
-          case Failure(:final error): return Failure(error);
+        switch (PatientTranslator.intakeInfoFromJson(
+          payload['info'] as Map<String, dynamic>,
+        )) {
+          case Success(:final value):
+            info = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updateIntakeInfo(patientId, info);
 
       case 'UPDATE_PLACEMENT':
         final PlacementHistory history;
         switch (PatientTranslator.placementHistoryFromJson(payload)) {
-          case Success(:final value): history = value;
-          case Failure(:final error): return Failure(error);
+          case Success(:final value):
+            history = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.updatePlacementHistory(patientId, history);
 
       case 'REPORT_VIOLATION':
         final RightsViolationReport report;
-        switch (PatientTranslator.violationReportFromJson(payload['report'] as Map<String, dynamic>)) {
-          case Success(:final value): report = value;
-          case Failure(:final error): return Failure(error);
+        switch (PatientTranslator.violationReportFromJson(
+          payload['report'] as Map<String, dynamic>,
+        )) {
+          case Success(:final value):
+            report = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.reportViolation(patientId, report);
 
       case 'CREATE_REFERRAL':
         final Referral referral;
-        switch (PatientTranslator.referralFromJson(payload['referral'] as Map<String, dynamic>)) {
-          case Success(:final value): referral = value;
-          case Failure(:final error): return Failure(error);
+        switch (PatientTranslator.referralFromJson(
+          payload['referral'] as Map<String, dynamic>,
+        )) {
+          case Success(:final value):
+            referral = value;
+          case Failure(:final error):
+            return Failure(error);
         }
         return _remoteBff.createReferral(patientId, referral);
 
       default:
-        return Failure(AppError(
-          code: 'SYNC-400',
-          message: 'Unknown action type: ${action.actionType}',
-          module: 'social-care/sync-engine',
-          kind: 'validation',
-          observability: const Observability(
-            category: ErrorCategory.domainRuleViolation,
-            severity: ErrorSeverity.error,
+        return Failure(
+          AppError(
+            code: 'SYNC-400',
+            message: 'Unknown action type: ${action.actionType}',
+            module: 'social-care/sync-engine',
+            kind: 'validation',
+            observability: const Observability(
+              category: ErrorCategory.domainRuleViolation,
+              severity: ErrorSeverity.error,
+            ),
           ),
-        ));
+        );
     }
   }
 }

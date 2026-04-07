@@ -13,10 +13,7 @@ void main() {
         expiresAt: DateTime.utc(2026, 1, 1, 12, 0),
       );
 
-      expect(
-        () => session.roles.add('admin'),
-        throwsUnsupportedError,
-      );
+      expect(() => session.roles.add('admin'), throwsUnsupportedError);
     });
 
     test('isExpired returns true when now is after expiresAt', () {

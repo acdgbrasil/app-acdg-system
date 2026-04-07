@@ -28,9 +28,7 @@ class AppDependencyManager {
 
     _authRepository =
         authRepository ??
-        AuthRepositoryImpl(
-          authService: AuthConfigFactory.createAuthService(),
-        );
+        AuthRepositoryImpl(authService: AuthConfigFactory.createAuthService());
   }
 
   late final bool _isWeb;

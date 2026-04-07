@@ -25,7 +25,10 @@ final class ResidenceLocationInput extends StatelessWidget {
                 text: ReferencePersonLn10.residenceLocationLabel,
                 style: TextStyle(color: Colors.black, fontSize: 16),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

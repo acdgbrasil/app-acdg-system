@@ -81,16 +81,16 @@ class _ToastOverlayState extends State<_ToastOverlay>
   static const _bgWhite = AppColors.surfaceLight;
 
   Color get _backgroundColor => switch (widget.type) {
-        ToastType.success => _green,
-        ToastType.error => _red,
-        ToastType.warning => _amber,
-      };
+    ToastType.success => _green,
+    ToastType.error => _red,
+    ToastType.warning => _amber,
+  };
 
   String get _icon => switch (widget.type) {
-        ToastType.success => '✓',
-        ToastType.error => '✕',
-        ToastType.warning => '!',
-      };
+    ToastType.success => '✓',
+    ToastType.error => '✕',
+    ToastType.warning => '!',
+  };
 
   @override
   void initState() {
@@ -102,10 +102,7 @@ class _ToastOverlayState extends State<_ToastOverlay>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1.5),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
     _controller.forward();
     _dismissTimer = Timer(const Duration(seconds: 4), _dismiss);
   }

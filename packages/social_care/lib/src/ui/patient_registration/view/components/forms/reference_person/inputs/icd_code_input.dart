@@ -6,7 +6,12 @@ final class IcdCodeInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController icdCodeController;
 
-  const IcdCodeInput({super.key, this.errorText, this.validator, required this.icdCodeController});
+  const IcdCodeInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.icdCodeController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,10 @@ final class IcdCodeInput extends StatelessWidget {
                 text: ReferencePersonLn10.icdCodeLabel,
                 style: TextStyle(color: Colors.black),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

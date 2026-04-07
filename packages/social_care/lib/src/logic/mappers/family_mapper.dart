@@ -8,20 +8,26 @@ abstract final class FamilyMapper {
   static Result<FamilyMember> toFamilyMember(AddFamilyMemberIntent intent) {
     final PersonId personId;
     switch (PersonId.create(UuidUtil.generateV4())) {
-      case Success(:final value): personId = value;
-      case Failure(:final error): return Failure(error);
+      case Success(:final value):
+        personId = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     final LookupId relationshipId;
     switch (LookupId.create(intent.relationshipId)) {
-      case Success(:final value): relationshipId = value;
-      case Failure(:final error): return Failure(error);
+      case Success(:final value):
+        relationshipId = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     final TimeStamp birthDate;
     switch (TimeStamp.fromDate(intent.birthDate)) {
-      case Success(:final value): birthDate = value;
-      case Failure(:final error): return Failure(error);
+      case Success(:final value):
+        birthDate = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     return FamilyMember.create(

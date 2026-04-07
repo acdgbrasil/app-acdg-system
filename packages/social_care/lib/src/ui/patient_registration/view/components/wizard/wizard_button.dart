@@ -37,10 +37,7 @@ class WizardButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!isPrimary) ...[
-            Icon(icon, size: 18),
-            const SizedBox(width: 8),
-          ],
+          if (!isPrimary) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
           Text(
             label,
             style: const TextStyle(
@@ -50,10 +47,7 @@ class WizardButton extends StatelessWidget {
               fontSize: 16,
             ),
           ),
-          if (isPrimary) ...[
-            const SizedBox(width: 8),
-            Icon(icon, size: 18),
-          ],
+          if (isPrimary) ...[const SizedBox(width: 8), Icon(icon, size: 18)],
         ],
       ),
     );

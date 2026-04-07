@@ -49,7 +49,9 @@ void main() {
 
     test('should return failure when patient not found', () async {
       // Arrange
-      final unknownIdRes = PatientId.create('550e8400-e29b-41d4-a716-999999999999');
+      final unknownIdRes = PatientId.create(
+        '550e8400-e29b-41d4-a716-999999999999',
+      );
 
       if (unknownIdRes case Success(value: final unknownId)) {
         // Act

@@ -6,7 +6,12 @@ final class ServiceReasonInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController controller;
 
-  const ServiceReasonInput({super.key, this.errorText, this.validator, required this.controller});
+  const ServiceReasonInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +24,18 @@ final class ServiceReasonInput extends StatelessWidget {
           maxLines: 4,
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
-            label: RichText(text: const TextSpan(
-              text: ReferencePersonLn10.serviceReasonLabel,
-              style: TextStyle(color: Colors.black),
-              children: <TextSpan>[ TextSpan(text: ' *', style: TextStyle(color: Colors.red)) ],
-            )),
+            label: RichText(
+              text: const TextSpan(
+                text: ReferencePersonLn10.serviceReasonLabel,
+                style: TextStyle(color: Colors.black),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
             hintText: ReferencePersonLn10.serviceReasonPlaceholder,
             errorText: errorText,
             alignLabelWithHint: true,

@@ -28,11 +28,13 @@ void main() {
 
       final textWidget = tester.widget<Text>(textFinder);
       expect(textWidget.style?.fontWeight, FontWeight.w400);
-      
-      final container = tester.widget<Container>(find.descendant(
-        of: find.byType(GestureDetector),
-        matching: find.byType(Container),
-      ));
+
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(GestureDetector),
+          matching: find.byType(Container),
+        ),
+      );
       final decoration = container.decoration as BoxDecoration?;
       expect(decoration?.color, Colors.transparent);
     });
@@ -55,11 +57,13 @@ void main() {
 
       final textWidget = tester.widget<Text>(textFinder);
       expect(textWidget.style?.fontWeight, FontWeight.w600);
-      
-      final container = tester.widget<Container>(find.descendant(
-        of: find.byType(GestureDetector),
-        matching: find.byType(Container),
-      ));
+
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(GestureDetector),
+          matching: find.byType(Container),
+        ),
+      );
       final decoration = container.decoration as BoxDecoration?;
       expect(decoration?.color, AppColors.background.withValues(alpha: 0.1));
     });
@@ -77,10 +81,12 @@ void main() {
         ),
       );
 
-      final mouseRegionFinder = find.descendant(
-        of: find.byType(HoverableRelationshipItem),
-        matching: find.byType(MouseRegion),
-      ).first;
+      final mouseRegionFinder = find
+          .descendant(
+            of: find.byType(HoverableRelationshipItem),
+            matching: find.byType(MouseRegion),
+          )
+          .first;
 
       // Simulate mouse enter
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -90,10 +96,12 @@ void main() {
       await gesture.moveTo(tester.getCenter(mouseRegionFinder));
       await tester.pumpAndSettle();
 
-      var container = tester.widget<Container>(find.descendant(
-        of: find.byType(GestureDetector),
-        matching: find.byType(Container),
-      ));
+      var container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(GestureDetector),
+          matching: find.byType(Container),
+        ),
+      );
       var decoration = container.decoration as BoxDecoration?;
       expect(decoration?.color, AppColors.background.withValues(alpha: 0.05));
 
@@ -101,10 +109,12 @@ void main() {
       await gesture.moveTo(const Offset(1000, 1000));
       await tester.pumpAndSettle();
 
-      container = tester.widget<Container>(find.descendant(
-        of: find.byType(GestureDetector),
-        matching: find.byType(Container),
-      ));
+      container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(GestureDetector),
+          matching: find.byType(Container),
+        ),
+      );
       decoration = container.decoration as BoxDecoration?;
       expect(decoration?.color, Colors.transparent);
     });
@@ -131,7 +141,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('applies highlight style when isHighlighted is true', (tester) async {
+    testWidgets('applies highlight style when isHighlighted is true', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -145,10 +157,12 @@ void main() {
         ),
       );
 
-      final container = tester.widget<Container>(find.descendant(
-        of: find.byType(GestureDetector),
-        matching: find.byType(Container),
-      ));
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(GestureDetector),
+          matching: find.byType(Container),
+        ),
+      );
       final decoration = container.decoration as BoxDecoration?;
       expect(decoration?.color, AppColors.background.withValues(alpha: 0.02));
       expect(decoration?.border, isNotNull);

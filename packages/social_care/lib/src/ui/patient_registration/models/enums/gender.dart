@@ -1,5 +1,1 @@
-enum Gender {
-  masculino,
-  feminino,
-  outro,
-}
+enum Gender { masculino, feminino, outro }

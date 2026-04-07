@@ -10,14 +10,11 @@ final class EducationalStatusDetail {
   factory EducationalStatusDetail.fromJson(Map<String, dynamic> json) {
     return EducationalStatusDetail(
       memberProfiles: (json['memberProfiles'] as List)
-          .map(
-            (e) => MemberProfileDetail.fromJson(e as Map<String, dynamic>),
-          )
+          .map((e) => MemberProfileDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
       programOccurrences: (json['programOccurrences'] as List)
           .map(
-            (e) =>
-                ProgramOccurrenceDetail.fromJson(e as Map<String, dynamic>),
+            (e) => ProgramOccurrenceDetail.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
     );

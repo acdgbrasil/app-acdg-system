@@ -85,8 +85,5 @@ class AcdgRadioOption<T> {
   final T value;
   final String label;
 
-  const AcdgRadioOption({
-    required this.value,
-    required this.label,
-  });
+  const AcdgRadioOption({required this.value, required this.label});
 }

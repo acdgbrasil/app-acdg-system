@@ -133,7 +133,10 @@ class RegistrationErrorModal extends StatelessWidget {
 
                 // Error code
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: _brown10,
                     borderRadius: BorderRadius.circular(8),
@@ -157,7 +160,10 @@ class RegistrationErrorModal extends StatelessWidget {
                     OutlinedButton(
                       onPressed: onClose,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100),
                         ),
@@ -181,7 +187,10 @@ class RegistrationErrorModal extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _green,
                         foregroundColor: _bgWhite,
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100),
                         ),

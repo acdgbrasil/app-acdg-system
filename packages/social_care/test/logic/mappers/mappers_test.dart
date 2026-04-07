@@ -85,8 +85,10 @@ void main() {
 
       final Patient patient;
       switch (RegistryMapper.toPatient(intent)) {
-        case Success(:final value): patient = value;
-        case Failure(:final error): fail('toPatient failed: $error');
+        case Success(:final value):
+          patient = value;
+        case Failure(:final error):
+          fail('toPatient failed: $error');
       }
       expect(patient.address?.isHomeless, isTrue);
     });
@@ -112,11 +114,16 @@ void main() {
 
       final Patient patient;
       switch (RegistryMapper.toPatient(intent)) {
-        case Success(:final value): patient = value;
-        case Failure(:final error): fail('toPatient failed: $error');
+        case Success(:final value):
+          patient = value;
+        case Failure(:final error):
+          fail('toPatient failed: $error');
       }
       expect(patient.socialIdentity, isNotNull);
-      expect(patient.socialIdentity?.otherDescription, 'Quilombola da comunidade X');
+      expect(
+        patient.socialIdentity?.otherDescription,
+        'Quilombola da comunidade X',
+      );
     });
 
     test('toPatient should attach intakeInfo via copyWith', () {
@@ -140,37 +147,47 @@ void main() {
 
       final Patient patient;
       switch (RegistryMapper.toPatient(intent)) {
-        case Success(:final value): patient = value;
-        case Failure(:final error): fail('toPatient failed: $error');
+        case Success(:final value):
+          patient = value;
+        case Failure(:final error):
+          fail('toPatient failed: $error');
       }
       expect(patient.intakeInfo, isNotNull);
-      expect(patient.intakeInfo?.serviceReason, 'Demanda espontânea por atendimento social');
-    });
-
-    test('toPatient without optional fields should have null socialIdentity and intakeInfo', () {
-      final intent = RegisterPatientIntent(
-        firstName: 'Maria',
-        lastName: 'Silva',
-        motherName: 'Ana Silva',
-        nationality: 'Brasileira',
-        sex: Sex.feminino,
-        birthDate: DateTime(1990, 5, 15),
-        prRelationshipId: PatientFixtures.prRelationshipId.value,
-        cpf: PatientFixtures.validCpf,
-        city: 'São Paulo',
-        addressState: 'SP',
-        residenceLocation: ResidenceLocation.urbano,
-        diagnoses: [PatientFixtures.diagnosis],
+      expect(
+        patient.intakeInfo?.serviceReason,
+        'Demanda espontânea por atendimento social',
       );
-
-      final Patient patient;
-      switch (RegistryMapper.toPatient(intent)) {
-        case Success(:final value): patient = value;
-        case Failure(:final error): fail('toPatient failed: $error');
-      }
-      expect(patient.socialIdentity, isNull);
-      expect(patient.intakeInfo, isNull);
     });
+
+    test(
+      'toPatient without optional fields should have null socialIdentity and intakeInfo',
+      () {
+        final intent = RegisterPatientIntent(
+          firstName: 'Maria',
+          lastName: 'Silva',
+          motherName: 'Ana Silva',
+          nationality: 'Brasileira',
+          sex: Sex.feminino,
+          birthDate: DateTime(1990, 5, 15),
+          prRelationshipId: PatientFixtures.prRelationshipId.value,
+          cpf: PatientFixtures.validCpf,
+          city: 'São Paulo',
+          addressState: 'SP',
+          residenceLocation: ResidenceLocation.urbano,
+          diagnoses: [PatientFixtures.diagnosis],
+        );
+
+        final Patient patient;
+        switch (RegistryMapper.toPatient(intent)) {
+          case Success(:final value):
+            patient = value;
+          case Failure(:final error):
+            fail('toPatient failed: $error');
+        }
+        expect(patient.socialIdentity, isNull);
+        expect(patient.intakeInfo, isNull);
+      },
+    );
   });
 
   group('FamilyMapper', () {

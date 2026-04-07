@@ -6,7 +6,12 @@ final class DiagnosisDescriptionInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController descriptionController;
 
-  const DiagnosisDescriptionInput({super.key, this.errorText, this.validator, required this.descriptionController});
+  const DiagnosisDescriptionInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.descriptionController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,10 @@ final class DiagnosisDescriptionInput extends StatelessWidget {
                 text: ReferencePersonLn10.descriptionLabel,
                 style: TextStyle(color: Colors.black),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

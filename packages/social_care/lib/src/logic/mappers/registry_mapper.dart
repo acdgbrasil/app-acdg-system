@@ -139,7 +139,8 @@ abstract final class RegistryMapper {
     final personIdStr = intent.personId ?? UuidUtil.generateV4();
     final personIdRes = PersonId.create(personIdStr);
 
-    if (patientIdRes is Failure) return Failure((patientIdRes as Failure).error);
+    if (patientIdRes is Failure)
+      return Failure((patientIdRes as Failure).error);
     if (personIdRes is Failure) return Failure((personIdRes as Failure).error);
 
     final patientId = (patientIdRes as Success<PatientId>).value;
@@ -178,10 +179,12 @@ abstract final class RegistryMapper {
         for (final progId in intent.linkedSocialPrograms) {
           final progIdRes = LookupId.create(progId);
           if (progIdRes case Success(:final value)) {
-            programs.add(ProgramLink(
-              programId: value,
-              observation: intent.programObservation,
-            ));
+            programs.add(
+              ProgramLink(
+                programId: value,
+                observation: intent.programObservation,
+              ),
+            );
           }
         }
 
@@ -214,10 +217,12 @@ abstract final class RegistryMapper {
 
     // Attach optional sections via copyWith
     if (socialIdentity != null || intakeInfo != null) {
-      return Success(patient.copyWith(
-        socialIdentity: socialIdentity != null ? () => socialIdentity : null,
-        intakeInfo: intakeInfo != null ? () => intakeInfo : null,
-      ));
+      return Success(
+        patient.copyWith(
+          socialIdentity: socialIdentity != null ? () => socialIdentity : null,
+          intakeInfo: intakeInfo != null ? () => intakeInfo : null,
+        ),
+      );
     }
 
     return patientRes;

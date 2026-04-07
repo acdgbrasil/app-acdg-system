@@ -19,7 +19,8 @@ class HoverableRelationshipItem extends StatefulWidget {
   });
 
   @override
-  State<HoverableRelationshipItem> createState() => _HoverableRelationshipItemState();
+  State<HoverableRelationshipItem> createState() =>
+      _HoverableRelationshipItemState();
 }
 
 class _HoverableRelationshipItemState extends State<HoverableRelationshipItem> {
@@ -30,7 +31,9 @@ class _HoverableRelationshipItemState extends State<HoverableRelationshipItem> {
     return MouseRegion(
       onEnter: widget.enabled ? (_) => setState(() => _isHovered = true) : null,
       onExit: widget.enabled ? (_) => setState(() => _isHovered = false) : null,
-      cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: widget.enabled
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: widget.enabled ? widget.onTap : null,
         child: Opacity(
@@ -41,12 +44,14 @@ class _HoverableRelationshipItemState extends State<HoverableRelationshipItem> {
               color: widget.isSelected
                   ? AppColors.background.withValues(alpha: 0.1)
                   : _isHovered
-                      ? AppColors.background.withValues(alpha: 0.05)
-                      : widget.isHighlighted
-                          ? AppColors.background.withValues(alpha: 0.02)
-                          : Colors.transparent,
-              border: widget.isHighlighted 
-                  ? Border.all(color: AppColors.background.withValues(alpha: 0.2)) 
+                  ? AppColors.background.withValues(alpha: 0.05)
+                  : widget.isHighlighted
+                  ? AppColors.background.withValues(alpha: 0.02)
+                  : Colors.transparent,
+              border: widget.isHighlighted
+                  ? Border.all(
+                      color: AppColors.background.withValues(alpha: 0.2),
+                    )
                   : null,
               borderRadius: BorderRadius.circular(4),
             ),
@@ -55,7 +60,9 @@ class _HoverableRelationshipItemState extends State<HoverableRelationshipItem> {
               style: TextStyle(
                 color: AppColors.background,
                 fontSize: 14,
-                fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: widget.isSelected
+                    ? FontWeight.w600
+                    : FontWeight.w400,
               ),
             ),
           ),

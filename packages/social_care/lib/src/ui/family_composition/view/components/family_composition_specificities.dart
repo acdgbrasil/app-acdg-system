@@ -49,14 +49,18 @@ class FamilyCompositionSpecificities extends StatelessWidget {
         const Divider(height: 1, color: AppColors.inputLine),
         const SizedBox(height: 14),
         if (items.isEmpty)
-          const Text('Nenhuma especificidade carregada (Lista Vazia)', 
-            style: TextStyle(color: Colors.red, fontSize: 12)),
+          const Text(
+            'Nenhuma especificidade carregada (Lista Vazia)',
+            style: TextStyle(color: Colors.red, fontSize: 12),
+          ),
         for (final item in items)
           SpecificityTile(
             label: item.descricao,
             selected: item.id == selectedId,
             onTap: () {
-              debugPrint('[UI] Tapped specificity: ${item.descricao} (${item.id})');
+              debugPrint(
+                '[UI] Tapped specificity: ${item.descricao} (${item.id})',
+              );
               onSelected(item.id);
             },
           ),

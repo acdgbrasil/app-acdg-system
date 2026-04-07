@@ -6,7 +6,12 @@ final class CityInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController cityController;
 
-  const CityInput({super.key, this.errorText, this.validator, required this.cityController});
+  const CityInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.cityController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,10 @@ final class CityInput extends StatelessWidget {
                 text: ReferencePersonLn10.cityLabel,
                 style: TextStyle(color: Colors.black),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

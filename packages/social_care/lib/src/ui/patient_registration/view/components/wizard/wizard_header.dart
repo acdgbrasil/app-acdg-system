@@ -14,10 +14,9 @@ class WizardHeader extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 16),
       child: Text(
         ReferencePersonLn10.wizardTitle,
-        style: AppTypography.displayLarge(screenWidth).copyWith(
-          color: AppColors.textPrimary,
-          height: 1.1,
-        ),
+        style: AppTypography.displayLarge(
+          screenWidth,
+        ).copyWith(color: AppColors.textPrimary, height: 1.1),
       ),
     );
   }

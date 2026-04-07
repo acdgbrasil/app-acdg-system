@@ -28,27 +28,35 @@ void main() {
     });
 
     test(
-        'DEVE enviar captureException para o Sentry quando o LogLevel for ERROR com exception atrelada',
-        () {
-      final exception = Exception('Falha grave na API');
-      final stackTrace = StackTrace.current;
+      'DEVE enviar captureException para o Sentry quando o LogLevel for ERROR com exception atrelada',
+      () {
+        final exception = Exception('Falha grave na API');
+        final stackTrace = StackTrace.current;
 
-      logger.log('Falha na requisição', LogLevel.error,
-          error: exception, stackTrace: stackTrace);
+        logger.log(
+          'Falha na requisição',
+          LogLevel.error,
+          error: exception,
+          stackTrace: stackTrace,
+        );
 
-      expect(fakeSentryClient.capturedExceptions, hasLength(1));
-      expect(fakeSentryClient.capturedExceptions.first, equals(exception));
-      expect(fakeSentryClient.capturedMessages, isEmpty);
-    });
+        expect(fakeSentryClient.capturedExceptions, hasLength(1));
+        expect(fakeSentryClient.capturedExceptions.first, equals(exception));
+        expect(fakeSentryClient.capturedMessages, isEmpty);
+      },
+    );
 
     test(
-        'DEVE enviar captureMessage para o Sentry quando o LogLevel for FATAL sem exception explícita',
-        () {
-      logger.log('Estado da ViewModel inconsistente', LogLevel.fatal);
+      'DEVE enviar captureMessage para o Sentry quando o LogLevel for FATAL sem exception explícita',
+      () {
+        logger.log('Estado da ViewModel inconsistente', LogLevel.fatal);
 
-      expect(fakeSentryClient.capturedMessages, hasLength(1));
-      expect(fakeSentryClient.capturedMessages.first,
-          equals('Estado da ViewModel inconsistente'));
-    });
+        expect(fakeSentryClient.capturedMessages, hasLength(1));
+        expect(
+          fakeSentryClient.capturedMessages.first,
+          equals('Estado da ViewModel inconsistente'),
+        );
+      },
+    );
   });
 }

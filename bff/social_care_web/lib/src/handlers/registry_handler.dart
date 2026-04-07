@@ -8,9 +8,8 @@ import '../remote/people_context_client.dart';
 import 'handler_utils.dart';
 
 typedef RegistryContractFactory = SocialCareContract Function(Session session);
-typedef RegistryPeopleContextFactory = PeopleContextClient Function(
-  Session session,
-);
+typedef RegistryPeopleContextFactory =
+    PeopleContextClient Function(Session session);
 
 class RegistryHandler {
   RegistryHandler({
@@ -63,15 +62,15 @@ class RegistryHandler {
       final body = await readJsonBody(request);
 
       // Extract person data from nested structure for people-context
-      final personalData =
-          body['personalData'] as Map<String, dynamic>? ?? {};
-      final civilDocs =
-          body['civilDocuments'] as Map<String, dynamic>? ?? {};
+      final personalData = body['personalData'] as Map<String, dynamic>? ?? {};
+      final civilDocs = body['civilDocuments'] as Map<String, dynamic>? ?? {};
       final firstName = personalData['firstName'] as String? ?? '';
       final lastName = personalData['lastName'] as String? ?? '';
       final fullName = '$firstName $lastName'.trim();
-      final birthDate = personalData['birthDate'] as String? ??
-          civilDocs['birthDate'] as String? ?? '';
+      final birthDate =
+          personalData['birthDate'] as String? ??
+          civilDocs['birthDate'] as String? ??
+          '';
       final cpf = civilDocs['cpf'] as String?;
 
       // Register reference person in people-context (non-blocking on failure)
@@ -234,10 +233,11 @@ class RegistryHandler {
           Success() => jsonNoContent(),
           Failure(:final error) => backendError(error),
         },
-      (Failure(:final error), _) =>
-        jsonError(400, 'Invalid patient ID: $error'),
-      (_, Failure(:final error)) =>
-        jsonError(400, 'Invalid member ID: $error'),
+      (Failure(:final error), _) => jsonError(
+        400,
+        'Invalid patient ID: $error',
+      ),
+      (_, Failure(:final error)) => jsonError(400, 'Invalid member ID: $error'),
     };
   }
 
@@ -264,10 +264,14 @@ class RegistryHandler {
             Success() => jsonNoContent(),
             Failure(:final error) => backendError(error),
           },
-        (Failure(:final error), _) =>
-          jsonError(400, 'Invalid patient ID: $error'),
-        (_, Failure(:final error)) =>
-          jsonError(400, 'Invalid member person ID: $error'),
+        (Failure(:final error), _) => jsonError(
+          400,
+          'Invalid patient ID: $error',
+        ),
+        (_, Failure(:final error)) => jsonError(
+          400,
+          'Invalid member person ID: $error',
+        ),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -291,10 +295,14 @@ class RegistryHandler {
             Success() => jsonNoContent(),
             Failure(:final error) => backendError(error),
           },
-        (Failure(:final error), _) =>
-          jsonError(400, 'Invalid patient ID: $error'),
-        (_, Failure(:final error)) =>
-          jsonError(400, 'Invalid social identity: $error'),
+        (Failure(:final error), _) => jsonError(
+          400,
+          'Invalid patient ID: $error',
+        ),
+        (_, Failure(:final error)) => jsonError(
+          400,
+          'Invalid social identity: $error',
+        ),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');

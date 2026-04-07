@@ -7,7 +7,12 @@ final class RgNumberInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController rgNumberController;
 
-  const RgNumberInput({super.key, this.errorText, this.validator, required this.rgNumberController});
+  const RgNumberInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.rgNumberController,
+  });
 
   @override
   Widget build(BuildContext context) {

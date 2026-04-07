@@ -28,7 +28,10 @@ final class IsShelterInput extends StatelessWidget {
                 text: ReferencePersonLn10.isShelterLabel,
                 style: TextStyle(color: Colors.black, fontSize: 16),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

@@ -31,12 +31,16 @@ class LookupHandler {
     final tokenSnippet = session.accessToken.isEmpty
         ? 'EMPTY'
         : '${session.accessToken.substring(0, 15)}...';
-    print('[BFF:Lookup] GET /lookups/$tableName — '
-        'userId=${session.userId}, token=$tokenSnippet, expired=${session.isExpired()}');
+    print(
+      '[BFF:Lookup] GET /lookups/$tableName — '
+      'userId=${session.userId}, token=$tokenSnippet, expired=${session.isExpired()}',
+    );
     final contract = _contractFactory(session);
     final result = await contract.getLookupTable(tableName);
-    print('[BFF:Lookup] GET /lookups/$tableName — '
-        'result=${result.isSuccess ? "SUCCESS(${(result as Success).value.length} items)" : "FAIL(${(result as Failure).error})"}');
+    print(
+      '[BFF:Lookup] GET /lookups/$tableName — '
+      'result=${result.isSuccess ? "SUCCESS(${(result as Success).value.length} items)" : "FAIL(${(result as Failure).error})"}',
+    );
 
     return switch (result) {
       Success(:final value) => jsonOk(

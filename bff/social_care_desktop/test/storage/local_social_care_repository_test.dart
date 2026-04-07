@@ -86,10 +86,11 @@ void main() {
 
       expect(result.isSuccess, isTrue);
 
-      final cached = await (db.select(db.cachedPatients)
-            ..where((t) => t.patientId.equals(testPatientId.value)))
-          .getSingleOrNull();
-      
+      final cached =
+          await (db.select(db.cachedPatients)
+                ..where((t) => t.patientId.equals(testPatientId.value)))
+              .getSingleOrNull();
+
       expect(cached, isNotNull);
       expect(cached!.personId, testPersonId.value);
       expect(cached.isDirty, isTrue);
@@ -122,19 +123,21 @@ void main() {
           },
         });
 
-        await db.into(db.cachedPatients).insert(
-          CachedPatientsCompanion.insert(
-            patientId: testPatientId.value,
-            personId: testPersonId.value,
-            firstName: const Value('João'),
-            lastName: const Value('Silva'),
-            cpf: const Value('123'),
-            fullRecordJson: fullRecordJson,
-            version: const Value(1),
-            isDirty: const Value(false),
-            lastSyncAt: now,
-          ),
-        );
+        await db
+            .into(db.cachedPatients)
+            .insert(
+              CachedPatientsCompanion.insert(
+                patientId: testPatientId.value,
+                personId: testPersonId.value,
+                firstName: const Value('João'),
+                lastName: const Value('Silva'),
+                cpf: const Value('123'),
+                fullRecordJson: fullRecordJson,
+                version: const Value(1),
+                isDirty: const Value(false),
+                lastSyncAt: now,
+              ),
+            );
 
         final result = await repository.fetchPatient(testPatientId);
 
@@ -150,23 +153,25 @@ void main() {
       'updateHousingCondition should update cache, increment version and enqueue',
       () async {
         final now = DateTime.now();
-        await db.into(db.cachedPatients).insert(
-          CachedPatientsCompanion.insert(
-            patientId: testPatientId.value,
-            personId: testPersonId.value,
-            firstName: const Value('João'),
-            lastName: const Value('Silva'),
-            fullRecordJson: jsonEncode({
-              'patientId': testPatientId.value,
-              'personId': testPersonId.value,
-              'version': 1,
-              'prRelationshipId': testPrRelationshipId.value,
-            }),
-            version: const Value(1),
-            isDirty: const Value(false),
-            lastSyncAt: now,
-          ),
-        );
+        await db
+            .into(db.cachedPatients)
+            .insert(
+              CachedPatientsCompanion.insert(
+                patientId: testPatientId.value,
+                personId: testPersonId.value,
+                firstName: const Value('João'),
+                lastName: const Value('Silva'),
+                fullRecordJson: jsonEncode({
+                  'patientId': testPatientId.value,
+                  'personId': testPersonId.value,
+                  'version': 1,
+                  'prRelationshipId': testPrRelationshipId.value,
+                }),
+                version: const Value(1),
+                isDirty: const Value(false),
+                lastSyncAt: now,
+              ),
+            );
 
         final condition = ensureSuccess(
           HousingCondition.create(
@@ -195,10 +200,11 @@ void main() {
 
         expect(result.isSuccess, isTrue);
 
-        final updated = await (db.select(db.cachedPatients)
-              ..where((t) => t.patientId.equals(testPatientId.value)))
-            .getSingleOrNull();
-        
+        final updated =
+            await (db.select(db.cachedPatients)
+                  ..where((t) => t.patientId.equals(testPatientId.value)))
+                .getSingleOrNull();
+
         expect(updated!.version, 2);
         expect(updated.isDirty, isTrue);
 
@@ -221,13 +227,15 @@ void main() {
         },
       ]);
 
-      await db.into(db.cachedLookups).insert(
-        CachedLookupsCompanion.insert(
-          lookupName: 'dominio_parentesco',
-          itemsJson: itemsJson,
-          lastFetchedAt: DateTime.now(),
-        ),
-      );
+      await db
+          .into(db.cachedLookups)
+          .insert(
+            CachedLookupsCompanion.insert(
+              lookupName: 'dominio_parentesco',
+              itemsJson: itemsJson,
+              lastFetchedAt: DateTime.now(),
+            ),
+          );
 
       final result = await repository.getLookupTable('dominio_parentesco');
 

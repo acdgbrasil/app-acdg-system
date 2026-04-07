@@ -23,11 +23,7 @@ const testLookupId = '880e8400-e29b-41d4-a716-446655440003';
 /// A fake [PeopleContextClient] that always returns a canonical PersonId.
 class FakePeopleContextClient extends PeopleContextClient {
   FakePeopleContextClient()
-      : super(
-          baseUrl: 'http://localhost',
-          accessToken: 'test',
-          actorId: 'test',
-        );
+    : super(baseUrl: 'http://localhost', accessToken: 'test', actorId: 'test');
 
   String nextPersonId = testPersonId;
 

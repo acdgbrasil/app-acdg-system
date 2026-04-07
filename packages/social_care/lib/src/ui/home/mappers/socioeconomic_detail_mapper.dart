@@ -13,14 +13,16 @@ abstract final class SocioeconomicDetailMapper {
     for (final (i, b) in detail.socialBenefits.indexed) {
       final LookupId benefitTypeId;
       switch (LookupId.create(b.benefitTypeId)) {
-        case Success(:final value): benefitTypeId = value;
+        case Success(:final value):
+          benefitTypeId = value;
         case Failure(:final error):
           return Failure('socialBenefits[$i].benefitTypeId: $error');
       }
 
       final PersonId beneficiaryId;
       switch (PersonId.create(b.beneficiaryId)) {
-        case Success(:final value): beneficiaryId = value;
+        case Success(:final value):
+          beneficiaryId = value;
         case Failure(:final error):
           return Failure('socialBenefits[$i].beneficiaryId: $error');
       }
@@ -31,20 +33,23 @@ abstract final class SocioeconomicDetailMapper {
         amount: b.amount,
         beneficiaryId: beneficiaryId,
       )) {
-        case Success(:final value): benefits.add(value);
+        case Success(:final value):
+          benefits.add(value);
         case Failure(:final error):
           return Failure('socialBenefits[$i]: $error');
       }
     }
 
-    return Success(UpdateSocioEconomicIntent(
-      patientId: patientId,
-      totalFamilyIncome: detail.totalFamilyIncome,
-      incomePerCapita: detail.incomePerCapita,
-      receivesSocialBenefit: detail.receivesSocialBenefit,
-      hasUnemployed: detail.hasUnemployed,
-      mainSourceOfIncome: detail.mainSourceOfIncome,
-      socialBenefits: benefits,
-    ));
+    return Success(
+      UpdateSocioEconomicIntent(
+        patientId: patientId,
+        totalFamilyIncome: detail.totalFamilyIncome,
+        incomePerCapita: detail.incomePerCapita,
+        receivesSocialBenefit: detail.receivesSocialBenefit,
+        hasUnemployed: detail.hasUnemployed,
+        mainSourceOfIncome: detail.mainSourceOfIncome,
+        socialBenefits: benefits,
+      ),
+    );
   }
 }

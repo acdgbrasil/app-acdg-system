@@ -27,16 +27,18 @@ void main() {
   ).valueOrNull!;
 
   setUpAll(() {
-    registerFallbackValue(SyncAction(
-      id: 0,
-      actionId: '',
-      patientId: '',
-      actionType: '',
-      payloadJson: '',
-      timestamp: DateTime.now(),
-      status: 'PENDING',
-      retryCount: 0,
-    ));
+    registerFallbackValue(
+      SyncAction(
+        id: 0,
+        actionId: '',
+        patientId: '',
+        actionType: '',
+        payloadJson: '',
+        timestamp: DateTime.now(),
+        status: 'PENDING',
+        retryCount: 0,
+      ),
+    );
     registerFallbackValue(testPatientId);
 
     registerFallbackValue(

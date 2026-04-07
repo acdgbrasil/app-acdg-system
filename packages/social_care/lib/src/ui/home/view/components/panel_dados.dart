@@ -79,10 +79,16 @@ class PanelDados extends StatelessWidget {
             // Data
             DataField(label: HomeLn10.labelFullName, value: detail.fullName),
             const SizedBox(height: 28),
-            DataField(label: HomeLn10.labelMotherName, value: detail.motherName),
+            DataField(
+              label: HomeLn10.labelMotherName,
+              value: detail.motherName,
+            ),
             const SizedBox(height: 24),
 
-            Divider(color: AppColors.background.withValues(alpha: 0.15), height: 1),
+            Divider(
+              color: AppColors.background.withValues(alpha: 0.15),
+              height: 1,
+            ),
             const SizedBox(height: 24),
             DataField(label: HomeLn10.labelDiagnosis, value: detail.diagnosis),
             const SizedBox(height: 24),
@@ -92,19 +98,55 @@ class PanelDados extends StatelessWidget {
               spacing: 40,
               runSpacing: 24,
               children: [
-                SizedBox(width: 200, child: DataField(label: HomeLn10.labelBirthDate, value: detail.birthDate)),
-                SizedBox(width: 200, child: DataField(label: HomeLn10.labelCpf, value: detail.cpf)),
-                SizedBox(width: 200, child: DataField(label: HomeLn10.labelEntryDate, value: detail.entryDate)),
-                SizedBox(width: 200, child: DataField(label: HomeLn10.labelResponsible, value: detail.responsible)),
-                SizedBox(width: 200, child: DataField(label: HomeLn10.labelCep, value: detail.cep)),
-                SizedBox(width: 200, child: DataField(label: HomeLn10.labelPhone, value: detail.phone)),
+                SizedBox(
+                  width: 200,
+                  child: DataField(
+                    label: HomeLn10.labelBirthDate,
+                    value: detail.birthDate,
+                  ),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: DataField(label: HomeLn10.labelCpf, value: detail.cpf),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: DataField(
+                    label: HomeLn10.labelEntryDate,
+                    value: detail.entryDate,
+                  ),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: DataField(
+                    label: HomeLn10.labelResponsible,
+                    value: detail.responsible,
+                  ),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: DataField(label: HomeLn10.labelCep, value: detail.cep),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: DataField(
+                    label: HomeLn10.labelPhone,
+                    value: detail.phone,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
-            Divider(color: AppColors.background.withValues(alpha: 0.15), height: 1),
+            Divider(
+              color: AppColors.background.withValues(alpha: 0.15),
+              height: 1,
+            ),
             const SizedBox(height: 24),
-            DataField(label: HomeLn10.labelAddress, value: detail.formattedAddress),
+            DataField(
+              label: HomeLn10.labelAddress,
+              value: detail.formattedAddress,
+            ),
           ],
         ),
       ),

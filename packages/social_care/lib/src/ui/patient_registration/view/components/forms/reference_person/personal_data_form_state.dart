@@ -6,7 +6,9 @@ import 'package:social_care/src/ui/patient_registration/models/enums/nationality
 import 'package:social_care/src/ui/patient_registration/models/personal_data.dart';
 
 class PersonalDataFormState {
-  static final RegExp _brazilPhoneRegex = RegExp(r'^(55)?(?:([1-9]{2})?)(\d{4,5})(\d{4})$');
+  static final RegExp _brazilPhoneRegex = RegExp(
+    r'^(55)?(?:([1-9]{2})?)(\d{4,5})(\d{4})$',
+  );
 
   // 1. Estados Reativos (Selections)
   final nationality = ValueNotifier<Nationality?>(null);
@@ -23,10 +25,14 @@ class PersonalDataFormState {
 
   // 3. Validadores Reutilizáveis
   String? _namesValidator(String? value, {bool isOptional = false}) {
-    if (value == null || value.trim().isEmpty) return isOptional ? null : ReferencePersonLn10.errorRequired;
+    if (value == null || value.trim().isEmpty)
+      return isOptional ? null : ReferencePersonLn10.errorRequired;
     if (value.length < 3) return ReferencePersonLn10.errorMinChars3;
-    if (RegExp(r'[0-9]').hasMatch(value)) return ReferencePersonLn10.errorNameNoDigits;
-    if (RegExp(r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]').hasMatch(value)) {
+    if (RegExp(r'[0-9]').hasMatch(value))
+      return ReferencePersonLn10.errorNameNoDigits;
+    if (RegExp(
+      r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]',
+    ).hasMatch(value)) {
       return ReferencePersonLn10.errorNameNoSpecialChars;
     }
     return null;
@@ -36,28 +42,38 @@ class PersonalDataFormState {
   String? get firstNameError => _namesValidator(firstName.text);
   String? get lastNameError => _namesValidator(lastName.text);
   String? get motherNameError => _namesValidator(motherName.text);
-  String? get socialNameError => _namesValidator(socialName.text, isOptional: true);
-  
+  String? get socialNameError =>
+      _namesValidator(socialName.text, isOptional: true);
+
   String? get phoneNumberError {
     final digitsOnly = phoneNumber.text.replaceAll(RegExp(r'\D'), '');
     if (digitsOnly.isEmpty) return null;
-    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) return ReferencePersonLn10.errorPhoneInvalid;
+    if (!_brazilPhoneRegex.hasMatch(digitsOnly))
+      return ReferencePersonLn10.errorPhoneInvalid;
     return null;
   }
 
   // Funções de Validação (Para o Form e os Widgets)
-  String? Function(String?) get firstNameValidator => (value) => _namesValidator(value);
-  String? Function(String?) get lastNameValidator => (value) => _namesValidator(value);
-  String? Function(String?) get motherNameValidator => (value) => _namesValidator(value);
-  String? Function(String?) get socialNameValidator => (value) => _namesValidator(value, isOptional: true);
+  String? Function(String?) get firstNameValidator =>
+      (value) => _namesValidator(value);
+  String? Function(String?) get lastNameValidator =>
+      (value) => _namesValidator(value);
+  String? Function(String?) get motherNameValidator =>
+      (value) => _namesValidator(value);
+  String? Function(String?) get socialNameValidator =>
+      (value) => _namesValidator(value, isOptional: true);
 
-  String? Function(Nationality?) get nationalityValidator => (value) => value == null ? ReferencePersonLn10.errorSelectNationality : null;
-  String? Function(Gender?) get genderValidator => (value) => value == null ? ReferencePersonLn10.errorSelectGender : null;
+  String? Function(Nationality?) get nationalityValidator =>
+      (value) =>
+          value == null ? ReferencePersonLn10.errorSelectNationality : null;
+  String? Function(Gender?) get genderValidator =>
+      (value) => value == null ? ReferencePersonLn10.errorSelectGender : null;
 
   String? Function(String?) get phoneNumberValidator => (value) {
     final digitsOnly = value?.replaceAll(RegExp(r'\D'), '');
     if (digitsOnly == null || digitsOnly.isEmpty) return null;
-    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) return ReferencePersonLn10.errorPhoneInvalid;
+    if (!_brazilPhoneRegex.hasMatch(digitsOnly))
+      return ReferencePersonLn10.errorPhoneInvalid;
     return null;
   };
 
@@ -66,7 +82,9 @@ class PersonalDataFormState {
     return PersonalData(
       firstName: firstName.text.trim(),
       lastName: lastName.text.trim(),
-      socialName: socialName.text.trim().isEmpty ? null : socialName.text.trim(),
+      socialName: socialName.text.trim().isEmpty
+          ? null
+          : socialName.text.trim(),
       motherName: motherName.text.trim(),
       nationality: nationality.value ?? Nationality.brasileira,
       sex: gender.value ?? Gender.feminino,
@@ -77,12 +95,12 @@ class PersonalDataFormState {
   // 5. Verificação de Status do Step
   bool get isValidForNextStep {
     return firstNameError == null &&
-           lastNameError == null &&
-           motherNameError == null &&
-           socialNameError == null &&
-           phoneNumberError == null &&
-           nationality.value != null &&
-           gender.value != null;
+        lastNameError == null &&
+        motherNameError == null &&
+        socialNameError == null &&
+        phoneNumberError == null &&
+        nationality.value != null &&
+        gender.value != null;
   }
 
   List<String> get validationErrors => [

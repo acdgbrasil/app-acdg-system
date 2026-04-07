@@ -80,20 +80,20 @@ class DetailPanel extends StatelessWidget {
                     ),
                   )
                 : panelView == 'dados'
-                    ? PanelDados(
-                        detail: detail!,
-                        onClose: onClose,
-                        onShowFichas: onShowFichas,
-                      )
-                    : PanelFichas(
-                        familyLastName: detail!.fullName.split(' ').last,
-                        fichas: fichas,
-                        onClose: onClose,
-                        onBack: onShowDados,
-                        onFichaTap: onFichaTap != null
-                            ? (ficha) => onFichaTap!(ficha, detail!.patientId)
-                            : null,
-                      ),
+                ? PanelDados(
+                    detail: detail!,
+                    onClose: onClose,
+                    onShowFichas: onShowFichas,
+                  )
+                : PanelFichas(
+                    familyLastName: detail!.fullName.split(' ').last,
+                    fichas: fichas,
+                    onClose: onClose,
+                    onBack: onShowDados,
+                    onFichaTap: onFichaTap != null
+                        ? (ficha) => onFichaTap!(ficha, detail!.patientId)
+                        : null,
+                  ),
           ),
         ),
       ],

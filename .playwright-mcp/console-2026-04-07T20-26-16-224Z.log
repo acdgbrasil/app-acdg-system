@@ -1,0 +1,13 @@
+[    3533ms] [LOG] FormatException: Illegal scheme character (at character 7)
+SENTRY_DSN=https://625a8e9203c95cc1295d1b9f847ba00c@o4511177712664576.inges...
+      ^
+ @ https://conecta-hml.acdgbrasil.com.br/main.dart.mjs:72
+[    3533ms] [LOG]     at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[1939]:0xffdb5
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[1938]:0xffd14
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[1914]:0xfeaf8
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[15899]:0x297d36
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[16145]:0x2a2d15
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[15889]:0x29763b
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[15885]:0x29744f
+    at https://conecta-hml.acdgbrasil.com.br/main.dart.wasm:wasm-function[1076]:0xecdf0 @ https://conecta-hml.acdgbrasil.com.br/main.dart.mjs:72
+[    3547ms] Exception

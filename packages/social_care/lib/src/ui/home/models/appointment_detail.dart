@@ -19,8 +19,7 @@ final class AppointmentDetail {
     return AppointmentDetail(
       id: json['id'] as String? ?? '',
       date: json['date'] as String? ?? '',
-      professionalInChargeId:
-          json['professionalInChargeId'] as String? ?? '',
+      professionalInChargeId: json['professionalInChargeId'] as String? ?? '',
       type: json['type'] as String? ?? '',
       summary: json['summary'] as String? ?? '',
       actionPlan: json['actionPlan'] as String? ?? '',

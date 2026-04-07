@@ -10,7 +10,7 @@ import 'package:social_care/src/ui/home/models/patient_summary.dart';
 /// filtering, analytics) without changing the ViewModel.
 class ListPatientsUseCase extends NoInputUseCase<List<PatientSummary>> {
   ListPatientsUseCase({required PatientRepository patientRepository})
-      : _patientRepository = patientRepository;
+    : _patientRepository = patientRepository;
 
   final PatientRepository _patientRepository;
 

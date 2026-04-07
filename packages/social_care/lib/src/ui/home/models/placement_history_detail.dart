@@ -17,9 +17,8 @@ final class PlacementHistoryDetail {
     return PlacementHistoryDetail(
       individualPlacements: (json['individualPlacements'] as List)
           .map(
-            (e) => IndividualPlacementDetail.fromJson(
-              e as Map<String, dynamic>,
-            ),
+            (e) =>
+                IndividualPlacementDetail.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
       homeLossReport: json['homeLossReport'] as String?,

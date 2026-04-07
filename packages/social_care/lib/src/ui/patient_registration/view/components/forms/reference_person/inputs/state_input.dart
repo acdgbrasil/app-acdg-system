@@ -21,7 +21,10 @@ final class StateInput extends StatelessWidget {
                 text: ReferencePersonLn10.stateLabel,
                 style: TextStyle(color: Colors.black),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

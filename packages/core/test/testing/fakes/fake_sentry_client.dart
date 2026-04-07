@@ -12,8 +12,10 @@ class FakeSentryClient implements SentryClientAdapter {
   }
 
   @override
-  Future<void> captureException(Exception exception,
-      {StackTrace? stackTrace}) async {
+  Future<void> captureException(
+    Exception exception, {
+    StackTrace? stackTrace,
+  }) async {
     capturedExceptions.add(exception);
   }
 }

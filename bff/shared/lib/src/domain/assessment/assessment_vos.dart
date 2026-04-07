@@ -227,13 +227,13 @@ final class SocialBenefit with Equatable {
 
   @override
   List<Object?> get props => [
-        benefitName,
-        benefitTypeId,
-        amount,
-        beneficiaryId,
-        birthCertificateNumber,
-        deceasedCpf,
-      ];
+    benefitName,
+    benefitTypeId,
+    amount,
+    beneficiaryId,
+    birthCertificateNumber,
+    deceasedCpf,
+  ];
 
   SocialBenefit copyWith({
     String? benefitName,

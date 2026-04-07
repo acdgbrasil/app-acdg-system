@@ -13,14 +13,16 @@ abstract final class PlacementHistoryDetailMapper {
     for (final (i, p) in detail.individualPlacements.indexed) {
       final PersonId memberId;
       switch (PersonId.create(p.memberId)) {
-        case Success(:final value): memberId = value;
+        case Success(:final value):
+          memberId = value;
         case Failure(:final error):
           return Failure('individualPlacements[$i].memberId: $error');
       }
 
       final TimeStamp startDate;
       switch (TimeStamp.fromIso(p.startDate)) {
-        case Success(:final value): startDate = value;
+        case Success(:final value):
+          startDate = value;
         case Failure(:final error):
           return Failure('individualPlacements[$i].startDate: $error');
       }
@@ -28,7 +30,8 @@ abstract final class PlacementHistoryDetailMapper {
       TimeStamp? endDate;
       if (p.endDate != null) {
         switch (TimeStamp.fromIso(p.endDate!)) {
-          case Success(:final value): endDate = value;
+          case Success(:final value):
+            endDate = value;
           case Failure(:final error):
             return Failure('individualPlacements[$i].endDate: $error');
         }
@@ -41,7 +44,8 @@ abstract final class PlacementHistoryDetailMapper {
         endDate: endDate,
         reason: p.reason,
       )) {
-        case Success(:final value): placements.add(value);
+        case Success(:final value):
+          placements.add(value);
         case Failure(:final error):
           return Failure('individualPlacements[$i]: $error');
       }
@@ -60,9 +64,8 @@ abstract final class PlacementHistoryDetailMapper {
       ),
     );
 
-    return Success(UpdatePlacementHistoryIntent(
-      patientId: patientId,
-      history: history,
-    ));
+    return Success(
+      UpdatePlacementHistoryIntent(patientId: patientId, history: history),
+    );
   }
 }

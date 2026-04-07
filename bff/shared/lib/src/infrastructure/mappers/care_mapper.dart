@@ -9,26 +9,25 @@ abstract final class CareMapper {
   // ── To JSON ─────────────────────────────────────────────────
 
   static Map<String, dynamic> appointmentToJson(SocialCareAppointment a) => {
-        'id': a.id.value,
-        'professionalId': a.professionalInChargeId.value,
-        'summary': a.summary,
-        'actionPlan': a.actionPlan,
-        'date': a.date.toIso8601(),
-        'type': a.type.name.toSnakeCaseUpper(),
-      };
+    'id': a.id.value,
+    'professionalId': a.professionalInChargeId.value,
+    'summary': a.summary,
+    'actionPlan': a.actionPlan,
+    'date': a.date.toIso8601(),
+    'type': a.type.name.toSnakeCaseUpper(),
+  };
 
   static Map<String, dynamic> intakeInfoToJson(IngressInfo i) => {
-        'ingressTypeId': i.ingressTypeId.value,
-        'originName': i.originName,
-        'originContact': i.originContact,
-        'serviceReason': i.serviceReason,
-        'linkedSocialPrograms': i.linkedSocialPrograms
-            .map((p) => {
-                  'programId': p.programId.value,
-                  'observation': p.observation,
-                })
-            .toList(),
-      };
+    'ingressTypeId': i.ingressTypeId.value,
+    'originName': i.originName,
+    'originContact': i.originContact,
+    'serviceReason': i.serviceReason,
+    'linkedSocialPrograms': i.linkedSocialPrograms
+        .map(
+          (p) => {'programId': p.programId.value, 'observation': p.observation},
+        )
+        .toList(),
+  };
 
   // ── From JSON ───────────────────────────────────────────────
 
@@ -37,27 +36,38 @@ abstract final class CareMapper {
   ) {
     final AppointmentId id;
     switch (idFromJsonOrDefault(AppointmentId.create, j['id'], defaultUuid)) {
-      case Success(:final value): id = value;
-      case Failure(:final error): return Failure('appointment.id: $error');
+      case Success(:final value):
+        id = value;
+      case Failure(:final error):
+        return Failure('appointment.id: $error');
     }
 
     final TimeStamp date;
     switch (TimeStamp.fromIso(j['date'])) {
-      case Success(:final value): date = value;
-      case Failure(:final error): return Failure('appointment.date: $error');
+      case Success(:final value):
+        date = value;
+      case Failure(:final error):
+        return Failure('appointment.date: $error');
     }
 
     final ProfessionalId professionalId;
     switch (ProfessionalId.create(j['professionalId'])) {
-      case Success(:final value): professionalId = value;
+      case Success(:final value):
+        professionalId = value;
       case Failure(:final error):
         return Failure('appointment.professionalId: $error');
     }
 
     final AppointmentType type;
-    switch (enumFromJson(AppointmentType.values, j['type'], 'appointment.type')) {
-      case Success(:final value): type = value;
-      case Failure(:final error): return Failure(error);
+    switch (enumFromJson(
+      AppointmentType.values,
+      j['type'],
+      'appointment.type',
+    )) {
+      case Success(:final value):
+        type = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     return SocialCareAppointment.create(
@@ -73,7 +83,8 @@ abstract final class CareMapper {
   static Result<IngressInfo> intakeInfoFromJson(Map<String, dynamic> j) {
     final LookupId ingressTypeId;
     switch (LookupId.create(j['ingressTypeId'])) {
-      case Success(:final value): ingressTypeId = value;
+      case Success(:final value):
+        ingressTypeId = value;
       case Failure(:final error):
         return Failure('intakeInfo.ingressTypeId: $error');
     }
@@ -84,15 +95,17 @@ abstract final class CareMapper {
 
       final LookupId programId;
       switch (LookupId.create(m['programId'])) {
-        case Success(:final value): programId = value;
+        case Success(:final value):
+          programId = value;
         case Failure(:final error):
-          return Failure('intakeInfo.linkedSocialPrograms[$i].programId: $error');
+          return Failure(
+            'intakeInfo.linkedSocialPrograms[$i].programId: $error',
+          );
       }
 
-      programs.add(ProgramLink(
-        programId: programId,
-        observation: m['observation'],
-      ));
+      programs.add(
+        ProgramLink(programId: programId, observation: m['observation']),
+      );
     }
 
     return IngressInfo.create(

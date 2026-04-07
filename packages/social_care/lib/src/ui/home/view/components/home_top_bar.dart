@@ -24,7 +24,11 @@ class HomeTopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.menu, size: 24, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.menu,
+              size: 24,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () {},
           ),
           const SizedBox(width: 32),

@@ -37,7 +37,8 @@ class _SocialCareHomePageState extends ConsumerState<SocialCareHomePage> {
   }
 
   bool _onKey(KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
       ref.read(homeViewModelProvider).closePanel();
       return true;
     }
@@ -97,8 +98,12 @@ class _SocialCareHomePageState extends ConsumerState<SocialCareHomePage> {
                             ]),
                             builder: (context, _) {
                               return FamilyList(
-                                families: viewModel.homeFormState.filteredFamilies,
-                                selectedId: viewModel.detailPanelState.selectedPatientId.value,
+                                families:
+                                    viewModel.homeFormState.filteredFamilies,
+                                selectedId: viewModel
+                                    .detailPanelState
+                                    .selectedPatientId
+                                    .value,
                                 onSelect: (id) => viewModel.select.execute(id),
                               );
                             },

@@ -11,7 +11,8 @@ abstract final class IntakeInfoDetailMapper {
   }) {
     final LookupId ingressTypeId;
     switch (LookupId.create(detail.ingressTypeId)) {
-      case Success(:final value): ingressTypeId = value;
+      case Success(:final value):
+        ingressTypeId = value;
       case Failure(:final error):
         return Failure('intakeInfo.ingressTypeId: $error');
     }
@@ -20,15 +21,15 @@ abstract final class IntakeInfoDetailMapper {
     for (final (i, p) in detail.linkedSocialPrograms.indexed) {
       final LookupId programId;
       switch (LookupId.create(p.programId)) {
-        case Success(:final value): programId = value;
+        case Success(:final value):
+          programId = value;
         case Failure(:final error):
           return Failure('linkedSocialPrograms[$i].programId: $error');
       }
 
-      programs.add(ProgramLink(
-        programId: programId,
-        observation: p.observation,
-      ));
+      programs.add(
+        ProgramLink(programId: programId, observation: p.observation),
+      );
     }
 
     final IngressInfo info;
@@ -39,14 +40,12 @@ abstract final class IntakeInfoDetailMapper {
       serviceReason: detail.serviceReason,
       linkedSocialPrograms: programs,
     )) {
-      case Success(:final value): info = value;
+      case Success(:final value):
+        info = value;
       case Failure(:final error):
         return Failure('intakeInfo: $error');
     }
 
-    return Success(UpdateIntakeInfoIntent(
-      patientId: patientId,
-      info: info,
-    ));
+    return Success(UpdateIntakeInfoIntent(patientId: patientId, info: info));
   }
 }

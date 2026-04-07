@@ -358,7 +358,9 @@ void main() {
       ).valueOrNull!;
       final benefit = SocialBenefit.create(
         benefitName: 'BPC',
-        benefitTypeId: LookupId.create('550e8400-e29b-41d4-a716-446655440002').valueOrNull!,
+        benefitTypeId: LookupId.create(
+          '550e8400-e29b-41d4-a716-446655440002',
+        ).valueOrNull!,
         amount: 1412.0,
         beneficiaryId: memberId,
       ).valueOrNull!;

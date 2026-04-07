@@ -36,10 +36,9 @@ class FamilyMemberEntry {
 
   String? get sexError =>
       sex.value == null ? ReferencePersonLn10.errorSelectGender : null;
-  String? get relationshipError =>
-      relationship.value == null
-          ? ReferencePersonLn10.errorSelectRelationship
-          : null;
+  String? get relationshipError => relationship.value == null
+      ? ReferencePersonLn10.errorSelectRelationship
+      : null;
   String? get hasDisabilityError =>
       hasDisability.value == null ? ReferencePersonLn10.errorRequired : null;
 
@@ -51,12 +50,12 @@ class FamilyMemberEntry {
       hasDisabilityError == null;
 
   List<String> get validationErrors => [
-        ?nameError,
-        ?birthDateError,
-        ?sexError,
-        ?relationshipError,
-        ?hasDisabilityError,
-      ];
+    ?nameError,
+    ?birthDateError,
+    ?sexError,
+    ?relationshipError,
+    ?hasDisabilityError,
+  ];
 
   DateTime? get dateParsed {
     final digits = birthDate.text.replaceAll(RegExp(r'\D'), '');

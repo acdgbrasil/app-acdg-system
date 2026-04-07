@@ -1,7 +1,6 @@
 /// Constants for the registration flow strings.
 /// Includes corrections from original design.
 abstract final class ReferencePersonLn10 {
-
   static const String wizardTitle = 'Pessoa de Referência';
   static const String navFamilies = 'Famílias';
   static const String navRegistration = 'Cadastro';
@@ -20,13 +19,15 @@ abstract final class ReferencePersonLn10 {
   static const String identificationSectionTitle = 'Identificação';
   static const String additionalInfoSectionTitle = 'Informações adicionais';
   static const String requiredFieldLegend = '* Campo obrigatório';
-  static const String socialNameHint = 'Preencha apenas se diferente do nome civil';
+  static const String socialNameHint =
+      'Preencha apenas se diferente do nome civil';
 
   static const String lastNameLabel = 'Sobrenome';
   static const String lastNamePlaceholder = 'Sobrenome Completo';
 
   static const String socialNameLabel = 'Nome Social';
-  static const String socialNamePlaceholder = 'Se possuir, digite o nome social';
+  static const String socialNamePlaceholder =
+      'Se possuir, digite o nome social';
 
   static const String motherNameLabel = 'Nome da Mãe';
   static const String motherNamePlaceholder = 'Nome completo da mãe';
@@ -237,15 +238,18 @@ abstract final class ReferencePersonLn10 {
   static const String errorSelectNationality = 'Selecione a nacionalidade';
   static const String errorSelectGender = 'Selecione o sexo';
   static const String errorSelectRelationship = 'Selecione o parentesco';
-  static const String errorSelectHousingSituation = 'Selecione a situação do domicílio';
+  static const String errorSelectHousingSituation =
+      'Selecione a situação do domicílio';
   static const String errorSelectLocation = 'Selecione a localização';
   static const String errorSelectState = 'Selecione o estado';
   static const String errorSelectIngressType = 'Selecione a forma de ingresso';
   static const String errorInformCity = 'Informe a cidade';
   static const String errorPhoneInvalid = 'Número de telefone inválido';
   static const String errorNameNoDigits = 'Nomes não podem conter números';
-  static const String errorNameNoSpecialChars = 'Nomes não podem conter caracteres especiais';
-  static const String errorCnsFirstDigit = 'Primeiro dígito deve ser 1, 2, 7, 8 ou 9';
+  static const String errorNameNoSpecialChars =
+      'Nomes não podem conter caracteres especiais';
+  static const String errorCnsFirstDigit =
+      'Primeiro dígito deve ser 1, 2, 7, 8 ou 9';
   static const String errorCaregiverExists =
       'Já existe um cuidador principal. Remova o atual antes de atribuir outro.';
 
@@ -263,7 +267,8 @@ abstract final class ReferencePersonLn10 {
   static const String tableHeaderPcd = 'PcD';
   static const String tableHeaderDocs = 'Docs';
   static const String tableRefPersonRelationship = '01 - Pessoa de Referência';
-  static const String tableMembersHint = 'Adicione outros membros da família abaixo, se houver.';
+  static const String tableMembersHint =
+      'Adicione outros membros da família abaixo, se houver.';
   static const String tooltipEdit = 'Editar';
   static const String tooltipRemove = 'Remover';
   static const String ageYears = 'anos';
@@ -271,15 +276,23 @@ abstract final class ReferencePersonLn10 {
   // ── Step 6: Ingresso options ────────────────────────────────
 
   static const String ingressEspontaneo = 'Por demanda espontânea';
-  static const String ingressBuscaAtiva = 'Em decorrência de busca ativa realizada pela equipe da unidade';
+  static const String ingressBuscaAtiva =
+      'Em decorrência de busca ativa realizada pela equipe da unidade';
   static const String ingressEncSaude = 'Encaminhamento pela área de saúde';
-  static const String ingressEncJudiciario = 'Encaminhamento pelo Poder Judiciário';
-  static const String ingressEncConselho = 'Encaminhamento pelo Conselho Tutelar';
-  static const String ingressEncEducacao = 'Encaminhamento pela área de educação';
-  static const String ingressEncSetoriais = 'Encaminhamento por outras políticas setoriais';
-  static const String ingressEncPsb = 'Encaminhamento por serviços da Proteção Social Básica';
-  static const String ingressEncPse = 'Encaminhamento por serviços da Proteção Social Especial';
-  static const String ingressEncSgd = 'Encaminhamento pelo Sistema de Garantia de Direitos';
+  static const String ingressEncJudiciario =
+      'Encaminhamento pelo Poder Judiciário';
+  static const String ingressEncConselho =
+      'Encaminhamento pelo Conselho Tutelar';
+  static const String ingressEncEducacao =
+      'Encaminhamento pela área de educação';
+  static const String ingressEncSetoriais =
+      'Encaminhamento por outras políticas setoriais';
+  static const String ingressEncPsb =
+      'Encaminhamento por serviços da Proteção Social Básica';
+  static const String ingressEncPse =
+      'Encaminhamento por serviços da Proteção Social Especial';
+  static const String ingressEncSgd =
+      'Encaminhamento pelo Sistema de Garantia de Direitos';
   static const String ingressOutros = 'Outros encaminhamentos';
 
   static const String programBolsaFamilia = 'Bolsa Família';

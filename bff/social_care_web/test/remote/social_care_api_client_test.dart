@@ -6,24 +6,26 @@ import 'package:test/test.dart';
 
 /// Creates a Dio instance with a fake adapter that returns [response].
 Dio _dioReturning(int statusCode, Map<String, dynamic> data) {
-  final dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost',
-    headers: {
-      'Authorization': 'Bearer test',
-      'X-Actor-Id': 'test-actor',
-      'Content-Type': 'application/json',
-    },
-  ));
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: 'http://localhost',
+      headers: {
+        'Authorization': 'Bearer test',
+        'X-Actor-Id': 'test-actor',
+        'Content-Type': 'application/json',
+      },
+    ),
+  );
 
-  dio.interceptors.add(InterceptorsWrapper(
-    onRequest: (options, handler) {
-      handler.resolve(Response(
-        requestOptions: options,
-        statusCode: statusCode,
-        data: data,
-      ));
-    },
-  ));
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        handler.resolve(
+          Response(requestOptions: options, statusCode: statusCode, data: data),
+        );
+      },
+    ),
+  );
 
   return dio;
 }
@@ -61,36 +63,28 @@ void main() {
       },
     );
 
-    test(
-      'maps 500 Internal Server Error to Failure(BackendError)',
-      () async {
-        final dio = _dioReturning(500, {
-          'message': 'Internal Server Error',
-        });
-        final client = SocialCareApiClient(
-          baseUrl: 'http://localhost',
-          actorId: 'test',
-          accessToken: 'test',
-          dio: dio,
-        );
+    test('maps 500 Internal Server Error to Failure(BackendError)', () async {
+      final dio = _dioReturning(500, {'message': 'Internal Server Error'});
+      final client = SocialCareApiClient(
+        baseUrl: 'http://localhost',
+        actorId: 'test',
+        accessToken: 'test',
+        dio: dio,
+      );
 
-        final result = await client.fetchPatients();
+      final result = await client.fetchPatients();
 
-        expect(result.isFailure, isTrue);
-        final error = (result as Failure).error;
-        expect(error, isA<BackendError>());
-        expect((error as BackendError).statusCode, equals(500));
-      },
-    );
+      expect(result.isFailure, isTrue);
+      final error = (result as Failure).error;
+      expect(error, isA<BackendError>());
+      expect((error as BackendError).statusCode, equals(500));
+    });
 
     test(
       'maps 400 Bad Request to Failure(BackendError) preserving status',
       () async {
         final dio = _dioReturning(400, {
-          'error': {
-            'code': 'PAT-001',
-            'message': 'Invalid patient data',
-          },
+          'error': {'code': 'PAT-001', 'message': 'Invalid patient data'},
         });
         final client = SocialCareApiClient(
           baseUrl: 'http://localhost',
@@ -111,8 +105,7 @@ void main() {
       },
     );
 
-    test('backendError() extracts correct HTTP status from BackendError',
-        () {
+    test('backendError() extracts correct HTTP status from BackendError', () {
       final error = BackendError(statusCode: 422, message: 'Validation failed');
       final response = backendError(error);
 

@@ -386,20 +386,20 @@ class _AcdgMaskedFieldState extends State<AcdgMaskedField> {
                 keyboardType: _config.keyboardType,
                 inputFormatters: _config.nativeFormatters,
                 readOnly: widget.readOnly,
-                style: AppTypography.bodyLarge(screenWidth)
-                    .copyWith(color: AppColors.textPrimary),
+                style: AppTypography.bodyLarge(
+                  screenWidth,
+                ).copyWith(color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText:
-                      widget.placeholder ?? _config.defaultPlaceholder,
-                  hintStyle: AppTypography.inputPlaceholder(screenWidth)
-                      .copyWith(color: AppColors.textMuted),
+                  hintText: widget.placeholder ?? _config.defaultPlaceholder,
+                  hintStyle: AppTypography.inputPlaceholder(
+                    screenWidth,
+                  ).copyWith(color: AppColors.textMuted),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   disabledBorder: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   isDense: true,
                 ),
               ),

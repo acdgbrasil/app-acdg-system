@@ -25,8 +25,8 @@ class _MaskFormatter extends TextInputFormatter {
   final int _maxRawChars;
 
   _MaskFormatter({required this.mask, required bool Function(String) charTest})
-      : _charTest = charTest,
-        _maxRawChars = '#'.allMatches(mask).length;
+    : _charTest = charTest,
+      _maxRawChars = '#'.allMatches(mask).length;
 
   @override
   TextEditingValue formatEditUpdate(
@@ -35,7 +35,11 @@ class _MaskFormatter extends TextInputFormatter {
   ) {
     // 1. Extract only valid raw characters from input
     final rawChars = StringBuffer();
-    for (var i = 0; i < newValue.text.length && rawChars.length < _maxRawChars; i++) {
+    for (
+      var i = 0;
+      i < newValue.text.length && rawChars.length < _maxRawChars;
+      i++
+    ) {
       if (_charTest(newValue.text[i])) {
         rawChars.write(newValue.text[i]);
       }
@@ -50,7 +54,11 @@ class _MaskFormatter extends TextInputFormatter {
     final buffer = StringBuffer();
     var rawIndex = 0;
 
-    for (var maskIndex = 0; maskIndex < mask.length && rawIndex < raw.length; maskIndex++) {
+    for (
+      var maskIndex = 0;
+      maskIndex < mask.length && rawIndex < raw.length;
+      maskIndex++
+    ) {
       if (mask[maskIndex] == '#') {
         buffer.write(raw[rawIndex]);
         rawIndex++;

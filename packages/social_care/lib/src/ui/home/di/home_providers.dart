@@ -6,8 +6,7 @@ import '../viewModel/home_view_model.dart';
 ///
 /// Must be overridden in the shell's [ProviderScope] with the actual
 /// implementation that wires the use cases.
-final homeViewModelProvider =
-    Provider.autoDispose<HomeViewModel>((ref) {
+final homeViewModelProvider = Provider.autoDispose<HomeViewModel>((ref) {
   throw UnimplementedError(
     'homeViewModelProvider must be overridden in ProviderScope',
   );

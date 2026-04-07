@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 /// Classe base selada para máscaras customizadas.
-/// 
+///
 /// Usamos [sealed] para garantir que todas as variações de máscaras
 /// sejam conhecidas em tempo de compilação.
 sealed class CustomMasks extends TextInputFormatter {
@@ -42,7 +42,7 @@ sealed class CustomMasks extends TextInputFormatter {
 }
 
 /// Máscara específica para Telefone (Brasil).
-/// 
+///
 /// Lógica inteligente: alterna entre (##) ####-#### e (##) #####-####
 /// dependendo da quantidade de números digitados.
 final class PhoneMask extends CustomMasks {
@@ -56,10 +56,10 @@ final class PhoneMask extends CustomMasks {
     if (newValue.text.isEmpty) return newValue;
 
     final cleanText = newValue.text.replaceAll(RegExp(r'\D'), '');
-    
+
     // Escolhe a máscara correta baseada no tamanho (fixo ou celular)
-    final String effectiveMask = cleanText.length <= 10 
-        ? '(##) ####-####' 
+    final String effectiveMask = cleanText.length <= 10
+        ? '(##) ####-####'
         : '(##) #####-####';
 
     final StringBuffer formatted = StringBuffer();

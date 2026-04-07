@@ -19,7 +19,9 @@ class SyncIndicator extends StatelessWidget {
         return Tooltip(
           message: _getMessage(currentStatus),
           child: MouseRegion(
-            cursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+            cursor: onTap != null
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
             child: GestureDetector(
               onTap: onTap,
               child: _getIcon(currentStatus),

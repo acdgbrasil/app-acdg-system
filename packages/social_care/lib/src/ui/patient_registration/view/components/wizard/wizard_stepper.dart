@@ -43,7 +43,9 @@ class WizardStepper extends StatelessWidget {
             child: Container(
               height: 1.5,
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              color: lineIdx < currentStep ? AppColors.primary : AppColors.inputLine,
+              color: lineIdx < currentStep
+                  ? AppColors.primary
+                  : AppColors.inputLine,
             ),
           );
         }),

@@ -7,7 +7,12 @@ final class CpfInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController cpfController;
 
-  const CpfInput({super.key, this.errorText, this.validator, required this.cpfController});
+  const CpfInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.cpfController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +25,18 @@ final class CpfInput extends StatelessWidget {
           keyboardType: TextInputType.number,
           inputFormatters: AppMasks.cpf,
           decoration: InputDecoration(
-            label: RichText(text: const TextSpan(
-              text: ReferencePersonLn10.cpfLabel,
-              style: TextStyle(color: Colors.black),
-              children: <TextSpan>[ TextSpan(text: ' *', style: TextStyle(color: Colors.red)) ],
-            )),
+            label: RichText(
+              text: const TextSpan(
+                text: ReferencePersonLn10.cpfLabel,
+                style: TextStyle(color: Colors.black),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
             hintText: ReferencePersonLn10.cpfPlaceholder,
             errorText: errorText,
           ),

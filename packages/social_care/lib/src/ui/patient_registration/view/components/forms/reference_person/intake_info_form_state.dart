@@ -41,8 +41,9 @@ class IntakeInfoFormState {
 
   // ── Validation ──
 
-  String? get ingressTypeError =>
-      ingressType.value == null ? ReferencePersonLn10.errorSelectIngressType : null;
+  String? get ingressTypeError => ingressType.value == null
+      ? ReferencePersonLn10.errorSelectIngressType
+      : null;
 
   String? get serviceReasonError {
     final text = serviceReason.text.trim();
@@ -53,10 +54,7 @@ class IntakeInfoFormState {
   bool get isValidForNextStep =>
       ingressTypeError == null && serviceReasonError == null;
 
-  List<String> get validationErrors => [
-        ?ingressTypeError,
-        ?serviceReasonError,
-      ];
+  List<String> get validationErrors => [?ingressTypeError, ?serviceReasonError];
 
   void dispose() {
     ingressType.dispose();

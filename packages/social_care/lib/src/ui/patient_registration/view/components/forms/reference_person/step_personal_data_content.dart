@@ -30,7 +30,9 @@ class StepPersonalDataContent extends StatelessWidget {
       children: [
         if (showErrors)
           RegistrationErrorBanner(errors: formState.validationErrors),
-        const RegistrationSectionTitle(ReferencePersonLn10.identificationSectionTitle),
+        const RegistrationSectionTitle(
+          ReferencePersonLn10.identificationSectionTitle,
+        ),
         RegistrationFormGrid(
           children: [
             FirstNameInput(

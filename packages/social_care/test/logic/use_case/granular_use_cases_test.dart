@@ -80,10 +80,14 @@ void main() {
       final useCase = UpdateSocialIdentityUseCase(
         patientRepository: repository,
       );
-      
-      final lookupId = switch (LookupId.create('550e8400-e29b-41d4-a716-000000000001')) {
+
+      final lookupId = switch (LookupId.create(
+        '550e8400-e29b-41d4-a716-000000000001',
+      )) {
         Success(:final value) => value,
-        Failure(:final error) => throw StateError('LookupId creation failed: $error'),
+        Failure(:final error) => throw StateError(
+          'LookupId creation failed: $error',
+        ),
       };
 
       final identity = switch (SocialIdentity.create(
@@ -92,7 +96,9 @@ void main() {
         isOtherType: true,
       )) {
         Success(:final value) => value,
-        Failure(:final error) => throw StateError('SocialIdentity creation failed: $error'),
+        Failure(:final error) => throw StateError(
+          'SocialIdentity creation failed: $error',
+        ),
       };
 
       final intent = UpdateSocialIdentityIntent(
@@ -105,7 +111,10 @@ void main() {
       expect(result.isSuccess, isTrue);
       final getResult = await repository.getPatient(patient.id);
       if (getResult case Success(value: final updated)) {
-        expect(updated.socialIdentity?.typeId.value, equals(identity.typeId.value));
+        expect(
+          updated.socialIdentity?.typeId.value,
+          equals(identity.typeId.value),
+        );
       } else {
         fail('Should have found patient');
       }

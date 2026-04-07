@@ -81,7 +81,9 @@ class FamilyCompositionActionBar extends StatelessWidget {
                 onPressed: canSave ? onSave : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
+                  disabledBackgroundColor: AppColors.primary.withValues(
+                    alpha: 0.4,
+                  ),
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,

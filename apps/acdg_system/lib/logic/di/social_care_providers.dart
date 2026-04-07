@@ -42,8 +42,9 @@ final addFamilyMemberUseCaseProvider = Provider<AddFamilyMemberUseCase>((ref) {
   );
 });
 
-final removeFamilyMemberUseCaseProvider =
-    Provider<RemoveFamilyMemberUseCase>((ref) {
+final removeFamilyMemberUseCaseProvider = Provider<RemoveFamilyMemberUseCase>((
+  ref,
+) {
   return RemoveFamilyMemberUseCase(
     patientRepository: ref.watch(patientRepositoryProvider),
   );
@@ -51,49 +52,50 @@ final removeFamilyMemberUseCaseProvider =
 
 final updatePrimaryCaregiverUseCaseProvider =
     Provider<UpdatePrimaryCaregiverUseCase>((ref) {
-  return UpdatePrimaryCaregiverUseCase(
-    patientRepository: ref.watch(patientRepositoryProvider),
-  );
-});
+      return UpdatePrimaryCaregiverUseCase(
+        patientRepository: ref.watch(patientRepositoryProvider),
+      );
+    });
 
 final updateSocialIdentityUseCaseProvider =
     Provider<UpdateSocialIdentityUseCase>((ref) {
-  return UpdateSocialIdentityUseCase(
-    patientRepository: ref.watch(patientRepositoryProvider),
-  );
-});
+      return UpdateSocialIdentityUseCase(
+        patientRepository: ref.watch(patientRepositoryProvider),
+      );
+    });
 
 /// Override for the [patientRegistrationViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case and repository providers.
 final patientRegistrationViewModelOverride =
     patientRegistrationViewModelProvider.overrideWith((ref) {
-  final vm = PatientRegistrationViewModel(
-    useCase: ref.watch(registerPatientUseCaseProvider),
-    lookupRepository: ref.watch(lookupRepositoryProvider),
-  );
-  ref.onDispose(() => vm.dispose());
-  return vm;
-});
+      final vm = PatientRegistrationViewModel(
+        useCase: ref.watch(registerPatientUseCaseProvider),
+        lookupRepository: ref.watch(lookupRepositoryProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
 /// Override for the [familyCompositionViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case providers.
-final familyCompositionViewModelOverride =
-    familyCompositionViewModelProvider
-        .overrideWith((ref, patientId) {
-  final vm = FamilyCompositionViewModel(
-    patientId: patientId,
-    getPatientUseCase: ref.watch(getPatientUseCaseProvider),
-    addFamilyMemberUseCase: ref.watch(addFamilyMemberUseCaseProvider),
-    removeFamilyMemberUseCase: ref.watch(removeFamilyMemberUseCaseProvider),
-    updatePrimaryCaregiverUseCase:
-        ref.watch(updatePrimaryCaregiverUseCaseProvider),
-    updateSocialIdentityUseCase:
-        ref.watch(updateSocialIdentityUseCaseProvider),
-    lookupRepository: ref.watch(lookupRepositoryProvider),
-  );
-  ref.onDispose(() => vm.dispose());
-  return vm;
-});
+final familyCompositionViewModelOverride = familyCompositionViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = FamilyCompositionViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        addFamilyMemberUseCase: ref.watch(addFamilyMemberUseCaseProvider),
+        removeFamilyMemberUseCase: ref.watch(removeFamilyMemberUseCaseProvider),
+        updatePrimaryCaregiverUseCase: ref.watch(
+          updatePrimaryCaregiverUseCaseProvider,
+        ),
+        updateSocialIdentityUseCase: ref.watch(
+          updateSocialIdentityUseCaseProvider,
+        ),
+        lookupRepository: ref.watch(lookupRepositoryProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
 /// Override for the [homeViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case providers.

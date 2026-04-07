@@ -54,7 +54,11 @@ final class SearchInput extends StatelessWidget {
                     controller.clear();
                     onChanged?.call();
                   },
-                  child: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
+                  child: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
                 ),
             ],
           ),

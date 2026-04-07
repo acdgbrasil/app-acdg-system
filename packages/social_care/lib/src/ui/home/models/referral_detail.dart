@@ -31,12 +31,12 @@ final class ReferralDetail {
 
   /// Raw JSON access -- provides untyped access to all fields.
   Map<String, dynamic> get json => {
-        'id': id,
-        'date': date,
-        'professionalId': professionalId,
-        'referredPersonId': referredPersonId,
-        'destinationService': destinationService,
-        'reason': reason,
-        'status': status,
-      };
+    'id': id,
+    'date': date,
+    'professionalId': professionalId,
+    'referredPersonId': referredPersonId,
+    'destinationService': destinationService,
+    'reason': reason,
+    'status': status,
+  };
 }

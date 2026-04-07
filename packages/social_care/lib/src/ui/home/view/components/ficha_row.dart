@@ -7,7 +7,12 @@ class FichaRow extends StatefulWidget {
   final bool isLast;
   final VoidCallback? onTap;
 
-  const FichaRow({super.key, required this.ficha, this.isLast = false, this.onTap});
+  const FichaRow({
+    super.key,
+    required this.ficha,
+    this.isLast = false,
+    this.onTap,
+  });
 
   @override
   State<FichaRow> createState() => _FichaRowState();

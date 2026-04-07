@@ -160,9 +160,12 @@ final class PatientDetail {
       familyMembers: (data['familyMembers'] as List? ?? [])
           .map((e) => FamilyMemberDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
-      diagnoses: (data['diagnoses'] as List? ?? data['initialDiagnoses'] as List? ?? [])
-          .map((e) => DiagnosisDetail.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      diagnoses:
+          (data['diagnoses'] as List? ??
+                  data['initialDiagnoses'] as List? ??
+                  [])
+              .map((e) => DiagnosisDetail.fromJson(e as Map<String, dynamic>))
+              .toList(),
       appointments: (data['appointments'] as List? ?? [])
           .map((e) => AppointmentDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -170,9 +173,7 @@ final class PatientDetail {
           .map((e) => ReferralDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
       violationReports: (data['violationReports'] as List? ?? [])
-          .map(
-            (e) => ViolationReportDetail.fromJson(e as Map<String, dynamic>),
-          )
+          .map((e) => ViolationReportDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
       computedAnalytics: data['computedAnalytics'] != null
           ? ComputedAnalyticsDetail.fromJson(

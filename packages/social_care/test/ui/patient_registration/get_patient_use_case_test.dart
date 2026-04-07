@@ -35,7 +35,9 @@ void main() {
 
     test('should fail when patient not found', () async {
       // Act
-      final result = await useCase.execute('550e8400-e29b-41d4-a716-999999999999');
+      final result = await useCase.execute(
+        '550e8400-e29b-41d4-a716-999999999999',
+      );
 
       // Assert
       expect(result.isFailure, isTrue);

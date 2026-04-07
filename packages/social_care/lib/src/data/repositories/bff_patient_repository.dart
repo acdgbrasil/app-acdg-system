@@ -31,7 +31,8 @@ class BffPatientRepository implements PatientRepository {
                 patientId: dto.patientId,
                 firstName: dto.firstName ?? '—',
                 lastName: dto.lastName ?? '—',
-                fullName: dto.fullName ??
+                fullName:
+                    dto.fullName ??
                     '${dto.firstName ?? '—'} ${dto.lastName ?? '—'}',
                 primaryDiagnosis: dto.primaryDiagnosis,
                 memberCount: dto.memberCount,
@@ -72,12 +73,9 @@ class BffPatientRepository implements PatientRepository {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) {
-    return _bff.addFamilyMember(
-      patientId,
-      member,
-      prRelationshipId,
-    );
+    LookupId prRelationshipId,
+  ) {
+    return _bff.addFamilyMember(patientId, member, prRelationshipId);
   }
 
   @override
@@ -204,5 +202,4 @@ class BffPatientRepository implements PatientRepository {
   ) {
     return _bff.createReferral(patientId, referral);
   }
-
 }

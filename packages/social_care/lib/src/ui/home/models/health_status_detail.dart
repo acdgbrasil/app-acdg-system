@@ -18,9 +18,7 @@ final class HealthStatusDetail {
           .map((e) => DeficiencyDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
       gestatingMembers: (json['gestatingMembers'] as List)
-          .map(
-            (e) => GestatingMemberDetail.fromJson(e as Map<String, dynamic>),
-          )
+          .map((e) => GestatingMemberDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
       constantCareNeeds: (json['constantCareNeeds'] as List)
           .map((e) => e as String)
@@ -47,8 +45,7 @@ final class DeficiencyDetail {
       memberId: json['memberId'] as String,
       deficiencyTypeId: json['deficiencyTypeId'] as String,
       needsConstantCare: json['needsConstantCare'] as bool,
-      responsibleCaregiverName:
-          json['responsibleCaregiverName'] as String?,
+      responsibleCaregiverName: json['responsibleCaregiverName'] as String?,
     );
   }
 }

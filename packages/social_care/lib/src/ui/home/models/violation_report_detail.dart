@@ -34,13 +34,13 @@ final class ViolationReportDetail {
 
   /// Raw JSON access -- provides untyped access to all fields.
   Map<String, dynamic> get json => {
-        'id': id,
-        'reportDate': reportDate,
-        'incidentDate': incidentDate,
-        'victimId': victimId,
-        'violationType': violationType,
-        'violationTypeId': violationTypeId,
-        'descriptionOfFact': descriptionOfFact,
-        'actionsTaken': actionsTaken,
-      };
+    'id': id,
+    'reportDate': reportDate,
+    'incidentDate': incidentDate,
+    'victimId': victimId,
+    'violationType': violationType,
+    'violationTypeId': violationTypeId,
+    'descriptionOfFact': descriptionOfFact,
+    'actionsTaken': actionsTaken,
+  };
 }

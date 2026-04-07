@@ -13,14 +13,16 @@ abstract final class WorkAndIncomeDetailMapper {
     for (final (i, item) in detail.individualIncomes.indexed) {
       final PersonId memberId;
       switch (PersonId.create(item.memberId)) {
-        case Success(:final value): memberId = value;
+        case Success(:final value):
+          memberId = value;
         case Failure(:final error):
           return Failure('individualIncomes[$i].memberId: $error');
       }
 
       final LookupId occupationId;
       switch (LookupId.create(item.occupationId)) {
-        case Success(:final value): occupationId = value;
+        case Success(:final value):
+          occupationId = value;
         case Failure(:final error):
           return Failure('individualIncomes[$i].occupationId: $error');
       }
@@ -31,7 +33,8 @@ abstract final class WorkAndIncomeDetailMapper {
         hasWorkCard: item.hasWorkCard,
         monthlyAmount: item.monthlyAmount,
       )) {
-        case Success(:final value): incomes.add(value);
+        case Success(:final value):
+          incomes.add(value);
         case Failure(:final error):
           return Failure('individualIncomes[$i]: $error');
       }
@@ -41,14 +44,16 @@ abstract final class WorkAndIncomeDetailMapper {
     for (final (i, b) in detail.socialBenefits.indexed) {
       final LookupId benefitTypeId;
       switch (LookupId.create(b.benefitTypeId)) {
-        case Success(:final value): benefitTypeId = value;
+        case Success(:final value):
+          benefitTypeId = value;
         case Failure(:final error):
           return Failure('socialBenefits[$i].benefitTypeId: $error');
       }
 
       final PersonId beneficiaryId;
       switch (PersonId.create(b.beneficiaryId)) {
-        case Success(:final value): beneficiaryId = value;
+        case Success(:final value):
+          beneficiaryId = value;
         case Failure(:final error):
           return Failure('socialBenefits[$i].beneficiaryId: $error');
       }
@@ -59,17 +64,20 @@ abstract final class WorkAndIncomeDetailMapper {
         amount: b.amount,
         beneficiaryId: beneficiaryId,
       )) {
-        case Success(:final value): benefits.add(value);
+        case Success(:final value):
+          benefits.add(value);
         case Failure(:final error):
           return Failure('socialBenefits[$i]: $error');
       }
     }
 
-    return Success(UpdateWorkAndIncomeIntent(
-      patientId: patientId,
-      hasRetiredMembers: detail.hasRetiredMembers,
-      individualIncomes: incomes,
-      socialBenefits: benefits,
-    ));
+    return Success(
+      UpdateWorkAndIncomeIntent(
+        patientId: patientId,
+        hasRetiredMembers: detail.hasRetiredMembers,
+        individualIncomes: incomes,
+        socialBenefits: benefits,
+      ),
+    );
   }
 }

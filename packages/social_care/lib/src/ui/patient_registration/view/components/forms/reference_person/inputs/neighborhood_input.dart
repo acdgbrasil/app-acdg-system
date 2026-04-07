@@ -5,7 +5,11 @@ final class NeighborhoodInput extends StatelessWidget {
   final String? errorText;
   final TextEditingController neighborhoodController;
 
-  const NeighborhoodInput({super.key, this.errorText, required this.neighborhoodController});
+  const NeighborhoodInput({
+    super.key,
+    this.errorText,
+    required this.neighborhoodController,
+  });
 
   @override
   Widget build(BuildContext context) {

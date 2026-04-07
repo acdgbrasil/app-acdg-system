@@ -43,7 +43,9 @@ class WizardButtonBar extends StatelessWidget {
             const WizardSuccessButton()
           else
             WizardButton(
-              label: isLastStep ? ReferencePersonLn10.btnSave : ReferencePersonLn10.btnNext,
+              label: isLastStep
+                  ? ReferencePersonLn10.btnSave
+                  : ReferencePersonLn10.btnNext,
               icon: isLastStep ? Icons.check : Icons.arrow_forward,
               isPrimary: true,
               onPressed: isNextEnabled ? onNext : null,

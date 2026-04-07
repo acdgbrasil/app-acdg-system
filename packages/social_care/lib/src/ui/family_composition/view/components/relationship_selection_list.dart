@@ -23,8 +23,9 @@ class RelationshipSelectionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items =
-        parentescoLookup.where((i) => i.codigo != 'PESSOA_REFERENCIA').toList();
+    final items = parentescoLookup
+        .where((i) => i.codigo != 'PESSOA_REFERENCIA')
+        .toList();
 
     return ValueListenableBuilder<String?>(
       valueListenable: relationshipNotifier,

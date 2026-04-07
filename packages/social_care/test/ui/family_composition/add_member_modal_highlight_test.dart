@@ -8,28 +8,36 @@ void main() {
   const otherCode = 'FILHO';
 
   final lookups = [
-    const LookupItem(id: '1', codigo: prCode, descricao: 'Pessoa de Referência'),
+    const LookupItem(
+      id: '1',
+      codigo: prCode,
+      descricao: 'Pessoa de Referência',
+    ),
     const LookupItem(id: '2', codigo: otherCode, descricao: 'Filho(a)'),
   ];
 
-  testWidgets('TDD: Reference Person relationship MUST NOT appear in the add member modal', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(useMaterial3: true),
-        home: Scaffold(
-          body: AddMemberModal(
-            parentescoLookup: lookups,
-            onSave: (_) {},
+  testWidgets(
+    'TDD: Reference Person relationship MUST NOT appear in the add member modal',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true),
+          home: Scaffold(
+            body: AddMemberModal(parentescoLookup: lookups, onSave: (_) {}),
           ),
         ),
-      ),
-    );
+      );
 
-    // Pessoa de Referência must be filtered out — only one PR per family, created at registration
-    expect(find.text('Pessoa de Referência'), findsNothing,
-        reason: 'A "Pessoa de Referência" não deve aparecer no modal de adição de membros');
+      // Pessoa de Referência must be filtered out — only one PR per family, created at registration
+      expect(
+        find.text('Pessoa de Referência'),
+        findsNothing,
+        reason:
+            'A "Pessoa de Referência" não deve aparecer no modal de adição de membros',
+      );
 
-    // Other relationships should still be visible
-    expect(find.text('Filho(a)'), findsOneWidget);
-  });
+      // Other relationships should still be visible
+      expect(find.text('Filho(a)'), findsOneWidget);
+    },
+  );
 }

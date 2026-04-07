@@ -60,7 +60,9 @@ class ConnectivityService {
     final results = await _connectivity.checkConnectivity();
     debugPrint('📡 ConnectivityService: connectivity_plus reported: $results');
     await _updateStatus(results);
-    debugPrint('📡 ConnectivityService: after _updateStatus → isOnline=${_online.value}');
+    debugPrint(
+      '📡 ConnectivityService: after _updateStatus → isOnline=${_online.value}',
+    );
 
     // 2. Listen for changes
     _subscription = _connectivity.onConnectivityChanged.listen(_updateStatus);
@@ -68,9 +70,13 @@ class ConnectivityService {
     // 3. On desktop, connectivity_plus may not work reliably.
     //    Always do an initial real check + periodic fallback.
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      debugPrint('📡 ConnectivityService: desktop detected — forcing real internet check');
+      debugPrint(
+        '📡 ConnectivityService: desktop detected — forcing real internet check',
+      );
       final result = await checkRealInternet(force: true);
-      debugPrint('📡 ConnectivityService: real internet check → isOnline=$result');
+      debugPrint(
+        '📡 ConnectivityService: real internet check → isOnline=$result',
+      );
 
       // Periodic fallback — re-check every 30s on desktop
       _periodicTimer = Timer.periodic(periodicCheckInterval, (_) {

@@ -43,7 +43,9 @@ class ModalRadioGroup<T> extends StatelessWidget {
                           Text(
                             label,
                             style: TextStyle(
-                              color: AppColors.textOnDark.withValues(alpha: 0.8),
+                              color: AppColors.textOnDark.withValues(
+                                alpha: 0.8,
+                              ),
                               fontSize: 15,
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w300,

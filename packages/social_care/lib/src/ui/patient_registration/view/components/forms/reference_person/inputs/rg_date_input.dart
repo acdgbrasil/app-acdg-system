@@ -7,7 +7,12 @@ final class RgDateInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController rgDateController;
 
-  const RgDateInput({super.key, this.errorText, this.validator, required this.rgDateController});
+  const RgDateInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.rgDateController,
+  });
 
   @override
   Widget build(BuildContext context) {

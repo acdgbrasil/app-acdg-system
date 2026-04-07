@@ -38,14 +38,12 @@ class HomePage extends ConsumerWidget {
                   child: SyncIndicator(status: syncEngine.status),
                 ),
               if (user != null)
-                UserMenuButton(
-                  user: user,
-                  onLogout: viewModel.logout.execute,
-                ),
+                UserMenuButton(user: user, onLogout: viewModel.logout.execute),
             ],
           ),
-          body:
-              user != null ? HomeContent(user: user) : const SizedBox.shrink(),
+          body: user != null
+              ? HomeContent(user: user)
+              : const SizedBox.shrink(),
         );
       },
     );

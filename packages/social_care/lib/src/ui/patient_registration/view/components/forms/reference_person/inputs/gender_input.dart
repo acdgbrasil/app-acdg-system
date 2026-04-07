@@ -7,11 +7,7 @@ final class GenderInput extends StatelessWidget {
   final ValueNotifier<Gender?> genderNotifier;
   final String? Function(Gender?)? validator;
 
-  const GenderInput({
-    super.key,
-    required this.genderNotifier,
-    this.validator,
-  });
+  const GenderInput({super.key, required this.genderNotifier, this.validator});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +27,10 @@ final class GenderInput extends StatelessWidget {
                     text: ReferencePersonLn10.genderLabel,
                     style: TextStyle(color: Colors.black, fontSize: 16),
                     children: [
-                      TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                      TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ],
                   ),
                 ),

@@ -25,7 +25,9 @@ class _FamilyItemState extends State<FamilyItem> {
   bool _hovered = false;
 
   bool get _isHighlighted =>
-      widget.isSelected || (_hovered && !widget.isAnySelected) || (_hovered && widget.isSelected);
+      widget.isSelected ||
+      (_hovered && !widget.isAnySelected) ||
+      (_hovered && widget.isSelected);
 
   bool get _isFaded => widget.isAnySelected && !widget.isSelected && !_hovered;
 
@@ -48,12 +50,12 @@ class _FamilyItemState extends State<FamilyItem> {
                 duration: const Duration(milliseconds: 250),
                 style: TextStyle(
                   fontFamily: 'Satoshi',
-                  fontWeight: _isHighlighted ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: _isHighlighted
+                      ? FontWeight.w700
+                      : FontWeight.w500,
                   fontSize: 40,
                   height: 1.2,
-                  color: _isFaded
-                      ? AppColors.textMuted
-                      : AppColors.textPrimary,
+                  color: _isFaded ? AppColors.textMuted : AppColors.textPrimary,
                 ),
                 child: Text(widget.family.lastName),
               ),

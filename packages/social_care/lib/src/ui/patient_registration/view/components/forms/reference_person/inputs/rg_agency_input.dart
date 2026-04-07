@@ -6,7 +6,12 @@ final class RgAgencyInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController rgAgencyController;
 
-  const RgAgencyInput({super.key, this.errorText, this.validator, required this.rgAgencyController});
+  const RgAgencyInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.rgAgencyController,
+  });
 
   @override
   Widget build(BuildContext context) {

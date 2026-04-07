@@ -44,7 +44,7 @@ void main() {
 
       // 1. Initial (Loading) -> Unauthenticated
       await viewModel.init();
-      
+
       // We expect at least one notification for the restoreSession change.
       // The exact count depends on how many intermediate states the fake emits.
       expect(notifyCount, greaterThan(0));
@@ -56,7 +56,7 @@ void main() {
       viewModel.addListener(() => notifyCount++);
 
       await viewModel.login.execute();
-      
+
       expect(viewModel.status, isA<Authenticated>());
       expect(viewModel.user, isNotNull);
       expect(notifyCount, greaterThan(0));

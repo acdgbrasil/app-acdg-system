@@ -47,7 +47,9 @@ class OfflineFirstRepository implements SocialCareContract {
     final result = await localCall();
 
     if (result.isSuccess) {
-      debugPrint('[Offline Repo] _handleWrite SUCCESS locally. Checking sync...');
+      debugPrint(
+        '[Offline Repo] _handleWrite SUCCESS locally. Checking sync...',
+      );
       if (_isOnline) {
         debugPrint('[Offline Repo] Online! Scheduling sync process...');
         _syncEngine.scheduleProcessQueue();
@@ -55,7 +57,9 @@ class OfflineFirstRepository implements SocialCareContract {
         debugPrint('[Offline Repo] Offline. Action remained in queue.');
       }
     } else {
-      debugPrint('[Offline Repo] _handleWrite FAILED locally: ${(result as Failure).error}');
+      debugPrint(
+        '[Offline Repo] _handleWrite FAILED locally: ${(result as Failure).error}',
+      );
     }
 
     return result;
@@ -78,7 +82,9 @@ class OfflineFirstRepository implements SocialCareContract {
         }
         return Success(value);
       } else {
-        debugPrint('[Offline Repo] Remote FAILED: ${(remoteResult as Failure).error}. Falling back to local...');
+        debugPrint(
+          '[Offline Repo] Remote FAILED: ${(remoteResult as Failure).error}. Falling back to local...',
+        );
       }
     }
 
@@ -168,7 +174,8 @@ class OfflineFirstRepository implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) => _handleWrite(
+    LookupId prRelationshipId,
+  ) => _handleWrite(
     () => _local.addFamilyMember(patientId, member, prRelationshipId),
   );
 
@@ -294,24 +301,34 @@ class OfflineFirstRepository implements SocialCareContract {
     final localResult = await _local.getLookupTable(tableName);
 
     if (localResult case Success(value: final items) when items.isNotEmpty) {
-      debugPrint('[Offline Repo] Returning ${items.length} items from LOCAL cache for $tableName');
+      debugPrint(
+        '[Offline Repo] Returning ${items.length} items from LOCAL cache for $tableName',
+      );
       return Success(items);
     }
 
-    debugPrint('[Offline Repo] Local cache EMPTY for $tableName. Checking online...');
+    debugPrint(
+      '[Offline Repo] Local cache EMPTY for $tableName. Checking online...',
+    );
     if (_isOnline) {
       debugPrint('[Offline Repo] Online! Fetching $tableName from REMOTE...');
       final remoteResult = await _remote.getLookupTable(tableName);
       if (remoteResult case Success(:final value)) {
-        debugPrint('[Offline Repo] Remote SUCCESS for $tableName. Updating local cache...');
+        debugPrint(
+          '[Offline Repo] Remote SUCCESS for $tableName. Updating local cache...',
+        );
         unawaited(_local.updateLookupCache(tableName, value));
         return Success(value);
       } else {
-        debugPrint('[Offline Repo] Remote FAILED for $tableName: ${(remoteResult as Failure).error}');
+        debugPrint(
+          '[Offline Repo] Remote FAILED for $tableName: ${(remoteResult as Failure).error}',
+        );
       }
     }
 
-    debugPrint('[Offline Repo] Returning local result (likely empty or failure)');
+    debugPrint(
+      '[Offline Repo] Returning local result (likely empty or failure)',
+    );
     return localResult;
   }
 

@@ -23,9 +23,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
     required UpdatePrimaryCaregiverUseCase updatePrimaryCaregiverUseCase,
     required UpdateSocialIdentityUseCase updateSocialIdentityUseCase,
     required LookupRepository lookupRepository,
-  })  : _getPatientUseCase = getPatientUseCase,
-        _updateSocialIdentityUseCase = updateSocialIdentityUseCase,
-        _lookupRepository = lookupRepository {
+  }) : _getPatientUseCase = getPatientUseCase,
+       _updateSocialIdentityUseCase = updateSocialIdentityUseCase,
+       _lookupRepository = lookupRepository {
     loadPatientCommand = Command0<void>(_loadPatient);
     saveChangesCommand = Command0<void>(_saveChanges);
     addMemberCommand = Command1<void, AddFamilyMemberIntent>(
@@ -50,7 +50,8 @@ class FamilyCompositionViewModel extends BaseViewModel {
   late final Command0<void> saveChangesCommand;
   late final Command1<void, AddFamilyMemberIntent> addMemberCommand;
   late final Command1<void, RemoveFamilyMemberIntent> removeMemberCommand;
-  late final Command1<void, UpdatePrimaryCaregiverIntent> assignCaregiverCommand;
+  late final Command1<void, UpdatePrimaryCaregiverIntent>
+  assignCaregiverCommand;
 
   // ── State (private fields + public getters + notifyListeners) ──
   List<FamilyMemberModel> _members = [];
@@ -98,8 +99,14 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
   Map<String, int> _computeAgeProfile() {
     final profile = <String, int>{
-      '0-6': 0, '7-14': 0, '15-17': 0, '18-29': 0,
-      '30-59': 0, '60-64': 0, '65-69': 0, '70+': 0,
+      '0-6': 0,
+      '7-14': 0,
+      '15-17': 0,
+      '18-29': 0,
+      '30-59': 0,
+      '60-64': 0,
+      '65-69': 0,
+      '70+': 0,
     };
 
     for (final member in _members) {
@@ -129,21 +136,29 @@ class FamilyCompositionViewModel extends BaseViewModel {
     final result = await _lookupRepository.getLookupTable('dominio_parentesco');
     switch (result) {
       case Success(:final value):
-        debugPrint('[ViewModel] Parentesco lookups loaded: ${value.length} items');
+        debugPrint(
+          '[ViewModel] Parentesco lookups loaded: ${value.length} items',
+        );
         _parentescoLookup = value
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
-        final pessoaRef = _parentescoLookup.where((i) => i.codigo == 'PESSOA_REFERENCIA');
+        final pessoaRef = _parentescoLookup.where(
+          (i) => i.codigo == 'PESSOA_REFERENCIA',
+        );
         if (pessoaRef.isNotEmpty) _prRelationshipId = pessoaRef.first.id;
       case Failure(:final error):
         debugPrint('[ViewModel] FAILED to load parentesco lookups: $error');
         errors.add('Falha ao carregar parentescos');
     }
 
-    final specResult = await _lookupRepository.getLookupTable('dominio_tipo_identidade');
+    final specResult = await _lookupRepository.getLookupTable(
+      'dominio_tipo_identidade',
+    );
     switch (specResult) {
       case Success(:final value):
-        debugPrint('[ViewModel] Especificidade lookups loaded: ${value.length} items');
+        debugPrint(
+          '[ViewModel] Especificidade lookups loaded: ${value.length} items',
+        );
         _specificityLookup = value
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
@@ -166,7 +181,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
     switch (result) {
       case Success(:final value):
-        debugPrint('[ViewModel] _loadPatient SUCCESS. Members count: ${value.familyMembers.length}');
+        debugPrint(
+          '[ViewModel] _loadPatient SUCCESS. Members count: ${value.familyMembers.length}',
+        );
         _members = _translateMembers(value);
         _ageProfileCache = null;
         final specId = value.socialIdentity?.typeId.value;
@@ -189,17 +206,23 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
     final PatientId patId;
     switch (PatientId.create(patientId)) {
-      case Success(:final value): patId = value;
-      case Failure(:final error): return Failure(error);
+      case Success(:final value):
+        patId = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     final LookupId typeId;
     switch (LookupId.create(_selectedSpecificityId!)) {
-      case Success(:final value): typeId = value;
-      case Failure(:final error): return Failure(error);
+      case Success(:final value):
+        typeId = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
-    final Result<SocialIdentity> identityResult = SocialIdentity.create(typeId: typeId);
+    final Result<SocialIdentity> identityResult = SocialIdentity.create(
+      typeId: typeId,
+    );
     switch (identityResult) {
       case Success(:final value):
         final result = await _updateSocialIdentityUseCase.execute(
@@ -228,7 +251,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
   Future<void> addMember(AddFamilyMemberIntent intent) async {
     debugPrint('[ViewModel] addMember intent for: ${intent.firstName}');
     await addMemberCommand.execute(intent);
-    debugPrint('[ViewModel] addMemberCommand completed: ${addMemberCommand.completed}');
+    debugPrint(
+      '[ViewModel] addMemberCommand completed: ${addMemberCommand.completed}',
+    );
     if (addMemberCommand.completed) {
       debugPrint('[ViewModel] Triggering reload after add...');
       await loadPatientCommand.execute();
@@ -238,38 +263,45 @@ class FamilyCompositionViewModel extends BaseViewModel {
   Future<void> removeMember(PersonId memberId) async {
     final PatientId patId;
     switch (PatientId.create(patientId)) {
-      case Success(:final value): patId = value;
-      case Failure(): return;
+      case Success(:final value):
+        patId = value;
+      case Failure():
+        return;
     }
 
-    await removeMemberCommand.execute(RemoveFamilyMemberIntent(
-      patientId: patId,
-      memberPersonId: memberId,
-    ));
+    await removeMemberCommand.execute(
+      RemoveFamilyMemberIntent(patientId: patId, memberPersonId: memberId),
+    );
     if (removeMemberCommand.completed) await loadPatientCommand.execute();
   }
 
   Future<void> assignCaregiver(PersonId memberId) async {
     final PatientId patId;
     switch (PatientId.create(patientId)) {
-      case Success(:final value): patId = value;
-      case Failure(): return;
+      case Success(:final value):
+        patId = value;
+      case Failure():
+        return;
     }
 
-    await assignCaregiverCommand.execute(UpdatePrimaryCaregiverIntent(
-      patientId: patId,
-      memberPersonId: memberId,
-    ));
+    await assignCaregiverCommand.execute(
+      UpdatePrimaryCaregiverIntent(patientId: patId, memberPersonId: memberId),
+    );
     if (assignCaregiverCommand.completed) await loadPatientCommand.execute();
   }
 
   /// Handles the full save flow from the add/edit modal result.
   /// Resolves lookups, builds intent, orchestrates add/edit + caregiver assignment.
-  Future<void> handleModalSave(AddMemberResult result, {FamilyMemberModel? existing}) async {
+  Future<void> handleModalSave(
+    AddMemberResult result, {
+    FamilyMemberModel? existing,
+  }) async {
     final PatientId patId;
     switch (PatientId.create(patientId)) {
-      case Success(:final value): patId = value;
-      case Failure(): return;
+      case Success(:final value):
+        patId = value;
+      case Failure():
+        return;
     }
 
     final lookupItem = _parentescoLookup
@@ -287,7 +319,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
       residesWithPatient: result.residesWithPatient,
       hasDisability: result.hasDisability,
       requiredDocuments: result.requiredDocuments
-          .map((d) => RequiredDocument.values.where((v) => v.value == d).firstOrNull)
+          .map(
+            (d) =>
+                RequiredDocument.values.where((v) => v.value == d).firstOrNull,
+          )
           .whereType<RequiredDocument>()
           .toList(),
     );
@@ -295,8 +330,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
     if (existing != null) {
       final PersonId oldId;
       switch (PersonId.create(existing.personId)) {
-        case Success(:final value): oldId = value;
-        case Failure(): return;
+        case Success(:final value):
+          oldId = value;
+        case Failure():
+          return;
       }
       await removeMember(oldId);
     }
@@ -315,8 +352,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
     final PersonId memberId;
     switch (PersonId.create(member.personId)) {
-      case Success(:final value): memberId = value;
-      case Failure(): return false;
+      case Success(:final value):
+        memberId = value;
+      case Failure():
+        return false;
     }
     await removeMember(memberId);
     return true;
@@ -325,7 +364,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
   /// Handles caregiver toggle with guard for reference person.
   /// Returns `true` if confirmation dialog is needed (existing caregiver).
   bool needsCaregiverConfirmation(FamilyMemberModel member) {
-    return !member.isReferencePerson && !member.isPrimaryCaregiver && currentCaregiver != null;
+    return !member.isReferencePerson &&
+        !member.isPrimaryCaregiver &&
+        currentCaregiver != null;
   }
 
   /// Toggles caregiver status for a member.
@@ -334,8 +375,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
     final PersonId memberId;
     switch (PersonId.create(member.personId)) {
-      case Success(:final value): memberId = value;
-      case Failure(): return;
+      case Success(:final value):
+        memberId = value;
+      case Failure():
+        return;
     }
     await assignCaregiver(memberId);
   }
@@ -347,8 +390,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
     if (newMember != null) {
       final PersonId newId;
       switch (PersonId.create(newMember.personId)) {
-        case Success(:final value): newId = value;
-        case Failure(): return;
+        case Success(:final value):
+          newId = value;
+        case Failure():
+          return;
       }
       assignCaregiver(newId);
     }
@@ -368,8 +413,10 @@ class FamilyCompositionViewModel extends BaseViewModel {
     }
     _members = [
       for (var i = 0; i < _members.length; i++)
-        if (i == memberIndex) member.copyWith(requiredDocuments: docs)
-        else _members[i],
+        if (i == memberIndex)
+          member.copyWith(requiredDocuments: docs)
+        else
+          _members[i],
     ];
     _ageProfileCache = null;
     notifyListeners();
@@ -393,18 +440,20 @@ class FamilyCompositionViewModel extends BaseViewModel {
           ? 'Pessoa de Referência'
           : lookupItem?.descricao ?? relId;
 
-      members.add(FamilyMemberModel(
-        personId: fm.personId.value,
-        relationshipLabel: relLabel,
-        relationshipCode: lookupItem?.codigo ?? relId,
-        birthDate: fm.birthDate.date,
-        sex: isPr ? _sexLabel(patient) : '–',
-        isReferencePerson: isPr,
-        isPrimaryCaregiver: fm.isPrimaryCaregiver,
-        residesWithPatient: fm.residesWithPatient,
-        hasDisability: fm.hasDisability,
-        requiredDocuments: fm.requiredDocuments.map((d) => d.value).toSet(),
-      ));
+      members.add(
+        FamilyMemberModel(
+          personId: fm.personId.value,
+          relationshipLabel: relLabel,
+          relationshipCode: lookupItem?.codigo ?? relId,
+          birthDate: fm.birthDate.date,
+          sex: isPr ? _sexLabel(patient) : '–',
+          isReferencePerson: isPr,
+          isPrimaryCaregiver: fm.isPrimaryCaregiver,
+          residesWithPatient: fm.residesWithPatient,
+          hasDisability: fm.hasDisability,
+          requiredDocuments: fm.requiredDocuments.map((d) => d.value).toSet(),
+        ),
+      );
     }
 
     // PR always first

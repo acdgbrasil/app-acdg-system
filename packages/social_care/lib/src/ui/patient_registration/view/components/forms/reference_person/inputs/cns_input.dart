@@ -7,7 +7,12 @@ final class CnsInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController cnsController;
 
-  const CnsInput({super.key, this.errorText, this.validator, required this.cnsController});
+  const CnsInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.cnsController,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -16,8 +16,7 @@ final class WorkAndIncomeDetail {
       hasRetiredMembers: json['hasRetiredMembers'] as bool,
       individualIncomes: (json['individualIncomes'] as List)
           .map(
-            (e) =>
-                IndividualIncomeDetail.fromJson(e as Map<String, dynamic>),
+            (e) => IndividualIncomeDetail.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
       socialBenefits: (json['socialBenefits'] as List)

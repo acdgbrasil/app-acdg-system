@@ -13,12 +13,14 @@ abstract final class HousingConditionDetailMapper {
       type: ConditionType.values.byName(detail.type),
       wallMaterial: WallMaterial.values.byName(detail.wallMaterial),
       waterSupply: WaterSupply.values.byName(detail.waterSupply),
-      electricityAccess:
-          ElectricityAccess.values.byName(detail.electricityAccess),
+      electricityAccess: ElectricityAccess.values.byName(
+        detail.electricityAccess,
+      ),
       sewageDisposal: SewageDisposal.values.byName(detail.sewageDisposal),
       wasteCollection: WasteCollection.values.byName(detail.wasteCollection),
-      accessibilityLevel:
-          AccessibilityLevel.values.byName(detail.accessibilityLevel),
+      accessibilityLevel: AccessibilityLevel.values.byName(
+        detail.accessibilityLevel,
+      ),
       numberOfRooms: detail.numberOfRooms,
       numberOfBedrooms: detail.numberOfBedrooms,
       numberOfBathrooms: detail.numberOfBathrooms,

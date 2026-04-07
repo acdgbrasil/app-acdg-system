@@ -5,7 +5,11 @@ final class NumberInput extends StatelessWidget {
   final String? errorText;
   final TextEditingController numberController;
 
-  const NumberInput({super.key, this.errorText, required this.numberController});
+  const NumberInput({
+    super.key,
+    this.errorText,
+    required this.numberController,
+  });
 
   @override
   Widget build(BuildContext context) {

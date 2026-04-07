@@ -7,7 +7,7 @@ final class NationalityInput extends StatelessWidget {
   final String? Function(Nationality?)? validator;
 
   const NationalityInput({
-    super.key, 
+    super.key,
     required this.nationalityNotifier,
     this.validator,
   });
@@ -27,7 +27,10 @@ final class NationalityInput extends StatelessWidget {
                 text: ReferencePersonLn10.nationalityLabel,
                 style: TextStyle(color: Colors.black),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),
@@ -49,7 +52,8 @@ final class NationalityInput extends StatelessWidget {
     return switch (value) {
       Nationality.brasileira => ReferencePersonLn10.nationalityOptionBrasilian,
       Nationality.estrangeira => ReferencePersonLn10.nationalityOptionForeigner,
-      Nationality.nacionalizado => ReferencePersonLn10.nationalityOptionNationalized,
+      Nationality.nacionalizado =>
+        ReferencePersonLn10.nationalityOptionNationalized,
     };
   }
 }

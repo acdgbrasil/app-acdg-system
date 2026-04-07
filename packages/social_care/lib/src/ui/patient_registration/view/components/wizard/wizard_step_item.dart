@@ -47,7 +47,9 @@ class WizardStepItem extends StatelessWidget {
                       fontFamily: 'Satoshi',
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: isActive ? AppColors.background : AppColors.textMuted,
+                      color: isActive
+                          ? AppColors.background
+                          : AppColors.textMuted,
                     ),
                   ),
           ),

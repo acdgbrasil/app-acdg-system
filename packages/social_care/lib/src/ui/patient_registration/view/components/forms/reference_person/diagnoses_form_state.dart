@@ -113,9 +113,12 @@ class DiagnosesFormState {
     }
     for (var i = 0; i < list.length; i++) {
       final e = list[i];
-      if (e.icdCodeError != null) errors.add('Diagnóstico ${i + 1}: ${e.icdCodeError}');
-      if (e.dateError != null) errors.add('Diagnóstico ${i + 1}: ${e.dateError}');
-      if (e.descriptionError != null) errors.add('Diagnóstico ${i + 1}: ${e.descriptionError}');
+      if (e.icdCodeError != null)
+        errors.add('Diagnóstico ${i + 1}: ${e.icdCodeError}');
+      if (e.dateError != null)
+        errors.add('Diagnóstico ${i + 1}: ${e.dateError}');
+      if (e.descriptionError != null)
+        errors.add('Diagnóstico ${i + 1}: ${e.descriptionError}');
     }
     return errors;
   }

@@ -9,29 +9,28 @@ abstract final class ProtectionMapper {
   // ── To JSON ─────────────────────────────────────────────────
 
   static Map<String, dynamic> placementHistoryToJson(PlacementHistory p) => {
-        'registries': p.individualPlacements
-            .map((r) => {
-                  'id': r.id,
-                  'memberId': r.memberId.value,
-                  'startDate': r.startDate.toIso8601(),
-                  'endDate': r.endDate?.toIso8601(),
-                  'reason': r.reason,
-                })
-            .toList(),
-        'collectiveSituations': {
-          'homeLossReport': p.collectiveSituations.homeLossReport,
-          'thirdPartyGuardReport': p.collectiveSituations.thirdPartyGuardReport,
-        },
-        'separationChecklist': {
-          'adultInPrison': p.separationChecklist.adultInPrison,
-          'adolescentInInternment':
-              p.separationChecklist.adolescentInInternment,
-        },
-      };
+    'registries': p.individualPlacements
+        .map(
+          (r) => {
+            'id': r.id,
+            'memberId': r.memberId.value,
+            'startDate': r.startDate.toIso8601(),
+            'endDate': r.endDate?.toIso8601(),
+            'reason': r.reason,
+          },
+        )
+        .toList(),
+    'collectiveSituations': {
+      'homeLossReport': p.collectiveSituations.homeLossReport,
+      'thirdPartyGuardReport': p.collectiveSituations.thirdPartyGuardReport,
+    },
+    'separationChecklist': {
+      'adultInPrison': p.separationChecklist.adultInPrison,
+      'adolescentInInternment': p.separationChecklist.adolescentInInternment,
+    },
+  };
 
-  static Map<String, dynamic> violationReportToJson(
-    RightsViolationReport r,
-  ) =>
+  static Map<String, dynamic> violationReportToJson(RightsViolationReport r) =>
       {
         'id': r.id.value,
         'victimId': r.victimId.value,
@@ -44,14 +43,14 @@ abstract final class ProtectionMapper {
       };
 
   static Map<String, dynamic> referralToJson(Referral r) => {
-        'id': r.id.value,
-        'referredPersonId': r.referredPersonId.value,
-        'destinationService': r.destinationService.name.toSnakeCaseUpper(),
-        'reason': r.reason,
-        'date': r.date.toIso8601(),
-        'professionalId': r.requestingProfessionalId.value,
-        'status': r.status.name.toSnakeCaseUpper(),
-      };
+    'id': r.id.value,
+    'referredPersonId': r.referredPersonId.value,
+    'destinationService': r.destinationService.name.toSnakeCaseUpper(),
+    'reason': r.reason,
+    'date': r.date.toIso8601(),
+    'professionalId': r.requestingProfessionalId.value,
+    'status': r.status.name.toSnakeCaseUpper(),
+  };
 
   // ── From JSON ───────────────────────────────────────────────
 
@@ -60,7 +59,8 @@ abstract final class ProtectionMapper {
   ) {
     final PatientId familyId;
     switch (idFromJsonOrDefault(PatientId.create, j['familyId'], defaultUuid)) {
-      case Success(:final value): familyId = value;
+      case Success(:final value):
+        familyId = value;
       case Failure(:final error):
         return Failure('placementHistory.familyId: $error');
     }
@@ -71,14 +71,16 @@ abstract final class ProtectionMapper {
 
       final PersonId memberId;
       switch (PersonId.create(m['memberId'])) {
-        case Success(:final value): memberId = value;
+        case Success(:final value):
+          memberId = value;
         case Failure(:final error):
           return Failure('placementHistory.registries[$i].memberId: $error');
       }
 
       final TimeStamp startDate;
       switch (TimeStamp.fromIso(m['startDate'])) {
-        case Success(:final value): startDate = value;
+        case Success(:final value):
+          startDate = value;
         case Failure(:final error):
           return Failure('placementHistory.registries[$i].startDate: $error');
       }
@@ -86,7 +88,8 @@ abstract final class ProtectionMapper {
       TimeStamp? endDate;
       if (m['endDate'] != null) {
         switch (TimeStamp.fromIso(m['endDate'])) {
-          case Success(:final value): endDate = value;
+          case Success(:final value):
+            endDate = value;
           case Failure(:final error):
             return Failure('placementHistory.registries[$i].endDate: $error');
         }
@@ -99,61 +102,79 @@ abstract final class ProtectionMapper {
         endDate: endDate,
         reason: m['reason'],
       )) {
-        case Success(:final value): registries.add(value);
+        case Success(:final value):
+          registries.add(value);
         case Failure(:final error):
           return Failure('placementHistory.registries[$i]: $error');
       }
     }
 
-    return Success(PlacementHistory(
-      familyId: familyId,
-      individualPlacements: registries,
-      collectiveSituations: CollectiveSituations(
-        homeLossReport: j['collectiveSituations']['homeLossReport'],
-        thirdPartyGuardReport:
-            j['collectiveSituations']['thirdPartyGuardReport'],
+    return Success(
+      PlacementHistory(
+        familyId: familyId,
+        individualPlacements: registries,
+        collectiveSituations: CollectiveSituations(
+          homeLossReport: j['collectiveSituations']['homeLossReport'],
+          thirdPartyGuardReport:
+              j['collectiveSituations']['thirdPartyGuardReport'],
+        ),
+        separationChecklist: SeparationChecklist(
+          adultInPrison: j['separationChecklist']['adultInPrison'],
+          adolescentInInternment:
+              j['separationChecklist']['adolescentInInternment'],
+        ),
       ),
-      separationChecklist: SeparationChecklist(
-        adultInPrison: j['separationChecklist']['adultInPrison'],
-        adolescentInInternment:
-            j['separationChecklist']['adolescentInInternment'],
-      ),
-    ));
+    );
   }
 
   static Result<RightsViolationReport> violationReportFromJson(
     Map<String, dynamic> j,
   ) {
     final ViolationReportId id;
-    switch (idFromJsonOrDefault(ViolationReportId.create, j['id'], defaultUuid)) {
-      case Success(:final value): id = value;
-      case Failure(:final error): return Failure('violationReport.id: $error');
+    switch (idFromJsonOrDefault(
+      ViolationReportId.create,
+      j['id'],
+      defaultUuid,
+    )) {
+      case Success(:final value):
+        id = value;
+      case Failure(:final error):
+        return Failure('violationReport.id: $error');
     }
 
     final TimeStamp reportDate;
     switch (TimeStamp.fromIso(j['reportDate'])) {
-      case Success(:final value): reportDate = value;
+      case Success(:final value):
+        reportDate = value;
       case Failure(:final error):
         return Failure('violationReport.reportDate: $error');
     }
 
     final PersonId victimId;
     switch (PersonId.create(j['victimId'])) {
-      case Success(:final value): victimId = value;
+      case Success(:final value):
+        victimId = value;
       case Failure(:final error):
         return Failure('violationReport.victimId: $error');
     }
 
     final ViolationType violationType;
-    switch (enumFromJson(ViolationType.values, j['violationType'], 'violationReport.violationType')) {
-      case Success(:final value): violationType = value;
-      case Failure(:final error): return Failure(error);
+    switch (enumFromJson(
+      ViolationType.values,
+      j['violationType'],
+      'violationReport.violationType',
+    )) {
+      case Success(:final value):
+        violationType = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     LookupId? violationTypeId;
     if (j['violationTypeId'] != null) {
       switch (LookupId.create(j['violationTypeId'])) {
-        case Success(:final value): violationTypeId = value;
+        case Success(:final value):
+          violationTypeId = value;
         case Failure(:final error):
           return Failure('violationReport.violationTypeId: $error');
       }
@@ -162,7 +183,8 @@ abstract final class ProtectionMapper {
     TimeStamp? incidentDate;
     if (j['incidentDate'] != null) {
       switch (TimeStamp.fromIso(j['incidentDate'])) {
-        case Success(:final value): incidentDate = value;
+        case Success(:final value):
+          incidentDate = value;
         case Failure(:final error):
           return Failure('violationReport.incidentDate: $error');
       }
@@ -183,41 +205,59 @@ abstract final class ProtectionMapper {
   static Result<Referral> referralFromJson(Map<String, dynamic> j) {
     final ReferralId id;
     switch (idFromJsonOrDefault(ReferralId.create, j['id'], defaultUuid)) {
-      case Success(:final value): id = value;
-      case Failure(:final error): return Failure('referral.id: $error');
+      case Success(:final value):
+        id = value;
+      case Failure(:final error):
+        return Failure('referral.id: $error');
     }
 
     final TimeStamp date;
     switch (TimeStamp.fromIso(j['date'])) {
-      case Success(:final value): date = value;
-      case Failure(:final error): return Failure('referral.date: $error');
+      case Success(:final value):
+        date = value;
+      case Failure(:final error):
+        return Failure('referral.date: $error');
     }
 
     final ProfessionalId professionalId;
     switch (ProfessionalId.create(j['professionalId'])) {
-      case Success(:final value): professionalId = value;
+      case Success(:final value):
+        professionalId = value;
       case Failure(:final error):
         return Failure('referral.professionalId: $error');
     }
 
     final PersonId referredPersonId;
     switch (PersonId.create(j['referredPersonId'])) {
-      case Success(:final value): referredPersonId = value;
+      case Success(:final value):
+        referredPersonId = value;
       case Failure(:final error):
         return Failure('referral.referredPersonId: $error');
     }
 
     final DestinationService destinationService;
-    switch (enumFromJson(DestinationService.values, j['destinationService'], 'referral.destinationService')) {
-      case Success(:final value): destinationService = value;
-      case Failure(:final error): return Failure(error);
+    switch (enumFromJson(
+      DestinationService.values,
+      j['destinationService'],
+      'referral.destinationService',
+    )) {
+      case Success(:final value):
+        destinationService = value;
+      case Failure(:final error):
+        return Failure(error);
     }
 
     ReferralStatus status = ReferralStatus.pending;
     if (j['status'] != null) {
-      switch (enumFromJson(ReferralStatus.values, j['status'], 'referral.status')) {
-        case Success(:final value): status = value;
-        case Failure(:final error): return Failure(error);
+      switch (enumFromJson(
+        ReferralStatus.values,
+        j['status'],
+        'referral.status',
+      )) {
+        case Success(:final value):
+          status = value;
+        case Failure(:final error):
+          return Failure(error);
       }
     }
 

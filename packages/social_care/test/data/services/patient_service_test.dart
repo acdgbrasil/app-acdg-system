@@ -15,8 +15,12 @@ void main() {
   group('PatientService', () {
     test('fetchPatient calls bff.fetchPatient correctly', () async {
       // Arrange
-      final patientIdRes = PatientId.create('550e8400-e29b-41d4-a716-446655440000');
-      final personIdRes = PersonId.create('550e8400-e29b-41d4-a716-446655440001');
+      final patientIdRes = PatientId.create(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
+      final personIdRes = PersonId.create(
+        '550e8400-e29b-41d4-a716-446655440001',
+      );
       final relIdRes = LookupId.create('550e8400-e29b-41d4-a716-446655440002');
 
       if (patientIdRes case Success(value: final patientId)) {
@@ -48,7 +52,9 @@ void main() {
 
     test('fetchPatient returns failure when patient not found', () async {
       // Arrange
-      final patientIdRes = PatientId.create('550e8400-e29b-41d4-a716-446655440003');
+      final patientIdRes = PatientId.create(
+        '550e8400-e29b-41d4-a716-446655440003',
+      );
 
       if (patientIdRes case Success(value: final patientId)) {
         // Act

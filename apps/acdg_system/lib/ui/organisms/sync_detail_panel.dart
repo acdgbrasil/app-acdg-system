@@ -64,9 +64,15 @@ class _SyncDetailPanelState extends State<SyncDetailPanel> {
     final buffer = StringBuffer();
     buffer.writeln('=== SYNC QUEUE REPORT ===');
     buffer.writeln('Total: ${_actions.length} ações');
-    buffer.writeln('Failed: ${_actions.where((a) => a.status == "FAILED").length}');
-    buffer.writeln('Conflict: ${_actions.where((a) => a.status == "CONFLICT").length}');
-    buffer.writeln('Pending: ${_actions.where((a) => a.status == "PENDING").length}');
+    buffer.writeln(
+      'Failed: ${_actions.where((a) => a.status == "FAILED").length}',
+    );
+    buffer.writeln(
+      'Conflict: ${_actions.where((a) => a.status == "CONFLICT").length}',
+    );
+    buffer.writeln(
+      'Pending: ${_actions.where((a) => a.status == "PENDING").length}',
+    );
     buffer.writeln('');
 
     for (final action in _actions) {
@@ -249,9 +255,21 @@ class _SyncDetailPanelState extends State<SyncDetailPanel> {
           Wrap(
             spacing: 8,
             children: [
-              if (pendingCount > 0) _StatusChip(label: '$pendingCount pendentes', color: Colors.orange),
-              if (failedCount > 0) _StatusChip(label: '$failedCount falhas', color: const Color(0xFFA6290D)),
-              if (conflictCount > 0) _StatusChip(label: '$conflictCount conflitos', color: const Color(0xFFC4441F)),
+              if (pendingCount > 0)
+                _StatusChip(
+                  label: '$pendingCount pendentes',
+                  color: Colors.orange,
+                ),
+              if (failedCount > 0)
+                _StatusChip(
+                  label: '$failedCount falhas',
+                  color: const Color(0xFFA6290D),
+                ),
+              if (conflictCount > 0)
+                _StatusChip(
+                  label: '$conflictCount conflitos',
+                  color: const Color(0xFFC4441F),
+                ),
             ],
           ),
           const SizedBox(height: 20),
@@ -293,17 +311,24 @@ class _SyncDetailPanelState extends State<SyncDetailPanel> {
 
   Widget _buildActionList() {
     // Sort: FAILED first, then CONFLICT, then PENDING
-    final sorted = [..._actions]..sort((a, b) {
-      const order = {'FAILED': 0, 'CONFLICT': 1, 'IN_PROGRESS': 2, 'PENDING': 3};
-      return (order[a.status] ?? 4).compareTo(order[b.status] ?? 4);
-    });
+    final sorted = [..._actions]
+      ..sort((a, b) {
+        const order = {
+          'FAILED': 0,
+          'CONFLICT': 1,
+          'IN_PROGRESS': 2,
+          'PENDING': 3,
+        };
+        return (order[a.status] ?? 4).compareTo(order[b.status] ?? 4);
+      });
 
     return Flexible(
       child: ListView.separated(
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(32, 16, 32, 32),
         itemCount: sorted.length,
-        separatorBuilder: (_, _) => const Divider(color: Color(0x15F2E2C4), height: 1),
+        separatorBuilder: (_, _) =>
+            const Divider(color: Color(0x15F2E2C4), height: 1),
         itemBuilder: (context, index) {
           final action = sorted[index];
           return _ActionRow(
@@ -351,7 +376,10 @@ class _HeaderAction extends StatelessWidget {
                 const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFF2E2C4)),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFF2E2C4),
+                  ),
                 )
               else
                 Icon(icon, size: 14, color: const Color(0xFFF2E2C4)),
@@ -487,7 +515,10 @@ class _ActionRow extends StatelessWidget {
                 width: 8,
                 height: 8,
                 margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(shape: BoxShape.circle, color: _statusColor),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _statusColor,
+                ),
               ),
               // Action name
               Expanded(
@@ -561,7 +592,8 @@ class _ActionRow extends StatelessWidget {
             ),
           ],
           // Conflict details
-          if (action.conflictDetails != null && action.conflictDetails!.isNotEmpty) ...[
+          if (action.conflictDetails != null &&
+              action.conflictDetails!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
               width: double.infinity,

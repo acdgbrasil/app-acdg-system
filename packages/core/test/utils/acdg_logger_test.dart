@@ -29,8 +29,12 @@ void main() {
 
     test('ERROR with exception sends captureException to Sentry', () {
       final exception = Exception('API failure');
-      logger.log('Request failed', LogLevel.error,
-          error: exception, stackTrace: StackTrace.current);
+      logger.log(
+        'Request failed',
+        LogLevel.error,
+        error: exception,
+        stackTrace: StackTrace.current,
+      );
 
       expect(fakeSentry.capturedExceptions, hasLength(1));
       expect(fakeSentry.capturedExceptions.first, equals(exception));
@@ -41,8 +45,10 @@ void main() {
       logger.log('Inconsistent ViewModel state', LogLevel.fatal);
 
       expect(fakeSentry.capturedMessages, hasLength(1));
-      expect(fakeSentry.capturedMessages.first,
-          equals('Inconsistent ViewModel state'));
+      expect(
+        fakeSentry.capturedMessages.first,
+        equals('Inconsistent ViewModel state'),
+      );
     });
   });
 }

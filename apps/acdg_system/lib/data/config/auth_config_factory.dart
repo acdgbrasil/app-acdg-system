@@ -13,9 +13,7 @@ abstract final class AuthConfigFactory {
   /// Creates an [AuthService] suitable for the running platform.
   static AuthService createAuthService() {
     if (PlatformResolver.isWeb) {
-      return BffAuthService(
-        config: BffAuthConfig(bffBaseUrl: Env.bffBaseUrl),
-      );
+      return BffAuthService(config: BffAuthConfig(bffBaseUrl: Env.bffBaseUrl));
     }
 
     return OidcAuthService(config: OidcConfigFactory.fromEnvironment());

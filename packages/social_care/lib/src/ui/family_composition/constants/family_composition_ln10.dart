@@ -67,8 +67,7 @@ abstract final class FamilyCompositionLn10 {
   static const String removeMessageSuffix = 'da composição familiar.';
   static const String removeCaregiverWarning =
       'é o cuidador principal. Ao remover, a família ficará sem cuidador designado. Você pode designar outro membro depois.';
-  static const String removeIrreversible =
-      'Esta ação não pode ser desfeita.';
+  static const String removeIrreversible = 'Esta ação não pode ser desfeita.';
   static const String btnRemoveConfirm = 'Sim, remover';
 
   // ── Confirm — Caregiver change ────────────────────────────────

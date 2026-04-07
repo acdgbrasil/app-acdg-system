@@ -38,15 +38,15 @@ class SocialCareApiClient implements SocialCareContract {
     if (data is Map<String, dynamic>) {
       final errorMap = data['error'] as Map<String, dynamic>?;
       final code = errorMap?['code'] as String?;
-      final msg = errorMap?['message'] as String? ??
+      final msg =
+          errorMap?['message'] as String? ??
           data['message'] as String? ??
           fallbackMessage;
       message = code != null ? '$code: $msg' : msg;
     }
-    return Failure(BackendError(
-      statusCode: response.statusCode ?? 502,
-      message: message,
-    ));
+    return Failure(
+      BackendError(statusCode: response.statusCode ?? 502, message: message),
+    );
   }
 
   @override
@@ -154,7 +154,8 @@ class SocialCareApiClient implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) async {
+    LookupId prRelationshipId,
+  ) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
@@ -419,7 +420,10 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return _backendFailure(response, 'Failed to update social health summary');
+      return _backendFailure(
+        response,
+        'Failed to update social health summary',
+      );
     } catch (e) {
       return Failure(e);
     }

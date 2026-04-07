@@ -72,22 +72,25 @@ void main() {
         expect(body, isEmpty);
       });
 
-      test('returns list of patients after registration (enriched via people-context)', () async {
-        // Pre-populate fake with a patient domain object
-        final patient = _testPatient();
-        await fakeBff.registerPatient(patient);
+      test(
+        'returns list of patients after registration (enriched via people-context)',
+        () async {
+          // Pre-populate fake with a patient domain object
+          final patient = _testPatient();
+          await fakeBff.registerPatient(patient);
 
-        final request = testRequest('GET', '/patients');
-        final response = await handler.router.call(request);
+          final request = testRequest('GET', '/patients');
+          final response = await handler.router.call(request);
 
-        expect(response.statusCode, equals(200));
+          expect(response.statusCode, equals(200));
 
-        final body = jsonDecode(await response.readAsString()) as List;
-        expect(body, hasLength(1));
-        expect(body[0]['patientId'], equals(testPatientId));
-        // The BFF should have called people-context and injected fullName and birthDate/age
-        expect(body[0]['fullName'], isNotEmpty);
-      });
+          final body = jsonDecode(await response.readAsString()) as List;
+          expect(body, hasLength(1));
+          expect(body[0]['patientId'], equals(testPatientId));
+          // The BFF should have called people-context and injected fullName and birthDate/age
+          expect(body[0]['fullName'], isNotEmpty);
+        },
+      );
     });
 
     group('POST /patients', () {

@@ -39,29 +39,32 @@ void main() {
       expect(find.byType(HoverableRelationshipItem), findsNWidgets(2));
     });
 
-    testWidgets('displays error when showErrors is true and error is provided',
-        (tester) async {
-      final notifier = ValueNotifier<String?>(null);
-      addTearDown(notifier.dispose);
+    testWidgets(
+      'displays error when showErrors is true and error is provided',
+      (tester) async {
+        final notifier = ValueNotifier<String?>(null);
+        addTearDown(notifier.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RelationshipSelectionList(
-              parentescoLookup: testLookup,
-              relationshipNotifier: notifier,
-              error: 'Campo obrigatorio',
-              showErrors: true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: RelationshipSelectionList(
+                parentescoLookup: testLookup,
+                relationshipNotifier: notifier,
+                error: 'Campo obrigatorio',
+                showErrors: true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Campo obrigatorio'), findsOneWidget);
-    });
+        expect(find.text('Campo obrigatorio'), findsOneWidget);
+      },
+    );
 
-    testWidgets('does not display error when showErrors is false',
-        (tester) async {
+    testWidgets('does not display error when showErrors is false', (
+      tester,
+    ) async {
       final notifier = ValueNotifier<String?>(null);
       addTearDown(notifier.dispose);
 

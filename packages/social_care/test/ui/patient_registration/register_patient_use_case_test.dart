@@ -78,9 +78,13 @@ void main() {
 
     test('should fail when multiple PRs are provided', () async {
       // Manual member with PR relationship ID
-      final birthDateTs = switch (TimeStamp.fromIso('1965-08-20T00:00:00.000Z')) {
+      final birthDateTs = switch (TimeStamp.fromIso(
+        '1965-08-20T00:00:00.000Z',
+      )) {
         Success(:final value) => value,
-        Failure(:final error) => throw StateError('Failed to create TimeStamp: $error'),
+        Failure(:final error) => throw StateError(
+          'Failed to create TimeStamp: $error',
+        ),
       };
 
       final extraPrMember = switch (FamilyMember.create(
@@ -90,7 +94,9 @@ void main() {
         birthDate: birthDateTs,
       )) {
         Success(:final value) => value,
-        Failure(:final error) => throw StateError('Failed to create FamilyMember: $error'),
+        Failure(:final error) => throw StateError(
+          'Failed to create FamilyMember: $error',
+        ),
       };
 
       final intent = RegisterPatientIntent(

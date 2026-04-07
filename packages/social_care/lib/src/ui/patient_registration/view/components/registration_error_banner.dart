@@ -82,35 +82,42 @@ class RegistrationErrorBanner extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 38),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: errors.map((e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          margin: const EdgeInsets.only(top: 7, right: 10),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _red.withValues(alpha: 0.5),
+                  children: errors
+                      .map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                margin: const EdgeInsets.only(
+                                  top: 7,
+                                  right: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _red.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  e,
+                                  style: const TextStyle(
+                                    fontFamily: 'Playfair Display',
+                                    fontSize: 13,
+                                    fontStyle: FontStyle.italic,
+                                    color: _red,
+                                    height: 1.7,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Expanded(
-                          child: Text(
-                            e,
-                            style: const TextStyle(
-                              fontFamily: 'Playfair Display',
-                              fontSize: 13,
-                              fontStyle: FontStyle.italic,
-                              color: _red,
-                              height: 1.7,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                      )
+                      .toList(),
                 ),
               ),
             ],

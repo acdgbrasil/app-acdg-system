@@ -64,18 +64,14 @@ class StepAddressContent extends StatelessWidget {
                   ignoring: disabled,
                   child: Opacity(
                     opacity: disabled ? 0.3 : 1.0,
-                    child: StreetInput(
-                      streetController: formState.street,
-                    ),
+                    child: StreetInput(streetController: formState.street),
                   ),
                 ),
                 IgnorePointer(
                   ignoring: disabled,
                   child: Opacity(
                     opacity: disabled ? 0.3 : 1.0,
-                    child: NumberInput(
-                      numberController: formState.number,
-                    ),
+                    child: NumberInput(numberController: formState.number),
                   ),
                 ),
                 IgnorePointer(

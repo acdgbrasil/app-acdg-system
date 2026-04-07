@@ -7,7 +7,12 @@ final class NisInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController nisController;
 
-  const NisInput({super.key, this.errorText, this.validator, required this.nisController});
+  const NisInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.nisController,
+  });
 
   @override
   Widget build(BuildContext context) {

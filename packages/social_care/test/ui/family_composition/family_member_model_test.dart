@@ -65,7 +65,9 @@ void main() {
 
     test('copyWith updates requiredDocuments', () {
       final original = createModel(requiredDocuments: {'RG'});
-      final modified = original.copyWith(requiredDocuments: {'RG', 'CPF', 'CN'});
+      final modified = original.copyWith(
+        requiredDocuments: {'RG', 'CPF', 'CN'},
+      );
 
       expect(modified.requiredDocuments, {'RG', 'CPF', 'CN'});
       expect(original.requiredDocuments, {'RG'});

@@ -34,15 +34,25 @@ class FakeSocialCareBff implements SocialCareContract {
   @override
   Future<Result<List<PatientOverview>>> fetchPatients() async {
     await Future.delayed(delay);
-    return Success(_patients.values.map((p) => PatientOverview(
-      patientId: p.id.value,
-      personId: p.personId.value,
-      firstName: p.personalData?.firstName,
-      lastName: p.personalData?.lastName,
-      fullName: '${p.personalData?.firstName ?? ''} ${p.personalData?.lastName ?? ''}'.trim(),
-      primaryDiagnosis: p.diagnoses.isNotEmpty ? p.diagnoses.first.description : null,
-      memberCount: p.familyMembers.length,
-    )).toList());
+    return Success(
+      _patients.values
+          .map(
+            (p) => PatientOverview(
+              patientId: p.id.value,
+              personId: p.personId.value,
+              firstName: p.personalData?.firstName,
+              lastName: p.personalData?.lastName,
+              fullName:
+                  '${p.personalData?.firstName ?? ''} ${p.personalData?.lastName ?? ''}'
+                      .trim(),
+              primaryDiagnosis: p.diagnoses.isNotEmpty
+                  ? p.diagnoses.first.description
+                  : null,
+              memberCount: p.familyMembers.length,
+            ),
+          )
+          .toList(),
+    );
   }
 
   @override
@@ -61,7 +71,9 @@ class FakeSocialCareBff implements SocialCareContract {
   }
 
   @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async {
+  Future<Result<PatientRemote>> fetchPatientByPersonId(
+    PersonId personId,
+  ) async {
     await Future.delayed(delay);
     try {
       final p = _patients.values.firstWhere((p) => p.personId == personId);
@@ -75,7 +87,8 @@ class FakeSocialCareBff implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) async => const Success(null);
+    LookupId prRelationshipId,
+  ) async => const Success(null);
 
   @override
   Future<Result<void>> removeFamilyMember(

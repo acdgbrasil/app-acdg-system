@@ -22,10 +22,8 @@ final class CommunitySupportNetworkDetail {
       hasRelativeSupport: json['hasRelativeSupport'] as bool,
       hasNeighborSupport: json['hasNeighborSupport'] as bool,
       familyConflicts: json['familyConflicts'] as String,
-      patientParticipatesInGroups:
-          json['patientParticipatesInGroups'] as bool,
-      familyParticipatesInGroups:
-          json['familyParticipatesInGroups'] as bool,
+      patientParticipatesInGroups: json['patientParticipatesInGroups'] as bool,
+      familyParticipatesInGroups: json['familyParticipatesInGroups'] as bool,
       patientHasAccessToLeisure: json['patientHasAccessToLeisure'] as bool,
       facesDiscrimination: json['facesDiscrimination'] as bool,
     );

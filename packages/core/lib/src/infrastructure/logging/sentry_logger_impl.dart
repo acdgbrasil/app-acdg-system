@@ -14,7 +14,7 @@ import 'sentry_client_adapter.dart';
 /// the logging abstraction — they never import Sentry directly.
 class SentryLoggerImpl {
   SentryLoggerImpl({required SentryClientAdapter sentryClient})
-      : _sentryClient = sentryClient;
+    : _sentryClient = sentryClient;
 
   final SentryClientAdapter _sentryClient;
 
@@ -52,9 +52,9 @@ class SentryLoggerImpl {
   }
 
   int _levelToInt(LogLevel level) => switch (level) {
-        LogLevel.info => 800,
-        LogLevel.warning => 900,
-        LogLevel.error => 1000,
-        LogLevel.fatal => 1200,
-      };
+    LogLevel.info => 800,
+    LogLevel.warning => 900,
+    LogLevel.error => 1000,
+    LogLevel.fatal => 1200,
+  };
 }

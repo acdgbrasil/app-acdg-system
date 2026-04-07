@@ -54,8 +54,7 @@ class FamilyTable extends StatelessWidget {
           DataColumn(label: Text('')),
         ],
         rows: [
-          for (var i = 0; i < members.length; i++)
-            _buildRow(i, members[i]),
+          for (var i = 0; i < members.length; i++) _buildRow(i, members[i]),
         ],
       ),
     );
@@ -73,87 +72,101 @@ class FamilyTable extends StatelessWidget {
       }),
       cells: [
         // Name + badges
-        DataCell(Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              member.displayName,
-              style: TextStyle(
-                fontFamily: 'Satoshi',
-                fontSize: 13,
-                fontWeight: isPr ? FontWeight.w500 : FontWeight.w400,
-              ),
-            ),
-            if (isPr) ...[
-              const SizedBox(width: 6),
-              const AcdgBadge(
-                label: FamilyCompositionLn10.badgeReference,
-                color: AppColors.primary,
-              ),
-            ],
-            if (isCg && !isPr) ...[
-              const SizedBox(width: 6),
-              const AcdgBadge(
-                label: FamilyCompositionLn10.badgeCaregiver,
-                color: AppColors.backgroundDark,
-              ),
-            ],
-          ],
-        )),
-        // Age
-        DataCell(Text(
-          '${member.age} ${FamilyCompositionLn10.ageYears}',
-          style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
-        )),
-        // Sex
-        DataCell(Text(
-          member.sex,
-          style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
-        )),
-        // Relationship
-        DataCell(Text(
-          member.relationshipLabel,
-          style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
-        )),
-        // Resides
-        DataCell(Text(
-          isPr
-              ? '—'
-              : member.residesWithPatient
-                  ? FamilyCompositionLn10.residesYes
-                  : FamilyCompositionLn10.residesNo,
-          style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
-        )),
-        // PcD
-        DataCell(Text(
-          member.hasDisability
-              ? FamilyCompositionLn10.residesYes
-              : FamilyCompositionLn10.residesNo,
-          style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
-        )),
-        // Documents
-        DataCell(Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (member.requiredDocuments.isEmpty && isPr)
-              const Text(
-                FamilyCompositionLn10.docsNone,
+        DataCell(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                member.displayName,
                 style: TextStyle(
-                  fontFamily: 'Playfair Display',
-                  fontStyle: FontStyle.italic,
-                  fontSize: 12,
-                  color: AppColors.textMuted,
+                  fontFamily: 'Satoshi',
+                  fontSize: 13,
+                  fontWeight: isPr ? FontWeight.w500 : FontWeight.w400,
                 ),
-              )
-            else
-              for (final doc in _docs)
-                FamilyTableDocCheckbox(
-                  label: doc,
-                  checked: member.requiredDocuments.contains(doc),
-                  enabled: false,
+              ),
+              if (isPr) ...[
+                const SizedBox(width: 6),
+                const AcdgBadge(
+                  label: FamilyCompositionLn10.badgeReference,
+                  color: AppColors.primary,
                 ),
-          ],
-        )),
+              ],
+              if (isCg && !isPr) ...[
+                const SizedBox(width: 6),
+                const AcdgBadge(
+                  label: FamilyCompositionLn10.badgeCaregiver,
+                  color: AppColors.backgroundDark,
+                ),
+              ],
+            ],
+          ),
+        ),
+        // Age
+        DataCell(
+          Text(
+            '${member.age} ${FamilyCompositionLn10.ageYears}',
+            style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
+          ),
+        ),
+        // Sex
+        DataCell(
+          Text(
+            member.sex,
+            style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
+          ),
+        ),
+        // Relationship
+        DataCell(
+          Text(
+            member.relationshipLabel,
+            style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
+          ),
+        ),
+        // Resides
+        DataCell(
+          Text(
+            isPr
+                ? '—'
+                : member.residesWithPatient
+                ? FamilyCompositionLn10.residesYes
+                : FamilyCompositionLn10.residesNo,
+            style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
+          ),
+        ),
+        // PcD
+        DataCell(
+          Text(
+            member.hasDisability
+                ? FamilyCompositionLn10.residesYes
+                : FamilyCompositionLn10.residesNo,
+            style: const TextStyle(fontFamily: 'Satoshi', fontSize: 13),
+          ),
+        ),
+        // Documents
+        DataCell(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (member.requiredDocuments.isEmpty && isPr)
+                const Text(
+                  FamilyCompositionLn10.docsNone,
+                  style: TextStyle(
+                    fontFamily: 'Playfair Display',
+                    fontStyle: FontStyle.italic,
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                )
+              else
+                for (final doc in _docs)
+                  FamilyTableDocCheckbox(
+                    label: doc,
+                    checked: member.requiredDocuments.contains(doc),
+                    enabled: false,
+                  ),
+            ],
+          ),
+        ),
         // Actions
         DataCell(
           isPr

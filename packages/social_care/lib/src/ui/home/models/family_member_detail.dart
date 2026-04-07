@@ -28,11 +28,11 @@ final class FamilyMemberDetail {
 
   /// Raw JSON access for field extraction.
   Map<String, dynamic> get json => {
-        'id': id,
-        'relationshipId': relationshipId,
-        'isPrimaryCaregiver': isPrimaryCaregiver,
-        'residesWithPatient': residesWithPatient,
-        'hasDisability': hasDisability,
-        'birthDate': birthDate,
-      };
+    'id': id,
+    'relationshipId': relationshipId,
+    'isPrimaryCaregiver': isPrimaryCaregiver,
+    'residesWithPatient': residesWithPatient,
+    'hasDisability': hasDisability,
+    'birthDate': birthDate,
+  };
 }

@@ -22,11 +22,7 @@ class RegistrationSectionTitle extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Divider(
-          color: AppColors.inputLine,
-          thickness: 1,
-          height: 1,
-        ),
+        const Divider(color: AppColors.inputLine, thickness: 1, height: 1),
         const SizedBox(height: 24),
       ],
     );

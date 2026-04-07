@@ -7,7 +7,12 @@ final class DiagnosisDateInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController dateController;
 
-  const DiagnosisDateInput({super.key, this.errorText, this.validator, required this.dateController});
+  const DiagnosisDateInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.dateController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +30,10 @@ final class DiagnosisDateInput extends StatelessWidget {
                 text: ReferencePersonLn10.diagnosisDateLabel,
                 style: TextStyle(color: Colors.black),
                 children: [
-                  TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),

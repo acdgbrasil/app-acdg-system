@@ -33,8 +33,7 @@ class FamilyCompositionPage extends ConsumerStatefulWidget {
       _FamilyCompositionPageState();
 }
 
-class _FamilyCompositionPageState
-    extends ConsumerState<FamilyCompositionPage> {
+class _FamilyCompositionPageState extends ConsumerState<FamilyCompositionPage> {
   late final FamilyCompositionViewModel _vm;
 
   @override
@@ -66,7 +65,11 @@ class _FamilyCompositionPageState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, color: AppColors.danger, size: 48),
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppColors.danger,
+                      size: 48,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'Erro ao carregar dados do paciente',
@@ -82,7 +85,9 @@ class _FamilyCompositionPageState
                       onPressed: () => vm.loadPatientCommand.execute(),
                       icon: const Icon(Icons.refresh),
                       label: const Text('Tentar novamente'),
-                      style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -127,7 +132,10 @@ class _FamilyCompositionPageState
 
   // ── Dialog triggers ──
 
-  void _showAddModal(FamilyCompositionViewModel vm, {FamilyMemberModel? existing}) {
+  void _showAddModal(
+    FamilyCompositionViewModel vm, {
+    FamilyMemberModel? existing,
+  }) {
     showDialog<void>(
       context: context,
       barrierColor: AppColors.backgroundDark.withValues(alpha: 0.55),
@@ -135,12 +143,15 @@ class _FamilyCompositionPageState
         parentescoLookup: vm.parentescoLookup,
         existing: existing != null
             ? AddMemberResult(
-                name: existing.displayName, birthDate: existing.birthDate,
-                sex: existing.sex, relationshipCode: existing.relationshipCode,
+                name: existing.displayName,
+                birthDate: existing.birthDate,
+                sex: existing.sex,
+                relationshipCode: existing.relationshipCode,
                 residesWithPatient: existing.residesWithPatient,
                 hasDisability: existing.hasDisability,
                 isPrimaryCaregiver: existing.isPrimaryCaregiver,
-                requiredDocuments: existing.requiredDocuments)
+                requiredDocuments: existing.requiredDocuments,
+              )
             : null,
         onSave: (r) => vm.handleModalSave(r, existing: existing),
       ),
@@ -149,15 +160,25 @@ class _FamilyCompositionPageState
 
   void _showRemoveDialog(FamilyCompositionViewModel vm, FamilyMemberModel m) {
     if (m.isReferencePerson) return;
-    ConfirmRemoveDialog.show(context, member: m, onConfirm: () => vm.handleRemove(m));
+    ConfirmRemoveDialog.show(
+      context,
+      member: m,
+      onConfirm: () => vm.handleRemove(m),
+    );
   }
 
-  void _showCaregiverDialog(FamilyCompositionViewModel vm, FamilyMemberModel m) {
+  void _showCaregiverDialog(
+    FamilyCompositionViewModel vm,
+    FamilyMemberModel m,
+  ) {
     if (m.isReferencePerson) return;
     if (vm.needsCaregiverConfirmation(m)) {
-      ConfirmCaregiverDialog.show(context,
-          currentCaregiver: vm.currentCaregiver!, newCandidate: m,
-          onConfirm: () => vm.handleCaregiverToggle(m));
+      ConfirmCaregiverDialog.show(
+        context,
+        currentCaregiver: vm.currentCaregiver!,
+        newCandidate: m,
+        onConfirm: () => vm.handleCaregiverToggle(m),
+      );
     } else {
       vm.handleCaregiverToggle(m);
     }

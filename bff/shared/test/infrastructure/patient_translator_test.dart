@@ -4,15 +4,18 @@ import 'package:test/test.dart';
 void main() {
   // ─── Shared IDs ─────────────────────────────────────────────────────
 
-  final patientId =
-      PatientId.create('550e8400-e29b-41d4-a716-000000000001').valueOrNull!;
-  final personId =
-      PersonId.create('550e8400-e29b-41d4-a716-000000000002').valueOrNull!;
-  final prRelationshipId =
-      LookupId.create('550e8400-e29b-41d4-a716-000000000010').valueOrNull!;
-  final professionalId =
-      ProfessionalId.create('550e8400-e29b-41d4-a716-000000000020')
-          .valueOrNull!;
+  final patientId = PatientId.create(
+    '550e8400-e29b-41d4-a716-000000000001',
+  ).valueOrNull!;
+  final personId = PersonId.create(
+    '550e8400-e29b-41d4-a716-000000000002',
+  ).valueOrNull!;
+  final prRelationshipId = LookupId.create(
+    '550e8400-e29b-41d4-a716-000000000010',
+  ).valueOrNull!;
+  final professionalId = ProfessionalId.create(
+    '550e8400-e29b-41d4-a716-000000000020',
+  ).valueOrNull!;
 
   // ─── Critical 1: CNS serialization round-trip ───────────────────────
 
@@ -27,8 +30,11 @@ void main() {
       final docs = CivilDocuments.create(cns: cns).valueOrNull!;
       final json = PatientTranslator.civilDocumentsToJson(docs);
 
-      expect(json.containsKey('cns'), isTrue,
-          reason: 'civilDocumentsToJson deve incluir o campo cns');
+      expect(
+        json.containsKey('cns'),
+        isTrue,
+        reason: 'civilDocumentsToJson deve incluir o campo cns',
+      );
 
       final cnsJson = json['cns'] as Map<String, dynamic>;
       expect(cnsJson['number'], '700000000000005');
@@ -94,9 +100,9 @@ void main() {
 
   group('appointmentToJson — deve incluir id', () {
     test('Deve serializar o id do appointment', () {
-      final appointmentId =
-          AppointmentId.create('550e8400-e29b-41d4-a716-000000000030')
-              .valueOrNull!;
+      final appointmentId = AppointmentId.create(
+        '550e8400-e29b-41d4-a716-000000000030',
+      ).valueOrNull!;
       final appointment = SocialCareAppointment.create(
         id: appointmentId,
         date: TimeStamp.now,
@@ -108,16 +114,19 @@ void main() {
 
       final json = PatientTranslator.appointmentToJson(appointment);
 
-      expect(json['id'], appointmentId.value,
-          reason: 'appointmentToJson deve incluir id');
+      expect(
+        json['id'],
+        appointmentId.value,
+        reason: 'appointmentToJson deve incluir id',
+      );
     });
   });
 
   group('violationReportToJson — deve incluir id', () {
     test('Deve serializar o id do violation report', () {
-      final reportId =
-          ViolationReportId.create('550e8400-e29b-41d4-a716-000000000040')
-              .valueOrNull!;
+      final reportId = ViolationReportId.create(
+        '550e8400-e29b-41d4-a716-000000000040',
+      ).valueOrNull!;
       final report = RightsViolationReport.create(
         id: reportId,
         reportDate: TimeStamp.fromIso('2025-01-01T00:00:00.000Z').valueOrNull!,
@@ -128,8 +137,11 @@ void main() {
 
       final json = PatientTranslator.violationReportToJson(report);
 
-      expect(json['id'], reportId.value,
-          reason: 'violationReportToJson deve incluir id');
+      expect(
+        json['id'],
+        reportId.value,
+        reason: 'violationReportToJson deve incluir id',
+      );
     });
   });
 
@@ -145,8 +157,7 @@ void main() {
       final history = PlacementHistory(
         familyId: patientId,
         individualPlacements: [registry],
-        collectiveSituations:
-            const CollectiveSituations(homeLossReport: null),
+        collectiveSituations: const CollectiveSituations(homeLossReport: null),
         separationChecklist: const SeparationChecklist(
           adultInPrison: false,
           adolescentInInternment: false,
@@ -156,16 +167,19 @@ void main() {
       final json = PatientTranslator.placementHistoryToJson(history);
       final registries = json['registries'] as List;
 
-      expect(registries.first['id'], registry.id,
-          reason: 'placementHistoryToJson deve incluir id em cada registry');
+      expect(
+        registries.first['id'],
+        registry.id,
+        reason: 'placementHistoryToJson deve incluir id em cada registry',
+      );
     });
   });
 
   group('referralToJson — deve incluir id e status', () {
     test('Deve serializar id e status do referral', () {
-      final referralId =
-          ReferralId.create('550e8400-e29b-41d4-a716-000000000060')
-              .valueOrNull!;
+      final referralId = ReferralId.create(
+        '550e8400-e29b-41d4-a716-000000000060',
+      ).valueOrNull!;
       final referral = Referral.create(
         id: referralId,
         date: TimeStamp.fromIso('2025-01-01T00:00:00.000Z').valueOrNull!,
@@ -177,10 +191,16 @@ void main() {
 
       final json = PatientTranslator.referralToJson(referral);
 
-      expect(json['id'], referralId.value,
-          reason: 'referralToJson deve incluir id');
-      expect(json['status'], 'PENDING',
-          reason: 'referralToJson deve incluir status');
+      expect(
+        json['id'],
+        referralId.value,
+        reason: 'referralToJson deve incluir id',
+      );
+      expect(
+        json['status'],
+        'PENDING',
+        reason: 'referralToJson deve incluir status',
+      );
     });
   });
 
@@ -188,11 +208,12 @@ void main() {
 
   group('RightsViolationReport — violationTypeId', () {
     test('Deve criar report com violationTypeId', () {
-      final violationTypeId =
-          LookupId.create('550e8400-e29b-41d4-a716-000000000070').valueOrNull!;
-      final reportId =
-          ViolationReportId.create('550e8400-e29b-41d4-a716-000000000040')
-              .valueOrNull!;
+      final violationTypeId = LookupId.create(
+        '550e8400-e29b-41d4-a716-000000000070',
+      ).valueOrNull!;
+      final reportId = ViolationReportId.create(
+        '550e8400-e29b-41d4-a716-000000000040',
+      ).valueOrNull!;
 
       final result = RightsViolationReport.create(
         id: reportId,
@@ -208,11 +229,12 @@ void main() {
     });
 
     test('Deve serializar violationTypeId no JSON', () {
-      final violationTypeId =
-          LookupId.create('550e8400-e29b-41d4-a716-000000000070').valueOrNull!;
-      final reportId =
-          ViolationReportId.create('550e8400-e29b-41d4-a716-000000000040')
-              .valueOrNull!;
+      final violationTypeId = LookupId.create(
+        '550e8400-e29b-41d4-a716-000000000070',
+      ).valueOrNull!;
+      final reportId = ViolationReportId.create(
+        '550e8400-e29b-41d4-a716-000000000040',
+      ).valueOrNull!;
 
       final report = RightsViolationReport.create(
         id: reportId,
@@ -250,9 +272,9 @@ void main() {
     });
 
     test('Deve aceitar violationTypeId como null', () {
-      final reportId =
-          ViolationReportId.create('550e8400-e29b-41d4-a716-000000000040')
-              .valueOrNull!;
+      final reportId = ViolationReportId.create(
+        '550e8400-e29b-41d4-a716-000000000040',
+      ).valueOrNull!;
 
       final report = RightsViolationReport.create(
         id: reportId,
@@ -274,9 +296,9 @@ void main() {
 
   group('PatientTranslator.toJson / fromJson — round-trip completo', () {
     test('Deve preservar IDs de appointments no round-trip', () {
-      final appointmentId =
-          AppointmentId.create('550e8400-e29b-41d4-a716-000000000030')
-              .valueOrNull!;
+      final appointmentId = AppointmentId.create(
+        '550e8400-e29b-41d4-a716-000000000030',
+      ).valueOrNull!;
       final appointment = SocialCareAppointment.create(
         id: appointmentId,
         date: TimeStamp.now,
@@ -304,9 +326,9 @@ void main() {
     });
 
     test('Deve preservar IDs de referrals e status no round-trip', () {
-      final referralId =
-          ReferralId.create('550e8400-e29b-41d4-a716-000000000060')
-              .valueOrNull!;
+      final referralId = ReferralId.create(
+        '550e8400-e29b-41d4-a716-000000000060',
+      ).valueOrNull!;
       final referral = Referral.create(
         id: referralId,
         date: TimeStamp.fromIso('2025-01-01T00:00:00.000Z').valueOrNull!,

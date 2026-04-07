@@ -5,18 +5,14 @@ import 'cpf.dart';
 
 /// Value Object para o Cartão Nacional de Saúde (CNS).
 final class Cns with Equatable {
-  const Cns._({
-    required this.number,
-    this.cpf,
-    this.qrCode,
-  });
+  const Cns._({required this.number, this.cpf, this.qrCode});
 
   /// O número de 15 dígitos do CNS.
   final String number;
-  
+
   /// Opcional: O CPF associado ao cartão CNS.
   final Cpf? cpf;
-  
+
   /// Opcional: O QRCode associado ao CNS.
   final String? qrCode;
 
@@ -29,7 +25,9 @@ final class Cns with Equatable {
     String? qrCode,
   }) {
     if (number == null || number.normalizedTrim().isEmpty) {
-      return Failure(_buildError('CNS-001', 'Número do CNS não pode ser vazio.'));
+      return Failure(
+        _buildError('CNS-001', 'Número do CNS não pode ser vazio.'),
+      );
     }
 
     final digits = number.replaceAll(RegExp(r'\D'), '');
@@ -42,7 +40,10 @@ final class Cns with Equatable {
 
     if (!RegExp(r'^[12789]').hasMatch(digits[0])) {
       return Failure(
-        _buildError('CNS-003', 'Primeiro dígito do CNS deve ser 1, 2, 7, 8 ou 9.'),
+        _buildError(
+          'CNS-003',
+          'Primeiro dígito do CNS deve ser 1, 2, 7, 8 ou 9.',
+        ),
       );
     }
 
@@ -52,11 +53,9 @@ final class Cns with Equatable {
       );
     }
 
-    return Success(Cns._(
-      number: digits,
-      cpf: cpf,
-      qrCode: qrCode?.nullIfEmptyTrimmed(),
-    ));
+    return Success(
+      Cns._(number: digits, cpf: cpf, qrCode: qrCode?.nullIfEmptyTrimmed()),
+    );
   }
 
   static bool _isValidCns(String cns) {

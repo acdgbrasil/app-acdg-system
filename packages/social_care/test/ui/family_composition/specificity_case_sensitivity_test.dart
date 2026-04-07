@@ -22,70 +22,103 @@ void main() {
 
     // Simula API de Lookups retornando IDs em MAIÚSCULAS
     fakeLookup.seed('dominio_parentesco', [
-      const LookupItem(id: '00000000-0000-0000-0000-000000000001', codigo: 'PESSOA_REFERENCIA', descricao: 'Pessoa de Referência'),
+      const LookupItem(
+        id: '00000000-0000-0000-0000-000000000001',
+        codigo: 'PESSOA_REFERENCIA',
+        descricao: 'Pessoa de Referência',
+      ),
     ]);
 
     fakeLookup.seed('dominio_tipo_identidade', [
-      const LookupItem(id: specificityIdUpper, codigo: 'ASSENTADO', descricao: 'Assentado(a)'),
+      const LookupItem(
+        id: specificityIdUpper,
+        codigo: 'ASSENTADO',
+        descricao: 'Assentado(a)',
+      ),
     ]);
 
     final pId = PatientId.create(patientIdStr).valueOrNull!;
 
     // Simula Paciente vindo do banco com ID normalizado (lowercase pelo BaseUuid)
-    await fakeRepo.registerPatient(Patient.reconstitute(
-      id: pId,
-      personId: PersonId.create('00000000-0000-0000-0000-000000000200').valueOrNull!,
-      prRelationshipId: LookupId.create('00000000-0000-0000-0000-000000000001').valueOrNull!,
-      version: 1,
-      socialIdentity: SocialIdentity.create(
-        typeId: LookupId.create(specificityIdLower).valueOrNull!,
-      ).valueOrNull!,
-    ));
+    await fakeRepo.registerPatient(
+      Patient.reconstitute(
+        id: pId,
+        personId: PersonId.create(
+          '00000000-0000-0000-0000-000000000200',
+        ).valueOrNull!,
+        prRelationshipId: LookupId.create(
+          '00000000-0000-0000-0000-000000000001',
+        ).valueOrNull!,
+        version: 1,
+        socialIdentity: SocialIdentity.create(
+          typeId: LookupId.create(specificityIdLower).valueOrNull!,
+        ).valueOrNull!,
+      ),
+    );
 
     viewModel = FamilyCompositionViewModel(
       patientId: patientIdStr,
       getPatientUseCase: GetPatientUseCase(patientRepository: fakeRepo),
-      addFamilyMemberUseCase: AddFamilyMemberUseCase(patientRepository: fakeRepo),
-      removeFamilyMemberUseCase: RemoveFamilyMemberUseCase(patientRepository: fakeRepo),
-      updatePrimaryCaregiverUseCase: UpdatePrimaryCaregiverUseCase(patientRepository: fakeRepo),
-      updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(patientRepository: fakeRepo),
+      addFamilyMemberUseCase: AddFamilyMemberUseCase(
+        patientRepository: fakeRepo,
+      ),
+      removeFamilyMemberUseCase: RemoveFamilyMemberUseCase(
+        patientRepository: fakeRepo,
+      ),
+      updatePrimaryCaregiverUseCase: UpdatePrimaryCaregiverUseCase(
+        patientRepository: fakeRepo,
+      ),
+      updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(
+        patientRepository: fakeRepo,
+      ),
       lookupRepository: fakeLookup,
     );
   });
 
   group('FamilyCompositionViewModel: Case Sensitivity Regression', () {
-    test('BUG: selectedId MUST match a lookup item ID regardless of casing', () async {
-      // 1. Carregar lookups e paciente
-      // O ViewModel chama _loadLookups no construtor, mas é async. 
-      // Precisamos garantir que terminou.
-      await Future<void>.delayed(Duration.zero);
-      await viewModel.loadPatientCommand.execute();
+    test(
+      'BUG: selectedId MUST match a lookup item ID regardless of casing',
+      () async {
+        // 1. Carregar lookups e paciente
+        // O ViewModel chama _loadLookups no construtor, mas é async.
+        // Precisamos garantir que terminou.
+        await Future<void>.delayed(Duration.zero);
+        await viewModel.loadPatientCommand.execute();
 
-      final selectedId = viewModel.selectedSpecificityId;
-      final lookupItems = viewModel.specificityLookup;
+        final selectedId = viewModel.selectedSpecificityId;
+        final lookupItems = viewModel.specificityLookup;
 
+        // O teste de regressão: Deve existir um item na lista cujo ID seja IGUAL ao selecionado.
+        // Se um for lower e outro upper, isso falha, quebrando o "check" na UI.
+        final hasMatch = lookupItems.any((item) => item.id == selectedId);
 
-      // O teste de regressão: Deve existir um item na lista cujo ID seja IGUAL ao selecionado.
-      // Se um for lower e outro upper, isso falha, quebrando o "check" na UI.
-      final hasMatch = lookupItems.any((item) => item.id == selectedId);
+        expect(
+          hasMatch,
+          isTrue,
+          reason:
+              'A UI faz comparação estrita (item.id == selectedId). '
+              'Se os IDs não forem normalizados para o mesmo case, o check não aparecerá.',
+        );
+      },
+    );
 
-      expect(
-        hasMatch, 
-        isTrue, 
-        reason: 'A UI faz comparação estrita (item.id == selectedId). '
-                'Se os IDs não forem normalizados para o mesmo case, o check não aparecerá.'
-      );
-    });
+    test(
+      'BUG: canSave MUST remain false after selecting logically identical ID (case-insensitive)',
+      () async {
+        await Future<void>.delayed(Duration.zero);
+        await viewModel.loadPatientCommand.execute();
 
-    test('BUG: canSave MUST remain false after selecting logically identical ID (case-insensitive)', () async {
-      await Future<void>.delayed(Duration.zero);
-      await viewModel.loadPatientCommand.execute();
+        // O ID original é lowercase (vindo do domínio)
+        // O usuário clica em um item que veio em UPPERCASE da API de Lookups
+        viewModel.updateSpecificity(specificityIdUpper);
 
-      // O ID original é lowercase (vindo do domínio)
-      // O usuário clica em um item que veio em UPPERCASE da API de Lookups
-      viewModel.updateSpecificity(specificityIdUpper);
-      
-      expect(viewModel.canSave, isFalse, reason: 'Selecionar o mesmo ID (mesmo que com casing diferente) não deve sujar o estado');
-    });
+        expect(
+          viewModel.canSave,
+          isFalse,
+          reason:
+              'Selecionar o mesmo ID (mesmo que com casing diferente) não deve sujar o estado',
+        );
+      },
+    );
   });
 }

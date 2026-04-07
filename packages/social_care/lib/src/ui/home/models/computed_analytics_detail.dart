@@ -26,13 +26,11 @@ final class ComputedAnalyticsDetail {
       ageProfile: AgeProfileDetail.fromJson(
         json['ageProfile'] as Map<String, dynamic>,
       ),
-      educationalVulnerabilities:
-          json['educationalVulnerabilities'] != null
-              ? EducationalVulnerabilitiesDetail.fromJson(
-                  json['educationalVulnerabilities']
-                      as Map<String, dynamic>,
-                )
-              : null,
+      educationalVulnerabilities: json['educationalVulnerabilities'] != null
+          ? EducationalVulnerabilitiesDetail.fromJson(
+              json['educationalVulnerabilities'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 }
@@ -72,8 +70,7 @@ final class FinancialAnalyticsDetail {
       totalWorkIncome: (json['totalWorkIncome'] as num).toDouble(),
       perCapitaWorkIncome: (json['perCapitaWorkIncome'] as num).toDouble(),
       totalGlobalIncome: (json['totalGlobalIncome'] as num).toDouble(),
-      perCapitaGlobalIncome:
-          (json['perCapitaGlobalIncome'] as num).toDouble(),
+      perCapitaGlobalIncome: (json['perCapitaGlobalIncome'] as num).toDouble(),
     );
   }
 }
@@ -133,9 +130,7 @@ final class EducationalVulnerabilitiesDetail {
     required this.illiteracy60Plus,
   });
 
-  factory EducationalVulnerabilitiesDetail.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory EducationalVulnerabilitiesDetail.fromJson(Map<String, dynamic> json) {
     return EducationalVulnerabilitiesDetail(
       notInSchool0to5: json['notInSchool0to5'] as int,
       notInSchool6to14: json['notInSchool6to14'] as int,

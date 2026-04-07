@@ -7,7 +7,12 @@ final class CepInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextEditingController cepController;
 
-  const CepInput({super.key, this.errorText, this.validator, required this.cepController});
+  const CepInput({
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.cepController,
+  });
 
   @override
   Widget build(BuildContext context) {

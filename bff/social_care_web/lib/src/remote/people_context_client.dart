@@ -12,17 +12,18 @@ class PeopleContextClient {
     required String accessToken,
     required String actorId,
     Dio? dio,
-  }) : _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: baseUrl,
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer $accessToken',
-                  'X-Actor-Id': actorId,
-                },
-              ),
-            );
+  }) : _dio =
+           dio ??
+           Dio(
+             BaseOptions(
+               baseUrl: baseUrl,
+               headers: {
+                 'Content-Type': 'application/json',
+                 'Authorization': 'Bearer $accessToken',
+                 'X-Actor-Id': actorId,
+               },
+             ),
+           );
 
   final Dio _dio;
 

@@ -43,11 +43,17 @@ class FamilyCompositionContent extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.danger.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.danger.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 20),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.danger,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -77,25 +83,29 @@ class FamilyCompositionContent extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 28),
             child: Divider(color: AppColors.inputLine),
           ),
-          LayoutBuilder(builder: (context, c) {
-            final spec = FamilyCompositionSpecificities(
-              items: viewModel.specificityLookup,
-              selectedId: viewModel.selectedSpecificityId,
-              onSelected: viewModel.updateSpecificity,
-            );
-            final age = AgeProfilePanel(ageProfile: viewModel.ageProfile);
-            return c.maxWidth > 600
-                ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Expanded(child: spec),
-                    const SizedBox(width: 40),
-                    Expanded(child: age),
-                  ])
-                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    spec,
-                    const SizedBox(height: 28),
-                    age,
-                  ]);
-          }),
+          LayoutBuilder(
+            builder: (context, c) {
+              final spec = FamilyCompositionSpecificities(
+                items: viewModel.specificityLookup,
+                selectedId: viewModel.selectedSpecificityId,
+                onSelected: viewModel.updateSpecificity,
+              );
+              final age = AgeProfilePanel(ageProfile: viewModel.ageProfile);
+              return c.maxWidth > 600
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: spec),
+                        const SizedBox(width: 40),
+                        Expanded(child: age),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [spec, const SizedBox(height: 28), age],
+                    );
+            },
+          ),
           const SizedBox(height: 32),
         ],
       ),

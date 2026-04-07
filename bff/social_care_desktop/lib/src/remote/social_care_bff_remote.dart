@@ -14,7 +14,8 @@ class SocialCareBffRemote implements SocialCareContract {
     TokenProvider? tokenProvider,
     String? authToken,
     Dio? dio,
-  }) : _dio = dio ??
+  }) : _dio =
+           dio ??
            Dio(
              BaseOptions(
                baseUrl: baseUrl,
@@ -123,7 +124,9 @@ class SocialCareBffRemote implements SocialCareContract {
   }
 
   @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async {
+  Future<Result<PatientRemote>> fetchPatientByPersonId(
+    PersonId personId,
+  ) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/patients/by-person/${personId.value}',
@@ -144,14 +147,17 @@ class SocialCareBffRemote implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) async {
+    LookupId prRelationshipId,
+  ) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
         'prRelationshipId': prRelationshipId.value,
       };
 
-      debugPrint('[BFF Remote] addFamilyMember POST: /api/v1/patients/${patientId.value}/family-members');
+      debugPrint(
+        '[BFF Remote] addFamilyMember POST: /api/v1/patients/${patientId.value}/family-members',
+      );
       debugPrint('[BFF Remote] Payload: $payload');
 
       final response = await _dio.post(

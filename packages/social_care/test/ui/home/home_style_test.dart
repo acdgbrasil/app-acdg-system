@@ -7,9 +7,9 @@ String _packageRoot() {
   // When run from monorepo root, CWD won't contain pubspec.yaml for social_care.
   final cwd = Directory.current.path;
   if (File(p.join(cwd, 'pubspec.yaml')).existsSync() &&
-      File(p.join(cwd, 'pubspec.yaml'))
-          .readAsStringSync()
-          .contains('name: social_care')) {
+      File(
+        p.join(cwd, 'pubspec.yaml'),
+      ).readAsStringSync().contains('name: social_care')) {
     return cwd;
   }
   // Fallback: resolve from this test file's known location.
@@ -23,12 +23,19 @@ void main() {
     );
 
     test('Home components should not use hardcoded Colors', () {
-      final files = homeDir.listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
-      
+      final files = homeDir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'));
+
       for (final file in files) {
         final content = file.readAsStringSync();
-        expect(content.contains(RegExp(r'Color\(0x[0-9a-fA-F]+\)')), isFalse, 
-          reason: 'Hardcoded Color found in ${file.path}. Use AppColors from design_system.');
+        expect(
+          content.contains(RegExp(r'Color\(0x[0-9a-fA-F]+\)')),
+          isFalse,
+          reason:
+              'Hardcoded Color found in ${file.path}. Use AppColors from design_system.',
+        );
       }
     });
 
@@ -37,8 +44,12 @@ void main() {
       if (!file.existsSync()) return;
 
       final content = file.readAsStringSync();
-      expect(content.contains('context.read<HomeViewModel>()'), isFalse, 
-        reason: 'Legacy Provider usage detected. Use ConsumerWidget and ref.watch/read.');
+      expect(
+        content.contains('context.read<HomeViewModel>()'),
+        isFalse,
+        reason:
+            'Legacy Provider usage detected. Use ConsumerWidget and ref.watch/read.',
+      );
     });
   });
 }

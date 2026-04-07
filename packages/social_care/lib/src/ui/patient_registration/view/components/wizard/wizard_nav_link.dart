@@ -17,14 +17,15 @@ class WizardNavLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final textWidget = Text(
       label,
-      style: const TextStyle(
-        fontFamily: 'Satoshi',
-        fontWeight: FontWeight.w700,
-        fontSize: 16,
-      ).copyWith(
-        color: AppColors.textPrimary,
-        decoration: isActive ? TextDecoration.underline : null,
-      ),
+      style:
+          const TextStyle(
+            fontFamily: 'Satoshi',
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ).copyWith(
+            color: AppColors.textPrimary,
+            decoration: isActive ? TextDecoration.underline : null,
+          ),
     );
 
     if (onTap != null) {

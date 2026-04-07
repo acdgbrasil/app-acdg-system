@@ -9,10 +9,10 @@ final class PhoneNumberInput extends StatelessWidget {
   final TextEditingController phoneNumberController;
 
   const PhoneNumberInput({
-    super.key, 
-    this.errorText, 
-    this.validator, 
-    required this.phoneNumberController
+    super.key,
+    this.errorText,
+    this.validator,
+    required this.phoneNumberController,
   });
 
   @override
@@ -20,12 +20,15 @@ final class PhoneNumberInput extends StatelessWidget {
     final phoneMaskFormatter = PhoneMask();
 
     return ListenableBuilder(
-      listenable: phoneNumberController, 
+      listenable: phoneNumberController,
       builder: (context, child) {
         return TextFormField(
           controller: phoneNumberController,
           validator: validator,
-          keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
+          keyboardType: const TextInputType.numberWithOptions(
+            signed: false,
+            decimal: false,
+          ),
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             phoneMaskFormatter,

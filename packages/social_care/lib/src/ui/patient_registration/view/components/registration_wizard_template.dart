@@ -39,10 +39,7 @@ class RegistrationWizardTemplate extends StatelessWidget {
           children: [
             WizardNavBar(padding: horizontalPadding),
             WizardHeader(padding: horizontalPadding),
-            WizardStepper(
-              currentStep: currentStep,
-              padding: horizontalPadding,
-            ),
+            WizardStepper(currentStep: currentStep, padding: horizontalPadding),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),

@@ -39,15 +39,15 @@ class AgeProfilePanel extends StatelessWidget {
         const Divider(height: 1, color: AppColors.inputLine),
         const SizedBox(height: 12),
         Table(
-          columnWidths: const {
-            0: FlexColumnWidth(),
-            1: IntrinsicColumnWidth(),
-          },
+          columnWidths: const {0: FlexColumnWidth(), 1: IntrinsicColumnWidth()},
           children: [
             TableRow(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 14),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 7,
+                    horizontal: 14,
+                  ),
                   child: Text(
                     FamilyCompositionLn10.ageColRange,
                     style: TextStyle(
@@ -60,7 +60,10 @@ class AgeProfilePanel extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 14),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 7,
+                    horizontal: 14,
+                  ),
                   child: Text(
                     FamilyCompositionLn10.ageColCount,
                     textAlign: TextAlign.right,
@@ -75,8 +78,7 @@ class AgeProfilePanel extends StatelessWidget {
                 ),
               ],
             ),
-            for (final (key, label) in _ranges)
-              _buildRow(key, label),
+            for (final (key, label) in _ranges) _buildRow(key, label),
           ],
         ),
         const SizedBox(height: 12),

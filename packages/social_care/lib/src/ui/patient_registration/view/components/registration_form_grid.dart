@@ -16,10 +16,12 @@ class RegistrationFormGrid extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children
-                .map((w) => Padding(
-                      padding: const EdgeInsets.only(bottom: 28),
-                      child: w,
-                    ))
+                .map(
+                  (w) => Padding(
+                    padding: const EdgeInsets.only(bottom: 28),
+                    child: w,
+                  ),
+                )
                 .toList(),
           );
         }
@@ -29,10 +31,10 @@ class RegistrationFormGrid extends StatelessWidget {
           spacing: 40, // Horizontal gap from design
           runSpacing: 28, // Vertical gap from design
           children: children
-              .map((w) => SizedBox(
-                    width: (constraints.maxWidth - 40) / 2,
-                    child: w,
-                  ))
+              .map(
+                (w) =>
+                    SizedBox(width: (constraints.maxWidth - 40) / 2, child: w),
+              )
               .toList(),
         );
       },

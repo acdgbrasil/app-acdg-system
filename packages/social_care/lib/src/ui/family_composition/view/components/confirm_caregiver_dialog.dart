@@ -88,7 +88,9 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const TextSpan(text: ' ${FamilyCompositionLn10.caregiverCurrentIs}\n'),
+                    const TextSpan(
+                      text: ' ${FamilyCompositionLn10.caregiverCurrentIs}\n',
+                    ),
                     const TextSpan(text: 'Ao confirmar, '),
                     TextSpan(
                       text: newCandidate.displayName,
@@ -98,7 +100,8 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                       ),
                     ),
                     const TextSpan(
-                      text: ' ${FamilyCompositionLn10.caregiverWillBecome} ${FamilyCompositionLn10.caregiverLoseStatus}',
+                      text:
+                          ' ${FamilyCompositionLn10.caregiverWillBecome} ${FamilyCompositionLn10.caregiverLoseStatus}',
                     ),
                   ],
                 ),
@@ -108,7 +111,9 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.12),
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.3),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
@@ -134,7 +139,10 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       shape: const StadiumBorder(),
                       side: const BorderSide(color: AppColors.inputLine),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 10,
+                      ),
                     ),
                     child: const Text(
                       FamilyCompositionLn10.btnCancel,
@@ -154,7 +162,10 @@ class ConfirmCaregiverDialog extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 10,
+                      ),
                     ),
                     child: const Text(
                       FamilyCompositionLn10.btnCaregiverConfirm,

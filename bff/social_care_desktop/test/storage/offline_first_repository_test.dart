@@ -56,10 +56,15 @@ class InMemoryLocalRepository implements LocalCacheContract {
   }
 
   @override
-  Future<void> updateCacheFromSummaries(List<PatientOverview> summaries) async {}
+  Future<void> updateCacheFromSummaries(
+    List<PatientOverview> summaries,
+  ) async {}
 
   @override
-  Future<void> updateLookupCache(String tableName, List<LookupItem> items) async {}
+  Future<void> updateLookupCache(
+    String tableName,
+    List<LookupItem> items,
+  ) async {}
 
   @override
   Future<Result<PatientId>> registerPatient(Patient patient) async {
@@ -83,110 +88,95 @@ class InMemoryLocalRepository implements LocalCacheContract {
   Future<Result<List<PatientOverview>>> fetchPatients() async =>
       const Success([]);
   @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async =>
-      const Failure('Not implemented');
+  Future<Result<PatientRemote>> fetchPatientByPersonId(
+    PersonId personId,
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) async =>
-      const Failure('Not implemented');
+    LookupId prRelationshipId,
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> removeFamilyMember(
     PatientId patientId,
     PersonId memberId,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> assignPrimaryCaregiver(
     PatientId patientId,
     PersonId memberId,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateSocialIdentity(
     PatientId patientId,
     SocialIdentity identity,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<List<AuditEvent>>> getAuditTrail(
     PatientId patientId, {
     String? eventType,
-  }) async =>
-      const Success([]);
+  }) async => const Success([]);
   @override
   Future<Result<void>> updateHousingCondition(
     PatientId patientId,
     HousingCondition condition,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateSocioEconomicSituation(
     PatientId patientId,
     SocioEconomicSituation situation,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateWorkAndIncome(
     PatientId patientId,
     WorkAndIncome data,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateEducationalStatus(
     PatientId patientId,
     EducationalStatus status,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateHealthStatus(
     PatientId patientId,
     HealthStatus status,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateCommunitySupportNetwork(
     PatientId patientId,
     CommunitySupportNetwork network,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateSocialHealthSummary(
     PatientId patientId,
     SocialHealthSummary summary,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<AppointmentId>> registerAppointment(
     PatientId patientId,
     SocialCareAppointment appointment,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateIntakeInfo(
     PatientId patientId,
     IngressInfo info,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updatePlacementHistory(
     PatientId patientId,
     PlacementHistory history,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<ViolationReportId>> reportViolation(
     PatientId patientId,
     RightsViolationReport report,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<ReferralId>> createReferral(
     PatientId patientId,
     Referral referral,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<List<LookupItem>>> getLookupTable(String tableName) async =>
       const Success([]);
@@ -214,110 +204,95 @@ class InMemoryRemoteRepository implements SocialCareContract {
   Future<Result<PatientId>> registerPatient(Patient patient) async =>
       const Failure('Not implemented');
   @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) async =>
-      const Failure('Not implemented');
+  Future<Result<PatientRemote>> fetchPatientByPersonId(
+    PersonId personId,
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId) async =>
-      const Failure('Not implemented');
+    LookupId prRelationshipId,
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> removeFamilyMember(
     PatientId patientId,
     PersonId memberId,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> assignPrimaryCaregiver(
     PatientId patientId,
     PersonId memberId,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateSocialIdentity(
     PatientId patientId,
     SocialIdentity identity,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<List<AuditEvent>>> getAuditTrail(
     PatientId patientId, {
     String? eventType,
-  }) async =>
-      const Success([]);
+  }) async => const Success([]);
   @override
   Future<Result<void>> updateHousingCondition(
     PatientId patientId,
     HousingCondition condition,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateSocioEconomicSituation(
     PatientId patientId,
     SocioEconomicSituation situation,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateWorkAndIncome(
     PatientId patientId,
     WorkAndIncome data,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateEducationalStatus(
     PatientId patientId,
     EducationalStatus status,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateHealthStatus(
     PatientId patientId,
     HealthStatus status,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateCommunitySupportNetwork(
     PatientId patientId,
     CommunitySupportNetwork network,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateSocialHealthSummary(
     PatientId patientId,
     SocialHealthSummary summary,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<AppointmentId>> registerAppointment(
     PatientId patientId,
     SocialCareAppointment appointment,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updateIntakeInfo(
     PatientId patientId,
     IngressInfo info,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<void>> updatePlacementHistory(
     PatientId patientId,
     PlacementHistory history,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<ViolationReportId>> reportViolation(
     PatientId patientId,
     RightsViolationReport report,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<ReferralId>> createReferral(
     PatientId patientId,
     Referral referral,
-  ) async =>
-      const Failure('Not implemented');
+  ) async => const Failure('Not implemented');
   @override
   Future<Result<List<LookupItem>>> getLookupTable(String tableName) async =>
       const Success([]);

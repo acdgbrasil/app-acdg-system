@@ -5,7 +5,11 @@ final class ComplementInput extends StatelessWidget {
   final String? errorText;
   final TextEditingController complementController;
 
-  const ComplementInput({super.key, this.errorText, required this.complementController});
+  const ComplementInput({
+    super.key,
+    this.errorText,
+    required this.complementController,
+  });
 
   @override
   Widget build(BuildContext context) {

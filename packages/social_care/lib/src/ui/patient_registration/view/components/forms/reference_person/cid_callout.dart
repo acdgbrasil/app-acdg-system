@@ -14,9 +14,7 @@ class CidCallout extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.07),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -24,7 +22,11 @@ class CidCallout extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(right: 12, top: 2),
-            child: Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 20),
+            child: Icon(
+              Icons.lightbulb_outline,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           Expanded(
             child: Column(
@@ -52,7 +54,10 @@ class CidCallout extends StatelessWidget {
                 GestureDetector(
                   onTap: onApply,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.black26),
                       borderRadius: BorderRadius.circular(8),
@@ -71,7 +76,10 @@ class CidCallout extends StatelessWidget {
                         SizedBox(width: 6),
                         Text(
                           ReferencePersonLn10.cidCalloutChipLabel,
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),

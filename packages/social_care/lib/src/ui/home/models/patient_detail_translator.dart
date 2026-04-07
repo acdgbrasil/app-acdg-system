@@ -72,8 +72,7 @@ class PatientDetailTranslator {
               date: r.date.toIso8601(),
               professionalId: r.requestingProfessionalId.value,
               referredPersonId: r.referredPersonId.value,
-              destinationService:
-                  r.destinationService.name.toSnakeCaseUpper(),
+              destinationService: r.destinationService.name.toSnakeCaseUpper(),
               reason: r.reason,
               status: r.status.name.toSnakeCaseUpper(),
             ),
@@ -115,8 +114,8 @@ class PatientDetailTranslator {
                       number: docs.rgDocument!.number,
                       issuingState: docs.rgDocument!.issuingState,
                       issuingAgency: docs.rgDocument!.issuingAgency,
-                      issueDate:
-                          docs.rgDocument!.issueDate.date.toIso8601String(),
+                      issueDate: docs.rgDocument!.issueDate.date
+                          .toIso8601String(),
                     )
                   : null,
             )
@@ -173,8 +172,7 @@ class PatientDetailTranslator {
               hasPipedWater: patient.housingCondition!.hasPipedWater,
               isInGeographicRiskArea:
                   patient.housingCondition!.isInGeographicRiskArea,
-              hasDifficultAccess:
-                  patient.housingCondition!.hasDifficultAccess,
+              hasDifficultAccess: patient.housingCondition!.hasDifficultAccess,
               isInSocialConflictArea:
                   patient.housingCondition!.isInSocialConflictArea,
               hasDiagnosticObservations:

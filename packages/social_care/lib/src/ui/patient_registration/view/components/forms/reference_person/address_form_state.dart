@@ -20,7 +20,8 @@ class AddressFormState {
 
   // 3. Derived values for contract
   bool get isShelterValue => housingSituation.value == HousingSituation.shelter;
-  bool get isHomelessValue => housingSituation.value == HousingSituation.homeless;
+  bool get isHomelessValue =>
+      housingSituation.value == HousingSituation.homeless;
 
   /// Whether address fields (CEP, street, number, complement, neighborhood)
   /// should be disabled. State and city remain enabled for CRAS reference.
@@ -28,12 +29,14 @@ class AddressFormState {
 
   // 4. Getters de Erro
   String? get housingSituationError {
-    if (housingSituation.value == null) return ReferencePersonLn10.errorSelectHousingSituation;
+    if (housingSituation.value == null)
+      return ReferencePersonLn10.errorSelectHousingSituation;
     return null;
   }
 
   String? get residenceLocationError {
-    if (residenceLocation.value == null) return ReferencePersonLn10.errorSelectLocation;
+    if (residenceLocation.value == null)
+      return ReferencePersonLn10.errorSelectLocation;
     return null;
   }
 

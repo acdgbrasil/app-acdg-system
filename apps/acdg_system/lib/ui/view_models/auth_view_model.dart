@@ -9,8 +9,8 @@ class AuthViewModel extends BaseViewModel {
     required LoginUseCase loginUseCase,
     required LogoutUseCase logoutUseCase,
     required RestoreSessionUseCase restoreSessionUseCase,
-  })  : _status = authRepository.currentStatus,
-        _user = authRepository.currentUser {
+  }) : _status = authRepository.currentStatus,
+       _user = authRepository.currentUser {
     login = Command0(() => loginUseCase.execute(null));
     logout = Command0(() => logoutUseCase.execute(null));
     restoreSession = Command0(() => restoreSessionUseCase.execute(null));

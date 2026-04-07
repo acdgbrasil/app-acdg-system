@@ -24,15 +24,17 @@ class SyncQueueService {
     required String actionType,
     required Map<String, dynamic> payload,
   }) async {
-    await _db.into(_db.syncActions).insert(
-      SyncActionsCompanion.insert(
-        actionId: DateTime.now().millisecondsSinceEpoch.toString(),
-        patientId: patientId,
-        actionType: actionType,
-        payloadJson: jsonEncode(payload),
-        timestamp: DateTime.now().toUtc(),
-      ),
-    );
+    await _db
+        .into(_db.syncActions)
+        .insert(
+          SyncActionsCompanion.insert(
+            actionId: DateTime.now().millisecondsSinceEpoch.toString(),
+            patientId: patientId,
+            actionType: actionType,
+            payloadJson: jsonEncode(payload),
+            timestamp: DateTime.now().toUtc(),
+          ),
+        );
   }
 
   /// Returns all pending actions that are ready for processing.
@@ -63,7 +65,7 @@ class SyncQueueService {
   /// - `nextRetryAt`: earliest retry time among not-yet-ready actions,
   ///   so the caller can schedule a precise delayed re-check
   Stream<({List<SyncAction> ready, DateTime? nextRetryAt})>
-      watchPendingActions() {
+  watchPendingActions() {
     final query = _db.select(_db.syncActions)
       ..where((t) => t.status.equals('PENDING'))
       ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]);
@@ -90,9 +92,9 @@ class SyncQueueService {
 
   /// Returns all actions in the queue (any status).
   Future<List<SyncAction>> getAllActions() async {
-    return (_db.select(_db.syncActions)
-          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
-        .get();
+    return (_db.select(
+      _db.syncActions,
+    )..orderBy([(t) => OrderingTerm.desc(t.timestamp)])).get();
   }
 
   /// Updates the status of a sync action by [id].
@@ -101,17 +103,18 @@ class SyncQueueService {
       status: Value(status),
       lastError: error != null ? Value(error) : const Value.absent(),
     );
-    await (_db.update(_db.syncActions)..where((t) => t.id.equals(id)))
-        .write(companion);
+    await (_db.update(
+      _db.syncActions,
+    )..where((t) => t.id.equals(id))).write(companion);
   }
 
   /// Marks an action as failed with exponential backoff retry scheduling.
   ///
   /// After 10 retries, the action is permanently marked as FAILED.
   Future<void> markFailed(int id, String error) async {
-    final action =
-        await (_db.select(_db.syncActions)..where((t) => t.id.equals(id)))
-            .getSingleOrNull();
+    final action = await (_db.select(
+      _db.syncActions,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (action == null) return;
 
     final newRetryCount = action.retryCount + 1;

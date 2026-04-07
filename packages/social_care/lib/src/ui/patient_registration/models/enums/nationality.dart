@@ -1,5 +1,1 @@
-enum Nationality {
-  brasileira,
-  estrangeira,
-  nacionalizado
-}
+enum Nationality { brasileira, estrangeira, nacionalizado }

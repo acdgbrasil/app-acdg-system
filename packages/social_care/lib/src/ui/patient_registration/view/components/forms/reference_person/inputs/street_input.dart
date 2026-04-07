@@ -5,7 +5,11 @@ final class StreetInput extends StatelessWidget {
   final String? errorText;
   final TextEditingController streetController;
 
-  const StreetInput({super.key, this.errorText, required this.streetController});
+  const StreetInput({
+    super.key,
+    this.errorText,
+    required this.streetController,
+  });
 
   @override
   Widget build(BuildContext context) {

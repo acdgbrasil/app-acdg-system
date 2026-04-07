@@ -13,8 +13,12 @@ class AppView extends ConsumerWidget {
     final authInit = ref.watch(authInitializationProvider);
 
     return authInit.when(
-      loading: () => const MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator()))),
-      error: (err, stack) => MaterialApp(home: Scaffold(body: Center(child: Text('Auth Error: $err')))),
+      loading: () => const MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      ),
+      error: (err, stack) => MaterialApp(
+        home: Scaffold(body: Center(child: Text('Auth Error: $err'))),
+      ),
       data: (_) {
         final router = ref.watch(appRouterProvider).router;
         return MaterialApp.router(

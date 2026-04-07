@@ -5,11 +5,7 @@ class ModalLabel extends StatelessWidget {
   final String text;
   final bool isRequired;
 
-  const ModalLabel({
-    super.key,
-    required this.text,
-    this.isRequired = false,
-  });
+  const ModalLabel({super.key, required this.text, this.isRequired = false});
 
   @override
   Widget build(BuildContext context) {

@@ -48,8 +48,10 @@ class ModalSideMenu extends StatelessWidget {
               cursor: SystemMouseCursors.click,
               child: Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: i == currentTabIndex
                       ? AppColors.primary.withValues(alpha: 0.08)

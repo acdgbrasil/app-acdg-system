@@ -19,11 +19,12 @@ void main() {
 
       for (final file in files) {
         final content = file.readAsStringSync();
-        
+
         // Regex para encontrar declarações de StatelessWidget (públicos ou privados)
         // Procura por: class <Nome> extends StatelessWidget
-        final matches = RegExp(r'class\s+\w+\s+extends\s+StatelessWidget')
-            .allMatches(content);
+        final matches = RegExp(
+          r'class\s+\w+\s+extends\s+StatelessWidget',
+        ).allMatches(content);
 
         if (matches.length > 1) {
           violations.add(
@@ -49,7 +50,7 @@ void main() {
 
       for (final file in files) {
         final content = file.readAsStringSync();
-        
+
         // Procura por métodos privados que retornam Widget: Widget _buildSomething(...)
         // Ignora o método build obrigatório: Widget build(BuildContext context)
         final matches = RegExp(r'Widget\s+_\w+\s*\(').allMatches(content);

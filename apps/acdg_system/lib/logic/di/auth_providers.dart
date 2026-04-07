@@ -35,7 +35,7 @@ final authViewModelProvider = Provider<AuthViewModel>((ref) {
     logoutUseCase: ref.watch(logoutUseCaseProvider),
     restoreSessionUseCase: ref.watch(restoreSessionUseCaseProvider),
   );
-  
+
   // Ensure the VM is disposed when the provider is destroyed
   ref.onDispose(() => vm.dispose());
   return vm;

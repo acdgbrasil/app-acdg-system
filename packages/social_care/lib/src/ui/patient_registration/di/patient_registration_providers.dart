@@ -8,7 +8,7 @@ import '../viewModel/patient_registration_view_model.dart';
 /// implementation that wires the use case and repository.
 final patientRegistrationViewModelProvider =
     Provider.autoDispose<PatientRegistrationViewModel>((ref) {
-  throw UnimplementedError(
-    'patientRegistrationViewModelProvider must be overridden in ProviderScope',
-  );
-});
+      throw UnimplementedError(
+        'patientRegistrationViewModelProvider must be overridden in ProviderScope',
+      );
+    });
