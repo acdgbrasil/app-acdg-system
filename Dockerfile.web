@@ -2,7 +2,7 @@
 # rebuild: sentry-dsn-fix
 
 # ── Stage 1: Build Flutter Web WASM ──
-FROM ghcr.io/cirruslabs/flutter:3.41.4 AS build
+FROM ghcr.io/cirruslabs/flutter:3.41.6 AS build
 ENV CI=true
 WORKDIR /app
 
