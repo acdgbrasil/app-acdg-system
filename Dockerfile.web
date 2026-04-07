@@ -54,13 +54,19 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # MIME types for Flutter Web WASM
+    types {
+        application/javascript  mjs js;
+        application/wasm        wasm;
+    }
+
     # Gzip for WASM and JS
     gzip on;
     gzip_types application/wasm application/javascript text/css text/html;
     gzip_min_length 1024;
 
     # Aggressive cache for hashed assets
-    location ~* \.(wasm|js|css|png|jpg|svg|ico|woff2?)$ {
+    location ~* \.(wasm|mjs|js|css|png|jpg|svg|ico|woff2?)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
