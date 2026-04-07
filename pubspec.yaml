@@ -47,6 +47,7 @@ melos:
       description: Run tests in Dart-only packages.
       packageFilters:
         flutter: false
+        dirExists: test
 
     format:
       run: melos exec -- "dart format --set-exit-if-changed ."
