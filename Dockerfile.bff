@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ── Stage 1: Resolve + Compile AOT ──
-FROM ghcr.io/cirruslabs/flutter:3.41.4 AS build
+FROM ghcr.io/cirruslabs/flutter:3.41.6 AS build
 ENV CI=true
 WORKDIR /app
 
