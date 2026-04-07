@@ -68,6 +68,10 @@ server {
         application/wasm        wasm;
     }
 
+    # Required headers for Flutter WASM multi-threaded renderer (skwasm)
+    add_header Cross-Origin-Embedder-Policy "credentialless" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+
     # Gzip for WASM and JS
     gzip on;
     gzip_types application/wasm application/javascript text/css text/html;
