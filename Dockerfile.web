@@ -81,6 +81,10 @@ server {
     location ~* \.(wasm|mjs|js|css|png|jpg|svg|ico|woff2?)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        # Repeat COEP/COOP here — nginx does not inherit server-level
+        # add_header directives into location blocks that define their own.
+        add_header Cross-Origin-Embedder-Policy "credentialless" always;
+        add_header Cross-Origin-Opener-Policy "same-origin" always;
     }
 
     # SPA fallback
