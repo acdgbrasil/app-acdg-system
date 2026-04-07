@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Lint & Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          dart pub global activate melos
+          melos bootstrap
+
+      - name: Run code generation
+        run: melos run build_runner
+
+      - name: Analyze
+        run: melos run analyze
+
+      - name: Check formatting
+        run: melos run format
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: analyze
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          dart pub global activate melos
+          melos bootstrap
+
+      - name: Run code generation
+        run: melos run build_runner
+
+      - name: Run Flutter tests
+        run: melos run test
+
+      - name: Run Dart tests
+        run: melos run test:dart
+
+  kodus-review:
+    name: Kodus AI Review
+    if: github.event_name == 'pull_request'
+    uses: acdgbrasil/.github/.github/workflows/reusable-kodus-review.yml@main
+    with:
+      fail_on: critical
+    secrets:
+      KODUS_TEAM_KEY: ${{ secrets.KODUS_TEAM_KEY }}
