@@ -55,6 +55,7 @@ server {
     index index.html;
 
     # MIME types for Flutter Web WASM
+    include /etc/nginx/mime.types;
     types {
         application/javascript  mjs js;
         application/wasm        wasm;
