@@ -1,6 +1,7 @@
 name: Conecta Web — Build and Publish
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
