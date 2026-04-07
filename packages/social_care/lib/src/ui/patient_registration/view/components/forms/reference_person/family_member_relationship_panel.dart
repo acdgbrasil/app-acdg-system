@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 import 'family_member_modal_components/family_member_modal_relationship_list.dart';
 import 'family_member_modal_components/modal_label.dart';
-import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 /// Relationship selection panel for the family member modal (right column).
 ///

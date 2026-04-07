@@ -176,6 +176,7 @@ class SyncEngine implements SyncScheduler {
   /// Coalesces rapid-fire calls from multiple sources (watch stream,
   /// connectivity change, write handlers) into a single queue drain.
   /// Prefer this over calling [processQueue] directly for non-urgent triggers.
+  @override
   void scheduleProcessQueue() {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {

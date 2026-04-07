@@ -66,7 +66,7 @@ class _PatientRegistrationPageState
 
   Future<void> _handleSubmit(PatientRegistrationViewModel vm) async {
     final result = await vm.handleSubmit();
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     switch (result) {
       case SubmitResult.success:
@@ -76,7 +76,7 @@ class _PatientRegistrationPageState
           message: 'Cadastro salvo com sucesso!',
           type: ToastType.success,
           onDismissed: () {
-            if (context.mounted) context.go('/social-care');
+            if (mounted) context.go('/social-care');
           },
         );
       case SubmitResult.validationFailed:

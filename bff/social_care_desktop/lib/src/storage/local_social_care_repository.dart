@@ -144,6 +144,7 @@ class LocalSocialCareRepository implements LocalCacheContract {
   }
 
   /// Updates a lookup table cache.
+  @override
   Future<void> updateLookupCache(
     String tableName,
     List<LookupItem> items,
@@ -196,6 +197,7 @@ class LocalSocialCareRepository implements LocalCacheContract {
   }
 
   /// Bulk-updates local cache from server summaries without enqueuing sync actions.
+  @override
   Future<void> updateCacheFromSummaries(
       List<PatientOverview> summaries) async {
     final existingPatients = await _db.select(_db.cachedPatients).get();
@@ -246,12 +248,14 @@ class LocalSocialCareRepository implements LocalCacheContract {
   }
 
   /// Checks whether there are pending sync actions for a given patient.
+  @override
   Future<bool> hasPendingActions(PatientId patientId) async {
     final actions = await _queueService.getPendingActions();
     return actions.any((a) => a.patientId == patientId.value);
   }
 
   /// Updates the local cache from a [PatientRemote] without enqueuing a sync action.
+  @override
   Future<void> updateCacheFromRemote(PatientRemote dto) async {
     final fullJson = dto.toJson();
     final pd = dto.personalData;

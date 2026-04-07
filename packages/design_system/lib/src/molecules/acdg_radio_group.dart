@@ -46,24 +46,27 @@ class AcdgRadioGroup<T> extends StatelessWidget {
             ),
           )
         else
-          Column(
-            children: options.map((option) {
-              return RadioListTile<T>(
-                title: Text(
-                  option.label,
-                  style: TextStyle(
-                    fontSize: isDense ? 14 : 15,
-                    color: AppColors.textPrimary,
+          RadioGroup<T>(
+            groupValue: value,
+            onChanged: (_) {},
+            child: Column(
+              children: options.map((option) {
+                return RadioListTile<T>(
+                  title: Text(
+                    option.label,
+                    style: TextStyle(
+                      fontSize: isDense ? 14 : 15,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                value: option.value,
-                groupValue: value,
-                onChanged: null,
-                contentPadding: EdgeInsets.zero,
-                dense: isDense,
-                activeColor: AppColors.primary,
-              );
-            }).toList(),
+                  value: option.value,
+                  contentPadding: EdgeInsets.zero,
+                  dense: isDense,
+                  activeColor: AppColors.primary,
+                  toggleable: false,
+                );
+              }).toList(),
+            ),
           ),
         if (errorText != null)
           Padding(

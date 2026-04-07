@@ -1,33 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
-import 'package:shared/shared.dart';
 import 'package:social_care_web/src/handlers/handler_utils.dart';
 import 'package:social_care_web/src/remote/social_care_api_client.dart';
 import 'package:test/test.dart';
-
-/// Fake Dio adapter that returns preconfigured responses.
-class _FakeHttpAdapter implements HttpClientAdapter {
-  Response<dynamic>? nextResponse;
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<List<int>>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    final resp = nextResponse!;
-    return ResponseBody.fromString(
-      '',
-      resp.statusCode ?? 200,
-      headers: {
-        'content-type': ['application/json'],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
 
 /// Creates a Dio instance with a fake adapter that returns [response].
 Dio _dioReturning(int statusCode, Map<String, dynamic> data) {
