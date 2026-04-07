@@ -1,24 +1,52 @@
-name: Windows MSIX Build & Release
+name: Windows MSIX Build, Validate & Release
 
 on:
   push:
     tags:
-      - 'v*' # Trigger build on any tag starting with v (e.g., v0.1.0)
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      skip_wack:
+        description: 'Skip Windows App Certification Kit validation'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   build:
+    name: Build MSIX
     runs-on: windows-latest
     permissions:
       contents: write
+
+    outputs:
+      msix_path: ${{ steps.find_msix.outputs.path }}
+      msix_name: ${{ steps.find_msix.outputs.name }}
+      version: ${{ steps.version.outputs.tag }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v0.0.0-dev"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${TAG}"
+
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: '3.41.4' # Usando a versão do flutter do seu ambiente
+          flutter-version: '3.41.4'
           channel: 'stable'
 
       - name: Enable Windows Desktop
@@ -71,10 +99,141 @@ jobs:
         run: dart run msix:create
         working-directory: apps/acdg_system
 
+      - name: Find MSIX artifact
+        id: find_msix
+        shell: bash
+        run: |
+          msix_file=$(find apps/acdg_system/build -name "*.msix" -type f | head -1)
+          if [[ -z "$msix_file" ]]; then
+            echo "::error::No MSIX file found after build"
+            exit 1
+          fi
+          echo "path=${msix_file}" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename ${msix_file})" >> "$GITHUB_OUTPUT"
+          echo "Found MSIX: ${msix_file}"
+
+      - name: Upload MSIX as artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: msix-installer
+          path: ${{ steps.find_msix.outputs.path }}
+          retention-days: 30
+
+  validate:
+    name: WACK Validation
+    needs: build
+    runs-on: windows-latest
+    if: ${{ github.event.inputs.skip_wack != 'true' }}
+
+    steps:
+      - name: Download MSIX artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: msix-installer
+          path: msix
+
+      - name: Run Windows App Certification Kit
+        shell: powershell
+        run: |
+          $msix = Get-ChildItem -Path msix -Filter *.msix -Recurse | Select-Object -First 1
+          if (-not $msix) {
+            Write-Error "No MSIX file found"
+            exit 1
+          }
+
+          Write-Host "Validating: $($msix.FullName)"
+
+          # WACK path (Windows SDK)
+          $wackPath = "C:\Program Files (x86)\Windows Kits\10\App Certification Kit\appcert.exe"
+
+          if (-not (Test-Path $wackPath)) {
+            Write-Warning "WACK not found at expected path. Skipping validation."
+            Write-Host "##[warning]Windows App Certification Kit not available on this runner."
+            exit 0
+          }
+
+          & $wackPath reset
+          & $wackPath test -appxpackagepath "$($msix.FullName)" -reportoutputpath "wack-report.xml"
+
+          if (Test-Path "wack-report.xml") {
+            Write-Host "WACK report generated successfully"
+            Get-Content "wack-report.xml" | Select-Object -First 50
+          }
+
+      - name: Upload WACK report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wack-report
+          path: wack-report.xml
+          if-no-files-found: ignore
+          retention-days: 30
+
+  release:
+    name: Publish to GitHub Release (Sideload)
+    needs: [build, validate]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download MSIX artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: msix-installer
+          path: msix
+
       - name: Release to GitHub
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
-          files: apps/acdg_system/build/windows/x64/runner/Release/*.msix
+          files: msix/*.msix
           generate_release_notes: true
+          body: |
+            ## Conecta Raros ${{ needs.build.outputs.version }} — Windows
+
+            ### Instalacao (Sideloading)
+            1. Baixe o arquivo `.msix` abaixo
+            2. Clique duas vezes para instalar
+            3. Se solicitado, permita a instalacao de apps fora da Store
+
+            ### Requisitos
+            - Windows 10 (1809+) ou Windows 11
+            - Sideloading habilitado (Configuracoes > Apps > Configuracoes avancadas)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # --- Microsoft Store (descomente quando tiver Partner Center configurado) ---
+  # store:
+  #   name: Publish to Microsoft Store
+  #   needs: [build, validate]
+  #   if: needs.build.result == 'success' && needs.validate.result == 'success'
+  #   runs-on: windows-latest
+  #   permissions:
+  #     contents: read
+  #
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+  #
+  #     - name: Download MSIX artifact
+  #       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+  #       with:
+  #         name: msix-installer
+  #         path: msix
+  #
+  #     - name: Setup Microsoft Store CLI
+  #       uses: microsoft/setup-msstore-cli@v1
+  #
+  #     - name: Configure Store CLI
+  #       run: |
+  #         msstore reconfigure `
+  #           --tenantId ${{ secrets.AZURE_AD_TENANT_ID }} `
+  #           --clientId ${{ secrets.AZURE_AD_CLIENT_ID }} `
+  #           --clientSecret ${{ secrets.AZURE_AD_CLIENT_SECRET }} `
+  #           --sellerId ${{ secrets.SELLER_ID }}
+  #
+  #     - name: Publish to Microsoft Store
+  #       run: |
+  #         $msix = Get-ChildItem -Path msix -Filter *.msix | Select-Object -First 1
+  #         msstore publish -i "$($msix.FullName)" -v
