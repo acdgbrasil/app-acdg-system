@@ -11,4 +11,5 @@ permissions:
 jobs:
   version:
     name: Auto version from conventional commit
+    if: github.actor != 'github-actions[bot]'
     uses: acdgbrasil/.github/.github/workflows/reusable-auto-version.yml@main
