@@ -48,7 +48,11 @@ class PatientRemote {
   final Map<String, dynamic>? address;
   final Map<String, dynamic>? socialIdentity;
   final List<Map<String, dynamic>> familyMembers;
+  @JsonKey(readValue: _readDiagnoses)
   final List<Map<String, dynamic>> diagnoses;
+
+  static Object? _readDiagnoses(Map json, String key) =>
+      json['initialDiagnoses'] ?? json['diagnoses'] ?? const [];
   final Map<String, dynamic>? housingCondition;
   final Map<String, dynamic>? socioeconomicSituation;
   final Map<String, dynamic>? workAndIncome;

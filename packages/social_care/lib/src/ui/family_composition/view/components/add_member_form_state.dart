@@ -13,7 +13,7 @@ class AddMemberFormState {
   final relationship = ValueNotifier<String?>(null);
   final residing = ValueNotifier<bool?>(null);
   final pcd = ValueNotifier<bool?>(null);
-  final caregiver = ValueNotifier<bool>(false);
+  final caregiver = ValueNotifier<bool?>(false);
   final requiredDocuments = ValueNotifier<Set<String>>({});
 
   /// Populates the form from an existing [AddMemberResult] for editing.
@@ -101,7 +101,7 @@ class AddMemberFormState {
       relationshipCode: relationship.value!,
       residesWithPatient: residing.value!,
       hasDisability: pcd.value!,
-      isPrimaryCaregiver: caregiver.value,
+      isPrimaryCaregiver: caregiver.value ?? false,
       requiredDocuments: {...requiredDocuments.value},
     );
   }

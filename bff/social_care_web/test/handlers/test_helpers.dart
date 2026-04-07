@@ -39,6 +39,15 @@ class FakePeopleContextClient extends PeopleContextClient {
   }) async {
     return Success(nextPersonId);
   }
+
+  @override
+  Future<Result<Map<String, dynamic>>> getPerson(String personId) async {
+    return Success({
+      'id': personId,
+      'fullName': 'Maria Silva',
+      'birthDate': '2000-01-15',
+    });
+  }
 }
 
 /// Creates a shelf [Request] with the test session in context.

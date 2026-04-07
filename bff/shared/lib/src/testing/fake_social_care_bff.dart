@@ -75,10 +75,7 @@ class FakeSocialCareBff implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async => const Success(null);
+    LookupId prRelationshipId) async => const Success(null);
 
   @override
   Future<Result<void>> removeFamilyMember(

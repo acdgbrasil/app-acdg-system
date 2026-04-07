@@ -432,10 +432,7 @@ class LocalSocialCareRepository implements LocalCacheContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async {
+    LookupId prRelationshipId) async {
     final result = await _mutatePatient(
       patientId,
       'ADD_FAMILY_MEMBER',

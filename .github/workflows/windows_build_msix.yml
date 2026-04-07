@@ -42,6 +42,7 @@ jobs:
           secrets: |
             e384ef43-978c-4f04-b50e-b42201380a4c > OIDC_ISSUER
             29ebaaa5-bcad-4db9-90f4-b4220138173b > OIDC_CLIENT_ID
+            89f73bc5-6dff-42c1-9c01-b4250086a6bf > SENTRY_DSN
 
       - name: Create .env file
         working-directory: apps/acdg_system
@@ -51,6 +52,8 @@ jobs:
           echo "OIDC_SCOPES=openid profile email offline_access urn:zitadel:iam:org:project:roles" >> .env
           echo "CUSTOM_SCHEME=com.acdg.system" >> .env
           echo "BFF_BASE_URL=https://bff.acdgbrasil.com.br" >> .env
+          echo "SENTRY_DSN=${{ env.SENTRY_DSN }}" >> .env
+          echo "APP_ENV=production" >> .env
 
       - name: Install dependencies
         run: |

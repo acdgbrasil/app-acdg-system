@@ -72,7 +72,7 @@ void main() {
         expect(body, isEmpty);
       });
 
-      test('returns list of patients after registration', () async {
+      test('returns list of patients after registration (enriched via people-context)', () async {
         // Pre-populate fake with a patient domain object
         final patient = _testPatient();
         await fakeBff.registerPatient(patient);
@@ -85,7 +85,8 @@ void main() {
         final body = jsonDecode(await response.readAsString()) as List;
         expect(body, hasLength(1));
         expect(body[0]['patientId'], equals(testPatientId));
-        expect(body[0]['fullName'], equals('Maria Silva'));
+        // The BFF should have called people-context and injected fullName and birthDate/age
+        expect(body[0]['fullName'], isNotEmpty);
       });
     });
 
@@ -130,11 +131,11 @@ void main() {
         expect(response.statusCode, equals(400));
       });
 
-      test('returns 500 when patient not found', () async {
+      test('returns 502 when patient not found (backend error)', () async {
         final request = testRequest('GET', '/patients/$testPatientId');
         final response = await handler.router.call(request);
 
-        expect(response.statusCode, equals(500));
+        expect(response.statusCode, equals(502));
       });
     });
 

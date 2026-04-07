@@ -59,6 +59,7 @@ jobs:
           secrets: |
             e384ef43-978c-4f04-b50e-b42201380a4c > OIDC_ISSUER
             29ebaaa5-bcad-4db9-90f4-b4220138173b > OIDC_CLIENT_ID
+            89f73bc5-6dff-42c1-9c01-b4250086a6bf > SENTRY_DSN
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -72,3 +73,5 @@ jobs:
             OIDC_ISSUER=${{ env.OIDC_ISSUER || 'http://localhost:8080' }}
             OIDC_CLIENT_ID=${{ env.OIDC_CLIENT_ID || 'dummy-client-id' }}
             BFF_BASE_URL=/api
+            SENTRY_DSN=${{ env.SENTRY_DSN || '' }}
+            APP_ENV=production

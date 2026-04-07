@@ -37,3 +37,28 @@ Response jsonError(int status, String message) => Response(
   body: jsonEncode({'error': message}),
   headers: {'Content-Type': 'application/json'},
 );
+
+/// Typed error representing a backend API rejection.
+///
+/// Created by [SocialCareApiClient] when the backend returns a non-success
+/// status, preserving the original HTTP status code and error message.
+final class BackendError {
+  const BackendError({required this.statusCode, required this.message});
+
+  final int statusCode;
+  final String message;
+
+  @override
+  String toString() => 'BackendError($statusCode: $message)';
+}
+
+/// Creates an error [Response] from a [Failure]'s error object.
+///
+/// If the error is a [BackendError], forwards the original HTTP status code.
+/// Otherwise falls back to 502 Bad Gateway.
+Response backendError(Object error) {
+  if (error is BackendError) {
+    return jsonError(error.statusCode, error.message);
+  }
+  return jsonError(502, error.toString());
+}
