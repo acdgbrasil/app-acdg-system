@@ -30,8 +30,9 @@ void main() {
           }
         }
       }
-      if (violations.isNotEmpty)
+      if (violations.isNotEmpty) {
         fail('Architectural Violations (Safety):\n${violations.join('\n')}');
+      }
     });
 
     test('RULE: ViewModels MUST NOT import material.dart or dart:ui', () {
@@ -49,8 +50,9 @@ void main() {
           );
         }
       }
-      if (violations.isNotEmpty)
+      if (violations.isNotEmpty) {
         fail('Architectural Violations (MVVM): \n${violations.join('\n')}');
+      }
     });
 
     test('RULE: Models MUST use Equatable for value equality', () {
@@ -72,8 +74,9 @@ void main() {
           }
         }
       }
-      if (violations.isNotEmpty)
+      if (violations.isNotEmpty) {
         fail('Architectural Violations (Equality): \n${violations.join('\n')}');
+      }
     });
 
     test('RULE: No raw JSON access in Repositories (Mandatory DTOs)', () {
@@ -92,10 +95,11 @@ void main() {
           );
         }
       }
-      if (violations.isNotEmpty)
+      if (violations.isNotEmpty) {
         fail(
           'Architectural Violations (Data Layer): \n${violations.join('\n')}',
         );
+      }
     });
 
     test('RULE: One StatelessWidget per file and No Private Build Methods', () {
@@ -120,10 +124,11 @@ void main() {
           );
         }
       }
-      if (violations.isNotEmpty)
+      if (violations.isNotEmpty) {
         fail(
           'Architectural Violations (Atomic UI): \n${violations.join('\n')}',
         );
+      }
     });
 
     test('RULE: Strict Naming Conventions (Folder Structure)', () {
@@ -171,10 +176,11 @@ void main() {
         }
       }
 
-      if (violations.isNotEmpty)
+      if (violations.isNotEmpty) {
         fail(
           'Architectural Violations (Atomic State): \n${violations.join('\n')}',
         );
+      }
     });
   });
 }

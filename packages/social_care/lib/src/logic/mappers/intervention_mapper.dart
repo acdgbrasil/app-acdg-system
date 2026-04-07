@@ -74,8 +74,9 @@ abstract final class InterventionMapper {
 
     if (idRes case Failure(:final error)) return Failure(error);
     if (referredIdRes case Failure(:final error)) return Failure(error);
-    if (profIdRes != null && profIdRes is Failure)
+    if (profIdRes != null && profIdRes is Failure) {
       return Failure((profIdRes as Failure).error);
+    }
     if (dateRes case Failure(:final error)) return Failure(error);
 
     return Referral.create(

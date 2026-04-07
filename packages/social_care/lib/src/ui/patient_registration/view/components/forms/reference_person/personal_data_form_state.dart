@@ -25,11 +25,13 @@ class PersonalDataFormState {
 
   // 3. Validadores Reutilizáveis
   String? _namesValidator(String? value, {bool isOptional = false}) {
-    if (value == null || value.trim().isEmpty)
+    if (value == null || value.trim().isEmpty) {
       return isOptional ? null : ReferencePersonLn10.errorRequired;
+    }
     if (value.length < 3) return ReferencePersonLn10.errorMinChars3;
-    if (RegExp(r'[0-9]').hasMatch(value))
+    if (RegExp(r'[0-9]').hasMatch(value)) {
       return ReferencePersonLn10.errorNameNoDigits;
+    }
     if (RegExp(
       r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]',
     ).hasMatch(value)) {
@@ -48,8 +50,9 @@ class PersonalDataFormState {
   String? get phoneNumberError {
     final digitsOnly = phoneNumber.text.replaceAll(RegExp(r'\D'), '');
     if (digitsOnly.isEmpty) return null;
-    if (!_brazilPhoneRegex.hasMatch(digitsOnly))
+    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) {
       return ReferencePersonLn10.errorPhoneInvalid;
+    }
     return null;
   }
 
@@ -72,8 +75,9 @@ class PersonalDataFormState {
   String? Function(String?) get phoneNumberValidator => (value) {
     final digitsOnly = value?.replaceAll(RegExp(r'\D'), '');
     if (digitsOnly == null || digitsOnly.isEmpty) return null;
-    if (!_brazilPhoneRegex.hasMatch(digitsOnly))
+    if (!_brazilPhoneRegex.hasMatch(digitsOnly)) {
       return ReferencePersonLn10.errorPhoneInvalid;
+    }
     return null;
   };
 

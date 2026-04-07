@@ -139,8 +139,9 @@ abstract final class RegistryMapper {
     final personIdStr = intent.personId ?? UuidUtil.generateV4();
     final personIdRes = PersonId.create(personIdStr);
 
-    if (patientIdRes is Failure)
+    if (patientIdRes is Failure) {
       return Failure((patientIdRes as Failure).error);
+    }
     if (personIdRes is Failure) return Failure((personIdRes as Failure).error);
 
     final patientId = (patientIdRes as Success<PatientId>).value;

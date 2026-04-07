@@ -29,14 +29,16 @@ class AddressFormState {
 
   // 4. Getters de Erro
   String? get housingSituationError {
-    if (housingSituation.value == null)
+    if (housingSituation.value == null) {
       return ReferencePersonLn10.errorSelectHousingSituation;
+    }
     return null;
   }
 
   String? get residenceLocationError {
-    if (residenceLocation.value == null)
+    if (residenceLocation.value == null) {
       return ReferencePersonLn10.errorSelectLocation;
+    }
     return null;
   }
 

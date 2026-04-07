@@ -86,8 +86,9 @@ class DocumentsFormState {
     final digits = rgDate.text.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return ReferencePersonLn10.rgGroupError;
     if (digits.length != 8) return ReferencePersonLn10.errorDateIncomplete;
-    if (_parseDateBr(digits) == null)
+    if (_parseDateBr(digits) == null) {
       return ReferencePersonLn10.errorDateInvalid;
+    }
     return null;
   }
 
@@ -97,8 +98,9 @@ class DocumentsFormState {
     if (digits.length != 8) return ReferencePersonLn10.errorDateIncomplete;
     final parsed = _parseDateBr(digits);
     if (parsed == null) return ReferencePersonLn10.errorDateInvalid;
-    if (parsed.isAfter(DateTime.now()))
+    if (parsed.isAfter(DateTime.now())) {
       return ReferencePersonLn10.birthDateFutureError;
+    }
     return null;
   }
 
