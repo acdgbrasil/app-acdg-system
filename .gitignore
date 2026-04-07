@@ -1,3 +1,6 @@
+# Tool artifacts
+.playwright-mcp/
+
 # Flutter/Dart
 .dart_tool/
 .packages
