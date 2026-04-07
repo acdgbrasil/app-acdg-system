@@ -65,7 +65,6 @@ void main() {
         residenceLocation: ResidenceLocation.urbano,
         city: 'São Paulo',
         addressState: 'SP',
-        diagnoses: const <Diagnosis>[], // Empty — invariant violation
       );
 
       final result = await useCase.execute(intent);

@@ -70,7 +70,7 @@ class AcdgPillButton extends StatelessWidget {
           color: _getBackgroundColor(),
           borderRadius: BorderRadius.circular(100),
           border: variant == AcdgPillButtonVariant.outlined
-              ? Border.all(color: AppColors.border, width: 1.0)
+              ? Border.all(color: AppColors.border)
               : null,
           boxShadow: isDesktop ? AppShadows.buttonShadow : null,
         );

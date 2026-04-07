@@ -59,7 +59,6 @@ class _PatientRegistrationPageState
       RegistrationToast.show(
         context,
         message: 'Corrija os campos obrigatórios para continuar',
-        type: ToastType.error,
       );
     }
   }
@@ -83,7 +82,6 @@ class _PatientRegistrationPageState
         RegistrationToast.show(
           context,
           message: 'Corrija os campos obrigatórios para continuar',
-          type: ToastType.error,
         );
       case SubmitResult.networkError:
         _showErrorModal(vm, RegistrationErrorType.network);

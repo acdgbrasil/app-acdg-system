@@ -46,7 +46,7 @@ class StepFamilyCompositionContent extends StatelessWidget {
                   refSex: refPersonSex,
                   parentescoLookup: parentescoLookup,
                   onEdit: (index) => _openModal(context, editIndex: index),
-                  onRemove: (index) => formState.removeMember(index),
+                  onRemove: formState.removeMember,
                 ),
                 if (members.isEmpty)
                   Padding(
@@ -85,7 +85,6 @@ class StepFamilyCompositionContent extends StatelessWidget {
 
     showDialog<void>(
       context: context,
-      barrierDismissible: true,
       barrierColor: Colors.black38,
       builder: (dialogContext) => FamilyMemberModal(
         entry: entry,

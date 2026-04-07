@@ -120,7 +120,7 @@ void main() {
       test('allows null refreshToken (web Split-Token)', () {
         final token = OidcClaimsParser.tokenFromRaw(
           accessToken: 'access',
-          expiresAt: DateTime(2030, 1, 1),
+          expiresAt: DateTime(2030),
         );
 
         expect(token.refreshToken, isNull);

@@ -12,11 +12,7 @@ class FamilyEmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: AppColors.inputLine,
-          width: 1.5,
-          strokeAlign: BorderSide.strokeAlignInside,
-        ),
+        border: Border.all(color: AppColors.inputLine, width: 1.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Column(

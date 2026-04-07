@@ -14,7 +14,6 @@ abstract final class AppShadows {
     BoxShadow(
       offset: Offset(-1, -1),
       blurRadius: 4,
-      spreadRadius: 0,
       color: AppColors.shadowSubtle,
     ),
   ];
@@ -44,12 +43,7 @@ abstract final class AppShadows {
 
   /// Multi-layered shadow for popups/modals.
   static const List<BoxShadow> popupShadow = [
-    BoxShadow(
-      offset: Offset(0, 0),
-      blurRadius: 0,
-      spreadRadius: 1,
-      color: AppColors.elevationXs,
-    ),
+    BoxShadow(spreadRadius: 1, color: AppColors.elevationXs),
     BoxShadow(
       offset: Offset(-9, 9),
       blurRadius: 9,

@@ -25,10 +25,7 @@ final class PhoneNumberInput extends StatelessWidget {
         return TextFormField(
           controller: phoneNumberController,
           validator: validator,
-          keyboardType: const TextInputType.numberWithOptions(
-            signed: false,
-            decimal: false,
-          ),
+          keyboardType: const TextInputType.numberWithOptions(),
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             phoneMaskFormatter,

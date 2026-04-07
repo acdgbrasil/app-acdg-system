@@ -46,7 +46,6 @@ class OidcAuthService implements AuthService {
         redirectUri: _config.redirectUri,
         postLogoutRedirectUri: _config.postLogoutRedirectUri,
         scope: _config.scopes,
-        strictJwtVerification: false,
       ),
     );
 

@@ -57,7 +57,7 @@ void main() {
     });
 
     test('hasPrimaryCaregiver returns true when a caregiver exists', () {
-      state.addMember(_createSnapshot(name: 'João', isCaregiver: false));
+      state.addMember(_createSnapshot(name: 'João'));
       expect(state.hasPrimaryCaregiver, isFalse);
 
       state.addMember(_createSnapshot(name: 'Maria', isCaregiver: true));
@@ -236,7 +236,7 @@ FamilyMemberSnapshot _createSnapshot({
 }) {
   return FamilyMemberSnapshot(
     name: name,
-    birthDate: DateTime(1990, 1, 1),
+    birthDate: DateTime(1990),
     sex: 'masculino',
     relationshipCode: '03',
     hasDisability: false,

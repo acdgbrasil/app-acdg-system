@@ -1,47 +1,168 @@
 include: package:flutter_lints/flutter.yaml
 
+# ============================================================================
+# Analyzer — motor de análise estática
+# Mapeado de: recomendations.md (manipulação de dados, strict types)
+# ============================================================================
 analyzer:
   language:
+    # Fortemente recomendado: previne casts implícitos perigosos (dynamic → T)
     strict-casts: true
+    # Fortemente recomendado: garante inferência de tipos completa
     strict-inference: true
+    # Fortemente recomendado: proíbe tipos genéricos sem parâmetro (List vs List<String>)
     strict-raw-types: true
+
   errors:
-    missing_required_param: error
-    missing_return: error
+    # Handbook: modelos imutáveis são cruciais (recomendations.md § Manipulação de dados)
     must_be_immutable: error
+    # Handbook: toda função precisa de return (best_pratices.md § Dart Moderno)
+    missing_return: error
+    # Handbook: params obrigatórios devem ser enforçados
+    missing_required_param: error
+    # Handbook: UseCase obrigatório — imports entre camadas são críticos
+    avoid_relative_lib_imports: error
+
   exclude:
+    # Código gerado (build_runner, freezed, riverpod_generator)
     - "**/*.g.dart"
     - "**/*.freezed.dart"
 
+# ============================================================================
+# Linter — regras individuais organizadas por princípio arquitetural
+# Cada seção referencia o arquivo do handbook que fundamenta a regra
+# ============================================================================
 linter:
   rules:
-    - always_declare_return_types
-    - annotate_overrides
-    - avoid_empty_else
-    - avoid_print
-    - avoid_relative_lib_imports
-    - avoid_slow_async_io
-    - avoid_types_as_parameter_names
-    - avoid_unnecessary_containers
-    - avoid_web_libraries_in_flutter
-    - cancel_subscriptions
-    - close_sinks
-    - constant_identifier_names
-    - directives_ordering
-    - no_duplicate_case_values
-    - prefer_const_constructors
-    - prefer_const_declarations
-    - prefer_final_fields
-    - prefer_final_locals
-    - prefer_is_empty
-    - prefer_is_not_empty
-    - prefer_single_quotes
-    - prefer_void_to_null
-    - require_trailing_commas
-    - sized_box_for_whitespace
-    - sort_child_properties_last
-    - unnecessary_brace_in_string_interps
-    - unnecessary_const
-    - unnecessary_new
-    - unnecessary_string_interpolations
-    - use_key_in_widget_constructors
+    # ------------------------------------------------------------------
+    # IMUTABILIDADE (fortemente recomendado)
+    # Handbook: recomendations.md § "Use modelos de dados imutáveis"
+    # Handbook: ui_layer.md § "Estado da UI deve ser imutável"
+    # Handbook: best_pratices.md § "Camada de Dados"
+    # ------------------------------------------------------------------
+    - prefer_final_fields            # Campos de classe: sempre final
+    - prefer_final_locals            # Variáveis locais: sempre final
+    - prefer_final_in_for_each       # Variáveis de for-each: final
+    - prefer_const_constructors      # Constructors const quando possível
+    - prefer_const_constructors_in_immutables  # Widgets imutáveis com const
+    - prefer_const_declarations      # Declarações const quando possível
+    - prefer_const_literals_to_create_immutables  # const [] e const {} para coleções
+    - unnecessary_const              # Remover const redundante
+    - unnecessary_new                # Proibir new (Dart 2+)
+
+    # ------------------------------------------------------------------
+    # TIPOS E SEGURANÇA
+    # Handbook: recomendations.md § strict types, Result<T>
+    # Handbook: best_pratices.md § "Dart Moderno (Dart 3+)"
+    # ------------------------------------------------------------------
+    - always_declare_return_types    # Toda função declara tipo de retorno
+    - avoid_types_as_parameter_names # Não usar tipos como nomes de parâmetro
+    - prefer_void_to_null            # void ao invés de Null
+    - avoid_dynamic_calls            # Proibir chamadas em dynamic
+    - prefer_typing_uninitialized_variables  # Tipar variáveis não inicializadas
+
+    # ------------------------------------------------------------------
+    # ASYNC / CONCORRÊNCIA
+    # Handbook: ui_layer.md § Commands, Future handling
+    # Handbook: best_pratices.md § "NÃO FAZER: ignorar estado de erro"
+    # ------------------------------------------------------------------
+    - unawaited_futures              # Future ignorado sem unawaited()
+    - avoid_slow_async_io            # Evitar I/O síncrono em hot path
+    - cancel_subscriptions           # Cancelar StreamSubscription no dispose
+    - close_sinks                    # Fechar Sinks no dispose
+    - use_build_context_synchronously # Não usar BuildContext após await
+
+    # ------------------------------------------------------------------
+    # IMPORTS E ORGANIZAÇÃO DE MÓDULOS
+    # Handbook: recomendations.md § "Separação de responsabilidades"
+    # Handbook: best_pratices.md § "Camada de Dados" (não chamar Service da View)
+    # Handbook: data_layer.md § "service é membro privado"
+    # ------------------------------------------------------------------
+    - directives_ordering            # sdk → package → relative
+    - avoid_relative_lib_imports     # Sempre usar package: imports
+    - avoid_web_libraries_in_flutter # Não importar dart:html em Flutter
+
+    # ------------------------------------------------------------------
+    # NAMING CONVENTIONS
+    # Handbook: recomendations.md § "Use convenções de nomenclatura padronizadas"
+    # HomeViewModel, HomeScreen, UserRepository, ClientApiService
+    # ------------------------------------------------------------------
+    - constant_identifier_names      # UPPER_CASE para constantes
+    - camel_case_types               # PascalCase para tipos
+    - non_constant_identifier_names  # camelCase para variáveis
+    - file_names                     # snake_case para arquivos
+    - library_prefixes               # Prefixos de library em snake_case
+
+    # ------------------------------------------------------------------
+    # WIDGETS E UI
+    # Handbook: ui_layer.md § "Views são widgets com 3 responsabilidades"
+    # Handbook: recomendations.md § "Não coloque lógica nos widgets"
+    # Handbook: best_pratices.md § "Atomic Design"
+    # ------------------------------------------------------------------
+    - use_key_in_widget_constructors # Widgets sempre com key parameter
+    - sized_box_for_whitespace       # SizedBox ao invés de Container vazio
+    - sort_child_properties_last     # child: sempre por último no constructor
+    - avoid_unnecessary_containers   # Sem Container quando SizedBox basta
+    - prefer_is_empty                # .isEmpty ao invés de .length == 0
+    - prefer_is_not_empty            # .isNotEmpty ao invés de .length > 0
+
+    # ------------------------------------------------------------------
+    # DART MODERNO (Dart 3+)
+    # Handbook: best_pratices.md § "Dart Moderno"
+    # .firstOrNull, .nonNulls, cadeias funcionais, const coleções
+    # ------------------------------------------------------------------
+    - unnecessary_lambdas            # (x) => foo(x) → foo (tearoff)
+    - prefer_collection_literals     # [] ao invés de List(), {} ao invés de Map()
+    - prefer_for_elements_to_map_from_entries  # for em collection literal
+    - prefer_iterable_whereType      # .whereType<T>() ao invés de .where + cast
+    - prefer_spread_collections      # Spread [...a, ...b] ao invés de addAll
+    - prefer_if_elements_to_conditional_expressions  # if em collection literal
+    - unnecessary_string_interpolations  # '$x' → x quando desnecessário
+    - unnecessary_brace_in_string_interps  # '$x' ao invés de '${x}'
+    - unnecessary_this               # Remover this. desnecessário
+
+    # ------------------------------------------------------------------
+    # CONTROLE DE FLUXO
+    # Handbook: best_pratices.md § code style consistency
+    # ------------------------------------------------------------------
+    - curly_braces_in_flow_control_structures  # if/else/for sempre com { }
+    - avoid_empty_else               # Sem else vazio
+    - no_duplicate_case_values       # Sem case duplicado em switch
+    - exhaustive_cases               # Switch deve cobrir todos os casos
+
+    # ------------------------------------------------------------------
+    # QUALIDADE DE CÓDIGO E MANUTENIBILIDADE
+    # Handbook: recomendations.md § "Código bem organizado"
+    # Handbook: best_pratices.md § code reviews consolidadas
+    # ------------------------------------------------------------------
+    - annotate_overrides             # @override obrigatório
+    - avoid_print                    # Sem print() — usar logger (Sentry)
+    - prefer_single_quotes           # Aspas simples para consistência
+    - require_trailing_commas        # Vírgula no final (melhor diff em git)
+    - avoid_redundant_argument_values  # Sem passar valor que já é default
+    - avoid_returning_null_for_void  # Não retornar null em funções void
+    - avoid_void_async               # Async deve retornar Future, não void
+    - prefer_function_declarations_over_variables  # function foo() vs var foo = () =>
+    - prefer_interpolation_to_compose_strings  # Interpolação ao invés de +
+    - unnecessary_overrides          # Remover @override que só chama super
+    - unnecessary_parenthesis        # Remover parênteses desnecessários
+    - unnecessary_string_escapes     # Remover escapes desnecessários
+    - no_leading_underscores_for_local_identifiers  # Sem _ prefixo em locais
+
+    # ------------------------------------------------------------------
+    # TESTES E TESTABILIDADE
+    # Handbook: tests.md § "Fakes em vez de Mocks"
+    # Handbook: best_pratices.md § "Testabilidade e Fakes"
+    # Handbook: recomendations.md § "Crie fakes para testes"
+    # ------------------------------------------------------------------
+    - test_types_in_equals           # Testar tipo no operator ==
+    - prefer_asserts_with_message    # assert() sempre com mensagem
+
+    # ------------------------------------------------------------------
+    # REPOSITORY PATTERN
+    # Handbook: data_layer.md § "Service é membro privado"
+    # Handbook: recomendations.md § "Use classes de repository abstratas"
+    # Handbook: best_pratices.md § "Repository como Fonte de Verdade"
+    # (Enforçado via Kodus rules, não há lint nativo para layer boundaries)
+    # ------------------------------------------------------------------
+    - prefer_mixin                   # Prefer mixin sobre abstract class para mixins

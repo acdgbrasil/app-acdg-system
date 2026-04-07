@@ -70,7 +70,6 @@ class AcdgRegistrationHeader extends StatelessWidget {
 
               // 2. Title Layer
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: AcdgText(
@@ -117,9 +116,7 @@ class AcdgRegistrationHeader extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               border: item.isActive
-                  ? const Border(
-                      bottom: BorderSide(color: AppColors.border, width: 1.0),
-                    )
+                  ? const Border(bottom: BorderSide(color: AppColors.border))
                   : null,
             ),
             child: AcdgText(item.label, variant: AcdgTextVariant.headingSmall),

@@ -166,7 +166,7 @@ void main() {
 AddMemberResult _createMockResult({required bool isPrimaryCaregiver}) {
   return AddMemberResult(
     name: 'John Doe',
-    birthDate: DateTime(1990, 1, 1),
+    birthDate: DateTime(1990),
     sex: 'Masculino',
     relationshipCode: 'FILHO',
     residesWithPatient: true,
@@ -181,7 +181,7 @@ FamilyMemberModel _createMockMember({required String id, bool isPr = false}) {
     personId: id,
     relationshipLabel: isPr ? 'Pessoa de Referência' : 'Filho',
     relationshipCode: isPr ? 'PESSOA_REFERENCIA' : 'FILHO',
-    birthDate: DateTime(1990, 1, 1),
+    birthDate: DateTime(1990),
     sex: 'Masculino',
     isReferencePerson: isPr,
     isPrimaryCaregiver: false,

@@ -62,7 +62,6 @@ class AcdgDocumentsCheckboxRow extends StatelessWidget {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         AcdgCheckbox(
           value: isSelected,
