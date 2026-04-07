@@ -89,10 +89,7 @@ class InMemoryLocalRepository implements LocalCacheContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async =>
+    LookupId prRelationshipId) async =>
       const Failure('Not implemented');
   @override
   Future<Result<void>> removeFamilyMember(
@@ -223,10 +220,7 @@ class InMemoryRemoteRepository implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async =>
+    LookupId prRelationshipId) async =>
       const Failure('Not implemented');
   @override
   Future<Result<void>> removeFamilyMember(

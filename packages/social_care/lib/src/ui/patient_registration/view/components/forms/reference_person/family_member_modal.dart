@@ -3,16 +3,12 @@ import 'dart:ui';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
-import 'package:social_care/src/constants/reference_person_ln10.dart';
 
 import 'family_composition_form_state.dart';
+import 'family_member_form_fields.dart';
 import 'family_member_modal_components/family_member_modal_footer.dart';
 import 'family_member_modal_components/family_member_modal_header.dart';
-import 'family_member_modal_components/family_member_modal_relationship_list.dart';
-import 'family_member_modal_components/modal_doc_checkboxes.dart';
-import 'family_member_modal_components/modal_label.dart';
-import 'family_member_modal_components/modal_radio_group.dart';
-import 'family_member_modal_components/modal_text_input.dart';
+import 'family_member_relationship_panel.dart';
 
 /// Callback type for validating a save attempt before actually saving.
 ///
@@ -44,8 +40,6 @@ class FamilyMemberModal extends StatefulWidget {
 class _FamilyMemberModalState extends State<FamilyMemberModal> {
   FamilyMemberEntry get _entry => widget.entry;
   bool _showErrors = false;
-
-  static const _docOptions = ['CN', 'RG', 'CTPS', 'CPF', 'TE', 'CNS'];
 
   List<(String, String)> get _parentescoOptions {
     if (widget.parentescoLookup.isEmpty) return const [];
@@ -142,13 +136,25 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
                       builder: (context, constraints) {
                         final isWide = constraints.maxWidth > 500;
 
+                        final formFields = FamilyMemberFormFields(
+                          entry: _entry,
+                          showErrors: _showErrors,
+                        );
+                        final relationshipPanel = FamilyMemberRelationshipPanel(
+                          parentescoOptions: _parentescoOptions,
+                          relationshipNotifier: _entry.relationship,
+                          errorText: _showErrors
+                              ? _entry.relationshipError
+                              : null,
+                        );
+
                         if (isWide) {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: _buildLeftColumn()),
+                              Expanded(child: formFields),
                               const SizedBox(width: 40),
-                              SizedBox(width: 260, child: _buildRightColumn()),
+                              SizedBox(width: 260, child: relationshipPanel),
                             ],
                           );
                         }
@@ -156,9 +162,9 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLeftColumn(),
+                            formFields,
                             const SizedBox(height: 28),
-                            _buildRightColumn(),
+                            relationshipPanel,
                           ],
                         );
                       },
@@ -176,104 +182,6 @@ class _FamilyMemberModalState extends State<FamilyMemberModal> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLeftColumn() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ModalLabel(
-          text: ReferencePersonLn10.memberNameLabel,
-          isRequired: true,
-        ),
-        ModalTextInput(
-          controller: _entry.name,
-          placeholder: ReferencePersonLn10.memberNamePlaceholder,
-          errorText: _showErrors ? _entry.nameError : null,
-        ),
-        const SizedBox(height: 28),
-        const ModalLabel(
-          text: ReferencePersonLn10.memberBirthDateLabel,
-          isRequired: true,
-        ),
-        ModalTextInput(
-          controller: _entry.birthDate,
-          placeholder: ReferencePersonLn10.birthDatePlaceholder,
-          errorText: _showErrors ? _entry.birthDateError : null,
-          formatters: AppMasks.date,
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 28),
-        const ModalLabel(
-          text: ReferencePersonLn10.memberSexLabel,
-          isRequired: true,
-        ),
-        ModalRadioGroup<String>(
-          notifier: _entry.sex,
-          options: const [
-            ('masculino', ReferencePersonLn10.genderOptionMale),
-            ('feminino', ReferencePersonLn10.genderOptionFemale),
-            ('outro', ReferencePersonLn10.genderOptionOther),
-          ],
-          errorText: _showErrors ? _entry.sexError : null,
-        ),
-        const SizedBox(height: 28),
-        const ModalLabel(
-          text: ReferencePersonLn10.memberPcdLabel,
-          isRequired: true,
-        ),
-        ModalRadioGroup<bool>(
-          notifier: _entry.hasDisability,
-          options: const [
-            (true, ReferencePersonLn10.radioYes),
-            (false, ReferencePersonLn10.radioNo),
-          ],
-          errorText: _showErrors ? _entry.hasDisabilityError : null,
-        ),
-        const SizedBox(height: 28),
-        const ModalLabel(text: ReferencePersonLn10.memberResidingLabel),
-        ModalRadioGroup<bool>(
-          notifier: _entry.isResiding,
-          options: const [
-            (true, ReferencePersonLn10.radioYes),
-            (false, ReferencePersonLn10.radioNo),
-          ],
-        ),
-        const SizedBox(height: 28),
-        const ModalLabel(text: ReferencePersonLn10.memberCaregiverLabel),
-        ModalRadioGroup<bool>(
-          notifier: _entry.isCaregiver,
-          options: const [
-            (true, ReferencePersonLn10.radioYes),
-            (false, ReferencePersonLn10.radioNo),
-          ],
-        ),
-        const SizedBox(height: 28),
-        const ModalLabel(text: ReferencePersonLn10.memberDocsLabel),
-        ModalDocCheckboxes(
-          notifier: _entry.requiredDocuments,
-          options: _docOptions,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRightColumn() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ModalLabel(
-          text: ReferencePersonLn10.memberRelationshipLabel,
-          isRequired: true,
-        ),
-        const SizedBox(height: 8),
-        FamilyMemberModalRelationshipList(
-          options: _parentescoOptions,
-          relationshipNotifier: _entry.relationship,
-          errorText: _showErrors ? _entry.relationshipError : null,
-        ),
-      ],
     );
   }
 }

@@ -54,7 +54,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateHousingCondition(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -83,7 +83,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateSocioEconomicSituation(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -112,7 +112,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateWorkAndIncome(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -141,7 +141,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateEducationalStatus(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -170,7 +170,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateHealthStatus(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -199,7 +199,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateCommunitySupportNetwork(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -228,7 +228,7 @@ class AssessmentHandler {
         (Success(:final value), Success(value: final data)) =>
           switch (await contract.updateSocialHealthSummary(value, data)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,

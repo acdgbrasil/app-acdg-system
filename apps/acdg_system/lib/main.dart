@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:core/core.dart';
+import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
 import 'root.dart';
 
-void main() {
-  // Ensure Flutter bindings are initialized before any core setup
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Capture environment variables at the app level and inject into Core.
-  // This ensures variables from .env are correctly picked up in monorepo builds.
   Env.configure(
     oidcIssuer: const String.fromEnvironment('OIDC_ISSUER'),
     oidcClientId: const String.fromEnvironment('OIDC_CLIENT_ID'),
@@ -20,9 +19,20 @@ void main() {
     bffBaseUrl: const String.fromEnvironment('BFF_BASE_URL'),
   );
 
-  // Initialize logging
-  AcdgLogger.initialize();
+  const dsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+  const env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
 
-  // Run the Root widget which handles app-wide configuration
-  runApp(const Root());
+  // Initialize logging — with Sentry forwarding when DSN is configured
+  final sentryAdapter = dsn.isNotEmpty ? RealSentryClientAdapter() : null;
+  AcdgLogger.initialize(sentryClient: sentryAdapter);
+
+  if (dsn.isNotEmpty) {
+    await SentryFlutter.init((options) {
+      options.dsn = dsn;
+      options.environment = env;
+      options.tracesSampleRate = 1.0;
+    }, appRunner: () => runApp(const Root()));
+  } else {
+    runApp(const Root());
+  }
 }

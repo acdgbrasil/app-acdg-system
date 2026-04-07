@@ -50,7 +50,7 @@ class LookupHandler {
             )
             .toList(),
       ),
-      Failure(:final error) => jsonError(500, error.toString()),
+      Failure(:final error) => backendError(error),
     };
   }
 }

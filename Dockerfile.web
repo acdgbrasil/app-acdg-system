@@ -26,11 +26,14 @@ ARG OIDC_SCOPES=openid\ profile\ email\ offline_access\ urn:zitadel:iam:org:proj
 ARG OIDC_WEB_REDIRECT_URI
 ARG OIDC_WEB_POST_LOGOUT_URI
 ARG BFF_BASE_URL=/api
+ARG SENTRY_DSN=
+ARG APP_ENV=production
 
 # Generate .env at build-time
-RUN printf 'OIDC_ISSUER=%s\nOIDC_CLIENT_ID=%s\nOIDC_SCOPES=%s\nOIDC_WEB_REDIRECT_URI=%s\nOIDC_WEB_POST_LOGOUT_URI=%s\nBFF_BASE_URL=%s\n' \
+RUN printf 'OIDC_ISSUER=%s\nOIDC_CLIENT_ID=%s\nOIDC_SCOPES=%s\nOIDC_WEB_REDIRECT_URI=%s\nOIDC_WEB_POST_LOGOUT_URI=%s\nBFF_BASE_URL=%s\nSENTRY_DSN=%s\nAPP_ENV=%s\n' \
     "$OIDC_ISSUER" "$OIDC_CLIENT_ID" "$OIDC_SCOPES" \
     "$OIDC_WEB_REDIRECT_URI" "$OIDC_WEB_POST_LOGOUT_URI" "$BFF_BASE_URL" \
+    "$SENTRY_DSN" "$APP_ENV" \
     > apps/acdg_system/.env
 
 RUN cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=.env

@@ -1,8 +1,8 @@
-import 'dart:developer' as developer;
-
 import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
+
+import '../handlers/handler_utils.dart';
 
 /// Implementation of [SocialCareContract] that communicates with the real
 /// backend API (Swift/Vapor) via HTTP.
@@ -30,6 +30,24 @@ class SocialCareApiClient implements SocialCareContract {
            );
 
   final Dio _dio;
+
+  /// Extracts a typed [BackendError] from a non-success Dio [Response].
+  Failure<T> _backendFailure<T>(Response response, String fallbackMessage) {
+    final data = response.data;
+    String message = fallbackMessage;
+    if (data is Map<String, dynamic>) {
+      final errorMap = data['error'] as Map<String, dynamic>?;
+      final code = errorMap?['code'] as String?;
+      final msg = errorMap?['message'] as String? ??
+          data['message'] as String? ??
+          fallbackMessage;
+      message = code != null ? '$code: $msg' : msg;
+    }
+    return Failure(BackendError(
+      statusCode: response.statusCode ?? 502,
+      message: message,
+    ));
+  }
 
   @override
   Future<Result<void>> checkHealth() async {
@@ -68,7 +86,7 @@ class SocialCareApiClient implements SocialCareContract {
             .toList();
         return Success(summaries);
       }
-      return Failure(response.data ?? 'Failed to list patients');
+      return _backendFailure(response, 'Failed to list patients');
     } catch (e) {
       return Failure(e);
     }
@@ -87,7 +105,7 @@ class SocialCareApiClient implements SocialCareContract {
         final data = response.data!['data'] as Map<String, dynamic>;
         return PatientId.create(data['id'] as String);
       }
-      return Failure(response.data ?? 'Unknown backend error');
+      return _backendFailure(response, 'Unknown backend error');
     } catch (e) {
       return Failure(e);
     }
@@ -106,7 +124,7 @@ class SocialCareApiClient implements SocialCareContract {
         final data = response.data!['data'] as Map<String, dynamic>;
         return Success(PatientRemote.fromJson(data));
       }
-      return Failure(response.data ?? 'Patient not found');
+      return _backendFailure(response, 'Patient not found');
     } catch (e) {
       return Failure(e);
     }
@@ -126,7 +144,7 @@ class SocialCareApiClient implements SocialCareContract {
         final data = response.data!['data'] as Map<String, dynamic>;
         return Success(PatientRemote.fromJson(data));
       }
-      return Failure(response.data ?? 'Patient not found');
+      return _backendFailure(response, 'Patient not found');
     } catch (e) {
       return Failure(e);
     }
@@ -136,20 +154,12 @@ class SocialCareApiClient implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async {
+    LookupId prRelationshipId) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
         'prRelationshipId': prRelationshipId.value,
       };
-
-      developer.log(
-        'addFamilyMember POST: /api/v1/patients/${patientId.value}/family-members',
-        name: 'SocialCareApiClient',
-      );
 
       final response = await _dio.post(
         '/api/v1/patients/${patientId.value}/family-members',
@@ -162,13 +172,8 @@ class SocialCareApiClient implements SocialCareContract {
           response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to add family member');
+      return _backendFailure(response, 'Failed to add family member');
     } catch (e) {
-      developer.log(
-        'CRITICAL ERROR: $e',
-        name: 'SocialCareApiClient',
-        level: 1000,
-      );
       return Failure(e);
     }
   }
@@ -187,7 +192,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to remove family member');
+      return _backendFailure(response, 'Failed to remove family member');
     } catch (e) {
       return Failure(e);
     }
@@ -208,7 +213,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to assign primary caregiver');
+      return _backendFailure(response, 'Failed to assign primary caregiver');
     } catch (e) {
       return Failure(e);
     }
@@ -229,7 +234,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update social identity');
+      return _backendFailure(response, 'Failed to update social identity');
     } catch (e) {
       return Failure(e);
     }
@@ -251,7 +256,7 @@ class SocialCareApiClient implements SocialCareContract {
         final List<dynamic> data = response.data!['data'];
         return Success(data.map((item) => _mapApiToAuditEvent(item)).toList());
       }
-      return Failure(response.data ?? 'Failed to fetch audit trail');
+      return _backendFailure(response, 'Failed to fetch audit trail');
     } catch (e) {
       return Failure(e);
     }
@@ -284,7 +289,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update housing condition');
+      return _backendFailure(response, 'Failed to update housing condition');
     } catch (e) {
       return Failure(e);
     }
@@ -328,7 +333,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update work and income');
+      return _backendFailure(response, 'Failed to update work and income');
     } catch (e) {
       return Failure(e);
     }
@@ -349,7 +354,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update educational status');
+      return _backendFailure(response, 'Failed to update educational status');
     } catch (e) {
       return Failure(e);
     }
@@ -370,7 +375,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update health status');
+      return _backendFailure(response, 'Failed to update health status');
     } catch (e) {
       return Failure(e);
     }
@@ -414,7 +419,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update social health summary');
+      return _backendFailure(response, 'Failed to update social health summary');
     } catch (e) {
       return Failure(e);
     }
@@ -436,7 +441,7 @@ class SocialCareApiClient implements SocialCareContract {
         final data = response.data!['data'] as Map<String, dynamic>;
         return AppointmentId.create(data['id'] as String);
       }
-      return Failure(response.data ?? 'Failed to register appointment');
+      return _backendFailure(response, 'Failed to register appointment');
     } catch (e) {
       return Failure(e);
     }
@@ -457,7 +462,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update intake info');
+      return _backendFailure(response, 'Failed to update intake info');
     } catch (e) {
       return Failure(e);
     }
@@ -478,7 +483,7 @@ class SocialCareApiClient implements SocialCareContract {
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(response.data ?? 'Failed to update placement history');
+      return _backendFailure(response, 'Failed to update placement history');
     } catch (e) {
       return Failure(e);
     }
@@ -500,7 +505,7 @@ class SocialCareApiClient implements SocialCareContract {
         final data = response.data!['data'] as Map<String, dynamic>;
         return ViolationReportId.create(data['id'] as String);
       }
-      return Failure(response.data ?? 'Failed to report violation');
+      return _backendFailure(response, 'Failed to report violation');
     } catch (e) {
       return Failure(e);
     }
@@ -522,7 +527,7 @@ class SocialCareApiClient implements SocialCareContract {
         final data = response.data!['data'] as Map<String, dynamic>;
         return ReferralId.create(data['id'] as String);
       }
-      return Failure(response.data ?? 'Failed to create referral');
+      return _backendFailure(response, 'Failed to create referral');
     } catch (e) {
       return Failure(e);
     }

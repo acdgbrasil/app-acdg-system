@@ -7,19 +7,25 @@ import 'package:social_care/src/ui/family_composition/view/components/relationsh
 void main() {
   group('RelationshipSelectionList', () {
     final testLookup = <LookupItem>[
-      const LookupItem(id: '1', codigo: 'MAE', descricao: 'Mãe'),
+      const LookupItem(id: '1', codigo: 'MAE', descricao: 'Mae'),
       const LookupItem(id: '2', codigo: 'PAI', descricao: 'Pai'),
-      const LookupItem(id: '3', codigo: 'PESSOA_REFERENCIA', descricao: 'Pessoa de Referência'),
+      const LookupItem(
+        id: '3',
+        codigo: 'PESSOA_REFERENCIA',
+        descricao: 'Pessoa de Referencia',
+      ),
     ];
 
     testWidgets('renders items excluding PESSOA_REFERENCIA', (tester) async {
+      final notifier = ValueNotifier<String?>(null);
+      addTearDown(notifier.dispose);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: RelationshipSelectionList(
               parentescoLookup: testLookup,
-              selectedRelationship: null,
-              onChanged: (v) {},
+              relationshipNotifier: notifier,
               error: null,
               showErrors: false,
             ),
@@ -27,65 +33,64 @@ void main() {
         ),
       );
 
-      // Should find Mãe and Pai
-      expect(find.text('Mãe'), findsOneWidget);
+      expect(find.text('Mae'), findsOneWidget);
       expect(find.text('Pai'), findsOneWidget);
-
-      // Should NOT find Pessoa Referência
-      expect(find.text('Pessoa de Referência'), findsNothing);
-
-      // Should have 2 HoverableRelationshipItem widgets
+      expect(find.text('Pessoa de Referencia'), findsNothing);
       expect(find.byType(HoverableRelationshipItem), findsNWidgets(2));
     });
 
-    testWidgets('displays error when showErrors is true and error is provided', (tester) async {
+    testWidgets('displays error when showErrors is true and error is provided',
+        (tester) async {
+      final notifier = ValueNotifier<String?>(null);
+      addTearDown(notifier.dispose);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: RelationshipSelectionList(
               parentescoLookup: testLookup,
-              selectedRelationship: null,
-              onChanged: (v) {},
-              error: 'Campo obrigatório',
+              relationshipNotifier: notifier,
+              error: 'Campo obrigatorio',
               showErrors: true,
             ),
           ),
         ),
       );
 
-      expect(find.text('Campo obrigatório'), findsOneWidget);
+      expect(find.text('Campo obrigatorio'), findsOneWidget);
     });
 
-    testWidgets('does not display error when showErrors is false', (tester) async {
+    testWidgets('does not display error when showErrors is false',
+        (tester) async {
+      final notifier = ValueNotifier<String?>(null);
+      addTearDown(notifier.dispose);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: RelationshipSelectionList(
               parentescoLookup: testLookup,
-              selectedRelationship: null,
-              onChanged: (v) {},
-              error: 'Campo obrigatório',
+              relationshipNotifier: notifier,
+              error: 'Campo obrigatorio',
               showErrors: false,
             ),
           ),
         ),
       );
 
-      expect(find.text('Campo obrigatório'), findsNothing);
+      expect(find.text('Campo obrigatorio'), findsNothing);
     });
 
-    testWidgets('emits onChanged when an item is tapped', (tester) async {
-      String? selectedVal;
+    testWidgets('updates notifier when an item is tapped', (tester) async {
+      final notifier = ValueNotifier<String?>(null);
+      addTearDown(notifier.dispose);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: RelationshipSelectionList(
               parentescoLookup: testLookup,
-              selectedRelationship: null,
-              onChanged: (v) {
-                selectedVal = v;
-              },
+              relationshipNotifier: notifier,
               error: null,
               showErrors: false,
             ),
@@ -96,7 +101,7 @@ void main() {
       await tester.tap(find.text('Pai'));
       await tester.pumpAndSettle();
 
-      expect(selectedVal, 'PAI');
+      expect(notifier.value, 'PAI');
     });
   });
 }

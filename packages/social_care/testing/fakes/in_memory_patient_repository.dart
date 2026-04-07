@@ -90,10 +90,7 @@ class InMemoryPatientRepository implements PatientRepository {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async {
+    LookupId prRelationshipId) async {
     final patient = _store[patientId.value];
     if (patient == null) {
       return Failure(

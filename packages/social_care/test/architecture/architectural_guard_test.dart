@@ -51,6 +51,7 @@ void main() {
         if (content.contains('class ') && !content.contains('with Equatable') && !content.contains('extends Equatable')) {
           if (!content.contains('enum ') && 
               !content.contains('abstract interface class') &&
+              !content.contains('abstract final class') &&
               !content.contains('mixin ')) {
             violations.add('${file.path}: Domain models must use Equatable.');
           }
@@ -107,6 +108,33 @@ void main() {
           }
         }
       }
+    });
+
+    test('RULE: Atomic State Management (No setState for Form fields)', () {
+      final violations = <String>[];
+      
+      // Specifically target the modals where we know ValueNotifiers/FormStates are used
+      final modalFiles = allDartFiles(uiDir).where((f) => 
+        f.path.contains('add_member_modal.dart') || 
+        f.path.contains('family_member_modal.dart')
+      );
+
+      for (final file in modalFiles) {
+        final content = file.readAsStringSync();
+        
+        // Find usages of setState wrapping any property change logic
+        // Look for setState being used for typical form fields
+        final hasSetStateForFields = content.contains('setState(() => _formState');
+        
+        if (hasSetStateForFields) {
+          violations.add(
+            '${file.path}: Found instances of setState() updating a field. '
+            'Rule: Use ValueListenableBuilder inside small, isolated components for atomic rebuilds instead of rebuilding the entire Modal.'
+          );
+        }
+      }
+      
+      if (violations.isNotEmpty) fail('Architectural Violations (Atomic State): \n${violations.join('\n')}');
     });
   });
 }

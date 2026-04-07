@@ -43,7 +43,7 @@ class ProtectionHandler {
         (Success(:final value), Success(value: final history)) =>
           switch (await contract.updatePlacementHistory(value, history)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -72,7 +72,7 @@ class ProtectionHandler {
         (Success(:final value), Success(value: final report)) =>
           switch (await contract.reportViolation(value, report)) {
             Success(:final value) => jsonOk({'id': value.value}),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -101,7 +101,7 @@ class ProtectionHandler {
         (Success(:final value), Success(value: final referral)) =>
           switch (await contract.createReferral(value, referral)) {
             Success(:final value) => jsonOk({'id': value.value}),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,

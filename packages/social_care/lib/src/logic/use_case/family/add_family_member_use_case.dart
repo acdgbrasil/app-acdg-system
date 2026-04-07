@@ -20,13 +20,10 @@ class AddFamilyMemberUseCase extends BaseUseCase<AddFamilyMemberIntent, void> {
     final prRelIdRes = LookupId.create(intent.prRelationshipId);
     if (prRelIdRes case Failure(:final error)) return Failure(error);
 
-    final fullName = '${intent.firstName} ${intent.lastName}'.trim();
-
     return _patientRepository.addFamilyMember(
       intent.patientId,
       (memberRes as Success<FamilyMember>).value,
       (prRelIdRes as Success<LookupId>).value,
-      fullName: fullName.isNotEmpty ? fullName : null,
     );
   }
 }

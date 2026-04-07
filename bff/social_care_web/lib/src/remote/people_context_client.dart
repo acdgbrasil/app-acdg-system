@@ -65,4 +65,26 @@ class PeopleContextClient {
       return Failure('People Context unreachable: $e');
     }
   }
+
+  /// Retrieves a person by [personId] from people-context.
+  ///
+  /// Returns `{id, fullName, birthDate}` on success.
+  /// Used by the BFF to enrich patient/member data with display names.
+  Future<Result<Map<String, dynamic>>> getPerson(String personId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/people/$personId',
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data!['data'] as Map<String, dynamic>;
+        return Success(data);
+      }
+
+      return const Failure('Person not found');
+    } catch (e) {
+      return Failure('People Context unreachable: $e');
+    }
+  }
 }

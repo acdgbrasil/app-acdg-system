@@ -40,7 +40,7 @@ class CareHandler {
         (Success(:final value), Success(value: final appointment)) =>
           switch (await contract.registerAppointment(value, appointment)) {
             Success(:final value) => jsonOk({'id': value.value}),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,
@@ -69,7 +69,7 @@ class CareHandler {
         (Success(:final value), Success(value: final intake)) =>
           switch (await contract.updateIntakeInfo(value, intake)) {
             Success() => jsonNoContent(),
-            Failure(:final error) => jsonError(500, error.toString()),
+            Failure(:final error) => backendError(error),
           },
         (Failure(:final error), _) => jsonError(
           400,

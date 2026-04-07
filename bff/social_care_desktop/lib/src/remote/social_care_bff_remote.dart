@@ -144,10 +144,7 @@ class SocialCareBffRemote implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-   {
-    String? fullName,
-  }) async {
+    LookupId prRelationshipId) async {
     try {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
