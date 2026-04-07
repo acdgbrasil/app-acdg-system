@@ -1,6 +1,6 @@
 name: core
 description: Core package - base classes and platform resolution.
-version: 0.1.1
+version: 0.1.2
 publish_to: 'none'
 
 resolution: workspace
