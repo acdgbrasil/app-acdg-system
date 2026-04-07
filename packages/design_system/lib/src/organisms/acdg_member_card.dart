@@ -163,7 +163,7 @@ class AcdgMemberCard extends StatelessWidget {
       children: [
         AcdgText(label, variant: AcdgTextVariant.headingSmall),
         const SizedBox(height: 4),
-        AcdgText(value, variant: AcdgTextVariant.bodyLarge),
+        AcdgText(value),
       ],
     );
   }

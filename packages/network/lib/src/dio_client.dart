@@ -70,7 +70,7 @@ class _LoggingInterceptor extends Interceptor {
       // ignore: avoid_print
       print('[DIO] ${options.method} ${options.uri}');
       return true;
-    }());
+    }(), 'DIO request logging'); // ignore: prefer_asserts_with_message
     handler.next(options);
   }
 
@@ -80,7 +80,7 @@ class _LoggingInterceptor extends Interceptor {
       // ignore: avoid_print
       print('[DIO] ERROR ${err.response?.statusCode} ${err.message}');
       return true;
-    }());
+    }(), 'DIO error logging'); // ignore: prefer_asserts_with_message
     handler.next(err);
   }
 }

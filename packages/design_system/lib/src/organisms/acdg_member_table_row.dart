@@ -42,52 +42,34 @@ class AcdgMemberTableRow extends StatelessWidget {
             // Nome - Flex 4
             Expanded(
               flex: 4,
-              child: AcdgText(
-                member.fullName,
-                variant: AcdgTextVariant.bodyLarge,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: AcdgText(member.fullName, overflow: TextOverflow.ellipsis),
             ),
             // Idade - Fixed Width
-            SizedBox(
-              width: 80,
-              child: AcdgText(
-                '${member.age} Anos',
-                variant: AcdgTextVariant.bodyLarge,
-              ),
-            ),
+            SizedBox(width: 80, child: AcdgText('${member.age} Anos')),
             // Sexo - Fixed Width
-            SizedBox(
-              width: 120,
-              child: AcdgText(member.sex, variant: AcdgTextVariant.bodyLarge),
-            ),
+            SizedBox(width: 120, child: AcdgText(member.sex)),
             // Parentesco - Flex 3
             Expanded(
               flex: 3,
               child: AcdgText(
                 member.relationship,
-                variant: AcdgTextVariant.bodyLarge,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             // PCD - Fixed Width
             SizedBox(
               width: 80,
-              child: AcdgText(
-                member.hasDisability ? 'Sim' : 'Não',
-                variant: AcdgTextVariant.bodyLarge,
-              ),
+              child: AcdgText(member.hasDisability ? 'Sim' : 'Não'),
             ),
             // Documentos - Flex 5
             Expanded(
               flex: 5,
               child: AcdgDocumentsCheckboxRow(
                 selectedDocuments: member.documents,
-                readOnly: true,
               ),
             ),
             // Editar - Icon Button
-            AcdgIconButton(icon: Icons.edit, size: 24, onPressed: onEdit),
+            AcdgIconButton(icon: Icons.edit, onPressed: onEdit),
           ],
         ),
       ),

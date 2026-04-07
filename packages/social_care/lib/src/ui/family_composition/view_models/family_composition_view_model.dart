@@ -315,7 +315,6 @@ class FamilyCompositionViewModel extends BaseViewModel {
       relationshipId: lookupItem?.id ?? result.relationshipCode,
       birthDate: result.birthDate,
       prRelationshipId: _prRelationshipId!,
-      isPrimaryCaregiver: false,
       residesWithPatient: result.residesWithPatient,
       hasDisability: result.hasDisability,
       requiredDocuments: result.requiredDocuments

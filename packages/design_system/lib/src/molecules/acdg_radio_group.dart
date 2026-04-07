@@ -63,7 +63,6 @@ class AcdgRadioGroup<T> extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   dense: isDense,
                   activeColor: AppColors.primary,
-                  toggleable: false,
                 );
               }).toList(),
             ),

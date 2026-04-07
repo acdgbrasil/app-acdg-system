@@ -47,11 +47,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AcdgPillButton(
-              onPressed: () {},
-              label: 'Test',
-              variant: AcdgPillButtonVariant.primary,
-            ),
+            body: AcdgPillButton(onPressed: () {}, label: 'Test'),
           ),
         ),
       );

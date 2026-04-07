@@ -57,12 +57,9 @@ class PersonalDataFormState {
   }
 
   // Funções de Validação (Para o Form e os Widgets)
-  String? Function(String?) get firstNameValidator =>
-      (value) => _namesValidator(value);
-  String? Function(String?) get lastNameValidator =>
-      (value) => _namesValidator(value);
-  String? Function(String?) get motherNameValidator =>
-      (value) => _namesValidator(value);
+  String? Function(String?) get firstNameValidator => _namesValidator;
+  String? Function(String?) get lastNameValidator => _namesValidator;
+  String? Function(String?) get motherNameValidator => _namesValidator;
   String? Function(String?) get socialNameValidator =>
       (value) => _namesValidator(value, isOptional: true);
 

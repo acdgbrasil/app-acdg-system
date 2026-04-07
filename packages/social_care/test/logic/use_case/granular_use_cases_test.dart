@@ -22,7 +22,7 @@ void main() {
         firstName: 'Familiar',
         lastName: 'Teste',
         relationshipId: '550e8400-e29b-41d4-a716-000000000010',
-        birthDate: DateTime(1990, 1, 1),
+        birthDate: DateTime(1990),
         prRelationshipId: patient.prRelationshipId.value,
       );
 

@@ -331,12 +331,13 @@ class AcdgFormField extends StatelessWidget {
       children: [
         _buildLabel(width),
         const SizedBox(height: 8),
-        direction == Axis.horizontal
-            ? Wrap(children: children)
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: children,
-              ),
+        if (direction == Axis.horizontal)
+          Wrap(children: children)
+        else
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
       ],
     );
   }
@@ -389,7 +390,6 @@ class AcdgFormField extends StatelessWidget {
 
   Widget _buildCheckboxSimple(double width) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         AcdgCheckbox(value: isChecked ?? false, onChanged: onCheckChanged),
         const SizedBox(width: 32),

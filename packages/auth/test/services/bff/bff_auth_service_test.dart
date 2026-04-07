@@ -249,7 +249,7 @@ void main() {
       service.dispose();
 
       // After dispose, adding to the stream should fail or the stream should be done.
-      expectLater(service.statusStream, emitsDone);
+      await expectLater(service.statusStream, emitsDone);
     });
   });
 }

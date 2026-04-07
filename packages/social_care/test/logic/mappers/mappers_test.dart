@@ -101,7 +101,7 @@ void main() {
         motherName: 'Julia Costa',
         nationality: 'Brasileira',
         sex: Sex.feminino,
-        birthDate: DateTime(1992, 12, 1),
+        birthDate: DateTime(1992, 12),
         prRelationshipId: PatientFixtures.prRelationshipId.value,
         cpf: PatientFixtures.validCpf,
         city: 'Salvador',
@@ -199,7 +199,7 @@ void main() {
           firstName: 'Jose',
           lastName: 'Silva',
           relationshipId: PatientFixtures.prRelationshipId.value,
-          birthDate: DateTime(1980, 1, 1),
+          birthDate: DateTime(1980),
           prRelationshipId: PatientFixtures.prRelationshipId.value,
         );
 
@@ -287,7 +287,7 @@ void main() {
     });
 
     test('toViolationReport should map incident date correctly', () {
-      final incidentDate = DateTime(2024, 1, 1);
+      final incidentDate = DateTime(2024);
       final intent = ReportViolationIntent(
         patientId: patientId,
         victimId: PatientFixtures.personId.value,

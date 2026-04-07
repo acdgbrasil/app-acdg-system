@@ -31,10 +31,7 @@ void main() {
       });
 
       test('accepts injectable now for deterministic testing', () {
-        final token = AuthToken(
-          accessToken: 'a',
-          expiresAt: DateTime(2030, 1, 1),
-        );
+        final token = AuthToken(accessToken: 'a', expiresAt: DateTime(2030));
         final before = DateTime(2029, 12, 31);
         final after = DateTime(2030, 1, 2);
 
@@ -58,7 +55,7 @@ void main() {
       test('accepts injectable now for deterministic testing', () {
         final token = AuthToken(
           accessToken: 'a',
-          expiresAt: DateTime(2030, 1, 1, 0, 1, 0), // 00:01:00
+          expiresAt: DateTime(2030, 1, 1, 0, 1), // 00:01:00
         );
         final now = DateTime(2030, 1, 1, 0, 0, 40); // 00:00:40 → 20s left
 
