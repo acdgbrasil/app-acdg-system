@@ -29,14 +29,21 @@ ARG BFF_BASE_URL=/api
 ARG SENTRY_DSN=
 ARG APP_ENV=production
 
-# Generate .env at build-time
-RUN printf 'OIDC_ISSUER=%s\nOIDC_CLIENT_ID=%s\nOIDC_SCOPES=%s\nOIDC_WEB_REDIRECT_URI=%s\nOIDC_WEB_POST_LOGOUT_URI=%s\nBFF_BASE_URL=%s\nSENTRY_DSN=%s\nAPP_ENV=%s\n' \
-    "$OIDC_ISSUER" "$OIDC_CLIENT_ID" "$OIDC_SCOPES" \
-    "$OIDC_WEB_REDIRECT_URI" "$OIDC_WEB_POST_LOGOUT_URI" "$BFF_BASE_URL" \
-    "$SENTRY_DSN" "$APP_ENV" \
-    > apps/acdg_system/.env
+# Generate config.json at build-time (more robust than .env for WASM)
+RUN cat <<EOF > apps/acdg_system/config.json
+{
+  "OIDC_ISSUER": "$OIDC_ISSUER",
+  "OIDC_CLIENT_ID": "$OIDC_CLIENT_ID",
+  "OIDC_SCOPES": "$OIDC_SCOPES",
+  "OIDC_WEB_REDIRECT_URI": "$OIDC_WEB_REDIRECT_URI",
+  "OIDC_WEB_POST_LOGOUT_URI": "$OIDC_WEB_POST_LOGOUT_URI",
+  "BFF_BASE_URL": "$BFF_BASE_URL",
+  "SENTRY_DSN": "$SENTRY_DSN",
+  "APP_ENV": "$APP_ENV"
+}
+EOF
 
-RUN cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=.env
+RUN cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=config.json
 
 # ── Stage 2: Serve with nginx ──
 FROM nginx:1.27-alpine
