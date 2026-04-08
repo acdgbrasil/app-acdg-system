@@ -3,7 +3,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 
-enum RegistrationErrorType { network, server, domain }
+enum RegistrationErrorType { network, server }
 
 class RegistrationErrorModal extends StatelessWidget {
   final RegistrationErrorType type;
@@ -29,31 +29,19 @@ class RegistrationErrorModal extends StatelessWidget {
   static const _red = AppColors.danger;
   static final _redBg2 = AppColors.danger.withValues(alpha: 0.12);
 
-  String get _title => switch (type) {
-    RegistrationErrorType.network => ReferencePersonLn10.errorNetworkTitle,
-    RegistrationErrorType.domain => 'Não foi possível salvar',
-    RegistrationErrorType.server => ReferencePersonLn10.errorServerTitle,
-  };
+  bool get _isNetwork => type == RegistrationErrorType.network;
 
-  String get _description => switch (type) {
-    RegistrationErrorType.network =>
-      ReferencePersonLn10.errorNetworkDescription,
-    RegistrationErrorType.domain =>
-      errorCode ?? 'Verifique os dados e tente novamente.',
-    RegistrationErrorType.server => ReferencePersonLn10.errorServerDescription,
-  };
+  String get _title => _isNetwork
+      ? ReferencePersonLn10.errorNetworkTitle
+      : ReferencePersonLn10.errorServerTitle;
 
-  String get _defaultCode => switch (type) {
-    RegistrationErrorType.network => ReferencePersonLn10.errorNetworkCode,
-    RegistrationErrorType.domain => '',
-    RegistrationErrorType.server => ReferencePersonLn10.errorServerCode,
-  };
+  String get _description => _isNetwork
+      ? ReferencePersonLn10.errorNetworkDescription
+      : ReferencePersonLn10.errorServerDescription;
 
-  IconData get _icon => switch (type) {
-    RegistrationErrorType.network => Icons.wifi_off_rounded,
-    RegistrationErrorType.domain => Icons.info_outline_rounded,
-    RegistrationErrorType.server => Icons.warning_rounded,
-  };
+  String get _defaultCode => _isNetwork
+      ? ReferencePersonLn10.errorNetworkCode
+      : ReferencePersonLn10.errorServerCode;
 
   static Future<void> show(
     BuildContext context, {
@@ -109,7 +97,11 @@ class RegistrationErrorModal extends StatelessWidget {
                     color: _redBg2,
                   ),
                   alignment: Alignment.center,
-                  child: Icon(_icon, size: 36, color: _red),
+                  child: Icon(
+                    _isNetwork ? Icons.wifi_off_rounded : Icons.warning_rounded,
+                    size: 36,
+                    color: _red,
+                  ),
                 ),
                 const SizedBox(height: 20),
 

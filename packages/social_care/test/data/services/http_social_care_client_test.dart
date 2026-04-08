@@ -4,7 +4,7 @@ import 'package:core/core.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
-import 'package:social_care/src/data/services/http_social_care_client.dart';
+import 'package:social_care/social_care.dart';
 
 import '../../../testing/fixtures/patient_fixtures.dart';
 
@@ -431,19 +431,110 @@ void main() {
     // =========================================================================
 
     group('error handling', () {
-      test('DioException is caught and returned as Failure', () async {
+      test('DioException connectionTimeout maps to NetworkError', () async {
         adapter.handler = (_) => throw DioException(
           requestOptions: RequestOptions(),
           type: DioExceptionType.connectionTimeout,
         );
         final result = await client.fetchPatients();
         expect(result, isA<Failure<List<PatientOverview>>>());
+        expect((result as Failure).error, isA<NetworkError>());
       });
 
-      test('generic exception is caught and returned as Failure', () async {
+      test('DioException connectionError maps to NetworkError', () async {
+        adapter.handler = (_) => throw DioException(
+          requestOptions: RequestOptions(),
+          type: DioExceptionType.connectionError,
+        );
+        final result = await client.fetchPatients();
+        expect(result, isA<Failure<List<PatientOverview>>>());
+        expect((result as Failure).error, isA<NetworkError>());
+      });
+
+      test('generic exception maps to UnexpectedSocialCareError', () async {
         adapter.handler = (_) => throw const FormatException('bad json');
         final result = await client.fetchPatient(PatientFixtures.patientId);
         expect(result, isA<Failure<PatientRemote>>());
+        expect((result as Failure).error, isA<UnexpectedSocialCareError>());
+      });
+    });
+
+    group('error mapping (_failureFromResponse)', () {
+      test('409 with REGP-001 maps to DuplicatePatientError', () async {
+        adapter.handler = (_) => jsonResponse({
+          'error': 'REGP-001: O paciente com este PersonId já está registrado.',
+        }, statusCode: 409);
+        final result = await client.registerPatient(
+          PatientFixtures.validPatient,
+        );
+        expect(result, isA<Failure<PatientId>>());
+        expect((result as Failure).error, isA<DuplicatePatientError>());
+      });
+
+      test('409 without backend code maps to DuplicatePatientError', () async {
+        adapter.handler = (_) =>
+            jsonResponse({'error': 'Conflict'}, statusCode: 409);
+        final result = await client.registerPatient(
+          PatientFixtures.validPatient,
+        );
+        expect(result, isA<Failure<PatientId>>());
+        // PAT-409 from status code fallback
+        expect((result as Failure).error, isA<DuplicatePatientError>());
+      });
+
+      test('backend code PAT-008 maps to PrMemberRequiredError', () async {
+        adapter.handler = (_) => jsonResponse({
+          'error': 'PAT-008: É necessário exatamente uma PR.',
+        }, statusCode: 422);
+        final result = await client.registerPatient(
+          PatientFixtures.validPatient,
+        );
+        expect(result, isA<Failure<PatientId>>());
+        expect((result as Failure).error, isA<PrMemberRequiredError>());
+      });
+
+      test(
+        'backend code PAT-009 maps to MultiplePrimaryReferencesError',
+        () async {
+          adapter.handler = (_) => jsonResponse({
+            'error': 'PAT-009: Não é permitido mais de uma PR.',
+          }, statusCode: 422);
+          final result = await client.registerPatient(
+            PatientFixtures.validPatient,
+          );
+          expect(result, isA<Failure<PatientId>>());
+          expect(
+            (result as Failure).error,
+            isA<MultiplePrimaryReferencesError>(),
+          );
+        },
+      );
+
+      test('unknown backend code maps to ServerError', () async {
+        adapter.handler = (_) => jsonResponse({
+          'error': 'XYZ-999: Something weird happened',
+        }, statusCode: 500);
+        final result = await client.registerPatient(
+          PatientFixtures.validPatient,
+        );
+        expect(result, isA<Failure<PatientId>>());
+        expect((result as Failure).error, isA<ServerError>());
+        final error = (result as Failure).error as ServerError;
+        expect(error.backendCode, 'XYZ-999');
+        expect(error.backendMessage, 'Something weird happened');
+      });
+
+      test('empty message after code uses fallback', () async {
+        adapter.handler = (_) =>
+            jsonResponse({'error': 'VAL-001: '}, statusCode: 422);
+        final result = await client.registerPatient(
+          PatientFixtures.validPatient,
+        );
+        expect(result, isA<Failure<PatientId>>());
+        expect((result as Failure).error, isA<InvalidDataError>());
+        // Should NOT have empty message
+        final error = (result as Failure).error as InvalidDataError;
+        expect(error.message, isNotEmpty);
       });
     });
   });

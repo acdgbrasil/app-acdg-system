@@ -43,6 +43,8 @@ class RegisterPatientUseCase
           SocialCareError() => error,
           AppError(code: 'PAT-409') ||
           AppError(code: 'REGP-001') => const DuplicatePatientError(),
+          AppError(code: 'PAT-008') => const PrMemberRequiredError(),
+          AppError(code: 'PAT-009') => const MultiplePrimaryReferencesError(),
           AppError() => InvalidDataError(error.message),
           _ => UnexpectedSocialCareError(error),
         },
@@ -58,7 +60,11 @@ class RegisterPatientUseCase
   /// backend responses.
   SocialCareError _mapAssemblyError(Object error) {
     if (error is AppError) {
-      return InvalidDataError(error.message);
+      return switch (error.code) {
+        'PAT-008' => const PrMemberRequiredError(),
+        'PAT-009' => const MultiplePrimaryReferencesError(),
+        _ => InvalidDataError(error.message),
+      };
     }
     return UnexpectedSocialCareError(error);
   }

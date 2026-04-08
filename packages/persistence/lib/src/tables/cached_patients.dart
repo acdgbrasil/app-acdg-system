@@ -4,6 +4,11 @@ import 'package:drift/drift.dart';
 ///
 /// Stores the full patient JSON blob for offline access,
 /// along with indexed fields for efficient lookups.
+///
+/// CPF uniqueness is enforced at the repository layer via
+/// a query-before-insert check. A DB-level partial unique index
+/// is not used because Drift's build_runner generates the schema
+/// and SQLite partial indexes require raw SQL migrations.
 class CachedPatients extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -15,9 +20,9 @@ class CachedPatients extends Table {
 
   TextColumn get lastName => text().withDefault(const Constant(''))();
 
-  /// CPF is unique when present. Empty string means not provided.
-  /// Uniqueness is enforced at the repository layer (not DB constraint)
-  /// because empty CPF is valid and should not conflict.
+  /// CPF — empty string when not provided. Uniqueness enforced
+  /// at repository layer (query-before-insert) to allow multiple
+  /// patients without CPF.
   TextColumn get cpf => text().withDefault(const Constant(''))();
 
   /// Complete patient aggregate serialized as JSON.

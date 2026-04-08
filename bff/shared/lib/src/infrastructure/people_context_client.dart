@@ -4,28 +4,47 @@ import 'package:dio/dio.dart';
 /// Client for the People Context service.
 ///
 /// Registers persons and retrieves canonical [PersonId]s.
-/// Used by the BFF Web before creating family members in social-care,
-/// ensuring every person exists in the people-context registry.
+/// Used by both the BFF Web (RegistryHandler) and the Desktop BFF
+/// (SyncEngine) to ensure every person exists in people-context
+/// before registering with the social-care backend.
 class PeopleContextClient {
   PeopleContextClient({
     required String baseUrl,
-    required String accessToken,
     required String actorId,
+    String? accessToken,
+    String Function()? tokenProvider,
     Dio? dio,
-  }) : _dio =
+  }) : _tokenProvider = tokenProvider,
+       _dio =
            dio ??
            Dio(
              BaseOptions(
                baseUrl: baseUrl,
                headers: {
                  'Content-Type': 'application/json',
-                 'Authorization': 'Bearer $accessToken',
+                 if (accessToken != null)
+                   'Authorization': 'Bearer $accessToken',
                  'X-Actor-Id': actorId,
                },
              ),
-           );
+           ) {
+    if (_tokenProvider != null) {
+      _dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            final token = _tokenProvider();
+            if (token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+            handler.next(options);
+          },
+        ),
+      );
+    }
+  }
 
   final Dio _dio;
+  final String Function()? _tokenProvider;
 
   /// Registers a person in people-context and returns the canonical PersonId.
   ///
@@ -55,8 +74,20 @@ class PeopleContextClient {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
-        return Success(data['id'] as String);
+        final responseBody = response.data;
+        if (responseBody == null) {
+          return Failure(
+            'People Context error (${response.statusCode}): Empty response body',
+          );
+        }
+        final data = responseBody['data'] as Map<String, dynamic>?;
+        final personId = data?['id'] as String?;
+        if (personId == null) {
+          return Failure(
+            'People Context error (${response.statusCode}): Missing "id" in response',
+          );
+        }
+        return Success(personId);
       }
 
       return Failure(
@@ -70,7 +101,6 @@ class PeopleContextClient {
   /// Retrieves a person by [personId] from people-context.
   ///
   /// Returns `{id, fullName, birthDate}` on success.
-  /// Used by the BFF to enrich patient/member data with display names.
   Future<Result<Map<String, dynamic>>> getPerson(String personId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
@@ -79,11 +109,24 @@ class PeopleContextClient {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
+        final responseBody = response.data;
+        if (responseBody == null) {
+          return Failure(
+            'People Context error (${response.statusCode}): Empty response body',
+          );
+        }
+        final data = responseBody['data'] as Map<String, dynamic>?;
+        if (data == null) {
+          return Failure(
+            'People Context error (${response.statusCode}): Missing "data" in response',
+          );
+        }
         return Success(data);
       }
 
-      return const Failure('Person not found');
+      return Failure(
+        'People Context error (${response.statusCode}): ${response.data}',
+      );
     } catch (e) {
       return Failure('People Context unreachable: $e');
     }

@@ -513,7 +513,10 @@ class HttpSocialCareClient implements SocialCareContract {
         final match = RegExp(r'^([A-Z]+-\d+):\s*(.*)$').firstMatch(errorStr);
         if (match != null) {
           code = match.group(1)!;
-          message = match.group(2) ?? messageStr ?? fallback;
+          final parsedMessage = match.group(2);
+          message = (parsedMessage != null && parsedMessage.trim().isNotEmpty)
+              ? parsedMessage
+              : (messageStr ?? fallback);
         } else {
           message = messageStr ?? errorStr;
         }
@@ -536,8 +539,8 @@ class HttpSocialCareClient implements SocialCareContract {
     int httpStatus,
   ) {
     return switch (code) {
-      // Registry — duplicate
-      'REGP-001' || 'PAT-409' => const DuplicatePatientError(),
+      // Registry — duplicate (backend code or HTTP status fallback)
+      'REGP-001' || 'PAT-409' || 'SRV-409' => const DuplicatePatientError(),
       // Registry — validation
       'VAL-001' || 'PAT-003' => InvalidDataError(message),
       // Family — PR constraints

@@ -45,11 +45,14 @@ SyncEngine _buildSyncEngine(Ref ref, AuthUser user) {
   // People-context client for enriching personIds at sync time.
   // Optional: if PEOPLE_CONTEXT_BASE_URL is not configured, enrichment
   // is skipped and local UUIDs are sent as-is (graceful degradation).
-  final peopleContext = Env.peopleContextBaseUrl.isNotEmpty
-      ? PeopleContextClient(
-          baseUrl: Env.peopleContextBaseUrl,
-          accessToken: deps.authRepository.currentToken?.accessToken ?? '',
-          actorId: user.id,
+  final enrichmentService = Env.peopleContextBaseUrl.isNotEmpty
+      ? PatientEnrichmentService(
+          PeopleContextClient(
+            baseUrl: Env.peopleContextBaseUrl,
+            tokenProvider: () =>
+                deps.authRepository.currentToken?.accessToken ?? '',
+            actorId: user.id,
+          ),
         )
       : null;
 
@@ -58,7 +61,7 @@ SyncEngine _buildSyncEngine(Ref ref, AuthUser user) {
     connectivityService: deps.connectivityService,
     remoteBff: remote,
     localRepo: deps.localSocialCareRepository,
-    peopleContext: peopleContext,
+    enrichmentService: enrichmentService,
   );
 
   engine.start();
