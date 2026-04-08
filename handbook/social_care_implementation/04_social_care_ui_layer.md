@@ -1,43 +1,35 @@
 # Camada de Apresentação e UI (UI Layer): Pacote Social Care
 
-A camada visual do pacote adota práticas avançadas de MVVM focado em eficiência com `ValueNotifier` em conjunto com Riverpod para injeção. Segue estritamente o padrão "Atomic Design".
+A camada visual do pacote transcende os modelos normais do Flutter. Utiliza as disciplinas puristas do padrão **MVVM**, reativas, guiadas a eventos via Riverpod como locador e `Command` objects, combinadas com um isolamento visual completo chamado **Atomic Design**. Evita sobrecargas da árvore de reconstrução global do sistema (as onerosas chamadas nativas globais `setState` da Widget Tree).
 
-## 1. Injeção de Dependências (`di/`)
-Os ViewModels são injetados de forma estrita pelo shell do aplicativo (App Module). O Riverpod é usado apenas como Service Locator (ex: `familyCompositionViewModelProvider`). Eles lançam `UnimplementedError` no escopo do pacote caso não sejam sobrescritos via `ProviderScope` no aplicativo raiz.
+## 1. O Fluxo Riverpod e Modelos da UI (`models/`, `constants/`, `di/`)
+- **Strings Intocadas em Código (`Constants`):** Nenhum widget de formulário possui código de UI "Hardcoded". Placeholders e títulos de steps (`"Diagnóstico"`, `"Informar Endereço"`) situam-se restritamente no diretório `constants/` (`ReferencePersonLn10.dart`). Mudanças de nomenclatura de botões e erros da tela operam sempre pelos arquivos `Ln10`.
+- **Injeção de ViewModels:** Os Provedores assinam dependências em `di/` (ex: `patientRegistrationViewModelProvider`). O pacote em si recusa-se a instanciar o UseCase; no Provider, o dev notará um gatilho de bloqueio: `throw UnimplementedError()`. Somente a raiz global principal da aplicação (O Core do ecossistema) será capaz de sobrepor e injetar implementações via escopo Riverpod.
+- **Modelos de Vista Isolados:** Widgets que desenham linhas e tabelas complexas (A tabela de familiares, listagem principal de home) recebem modelos finos e traduzidos (`PatientSummary`, `FamilyMemberModel`) com métodos computados (o cálculo real da idade por string temporal ocorre na `age()` deste Model), o que purga poluição computacional das camadas visuais.
 
-## 2. Modelos de UI (`models/` e `constants/`)
-- `constants/*_ln10.dart`: Contêm 100% das strings visuais, tooltips e placeholders da UI. *Nada de "hardcoded strings" em arquivos de Widget.*
-- Os Modelos da UI (`FamilyMemberModel`, `PatientSummary`, `PatientDetail`) são derivados dos Modelos de Domínio ou Entidades Brutas pelo `ViewModel` ou Repositório, para que o componente visual nunca dependa das complexidades do pacote `shared/domain`.
-- Computações de visualização exclusivas (ex: método `age()` no `FamilyMemberModel`) ficam neles mesmos, simplificando os widgets.
+## 2. Gerenciamento do Estado Local: FormStates e ViewModels
+Os cenários gigantes de formulários em passo-a-passo (Wizards) tornariam o ViewModel numa classe insalubre de milhares de linhas caso hospedasse cada entrada de input.
 
-## 3. View Models (`viewModels/`)
-- **Herança:** Estendem `BaseViewModel`.
-- **Commands:** Usa `Command0`, `Command1` para expor funções transacionais (carregamento, salvamento). Eles encapsulam status de `running` e `error`. Não crie variáveis `bool isLoading = false;` e setStates manuais em ViewModels, use a flag `command.running`.
-- **Controle de Estado Mestre:** As interações não dependem de `ChangeNotifier` pesados em toda parte, os dados são atualizados internamente num ciclo coeso, e é emitido o `notifyListeners()` apenas quando a operação completa.
+### 2.1 Os FormStates Específicos (`view/components/forms/`)
+O ViewModel particiona propriedades pesadas em instâncias de classes de manipulação separadas chamadas **FormStates**.
+- **Exemplo Real:** `AddressFormState`, `SpecificitiesFormState`.
+- **Mecanismos:** Eles armazenam os `TextEditingController` de campos textuais e `ValueNotifier<Type?>` para listas suspensas (UFs) e opções fechadas em botões rádio.
+- **Funções Funcionais Nativas:** Os getters de erro existem no nível do próprio campo. O formulário verifica a obrigatoriedade internamente. Se vazio, devolve um erro da Constante correspondente:
+  ```dart
+  String? get cityError {
+     if (city.text.trim().isEmpty) return ReferencePersonLn10.errorInformCity;
+     if (city.text.length < 2) return ReferencePersonLn10.errorMinChars2;
+     return null;
+  }
+  ```
+- **Lista de Agregado de Falhas:** O FormState oferece `isValidForNextStep` (calculado de getters) e consolida a coleção de strings no vetor `validationErrors` para exibição sumária nos banners visuais superiores da página vermelha.
 
-## 4. Form States (`view/components/forms/`)
-Em vez de encher o ViewModel de Controladores de Texto, formulários longos têm suas propriedades encapsuladas em classes puras:
-- Estão divididas por seções (ex: `PersonalDataFormState`, `AddressFormState`, `DiagnosesFormState`).
-- Usam `TextEditingController` para inputs diretos de teclado, e `ValueNotifier<T?>` para inputs de seleção ou booleanos (Rádios, Dropdowns, Checkboxes).
-- Definem de forma centralizada os Getters para erros (`String? get cpfError`). Retornam nulo se tudo estiver correto.
-- **Métodos Funcionais:** `isValidForNextStep`, `validationErrors` (lista das strings de falha na ordem para o *ErrorBanner*).
-- Devem incluir método `dispose()` explícito.
+### 2.2 O Maestro: The View Model
+- **Comandos de Async Action:** Utilizando a tipagem de encapsulamento seguro e reativo do módulo core do pacote da plataforma: `Command0` e `Command1`. O Action Flow mapeia estados automáticos do seu `execute()`, mudando flags internas (`running`, `completed`) sem exigir códigos paralelos repetitivos (`isLoading = true; await ...; isLoading = false;`).
+- **A Função Colossal `buildIntent()`:** Na classe do `PatientRegistrationViewModel`, a transição dos infinitos micro-estados (`FormStates`) de campos é aglomerada meticulosamente na montagem manual e tradução no Intent primário (ex. unindo os strings com "trim()", mascarando e traduzindo "masculino" de radio button para "Sex.masculino" de Domain Enum).
 
-## 5. UI Components (Atomic Design)
-- **Atoms/Molecules:** Construídos como classes `StatelessWidget`.
-- Recebem os valores estritamente necessários via construtor:
-  - Para inputs de texto: recebe o `TextEditingController`.
-  - Para dropdown/rádios: recebe o `ValueNotifier<T>` usando internamente `ValueListenableBuilder` limitando reconstrução só praquele widget.
-- **A regra de Ouro MVVM da UI:** Views são "dumb" (burras). Nenhum widget deve chamar lógica de UseCase; tudo é repassado via callbacks ou notifiers. 
-- *Proibido criar métodos grandes tipo `_buildSection()` dentro da Page; Quebre tudo em Widgets (Files dedicados).*
-
-## 6. Pages (Telas)
-- Implementadas usualmente como `ConsumerStatefulWidget`.
-- Inicializam os carregamentos (`vm.load.execute()`) dentro do `addPostFrameCallback` no `initState`.
-- Utilizam `ListenableBuilder` atrelado aos *Commands* ou ao ViewModel em si para redesenhar partes da tela ao mudar status de execução (ex: mostrando loading circular quando `vm.load.running`).
-
-## Resumo para IAs
-- **Nunca use `setState` para regras de negócio e validação, use FormStates.**
-- **Evite classes Widget gigantes.** Isole a lógica de formulário no FormState e os pedaços de tela em Widgets próprios.
-- **Injete ViewModels.** Nunca construa instâncias pesadas na UI.
-- Use `Command` para ações e interações. Escute a mudança na flag `.running`.
+## 3. Práticas do Atomic Design: Dumb Components vs Micro-Renders
+- **Dumb UI:** Nem o mais profundo componente (`FirstNameInput`) do diretório `components/` deverá ler da injeção central o Riverpod ou extrair algo mágico de instâncias de `ViewModel` ocultas. É mandatório que o elemento superior instancie propriedades isoladas: "Tome seu `Controller` aqui. Tome seu CallBack aqui." Componentes menores respondem cegamente.
+- **Isolamento Constante do Elemento `ListenableBuilder` / `ValueListenableBuilder` (Micro-renders):** Cada preenchimento com clique e caractere afeta o framework no recálculo e layout repaints da UI. No lugar de engatilhar os updates nos "Pais" grandiosos de layout, os TextFields e RadioGroups inserem no invólucro do próprio input individual seus Listeners (`listenable: firstNameController`) garantindo eficiência massiva por repintura apenas do campo que pulsa ou mostra mensagens de texto-inferiores vermelhas.
+- **Elimine `_buildMethods` Gigantes na Pagina:** Todo fragmento lógico da UI visual complexa requer arquivos separados dentro de `view/components/`. A classe mestre (ex: `PatientRegistrationPage`) compõe a junção (`RegistrationWizardTemplate` com o switch de telas via `RegistrationStepSwitcher`).
+- **A Complexidade Aninhada Modular (Composição Familiar):** O passo 4 de Adicionar Familiares tem vida autônoma. O `FamilyMemberModal` opera com seu state transitório, submete as strings de formulários para seu formstate interno isolado de pop-up e, em salvamento, remete via callback onSave o snapshot computado final para que a Tabela Externa do formulário mestre empilhe e calcule os agregadores de perfis de Idade visualmente em tempo real.

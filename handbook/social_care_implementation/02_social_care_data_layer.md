@@ -1,37 +1,47 @@
-# Camada de Dados (Data Layer): Pacote Social Care
+# Data Layer: Infraestrutura, Contratos e Repositórios
 
-A camada `data/` é responsável pela comunicação externa, definição de contratos de ação e conversão de informações brutas em modelos tipados.
+A camada de dados no pacote `social_care` é estritamente responsável pela integração com o BFF (Backend For Frontend), tradução de DTOs para modelos de domínio/UI e mapeamento de erros brutos da API para a hierarquia tipada `SocialCareError`.
 
-## 1. Commands (Intents)
-Localizados em `lib/src/data/commands/`.
-- **Definição:** São objetos de transferência de dados (DTOs internos) imutáveis (`final class ... with Equatable`) que capturam a intenção do usuário no momento de uma ação.
-- **Diferença para Models:** Enquanto um Model de Domínio possui regras de negócio ricas e validação na sua criação, o `Intent` é um "snapshot" de dados brutos (strings, inteiros, data/hora) vindos da UI.
-- **Exemplo:** `RegisterPatientIntent` possui strings, listas simples e booleans vindos diretamente dos campos do formulário (ex: `firstName`, `rgNumber`, `isHomeless`).
+## 1. Comandos / Intents (`lib/src/data/commands/`)
+Intents são objetos imutáveis (via `Equatable`) que capturam o estado bruto da UI no momento exato de uma submissão. Eles atuam como DTOs de entrada (Input Ports) para a camada de Lógica (UseCases e Mappers).
 
-## 2. Models (API DTOs)
-- **Definição:** Classes cujo único propósito é a serialização/deserialização JSON do e para o backend (BFF).
-- **Regras:**
-  - Nenhuma lógica de negócio ou computação complexa permitida.
-  - Implementam obrigatoriamente métodos `fromJson`.
-  - São usados apenas internamente pela camada Data ou Repositórios; a UI (fora algumas exceções de visualização como `PatientDetail`) nunca deve interagir diretamente com eles.
-- **Exemplo:** `PatientSummaryApiModel`, `FamilyMemberDetail`.
+**Principais Intents:**
+- `RegisterPatientIntent`: Contém todos os campos do Wizard de cadastro da Pessoa de Referência (Passo 0 ao 6). Inclui primitivas (`String`, `DateTime`, `bool`) e listas de DTOs aninhados da UI. Note que **não contém entidades do domínio ricas**.
+- `AddFamilyMemberIntent`, `UpdatePrimaryCaregiverIntent`: Comandos isolados, projetados especificamente para a mutação de composição familiar no modal de tela "Composição Familiar".
+- Intents de Assessment (`UpdateHousingConditionIntent`, `UpdateSocioEconomicIntent`, etc.): Espelham estritamente as propriedades manipuladas em uma seção específica das Fichas do paciente.
+- Intents de Intervenção (`RegisterAppointmentIntent`, `ReportViolationIntent`, `CreateReferralIntent`).
 
-## 3. Repositories
-Localizados em `lib/src/data/repositories/`.
-- **Contratos (Abstract classes):** Definem a interface do repositório devolvendo sempre `Future<Result<T>>`. (ex: `PatientRepository`, `LookupRepository`).
-- **Implementações (BFF):** Classes como `BffPatientRepository` encapsulam o cliente HTTP (`SocialCareContract` ou `PatientService`).
-- **Responsabilidade do Repositório:** Chamar o serviço HTTP e traduzir os DTOs brutos de resposta para Entidades de Domínio ou Modelos de UI amigáveis (usando classes auxiliares como `PatientDetailTranslator`).
+**Regra Absoluta:** Toda ação de mutação complexa orquestrada na UI DEVE ser empacotada em um `Intent` específico antes de ser enviada ao UseCase. A UI **nunca** deve construir entidades finais de domínio (`Patient`, `FamilyMember`) de forma artesanal. O `Intent` é o transporte limpo.
 
-## 4. Services (HTTP Client)
-Localizados em `lib/src/data/services/`.
-- **`HttpSocialCareClient`:** É a implementação em Dio do BFF para web.
-- **Tratamento de Autenticação:** Diferente de clientes puramente mobile que injetam `Authorization` header, este serviço confia no envio automático de cookies `HttpOnly` `SameSite=Strict` da mesma origem e o BFF extrai o `X-Actor-Id` da sessão.
-- **Tratamento Global de Erros (`_failureFromResponse` e `_failureFromException`):**
-  - Todas as exceções do Dio (timeouts, erros de rede) são capturadas e transformadas em `NetworkError` da família `SocialCareError`.
-  - Os códigos de erro padrão da API (ex: `REGP-001`, `PAT-409`) vindo do JSON do BFF são lidos através de expressões regulares ou propriedades e explicitamente mapeados para erros de domínio selados (ex: `DuplicatePatientError`, `PrMemberRequiredError`).
-  - O código do backend desconhecido é propagado dentro de um `ServerError` com a mensagem textual para a UI.
+## 2. Serviços / HTTP Client (`lib/src/data/services/`)
+A classe `HttpSocialCareClient` implementa a interface `SocialCareContract` utilizando a biblioteca `Dio`. É a implementação web do pacote.
 
-## Resumo para IAs
-- **Sempre crie um Intent para agrupar dados do View para o UseCase.**
-- **Sempre capture `catch` no Service (Dio) e converta para `Failure<SocialCareError>`. Nunca lance exceções nativas para o Repository.**
-- **Repository traduz DTO para Domínio. Service traduz HTTP para DTO/Error.**
+### 2.1 Padrões de Autenticação e Requisição
+- **Endpoint Web BFF:** As chamadas usam `baseUrl: '/api'` (relativo). A aplicação confia no ingress/proxy server da arquitetura para resolver e redirecionar `'/api'` ao backend correto da infraestrutura de cluster.
+- **Cookies Automáticos (Sem Headers MANUAIS):** O Dio é configurado com `extra: {'withCredentials': true}`. Não há a injeção do header `Authorization: Bearer <token>`. A autorização flui naturalmente pelos SameSite cookies configurados pelo sistema de autenticação `Zitadel OIDC`.
+- **Identidade Contextual:** O Header `X-Actor-Id` é extraído e injetado do lado do servidor via middleware/sessão. O frontend web ignora tal preenchimento em seus endpoints BFF.
+
+### 2.2 Mapeamento Esgotante de Erros (Obrigatório)
+O cliente intercepta toda e qualquer resposta do `Dio` para proteger as camadas superiores. O retorno do método será **SEMPRE** de tipo `Failure<SocialCareError>` ou `Success<Type>`. O `try/catch` encerra sua vida útil aqui.
+
+**Mecânica do Parse (`_failureFromResponse` e `_failureFromException`):**
+1. Falhas da camada de rede pura (`DioExceptionType.connectionTimeout`, erro de DNS) geram um `NetworkError(e.message)`.
+2. Exceções não esperadas geram `UnexpectedSocialCareError(e)`.
+3. A resposta bruta de erro HTTP é tratada avaliando o corpo em JSON: `{"error": "CÓDIGO: Mensagem legível"}`. O código é extraído via expressão regular.
+4. **Mapeamento Explícito dos Códigos Base:**
+   - `"REGP-001"` ou `"PAT-409"` ou status 409 ➡️ Traduz para domínio como `DuplicatePatientError()`.
+   - `"VAL-001"` ou `"PAT-003"` ➡️ Traduz para domínio como `InvalidDataError(message)`.
+   - `"PAT-008"` ➡️ Traduz para domínio como `PrMemberRequiredError()`.
+   - `"PAT-009"` ➡️ Traduz para domínio como `MultiplePrimaryReferencesError()`.
+   - Outros códigos desconhecidos ➡️ Traduzem para o container `ServerError(httpStatus, backendCode, backendMessage)`. O `backendMessage` já vem pronto para ser exibido pela UI.
+
+## 3. Repositórios (`lib/src/data/repositories/`)
+Os repositórios definem as interfaces Abstratas do domínio (Portas de Saída). Suas implementações (ex: `BffPatientRepository`) recebem a injeção do Client de Serviços.
+
+### 3.1 Tradutores de Camada Média (Translators / API Models)
+Modelos de API (ex: `PatientDetail`) residem em `data/models` apenas com regras de fábrica como `fromJson`. O Repositório é quem os evoca.
+A camada Data adota **Translators** que fazem a triagem bidirecional de objetos DTO x Modelos da UI/Domínio.
+- **`PatientDetailTranslator.toPatientDetail(Patient patient)`:** A UI da página inicial pede um JSON gigante "achatado" para listar no Painel de Dados, o `PatientDetail`. O Repositório pega o modelo complexo e de grafos aninhados (`Patient`) e o converte estaticamente para essa representação achatada (`PatientDetail` e `FamilyMemberDetail`).
+- **`PatientSummaryApiModel` / `PatientSummary`:** Reduz centenas de propriedades de um paciente do banco num objeto levíssimo para povoar os cards listados do componente visual à esquerda da interface.
+
+**Regra Absoluta:** O Repositório é o **ÚNICO** ator do sistema onde a transmutação entre um objeto remoto com chaves como "icdCode" converte-se nos Modelos tipados finais. Os `UseCases` repudiam JSON e o ViewModel recusa contato com as origens de API.

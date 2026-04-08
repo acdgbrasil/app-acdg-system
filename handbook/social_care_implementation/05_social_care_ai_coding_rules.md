@@ -1,60 +1,50 @@
-# Regras Estritas para LLMs (AI Coding Guidelines): Pacote Social Care
+# AI Coding Rules: GOLD STANDARD para o Pacote Social Care
 
-Estas são regras não-negociáveis que a Inteligência Artificial DEVE respeitar rigorosamente ao modificar ou escrever código para o ecossistema `social_care` e demais pacotes da aplicação. A base arquitetural está consolidada.
+Esta documentação serve de manual absolutista para inteligências artificiais e humanos efetuando alterações e gerações no ambiente `@packages/social_care`. Nenhuma submissão deve subverter qualquer preceito expresso abaixo; a ignorância às restrições fundamentais invalida a PR local na matriz ACDG.
 
-## 1. Pattern Matching Obrigatório
-Sempre trate retornos `Result` com a exaustividade proporcionada por `switch` ou `case` do Dart 3.
-**NUNCA** utilize atalhos perigosos de desembrulhar valor ignorando o caso de falha.
+## REGRA 1: Obrigatoriedade Exaustiva do Padrão "Result"
+É completamente, irrefutavelmente **PROIBIDO e ILEGAL** a manipulação forçada via operadores surdos para remover um valor da promessa do tipo "Result" que possa engatilhar quebras não-mapeadas do sistema. O uso do casting sombrio `.valueOrNull!` é banido em favor de ramificação controlada pelo Dart 3 (`switch/case`).
+
 ```dart
-// ❌ PROIBIDO E ILEGAL
-final success = result.valueOrNull!;
+// ❌ REJEIÇÃO IMEDIATA: Não força sucesso na arquitetura!
+final fetchPatient = await repository.getPatient(id);
+final finalName = fetchPatient.valueOrNull!.personalData.firstName;
 
-// ✅ CORRETO
+// ✅ PADRÃO OURO: Tratamento Funcional Intocável
+final result = await repository.getPatient(id);
 switch (result) {
-  case Success(:final value):
-    return Success(value); // Ou proceda com a regra
+  case Success(value: final patient):
+    final name = patient.personalData?.firstName ?? '—';
+    // Fluxo seguro para montagens da UI e Domain
   case Failure(:final error):
-    return Failure(error); // Trate a falha propriamente
+    _log.severe('Processo bloqueado, mapeamento retornado do erro: $error');
+    return Failure(error); // Propague ou manipule na notificação visual segura
 }
 ```
 
-## 2. Mapeamento da Camada de Rede no Cliente HTTP
-Em classes de Cliente HTTP de Serviços do Web BFF (ex: `HttpSocialCareClient` ou similares):
-- Todo erro não previsto no JSON retornado da API ou capturado de `Exception` da conexão de rede deve passar pelo mapeamento de falha que traduzirá para a família `SocialCareError`.
-- **Sem try/catch vazando:** Use o bloco `try/catch` no Dio para que qualquer `throw` se transforme formalmente em `Failure(NetworkError(e))`, `Failure(ServerError(...))` etc. O Repositório e o ViewModel *NUNCA* poderão ter um `try/catch` nativo para resolver falha de API. Eles só leem a variável `Result`.
+## REGRA 2: Bloqueio de Escape Subversivo de Exceção e Erros HTTP
+Toda infraestrutura exposta (ex: `HttpSocialCareClient`) encapsulará fatalidades da conexão remota via os tipos do `SocialCareError`.
+- **Proibição de `try/catch` Acima do Nível do Client Dio:** Nenhuma instrução de UseCase, ViewModel ou Page terá lógicas de `try/catch(e)` caçando exceções que deram throw em integrações. O Client captura, transforma em estrutura `Failure(NetworkError(e))` e devolve tipado em `Result`.
+- **Códigos Nativos:** JSON retornados por falha da API devem ser forçosamente convertidos por mapeamento de string regular expression para erros das sealed classes da Lógica de Negócios (ex: O "REGP-001" gera o instanciamento isolado de `DuplicatePatientError()`).
 
-## 3. Entidades e DTOs Estritos
-- **Models/DTOs (Camada Data):** Use `factory` de `fromJson` e mantenha-os sem complexidade (`final`). Podem conter propriedades opcionais (`?`) frouxas.
-- **Domínio/Entities (Camada Domain):** Construtores fortemente tipados e blindados (Mappers os montam e chamam o `.create()` estático ou ValueObjects internos).
-- **Não cruze fronteiras:** View Models não leem HTTP. Repositories não geram Widgets. Widgets nunca manipulam DTOs brutos; eles enxergam apenas Modelos Visuais de UI (`PatientSummary`, `FamilyMemberModel`) passados pelo seu ViewModel.
+## REGRA 3: Limites entre UI, ViewModels, UseCases e DTOs
+Não permita que "lixo estrutural" pule camadas não autorizadas do domínio.
+- **Data (DTOs / Models):** Nenhuma classe do pacote `models` possui Lógica ou Comportamento Complexo Computacional de Validação. Sua existência e declaração é frouxa e tipa apenas objetos literais (Strings, Enums em base raw) e constrói `fromJson`.
+- **Domain (Entities / Domínio):** Entidades do domínio possuem Vínculo Robusto em criação (.create) de `ValueObjects` que quebram o código se corrompidos. Têm blindagem de inicialização.
+- **Barreiras Estritas de Visibilidade:**
+  - ViewModels de Presentation NUNCA farão chamadas ao `HttpSocialCareClient` para efetuar rotas HTTP. E nem recebem de UsesCases um modelo HTTP DTO; o Repository é forçado a traduzi-los antes.
+  - Repositórios JAMAIS construirão lógicas de formatação de strings (`formatNumber()..`) que competem à construção reativa da UI e das `Constants` ou da `Ln10`.
 
-## 4. Uso Adequado dos UI States e Form States
-- Não declare `String error` ou `String campo` na raiz do `ViewModel`.
-- Form States complexos são Classes à parte do VM. O VM possui uma instância de um Form State.
-- Utilize `ValueNotifier` para propriedades individuais ao invés de refazer build de páginas pesadas. Utilize `ListenableBuilder` para monitorar o `ValueNotifier` e realizar Micro-Renderizações, limitando o peso da reconstrução da UI ao escopo atômico de uma Molecule/Input.
-- Use extensivamente `.trim()` nos inputs do Controller e evite mutar os controllers na árvore de Build.
+## REGRA 4: Distribuição dos FormStates vs ViewModel "Sujo"
+Não cometa o equívoco primário de atolar `ViewModels` robustos (como o `PatientRegistrationViewModel` com sete grandes steps longos) com a declaração nativa infindável de `TextEditingControllers` do Flutter na hierarquia-mor do MVVM.
+Você tem a obrigação arquitetural de **isolar grupos modulares de componentes** utilizando FormStates estáticos dedicados (Ex: `AddressFormState`, `DiagnosesFormState`).
+Esses micro-formstates terão seu `dispose()` local e fornecerão os cálculos estáticos de `$Error` baseados na regra pontual da UI correspondente.
 
-## 5. MVVM Commands
-Qualquer ação assíncrona feita pelo ViewModel (clique num botão `Salvar`, carregamento de lista na tela Inicial, exclusão de paciente) obrigatoriamente deve utilizar a sintaxe de pacote `core/core.dart` das classes `Command0<R>`, `Command1<R, T>`.
-```dart
-// Declaração no VM
-late final Command1<void, AtualizarAlgoIntent> atualizarCmd;
+## REGRA 5: Nenhuma String Pessoal/Legível Ancorada no Widget Tree
+**TODOS** os valores legíveis, descritores longos, marcadores de input (Hints), e sentenças com avisos de erro de Validação (Textos vermelhos), DEVERÃO figurar explicitamente catalogados nos arquivos contidos no escopo do pacote `constants/`, prefixados pelo grupo de L10N (Exemplo Crítico: `ReferencePersonLn10`). Uma Inteligência Artificial não possui o passe-livre de inventar instâncias de mensagens sem referenciá-las nos repositórios adequados da Feature Constants.
 
-// Inicialização no VM (Construtor)
-atualizarCmd = Command1<void, AtualizarAlgoIntent>((intent) => usecase.execute(intent));
+## REGRA 6: Controle Tátil por "Comandos" Assíncronos no ViewModel
+Utilize sempre classes `Command0` e `Command1` (provenientes do `core`) para a representação das intenções interativas do framework UI com o ambiente lógico final (e banco ou serviços de rede).
+As views que exibem loadings deverão invocar instâncias visuais baseadas puramente na flag passiva da variável interna do respectivo Command: `.running`. Ao clicar, você executa: `.execute()`.
 
-// Na UI (Listener)
-ListenableBuilder(
-    listenable: vm.atualizarCmd,
-    builder: (context, _) => ElevatedButton(
-        onPressed: vm.atualizarCmd.running ? null : () => vm.atualizarCmd.execute(intent),
-        child: vm.atualizarCmd.running ? Loading() : Text('Atualizar'),
-    )
-)
-```
-
-## 6. L10N (Internacionalização) Rigorosa
-NENHUMA string de interface de usuário (texto de botões, erros de formulários, hint text, títulos) deverá ficar solta numa classe `.dart` de widget.
-Tudo obrigatoriamente é registrado na classe estática do diretório `constants/` correspondente ao escopo da feature (ex: `ReferencePersonLn10.btnNext`).
-
-Se atenha puramente à estruturação já imposta pelos arquivos dentro de `handbook/` e os documentos listados neste guia de implementação.
+Respeitar as ordens descritas neste documento garante alinhamento 100% completo aos preceitos originais da infraestrutura já submetida nas malhas lógicas criadas localmente no projeto `social_care`, e é considerado pré-requisito irrefutável de sua configuração de codificação na base.
