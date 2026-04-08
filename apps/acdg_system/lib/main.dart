@@ -32,12 +32,14 @@ void main() async {
     await SentryFlutter.init((options) {
       options.dsn = dsn;
       options.environment = env;
-      options.tracesSampleRate = env == 'prod' ? 0.2 : 1.0;
+      options.tracesSampleRate = env == 'production' ? 0.2 : 1.0;
       options.sendDefaultPii = true;
+      options.debug = env != 'production';
       if (release.isNotEmpty) options.release = release;
       if (dist.isNotEmpty) options.dist = dist;
     }, appRunner: () => runApp(const Root()));
   } else {
+    debugPrint('[Sentry] SKIPPED — SENTRY_DSN is empty');
     runApp(const Root());
   }
 }
