@@ -15,6 +15,9 @@ class CachedPatients extends Table {
 
   TextColumn get lastName => text().withDefault(const Constant(''))();
 
+  /// CPF is unique when present. Empty string means not provided.
+  /// Uniqueness is enforced at the repository layer (not DB constraint)
+  /// because empty CPF is valid and should not conflict.
   TextColumn get cpf => text().withDefault(const Constant(''))();
 
   /// Complete patient aggregate serialized as JSON.
