@@ -6,6 +6,12 @@ import '../../../domain/errors/social_care_errors.dart';
 import '../../mappers/registry_mapper.dart';
 
 /// Orchestrates the registration of a new patient.
+///
+/// Error mapping is split between layers:
+/// - **HttpSocialCareClient**: maps HTTP responses to [SocialCareError]
+///   using backend error codes from the contract.
+/// - **This UseCase**: maps domain assembly errors (from [RegistryMapper])
+///   and propagates repository errors as-is (already typed).
 class RegisterPatientUseCase
     extends BaseUseCase<RegisterPatientIntent, PatientId> {
   RegisterPatientUseCase({required PatientRepository patientRepository})
@@ -22,18 +28,23 @@ class RegisterPatientUseCase
 
       if (patientRes case Failure(:final error)) {
         _log.warning('Domain assembly failed: $error');
-        return Failure(_mapDomainError(error));
+        return Failure(_mapAssemblyError(error));
       }
 
       final patient = (patientRes as Success<Patient>).value;
 
       // 2. Persistence
+      // Web path: errors are already SocialCareError from HttpSocialCareClient.
+      // Desktop path: errors may still be raw AppError from OfflineFirstRepository.
       final result = await _patientRepository.registerPatient(patient);
 
       return result.mapFailure(
         (error) => switch (error) {
-          AppError(code: 'PAT-409') => const DuplicatePatientError(),
-          _ => _mapDomainError(error),
+          SocialCareError() => error,
+          AppError(code: 'PAT-409') ||
+          AppError(code: 'REGP-001') => const DuplicatePatientError(),
+          AppError() => InvalidDataError(error.message),
+          _ => UnexpectedSocialCareError(error),
         },
       );
     } catch (e, st) {
@@ -42,16 +53,12 @@ class RegisterPatientUseCase
     }
   }
 
-  SocialCareError _mapDomainError(Object error) {
+  /// Maps domain assembly errors (RegistryMapper / VO creation) to
+  /// [SocialCareError]. These are local validation failures, not
+  /// backend responses.
+  SocialCareError _mapAssemblyError(Object error) {
     if (error is AppError) {
-      return switch (error.code) {
-        'VAL-001' => InvalidDataError(error.message),
-        'PAT-409' => const DuplicatePatientError(),
-        'PAT-003' => InvalidDataError(error.message),
-        'PAT-008' => const PrMemberRequiredError(),
-        'PAT-009' => const MultiplePrimaryReferencesError(),
-        _ => NetworkSocialCareError(error.toString()),
-      };
+      return InvalidDataError(error.message);
     }
     return UnexpectedSocialCareError(error);
   }

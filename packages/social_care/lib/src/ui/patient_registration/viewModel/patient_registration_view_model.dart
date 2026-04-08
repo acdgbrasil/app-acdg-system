@@ -14,7 +14,13 @@ import 'package:social_care/src/ui/patient_registration/view/components/forms/re
 enum StepNavigationResult { advanced, validationFailed }
 
 /// Result of a submit attempt.
-enum SubmitResult { success, validationFailed, networkError, serverError }
+enum SubmitResult {
+  success,
+  validationFailed,
+  networkError,
+  domainError,
+  serverError,
+}
 
 class PatientRegistrationViewModel extends BaseViewModel {
   static final _log = AcdgLogger.get('PatientRegistrationViewModel');
@@ -189,18 +195,26 @@ class PatientRegistrationViewModel extends BaseViewModel {
     );
     await registerPatient();
 
-    if (registerPatientCommand.completed) {
+    final result = registerPatientCommand.result;
+    if (result != null && result.isSuccess) {
       _log.info('Patient registered successfully');
       return SubmitResult.success;
     }
 
-    final errorMsg = errorMessage ?? '';
-    _log.severe('Patient registration failed: $errorMsg');
-    final isNetwork =
-        errorMsg.contains('SocketException') ||
-        errorMsg.contains('TimeoutException') ||
-        errorMsg.contains('network');
-    return isNetwork ? SubmitResult.networkError : SubmitResult.serverError;
+    final error = switch (result) {
+      Failure(:final error) => error,
+      _ => null,
+    };
+    _log.severe('Patient registration failed: $error');
+
+    return switch (error) {
+      NetworkError() => SubmitResult.networkError,
+      DuplicatePatientError() ||
+      InvalidDataError() ||
+      PrMemberRequiredError() ||
+      MultiplePrimaryReferencesError() => SubmitResult.domainError,
+      _ => SubmitResult.serverError,
+    };
   }
 
   // ── Build intent final ───────────────────────────────────────

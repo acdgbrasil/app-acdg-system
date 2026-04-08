@@ -85,6 +85,11 @@ class _PatientRegistrationPageState
         );
       case SubmitResult.networkError:
         _showErrorModal(vm, RegistrationErrorType.network);
+      case SubmitResult.domainError:
+        RegistrationToast.show(
+          context,
+          message: vm.errorMessage ?? 'Verifique os dados e tente novamente.',
+        );
       case SubmitResult.serverError:
         _showErrorModal(vm, RegistrationErrorType.server);
     }

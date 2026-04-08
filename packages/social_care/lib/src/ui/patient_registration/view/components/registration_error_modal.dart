@@ -3,7 +3,7 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 
-enum RegistrationErrorType { network, server }
+enum RegistrationErrorType { network, server, domain }
 
 class RegistrationErrorModal extends StatelessWidget {
   final RegistrationErrorType type;
@@ -29,19 +29,31 @@ class RegistrationErrorModal extends StatelessWidget {
   static const _red = AppColors.danger;
   static final _redBg2 = AppColors.danger.withValues(alpha: 0.12);
 
-  bool get _isNetwork => type == RegistrationErrorType.network;
+  String get _title => switch (type) {
+    RegistrationErrorType.network => ReferencePersonLn10.errorNetworkTitle,
+    RegistrationErrorType.domain => 'Não foi possível salvar',
+    RegistrationErrorType.server => ReferencePersonLn10.errorServerTitle,
+  };
 
-  String get _title => _isNetwork
-      ? ReferencePersonLn10.errorNetworkTitle
-      : ReferencePersonLn10.errorServerTitle;
+  String get _description => switch (type) {
+    RegistrationErrorType.network =>
+      ReferencePersonLn10.errorNetworkDescription,
+    RegistrationErrorType.domain =>
+      errorCode ?? 'Verifique os dados e tente novamente.',
+    RegistrationErrorType.server => ReferencePersonLn10.errorServerDescription,
+  };
 
-  String get _description => _isNetwork
-      ? ReferencePersonLn10.errorNetworkDescription
-      : ReferencePersonLn10.errorServerDescription;
+  String get _defaultCode => switch (type) {
+    RegistrationErrorType.network => ReferencePersonLn10.errorNetworkCode,
+    RegistrationErrorType.domain => '',
+    RegistrationErrorType.server => ReferencePersonLn10.errorServerCode,
+  };
 
-  String get _defaultCode => _isNetwork
-      ? ReferencePersonLn10.errorNetworkCode
-      : ReferencePersonLn10.errorServerCode;
+  IconData get _icon => switch (type) {
+    RegistrationErrorType.network => Icons.wifi_off_rounded,
+    RegistrationErrorType.domain => Icons.info_outline_rounded,
+    RegistrationErrorType.server => Icons.warning_rounded,
+  };
 
   static Future<void> show(
     BuildContext context, {
@@ -97,11 +109,7 @@ class RegistrationErrorModal extends StatelessWidget {
                     color: _redBg2,
                   ),
                   alignment: Alignment.center,
-                  child: Icon(
-                    _isNetwork ? Icons.wifi_off_rounded : Icons.warning_rounded,
-                    size: 36,
-                    color: _red,
-                  ),
+                  child: Icon(_icon, size: 36, color: _red),
                 ),
                 const SizedBox(height: 20),
 
@@ -131,25 +139,26 @@ class RegistrationErrorModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
 
-                // Error code
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _brown10,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    errorCode ?? _defaultCode,
-                    style: const TextStyle(
-                      fontFamily: 'Consolas',
-                      fontSize: 12,
-                      color: _brown50,
+                // Error code (hidden for domain errors)
+                if (_defaultCode.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _brown10,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      errorCode ?? _defaultCode,
+                      style: const TextStyle(
+                        fontFamily: 'Consolas',
+                        fontSize: 12,
+                        color: _brown50,
+                      ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 24),
 
                 // Buttons

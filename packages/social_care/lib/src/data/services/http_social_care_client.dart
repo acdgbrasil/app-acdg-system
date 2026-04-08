@@ -2,6 +2,8 @@ import 'package:core/core.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
 
+import '../../domain/errors/social_care_errors.dart';
+
 /// HTTP client implementation of [SocialCareContract] that communicates with
 /// the BFF Web server's REST endpoints.
 ///
@@ -37,7 +39,7 @@ class HttpSocialCareClient implements SocialCareContract {
       await _dio.get<dynamic>('/health/live');
       return const Success(null);
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -47,7 +49,7 @@ class HttpSocialCareClient implements SocialCareContract {
       await _dio.get<dynamic>('/health/ready');
       return const Success(null);
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -73,7 +75,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to fetch patients');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -92,7 +94,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to register patient');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -109,7 +111,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Patient not found');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -128,7 +130,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Patient not found');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -155,7 +157,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to add family member');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -175,7 +177,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to remove family member');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -199,7 +201,7 @@ class HttpSocialCareClient implements SocialCareContract {
         'Failed to assign primary caregiver',
       );
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -220,7 +222,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to update social identity');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -244,7 +246,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to fetch audit trail');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -351,7 +353,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to register appointment');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -399,7 +401,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to report violation');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -421,7 +423,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Failed to create referral');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -457,7 +459,7 @@ class HttpSocialCareClient implements SocialCareContract {
         'Lookup table $tableName not found',
       );
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -479,7 +481,7 @@ class HttpSocialCareClient implements SocialCareContract {
       }
       return _failureFromResponse(response, 'Request failed');
     } catch (e) {
-      return Failure(e);
+      return _failureFromException(e);
     }
   }
 
@@ -487,12 +489,12 @@ class HttpSocialCareClient implements SocialCareContract {
   bool _isSuccessStatus(int? statusCode) =>
       statusCode == 200 || statusCode == 201 || statusCode == 204;
 
-  /// Parses a BFF error response into an [AppError] [Failure].
+  /// Parses a BFF error response into a typed [SocialCareError] [Failure].
   ///
-  /// The BFF returns `{"error": "CODE: message"}` or `{"error": "message"}`.
-  /// If the error string contains a backend code (e.g. "PAT-008: ..."),
-  /// that code is preserved. Otherwise, the code is derived from the
-  /// HTTP status (409→PAT-409, 404→PAT-404, etc.).
+  /// The BFF forwards backend errors as `{"error": "CODE: message"}`.
+  /// This parser extracts the backend code and user-facing message,
+  /// then maps to domain errors when the code is known, or wraps in
+  /// [ServerError] otherwise.
   Failure<T> _failureFromResponse<T>(
     Response<dynamic> response,
     String fallback,
@@ -500,49 +502,74 @@ class HttpSocialCareClient implements SocialCareContract {
     final statusCode = response.statusCode ?? 500;
     final data = response.data;
     String message = fallback;
-    String? backendCode;
+    String code = 'SRV-$statusCode';
 
     if (data is Map<String, dynamic>) {
       final errorStr = data['error'] as String?;
       final messageStr = data['message'] as String?;
-      message = messageStr ?? errorStr ?? fallback;
 
       // Parse backend code from "CODE: message" pattern
       if (errorStr != null) {
-        final match = RegExp(r'^([A-Z]+-\d+):\s*(.+)$').firstMatch(errorStr);
+        final match = RegExp(r'^([A-Z]+-\d+):\s*(.*)$').firstMatch(errorStr);
         if (match != null) {
-          backendCode = match.group(1);
-          message = match.group(2) ?? message;
+          code = match.group(1)!;
+          message = match.group(2) ?? messageStr ?? fallback;
+        } else {
+          message = messageStr ?? errorStr;
         }
+      } else if (messageStr != null) {
+        message = messageStr;
       }
     }
 
-    final code =
-        backendCode ??
-        switch (statusCode) {
-          409 => 'PAT-409',
-          404 => 'PAT-404',
-          422 => 'VAL-001',
-          _ => 'SRV-$statusCode',
-        };
+    return Failure(_mapToSocialCareError(code, message, statusCode));
+  }
 
-    return Failure(
-      AppError(
-        code: code,
-        message: message,
-        module: 'social-care/http-client',
-        kind: statusCode >= 500 ? 'infrastructure' : 'domain',
-        http: statusCode,
-        observability: Observability(
-          category: statusCode >= 500
-              ? ErrorCategory.infrastructureDependencyFailure
-              : ErrorCategory.domainRuleViolation,
-          severity: statusCode >= 500
-              ? ErrorSeverity.error
-              : ErrorSeverity.warning,
-        ),
+  /// Maps a backend error code to the corresponding [SocialCareError].
+  ///
+  /// Known codes are mapped to specific domain errors. Unknown codes
+  /// are wrapped in [ServerError] which carries the backend message
+  /// for the UI to display directly.
+  SocialCareError _mapToSocialCareError(
+    String code,
+    String message,
+    int httpStatus,
+  ) {
+    return switch (code) {
+      // Registry — duplicate
+      'REGP-001' || 'PAT-409' => const DuplicatePatientError(),
+      // Registry — validation
+      'VAL-001' || 'PAT-003' => InvalidDataError(message),
+      // Family — PR constraints
+      'PAT-008' => const PrMemberRequiredError(),
+      'PAT-009' => const MultiplePrimaryReferencesError(),
+      // Everything else — pass the backend message through
+      _ => ServerError(
+        httpStatus: httpStatus,
+        backendCode: code,
+        backendMessage: message,
       ),
-    );
+    };
+  }
+
+  /// Wraps a caught exception into a [SocialCareError] [Failure].
+  ///
+  /// [DioException] with connection/timeout types become [NetworkError].
+  /// Everything else becomes [UnexpectedSocialCareError].
+  Failure<T> _failureFromException<T>(Object e) {
+    if (e is DioException) {
+      final isNetwork = switch (e.type) {
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.receiveTimeout ||
+        DioExceptionType.connectionError => true,
+        _ => false,
+      };
+      if (isNetwork) {
+        return Failure(NetworkError(e.message ?? e.type.name));
+      }
+    }
+    return Failure(UnexpectedSocialCareError(e));
   }
 
   /// Maps a raw JSON map to an [AuditEvent].
