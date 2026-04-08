@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -34,7 +35,7 @@ void main() async {
       options.environment = env;
       options.tracesSampleRate = env == 'production' ? 0.2 : 1.0;
       options.sendDefaultPii = true;
-      options.debug = env != 'production';
+      options.debug = env != 'production' && !kReleaseMode;
       if (release.isNotEmpty) options.release = release;
       if (dist.isNotEmpty) options.dist = dist;
     }, appRunner: () => runApp(const Root()));

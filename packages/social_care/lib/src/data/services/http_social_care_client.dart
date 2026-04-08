@@ -490,8 +490,9 @@ class HttpSocialCareClient implements SocialCareContract {
   /// Parses a BFF error response into an [AppError] [Failure].
   ///
   /// The BFF returns `{"error": "CODE: message"}` or `{"error": "message"}`.
-  /// This maps known HTTP status codes to AppError codes so the UseCase
-  /// layer can match on them (e.g. PAT-409 for duplicates).
+  /// If the error string contains a backend code (e.g. "PAT-008: ..."),
+  /// that code is preserved. Otherwise, the code is derived from the
+  /// HTTP status (409→PAT-409, 404→PAT-404, etc.).
   Failure<T> _failureFromResponse<T>(
     Response<dynamic> response,
     String fallback,
@@ -499,17 +500,31 @@ class HttpSocialCareClient implements SocialCareContract {
     final statusCode = response.statusCode ?? 500;
     final data = response.data;
     String message = fallback;
+    String? backendCode;
 
     if (data is Map<String, dynamic>) {
-      message = data['error'] as String? ?? fallback;
+      final errorStr = data['error'] as String?;
+      final messageStr = data['message'] as String?;
+      message = messageStr ?? errorStr ?? fallback;
+
+      // Parse backend code from "CODE: message" pattern
+      if (errorStr != null) {
+        final match = RegExp(r'^([A-Z]+-\d+):\s*(.+)$').firstMatch(errorStr);
+        if (match != null) {
+          backendCode = match.group(1);
+          message = match.group(2) ?? message;
+        }
+      }
     }
 
-    final code = switch (statusCode) {
-      409 => 'PAT-409',
-      404 => 'PAT-404',
-      422 => 'VAL-001',
-      _ => 'SRV-$statusCode',
-    };
+    final code =
+        backendCode ??
+        switch (statusCode) {
+          409 => 'PAT-409',
+          404 => 'PAT-404',
+          422 => 'VAL-001',
+          _ => 'SRV-$statusCode',
+        };
 
     return Failure(
       AppError(
@@ -517,6 +532,7 @@ class HttpSocialCareClient implements SocialCareContract {
         message: message,
         module: 'social-care/http-client',
         kind: statusCode >= 500 ? 'infrastructure' : 'domain',
+        http: statusCode,
         observability: Observability(
           category: statusCode >= 500
               ? ErrorCategory.infrastructureDependencyFailure
