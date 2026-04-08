@@ -71,7 +71,7 @@ class HttpSocialCareClient implements SocialCareContract {
             .toList();
         return Success(patients);
       }
-      return Failure(response.data ?? 'Failed to fetch patients');
+      return _failureFromResponse(response, 'Failed to fetch patients');
     } catch (e) {
       return Failure(e);
     }
@@ -90,7 +90,7 @@ class HttpSocialCareClient implements SocialCareContract {
         final id = response.data!['id'] as String;
         return PatientId.create(id);
       }
-      return Failure(response.data ?? 'Failed to register patient');
+      return _failureFromResponse(response, 'Failed to register patient');
     } catch (e) {
       return Failure(e);
     }
@@ -107,7 +107,7 @@ class HttpSocialCareClient implements SocialCareContract {
       if (response.statusCode == 200) {
         return Success(PatientRemote.fromJson(response.data!));
       }
-      return Failure(response.data ?? 'Patient not found');
+      return _failureFromResponse(response, 'Patient not found');
     } catch (e) {
       return Failure(e);
     }
@@ -126,7 +126,7 @@ class HttpSocialCareClient implements SocialCareContract {
       if (response.statusCode == 200) {
         return Success(PatientRemote.fromJson(response.data!));
       }
-      return Failure(response.data ?? 'Patient not found');
+      return _failureFromResponse(response, 'Patient not found');
     } catch (e) {
       return Failure(e);
     }
@@ -153,7 +153,7 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(response.data as Object? ?? 'Failed to add family member');
+      return _failureFromResponse(response, 'Failed to add family member');
     } catch (e) {
       return Failure(e);
     }
@@ -173,9 +173,7 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(
-        response.data as Object? ?? 'Failed to remove family member',
-      );
+      return _failureFromResponse(response, 'Failed to remove family member');
     } catch (e) {
       return Failure(e);
     }
@@ -196,8 +194,9 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(
-        response.data as Object? ?? 'Failed to assign primary caregiver',
+      return _failureFromResponse(
+        response,
+        'Failed to assign primary caregiver',
       );
     } catch (e) {
       return Failure(e);
@@ -219,9 +218,7 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(
-        response.data as Object? ?? 'Failed to update social identity',
-      );
+      return _failureFromResponse(response, 'Failed to update social identity');
     } catch (e) {
       return Failure(e);
     }
@@ -245,7 +242,7 @@ class HttpSocialCareClient implements SocialCareContract {
           data.cast<Map<String, dynamic>>().map(_mapAuditEvent).toList(),
         );
       }
-      return Failure(response.data ?? 'Failed to fetch audit trail');
+      return _failureFromResponse(response, 'Failed to fetch audit trail');
     } catch (e) {
       return Failure(e);
     }
@@ -352,7 +349,7 @@ class HttpSocialCareClient implements SocialCareContract {
         final id = response.data!['id'] as String;
         return AppointmentId.create(id);
       }
-      return Failure(response.data ?? 'Failed to register appointment');
+      return _failureFromResponse(response, 'Failed to register appointment');
     } catch (e) {
       return Failure(e);
     }
@@ -400,7 +397,7 @@ class HttpSocialCareClient implements SocialCareContract {
         final id = response.data!['id'] as String;
         return ViolationReportId.create(id);
       }
-      return Failure(response.data ?? 'Failed to report violation');
+      return _failureFromResponse(response, 'Failed to report violation');
     } catch (e) {
       return Failure(e);
     }
@@ -422,7 +419,7 @@ class HttpSocialCareClient implements SocialCareContract {
         final id = response.data!['id'] as String;
         return ReferralId.create(id);
       }
-      return Failure(response.data ?? 'Failed to create referral');
+      return _failureFromResponse(response, 'Failed to create referral');
     } catch (e) {
       return Failure(e);
     }
@@ -455,7 +452,10 @@ class HttpSocialCareClient implements SocialCareContract {
               .toList(),
         );
       }
-      return Failure(response.data ?? 'Lookup table $tableName not found');
+      return _failureFromResponse(
+        response,
+        'Lookup table $tableName not found',
+      );
     } catch (e) {
       return Failure(e);
     }
@@ -477,7 +477,7 @@ class HttpSocialCareClient implements SocialCareContract {
       if (_isSuccessStatus(response.statusCode)) {
         return const Success(null);
       }
-      return Failure(response.data as Object? ?? 'Request failed');
+      return _failureFromResponse(response, 'Request failed');
     } catch (e) {
       return Failure(e);
     }
@@ -486,6 +486,64 @@ class HttpSocialCareClient implements SocialCareContract {
   /// Checks if a status code represents a successful response.
   bool _isSuccessStatus(int? statusCode) =>
       statusCode == 200 || statusCode == 201 || statusCode == 204;
+
+  /// Parses a BFF error response into an [AppError] [Failure].
+  ///
+  /// The BFF returns `{"error": "CODE: message"}` or `{"error": "message"}`.
+  /// If the error string contains a backend code (e.g. "PAT-008: ..."),
+  /// that code is preserved. Otherwise, the code is derived from the
+  /// HTTP status (409→PAT-409, 404→PAT-404, etc.).
+  Failure<T> _failureFromResponse<T>(
+    Response<dynamic> response,
+    String fallback,
+  ) {
+    final statusCode = response.statusCode ?? 500;
+    final data = response.data;
+    String message = fallback;
+    String? backendCode;
+
+    if (data is Map<String, dynamic>) {
+      final errorStr = data['error'] as String?;
+      final messageStr = data['message'] as String?;
+      message = messageStr ?? errorStr ?? fallback;
+
+      // Parse backend code from "CODE: message" pattern
+      if (errorStr != null) {
+        final match = RegExp(r'^([A-Z]+-\d+):\s*(.+)$').firstMatch(errorStr);
+        if (match != null) {
+          backendCode = match.group(1);
+          message = match.group(2) ?? message;
+        }
+      }
+    }
+
+    final code =
+        backendCode ??
+        switch (statusCode) {
+          409 => 'PAT-409',
+          404 => 'PAT-404',
+          422 => 'VAL-001',
+          _ => 'SRV-$statusCode',
+        };
+
+    return Failure(
+      AppError(
+        code: code,
+        message: message,
+        module: 'social-care/http-client',
+        kind: statusCode >= 500 ? 'infrastructure' : 'domain',
+        http: statusCode,
+        observability: Observability(
+          category: statusCode >= 500
+              ? ErrorCategory.infrastructureDependencyFailure
+              : ErrorCategory.domainRuleViolation,
+          severity: statusCode >= 500
+              ? ErrorSeverity.error
+              : ErrorSeverity.warning,
+        ),
+      ),
+    );
+  }
 
   /// Maps a raw JSON map to an [AuditEvent].
   AuditEvent _mapAuditEvent(Map<String, dynamic> data) {
