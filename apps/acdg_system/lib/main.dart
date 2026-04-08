@@ -48,6 +48,9 @@ void _initializeApp() {
       'OIDC_WEB_POST_LOGOUT_URI',
     ),
     bffBaseUrl: const String.fromEnvironment('BFF_BASE_URL'),
+    peopleContextBaseUrl: const String.fromEnvironment(
+      'PEOPLE_CONTEXT_BASE_URL',
+    ),
   );
 
   final sentryAdapter = dsn.isNotEmpty ? RealSentryClientAdapter() : null;

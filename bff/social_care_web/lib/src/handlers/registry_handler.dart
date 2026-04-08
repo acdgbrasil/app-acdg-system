@@ -4,7 +4,6 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
 import '../auth/session_store.dart';
-import '../remote/people_context_client.dart';
 import 'handler_utils.dart';
 
 typedef RegistryContractFactory = SocialCareContract Function(Session session);

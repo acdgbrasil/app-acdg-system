@@ -20,6 +20,7 @@ class SyncEngine implements SyncScheduler {
   final ConnectivityService _connectivityService;
   final SocialCareContract _remoteBff;
   final LocalSocialCareRepository? _localRepo;
+  final PeopleContextClient? _peopleContext;
 
   bool _isProcessing = false;
   StreamSubscription<({List<SyncAction> ready, DateTime? nextRetryAt})>?
@@ -35,10 +36,12 @@ class SyncEngine implements SyncScheduler {
     required ConnectivityService connectivityService,
     required SocialCareContract remoteBff,
     LocalSocialCareRepository? localRepo,
+    PeopleContextClient? peopleContext,
   }) : _queueService = queueService,
        _connectivityService = connectivityService,
        _remoteBff = remoteBff,
-       _localRepo = localRepo;
+       _localRepo = localRepo,
+       _peopleContext = peopleContext;
 
   bool get _isOnline => _connectivityService.isOnline.value;
 
@@ -279,6 +282,10 @@ class SyncEngine implements SyncScheduler {
 
     switch (action.actionType) {
       case 'REGISTER_PATIENT':
+        // Enrich with people-context before sending to backend
+        // (same logic as Web BFF RegistryHandler)
+        await _enrichWithPeopleContext(payload);
+
         final Patient patient;
         switch (PatientTranslator.fromJson(payload)) {
           case Success(:final value):
@@ -480,6 +487,67 @@ class SyncEngine implements SyncScheduler {
             ),
           ),
         );
+    }
+  }
+
+  /// Enriches a patient registration payload with canonical PersonIds
+  /// from the people-context service.
+  ///
+  /// Non-blocking on failure: if people-context is unreachable, the
+  /// local UUIDs are kept and the registration proceeds. This ensures
+  /// offline-first behavior — enrichment is best-effort at sync time.
+  Future<void> _enrichWithPeopleContext(Map<String, dynamic> payload) async {
+    if (_peopleContext == null) return;
+
+    final personalData = payload['personalData'] as Map<String, dynamic>? ?? {};
+    final civilDocs = payload['civilDocuments'] as Map<String, dynamic>? ?? {};
+    final firstName = personalData['firstName'] as String? ?? '';
+    final lastName = personalData['lastName'] as String? ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    final birthDate = personalData['birthDate'] as String? ?? '';
+    final cpf = civilDocs['cpf'] as String?;
+
+    // Enrich reference person
+    if (fullName.isNotEmpty && birthDate.isNotEmpty) {
+      switch (await _peopleContext!.registerPerson(
+        fullName: fullName,
+        birthDate: birthDate,
+        cpf: cpf,
+      )) {
+        case Success(value: final canonicalId):
+          debugPrint(
+            '[Sync Engine] People-context enrichment: personId → $canonicalId',
+          );
+          payload['personId'] = canonicalId;
+        case Failure():
+          debugPrint(
+            '[Sync Engine] People-context unreachable, keeping local UUID',
+          );
+      }
+    }
+
+    // Enrich family members
+    final familyMembers = payload['familyMembers'] as List<dynamic>? ?? [];
+    for (final member in familyMembers) {
+      if (member is Map<String, dynamic>) {
+        final memberName = member['fullName'] as String? ?? '';
+        final memberBirth = member['birthDate'] as String? ?? '';
+        final memberCpf = member['cpf'] as String?;
+
+        if (memberName.isNotEmpty && memberBirth.isNotEmpty) {
+          switch (await _peopleContext!.registerPerson(
+            fullName: memberName,
+            birthDate: memberBirth,
+            cpf: memberCpf,
+          )) {
+            case Success(value: final id):
+              member['personId'] = id;
+              member['memberPersonId'] = id;
+            case Failure():
+              break; // Graceful degradation
+          }
+        }
+      }
     }
   }
 }

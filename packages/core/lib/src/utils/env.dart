@@ -14,6 +14,7 @@ abstract final class Env {
   static String _oidcWebRedirectUri = '';
   static String _oidcWebPostLogoutUri = '';
   static String _bffBaseUrl = 'http://localhost:8080';
+  static String _peopleContextBaseUrl = '';
 
   /// OIDC Configuration
   static String get oidcIssuer => _oidcIssuer;
@@ -25,6 +26,7 @@ abstract final class Env {
 
   /// BFF Configuration
   static String get bffBaseUrl => _bffBaseUrl;
+  static String get peopleContextBaseUrl => _peopleContextBaseUrl;
 
   /// Configures the environment with injected values.
   ///
@@ -37,6 +39,7 @@ abstract final class Env {
     String oidcWebRedirectUri = '',
     String oidcWebPostLogoutUri = '',
     String bffBaseUrl = 'http://localhost:8080',
+    String peopleContextBaseUrl = '',
   }) {
     _oidcIssuer = oidcIssuer;
     _oidcClientId = oidcClientId;
@@ -45,6 +48,7 @@ abstract final class Env {
     _oidcWebRedirectUri = oidcWebRedirectUri;
     _oidcWebPostLogoutUri = oidcWebPostLogoutUri;
     _bffBaseUrl = bffBaseUrl.isEmpty ? 'http://localhost:8080' : bffBaseUrl;
+    _peopleContextBaseUrl = peopleContextBaseUrl;
 
     validate();
   }
