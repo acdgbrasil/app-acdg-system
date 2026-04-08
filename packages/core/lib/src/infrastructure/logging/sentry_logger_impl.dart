@@ -6,8 +6,9 @@ import 'sentry_client_adapter.dart';
 /// Logger implementation that dispatches to Sentry based on [LogLevel].
 ///
 /// - [LogLevel.info] and [LogLevel.warning]: local-only (dart:developer).
-/// - [LogLevel.error]: sends `captureException` to Sentry (requires exception).
-/// - [LogLevel.fatal]: sends `captureMessage` to Sentry (no exception needed).
+/// - [LogLevel.error]: sends `captureException` to Sentry (requires throwable).
+/// - [LogLevel.fatal]: sends `captureException` if a throwable is present,
+///   otherwise sends `captureMessage`.
 ///
 /// The [SentryClientAdapter] is injected via constructor, following DIP.
 /// ViewModels and UseCases only know about [SentryLoggerImpl] through
@@ -39,11 +40,11 @@ class SentryLoggerImpl {
       case LogLevel.warning:
         break;
       case LogLevel.error:
-        if (error is Exception) {
+        if (error != null) {
           _sentryClient.captureException(error, stackTrace: stackTrace);
         }
       case LogLevel.fatal:
-        if (error is Exception) {
+        if (error != null) {
           _sentryClient.captureException(error, stackTrace: stackTrace);
         } else {
           _sentryClient.captureMessage(message, level: 'fatal');

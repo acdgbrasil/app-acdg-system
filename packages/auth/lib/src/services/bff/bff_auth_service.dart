@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:core/core.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,6 +27,8 @@ class BffAuthService implements AuthService {
   BffAuthService({required BffAuthConfig config, http.Client? httpClient})
     : _config = config,
       _httpClient = httpClient ?? http.Client();
+
+  static final _log = AcdgLogger.get('BffAuthService');
 
   final BffAuthConfig _config;
   final http.Client _httpClient;
@@ -64,8 +67,8 @@ class BffAuthService implements AuthService {
   Future<void> logout() async {
     try {
       await _httpClient.post(Uri.parse('${_config.bffBaseUrl}/auth/logout'));
-    } catch (_) {
-      // Best-effort logout
+    } catch (e, st) {
+      _log.warning('Logout request failed (best-effort)', e, st);
     }
     _clearSession();
   }
@@ -89,9 +92,11 @@ class BffAuthService implements AuthService {
         _currentUser = AuthUser(id: userId, roles: roles);
         _updateStatus(Authenticated(_currentUser!));
       } else {
+        _log.info('Session restore returned ${response.statusCode}');
         _clearSession();
       }
-    } catch (_) {
+    } catch (e, st) {
+      _log.severe('Session restore failed', e, st);
       _clearSession();
     }
   }
@@ -103,9 +108,11 @@ class BffAuthService implements AuthService {
         Uri.parse('${_config.bffBaseUrl}/auth/refresh'),
       );
       if (response.statusCode != 200) {
+        _log.warning('Token refresh returned ${response.statusCode}');
         _clearSession();
       }
-    } catch (_) {
+    } catch (e, st) {
+      _log.severe('Token refresh failed', e, st);
       _clearSession();
     }
   }

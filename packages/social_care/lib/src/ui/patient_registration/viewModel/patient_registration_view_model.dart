@@ -17,6 +17,7 @@ enum StepNavigationResult { advanced, validationFailed }
 enum SubmitResult { success, validationFailed, networkError, serverError }
 
 class PatientRegistrationViewModel extends BaseViewModel {
+  static final _log = AcdgLogger.get('PatientRegistrationViewModel');
   PatientRegistrationViewModel({
     required RegisterPatientUseCase useCase,
     required LookupRepository lookupRepository,
@@ -181,11 +182,20 @@ class PatientRegistrationViewModel extends BaseViewModel {
       notifyListeners();
       return SubmitResult.validationFailed;
     }
+
+    AcdgLogger.addBreadcrumb(
+      message: 'Submitting patient registration',
+      category: 'registration',
+    );
     await registerPatient();
 
-    if (registerPatientCommand.completed) return SubmitResult.success;
+    if (registerPatientCommand.completed) {
+      _log.info('Patient registered successfully');
+      return SubmitResult.success;
+    }
 
     final errorMsg = errorMessage ?? '';
+    _log.severe('Patient registration failed: $errorMsg');
     final isNetwork =
         errorMsg.contains('SocketException') ||
         errorMsg.contains('TimeoutException') ||

@@ -8,7 +8,7 @@ import 'package:yaml/yaml.dart';
 void main(List<String> args) {
   final yamlFile = File('secrets/env/env.yaml');
   if (!yamlFile.existsSync()) {
-    print('Error: secrets/env/env.yaml not found.');
+    stderr.writeln('Error: secrets/env/env.yaml not found.');
     exit(1);
   }
 
@@ -18,8 +18,8 @@ void main(List<String> args) {
 
   final environments = yamlDoc['environments'] as YamlMap;
   if (!environments.containsKey(targetEnv)) {
-    print('Error: Environment "$targetEnv" not found in env.yaml.');
-    print('Available environments: ${environments.keys.join(', ')}');
+    stderr.writeln('Error: Environment "$targetEnv" not found in env.yaml.');
+    stderr.writeln('Available environments: ${environments.keys.join(', ')}');
     exit(1);
   }
 
@@ -42,5 +42,5 @@ void main(List<String> args) {
   final outputFile = File('apps/acdg_system/.env');
   outputFile.writeAsStringSync(buffer.toString());
 
-  print('Successfully generated apps/acdg_system/.env for "$targetEnv"');
+  stdout.writeln('Successfully generated apps/acdg_system/.env for "$targetEnv"');
 }

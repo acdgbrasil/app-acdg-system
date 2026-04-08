@@ -38,6 +38,7 @@ abstract class AuthRepository extends Listenable {
 
 /// Production implementation of [AuthRepository].
 class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
+  static final _log = AcdgLogger.get('AuthRepository');
   AuthRepositoryImpl({required AuthService authService})
     : _authService = authService {
     _statusSubscription = _authService.statusStream.listen(
@@ -68,7 +69,8 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
     try {
       await _authService.login();
       return const Success(null);
-    } catch (e) {
+    } catch (e, st) {
+      _log.severe('Login failed', e, st);
       return Failure(e);
     }
   }
@@ -78,7 +80,8 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
     try {
       await _authService.logout();
       return const Success(null);
-    } catch (e) {
+    } catch (e, st) {
+      _log.severe('Logout failed', e, st);
       return Failure(e);
     }
   }
@@ -88,7 +91,8 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
     try {
       await _authService.tryRestoreSession();
       return const Success(null);
-    } catch (e) {
+    } catch (e, st) {
+      _log.severe('Session restore failed', e, st);
       return Failure(e);
     }
   }

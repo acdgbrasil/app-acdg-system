@@ -76,3 +76,5 @@ jobs:
             BFF_BASE_URL=/api
             SENTRY_DSN=${{ env.SENTRY_DSN || '' }}
             APP_ENV=production
+            SENTRY_RELEASE=conecta-raros@${{ github.sha }}
+            SENTRY_DIST=web

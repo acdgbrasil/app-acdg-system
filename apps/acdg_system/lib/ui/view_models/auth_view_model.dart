@@ -40,15 +40,28 @@ class AuthViewModel extends BaseViewModel {
   void _onStatusChanged(AuthStatus newStatus) {
     _log.info('Auth status changed: ${newStatus.runtimeType}');
 
-    if (newStatus is AuthError) {
-      _log.severe('Authentication error: ${newStatus.message}');
+    switch (newStatus) {
+      case Authenticated(:final user):
+        AcdgLogger.setUser(
+          id: user.id,
+          email: user.email,
+          username: user.preferredUsername,
+        );
+        AcdgLogger.addBreadcrumb(
+          message: 'User authenticated',
+          category: 'auth',
+        );
+        _user = user;
+      case AuthError(:final message):
+        _log.severe('Authentication error: $message');
+        AcdgLogger.clearUser();
+        _user = null;
+      case _:
+        AcdgLogger.clearUser();
+        _user = null;
     }
 
     _status = newStatus;
-    _user = switch (newStatus) {
-      Authenticated(:final user) => user,
-      _ => null,
-    };
     notifyListeners();
   }
 
