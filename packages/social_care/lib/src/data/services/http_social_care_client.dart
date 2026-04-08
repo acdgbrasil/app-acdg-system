@@ -492,7 +492,10 @@ class HttpSocialCareClient implements SocialCareContract {
   /// The BFF returns `{"error": "CODE: message"}` or `{"error": "message"}`.
   /// This maps known HTTP status codes to AppError codes so the UseCase
   /// layer can match on them (e.g. PAT-409 for duplicates).
-  Failure<T> _failureFromResponse<T>(Response response, String fallback) {
+  Failure<T> _failureFromResponse<T>(
+    Response<dynamic> response,
+    String fallback,
+  ) {
     final statusCode = response.statusCode ?? 500;
     final data = response.data;
     String message = fallback;
@@ -514,6 +517,14 @@ class HttpSocialCareClient implements SocialCareContract {
         message: message,
         module: 'social-care/http-client',
         kind: statusCode >= 500 ? 'infrastructure' : 'domain',
+        observability: Observability(
+          category: statusCode >= 500
+              ? ErrorCategory.infrastructureDependencyFailure
+              : ErrorCategory.domainRuleViolation,
+          severity: statusCode >= 500
+              ? ErrorSeverity.error
+              : ErrorSeverity.warning,
+        ),
       ),
     );
   }
