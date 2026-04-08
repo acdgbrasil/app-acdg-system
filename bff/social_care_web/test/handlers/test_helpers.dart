@@ -1,7 +1,7 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:social_care_web/src/auth/session_store.dart';
 import 'package:social_care_web/src/middleware/session_middleware.dart';
-import 'package:social_care_web/src/remote/people_context_client.dart';
+import 'package:shared/shared.dart';
 import 'package:shelf/shelf.dart';
 
 /// A test session for use in handler tests.

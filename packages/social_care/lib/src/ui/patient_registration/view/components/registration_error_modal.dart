@@ -131,25 +131,26 @@ class RegistrationErrorModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
 
-                // Error code
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _brown10,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    errorCode ?? _defaultCode,
-                    style: const TextStyle(
-                      fontFamily: 'Consolas',
-                      fontSize: 12,
-                      color: _brown50,
+                // Error code (hidden for domain errors)
+                if (_defaultCode.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _brown10,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      errorCode ?? _defaultCode,
+                      style: const TextStyle(
+                        fontFamily: 'Consolas',
+                        fontSize: 12,
+                        color: _brown50,
+                      ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 24),
 
                 // Buttons

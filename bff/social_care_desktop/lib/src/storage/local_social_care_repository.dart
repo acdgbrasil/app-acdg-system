@@ -360,6 +360,28 @@ class LocalSocialCareRepository implements LocalCacheContract {
   @override
   Future<Result<PatientId>> registerPatient(Patient patient) async {
     try {
+      // Validate CPF uniqueness locally before inserting
+      final cpf = patient.civilDocuments?.cpf?.value ?? '';
+      if (cpf.isNotEmpty) {
+        final existing = await (_db.select(
+          _db.cachedPatients,
+        )..where((t) => t.cpf.equals(cpf))).getSingleOrNull();
+        if (existing != null && existing.patientId != patient.id.value) {
+          return Failure(
+            AppError(
+              code: 'REGP-001',
+              message: 'O paciente com este CPF já está registrado no sistema.',
+              module: 'social-care/local-repo',
+              kind: 'domain',
+              observability: const Observability(
+                category: ErrorCategory.domainRuleViolation,
+                severity: ErrorSeverity.warning,
+              ),
+            ),
+          );
+        }
+      }
+
       final fullJson = PatientTranslator.toJson(patient);
 
       await _db

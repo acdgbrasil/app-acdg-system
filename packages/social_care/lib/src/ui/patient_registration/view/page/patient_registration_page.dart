@@ -85,6 +85,15 @@ class _PatientRegistrationPageState
         );
       case SubmitResult.networkError:
         _showErrorModal(vm, RegistrationErrorType.network);
+      case SubmitResult.domainError:
+        setState(() => _isSuccess = true);
+        RegistrationToast.show(
+          context,
+          message: vm.errorMessage ?? 'Verifique os dados e tente novamente.',
+          onDismissed: () {
+            if (mounted) context.go('/social-care');
+          },
+        );
       case SubmitResult.serverError:
         _showErrorModal(vm, RegistrationErrorType.server);
     }

@@ -20,6 +20,7 @@ class SyncEngine implements SyncScheduler {
   final ConnectivityService _connectivityService;
   final SocialCareContract _remoteBff;
   final LocalSocialCareRepository? _localRepo;
+  final PatientEnrichmentService? _enrichmentService;
 
   bool _isProcessing = false;
   StreamSubscription<({List<SyncAction> ready, DateTime? nextRetryAt})>?
@@ -35,10 +36,12 @@ class SyncEngine implements SyncScheduler {
     required ConnectivityService connectivityService,
     required SocialCareContract remoteBff,
     LocalSocialCareRepository? localRepo,
+    PatientEnrichmentService? enrichmentService,
   }) : _queueService = queueService,
        _connectivityService = connectivityService,
        _remoteBff = remoteBff,
-       _localRepo = localRepo;
+       _localRepo = localRepo,
+       _enrichmentService = enrichmentService;
 
   bool get _isOnline => _connectivityService.isOnline.value;
 
@@ -279,6 +282,9 @@ class SyncEngine implements SyncScheduler {
 
     switch (action.actionType) {
       case 'REGISTER_PATIENT':
+        // Enrich with people-context before sending to backend
+        await _enrichmentService?.enrichPayload(payload);
+
         final Patient patient;
         switch (PatientTranslator.fromJson(payload)) {
           case Success(:final value):

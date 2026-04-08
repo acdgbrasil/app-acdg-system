@@ -1,6 +1,9 @@
 import 'package:equatable/equatable.dart';
 
 /// Sealed class representing all possible domain errors in the Social Care module.
+///
+/// Each subtype carries a user-facing message via [toString] so the UI
+/// can display it directly without interpreting error internals.
 sealed class SocialCareError extends Equatable implements Exception {
   const SocialCareError();
 
@@ -90,22 +93,49 @@ final class PrMemberRequiredError extends FamilyError {
 }
 
 // =============================================================================
-// INFRASTRUCTURE & GENERIC ERRORS
+// INFRASTRUCTURE ERRORS
 // =============================================================================
 
-/// Thrown when the backend or network fails.
-final class NetworkSocialCareError extends SocialCareError {
-  const NetworkSocialCareError(this.technicalMessage);
-  final String technicalMessage;
+/// Thrown when a real network failure occurs (no connectivity, timeout, DNS).
+///
+/// Only for actual transport-layer failures — NOT for HTTP error responses.
+final class NetworkError extends SocialCareError {
+  const NetworkError(this.technicalDetail);
+  final String technicalDetail;
 
   @override
-  List<Object?> get props => [technicalMessage];
+  List<Object?> get props => [technicalDetail];
 
   @override
-  String toString() => 'Erro de conexão. Verifique sua internet.';
+  String toString() => 'Sem conexão com o servidor. Verifique sua internet.';
 }
 
-/// Fallback for unexpected system failures.
+/// Thrown when the server returns an error response (4xx/5xx) that doesn't
+/// map to a known domain error.
+///
+/// Carries the backend message so the UI can display something meaningful
+/// instead of a generic fallback.
+final class ServerError extends SocialCareError {
+  const ServerError({
+    required this.httpStatus,
+    required this.backendCode,
+    required this.backendMessage,
+  });
+
+  final int httpStatus;
+  final String backendCode;
+  final String backendMessage;
+
+  @override
+  List<Object?> get props => [httpStatus, backendCode, backendMessage];
+
+  @override
+  String toString() => backendMessage.isNotEmpty
+      ? backendMessage
+      : 'Erro no servidor (código $backendCode). Tente novamente.';
+}
+
+/// Fallback for unexpected system failures (programming errors, null access, etc.).
 final class UnexpectedSocialCareError extends SocialCareError {
   const UnexpectedSocialCareError(this.error);
   final Object error;

@@ -42,6 +42,12 @@ export 'src/infrastructure/dtos/patient_overview.dart';
 // Translator
 export 'src/infrastructure/patient_translator.dart';
 
+// People Context
+export 'src/infrastructure/people_context_client.dart';
+
+// Services
+export 'src/services/patient_enrichment_service.dart';
+
 // Care
 export 'src/domain/care/care_vos.dart';
 

@@ -13,7 +13,6 @@ import '../handlers/care_handler.dart';
 import '../handlers/lookup_handler.dart';
 import '../handlers/protection_handler.dart';
 import '../handlers/registry_handler.dart';
-import '../remote/people_context_client.dart';
 import '../middleware/auth_guard_middleware.dart';
 import '../middleware/session_middleware.dart';
 
