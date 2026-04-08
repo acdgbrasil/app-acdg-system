@@ -11,6 +11,7 @@ class RegisterPatientUseCase
   RegisterPatientUseCase({required PatientRepository patientRepository})
     : _patientRepository = patientRepository;
 
+  static final _log = AcdgLogger.get('RegisterPatientUseCase');
   final PatientRepository _patientRepository;
 
   @override
@@ -20,6 +21,7 @@ class RegisterPatientUseCase
       final patientRes = RegistryMapper.toPatient(intent);
 
       if (patientRes case Failure(:final error)) {
+        _log.warning('Domain assembly failed: $error');
         return Failure(_mapDomainError(error));
       }
 
@@ -34,7 +36,8 @@ class RegisterPatientUseCase
           _ => _mapDomainError(error),
         },
       );
-    } catch (e) {
+    } catch (e, st) {
+      _log.severe('Unexpected error during patient registration', e, st);
       return Failure(UnexpectedSocialCareError(e));
     }
   }

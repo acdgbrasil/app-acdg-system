@@ -58,5 +58,84 @@ void main() {
         );
       },
     );
+
+    test(
+      'DEVE enviar captureException quando LogLevel for FATAL com exception',
+      () {
+        final exception = Exception('Crash fatal');
+
+        logger.log('App crashed', LogLevel.fatal, error: exception);
+
+        expect(fakeSentryClient.capturedExceptions, hasLength(1));
+        expect(fakeSentryClient.capturedExceptions.first, equals(exception));
+        expect(fakeSentryClient.capturedMessages, isEmpty);
+      },
+    );
+
+    test(
+      'NÃO deve enviar para o Sentry quando LogLevel for ERROR sem error object',
+      () {
+        logger.log('Erro sem throwable', LogLevel.error);
+
+        expect(fakeSentryClient.capturedExceptions, isEmpty);
+        expect(fakeSentryClient.capturedMessages, isEmpty);
+      },
+    );
+
+    test(
+      'DEVE capturar Error types (não apenas Exception) quando LogLevel for ERROR',
+      () {
+        final error = TypeError();
+
+        logger.log('TypeError capturado', LogLevel.error, error: error);
+
+        expect(fakeSentryClient.capturedExceptions, hasLength(1));
+        expect(fakeSentryClient.capturedExceptions.first, isA<TypeError>());
+      },
+    );
+  });
+
+  group('SentryClientAdapter - User & Breadcrumb', () {
+    late FakeSentryClient fakeSentryClient;
+
+    setUp(() {
+      fakeSentryClient = FakeSentryClient();
+    });
+
+    test('DEVE registrar user context com setUser', () {
+      fakeSentryClient.setUser(
+        id: 'user-123',
+        email: 'test@acdg.com',
+        username: 'testuser',
+      );
+
+      expect(fakeSentryClient.users, hasLength(1));
+      expect(fakeSentryClient.users.first['id'], equals('user-123'));
+      expect(fakeSentryClient.users.first['email'], equals('test@acdg.com'));
+      expect(fakeSentryClient.userCleared, isFalse);
+    });
+
+    test('DEVE limpar user context com clearUser', () {
+      fakeSentryClient.setUser(id: 'user-123');
+      fakeSentryClient.clearUser();
+
+      expect(fakeSentryClient.userCleared, isTrue);
+    });
+
+    test('DEVE registrar breadcrumbs com message e category', () {
+      fakeSentryClient.addBreadcrumb(
+        message: 'Patient loaded',
+        category: 'home',
+        data: {'patientId': '456'},
+      );
+
+      expect(fakeSentryClient.breadcrumbs, hasLength(1));
+      expect(fakeSentryClient.breadcrumbs.first['message'], 'Patient loaded');
+      expect(fakeSentryClient.breadcrumbs.first['category'], 'home');
+      expect(
+        (fakeSentryClient.breadcrumbs.first['data'] as Map)['patientId'],
+        '456',
+      );
+    });
   });
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import 'package:network/network.dart';
@@ -19,6 +18,7 @@ abstract class SyncScheduler {
 }
 
 class OfflineFirstRepository implements SocialCareContract {
+  static final _log = AcdgLogger.get('OfflineFirstRepository');
   final LocalCacheContract _local;
   final SocialCareContract _remote;
   final ConnectivityService _connectivity;
@@ -43,23 +43,17 @@ class OfflineFirstRepository implements SocialCareContract {
   Future<Result<T>> _handleWrite<T>(
     Future<Result<T>> Function() localCall,
   ) async {
-    debugPrint('[Offline Repo] _handleWrite start');
     final result = await localCall();
 
     if (result.isSuccess) {
-      debugPrint(
-        '[Offline Repo] _handleWrite SUCCESS locally. Checking sync...',
-      );
       if (_isOnline) {
-        debugPrint('[Offline Repo] Online! Scheduling sync process...');
+        _log.fine('Write succeeded locally, scheduling sync');
         _syncEngine.scheduleProcessQueue();
       } else {
-        debugPrint('[Offline Repo] Offline. Action remained in queue.');
+        _log.fine('Write succeeded locally, offline — queued for sync');
       }
     } else {
-      debugPrint(
-        '[Offline Repo] _handleWrite FAILED locally: ${(result as Failure).error}',
-      );
+      _log.severe('Local write failed', (result as Failure).error);
     }
 
     return result;
@@ -70,25 +64,21 @@ class OfflineFirstRepository implements SocialCareContract {
     required Future<Result<T>> Function() localCall,
     Future<void> Function(T)? onRemoteSuccess,
   }) async {
-    debugPrint('[Offline Repo] _handleRead start (Online: $_isOnline)');
     if (_isOnline) {
-      debugPrint('[Offline Repo] Attempting remote call...');
       final remoteResult = await remoteCall();
 
       if (remoteResult case Success(:final value)) {
-        debugPrint('[Offline Repo] Remote SUCCESS. Updating cache...');
         if (onRemoteSuccess != null) {
           unawaited(onRemoteSuccess(value));
         }
         return Success(value);
       } else {
-        debugPrint(
-          '[Offline Repo] Remote FAILED: ${(remoteResult as Failure).error}. Falling back to local...',
+        _log.warning(
+          'Remote read failed, falling back to local: ${(remoteResult as Failure).error}',
         );
       }
     }
 
-    debugPrint('[Offline Repo] Returning local data...');
     return localCall();
   }
 
@@ -134,9 +124,8 @@ class OfflineFirstRepository implements SocialCareContract {
     final pending = await _local.hasPendingActions(id);
 
     if (pending) {
-      debugPrint(
-        '[Offline Repo] ⛔ Pending actions for patient ${id.value} — '
-        'returning LOCAL as source of truth.',
+      _log.info(
+        'Pending actions for patient ${id.value} — returning local as source of truth',
       );
       return _local.fetchPatient(id);
     }
@@ -150,10 +139,9 @@ class OfflineFirstRepository implements SocialCareContract {
           final localMembers = value.familyMembers.length;
           final remoteMembers = dto.familyMembers.length;
           if (remoteMembers < localMembers) {
-            debugPrint(
-              '[Offline Repo] ⚠️ DESYNC: Remote returned $remoteMembers members '
-              'but local has $localMembers for patient ${id.value}. '
-              'Possible sync lag or data loss.',
+            _log.warning(
+              'DESYNC: Remote has $remoteMembers members but local has $localMembers '
+              'for patient ${id.value}. Possible sync lag or data loss.',
             );
           }
         }
@@ -297,38 +285,24 @@ class OfflineFirstRepository implements SocialCareContract {
 
   @override
   Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
-    debugPrint('[Offline Repo] getLookupTable for: $tableName');
     final localResult = await _local.getLookupTable(tableName);
 
     if (localResult case Success(value: final items) when items.isNotEmpty) {
-      debugPrint(
-        '[Offline Repo] Returning ${items.length} items from LOCAL cache for $tableName',
-      );
       return Success(items);
     }
 
-    debugPrint(
-      '[Offline Repo] Local cache EMPTY for $tableName. Checking online...',
-    );
     if (_isOnline) {
-      debugPrint('[Offline Repo] Online! Fetching $tableName from REMOTE...');
       final remoteResult = await _remote.getLookupTable(tableName);
       if (remoteResult case Success(:final value)) {
-        debugPrint(
-          '[Offline Repo] Remote SUCCESS for $tableName. Updating local cache...',
-        );
         unawaited(_local.updateLookupCache(tableName, value));
         return Success(value);
       } else {
-        debugPrint(
-          '[Offline Repo] Remote FAILED for $tableName: ${(remoteResult as Failure).error}',
+        _log.warning(
+          'Remote lookup fetch failed for $tableName: ${(remoteResult as Failure).error}',
         );
       }
     }
 
-    debugPrint(
-      '[Offline Repo] Returning local result (likely empty or failure)',
-    );
     return localResult;
   }
 

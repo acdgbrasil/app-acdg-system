@@ -14,6 +14,7 @@ import '../infrastructure/logging/sentry_logger_impl.dart';
 abstract final class AcdgLogger {
   static bool _initialized = false;
   static SentryLoggerImpl? _sentryLogger;
+  static SentryClientAdapter? _sentryClient;
 
   /// Initializes the logging system.
   ///
@@ -21,6 +22,8 @@ abstract final class AcdgLogger {
   /// When [sentryClient] is provided, error/fatal logs are forwarded to Sentry.
   static void initialize({SentryClientAdapter? sentryClient}) {
     if (_initialized) return;
+
+    _sentryClient = sentryClient;
 
     if (sentryClient != null) {
       _sentryLogger = SentryLoggerImpl(sentryClient: sentryClient);
@@ -60,6 +63,35 @@ abstract final class AcdgLogger {
 
   /// Returns a logger for a specific [name].
   static Logger get(String name) => Logger(name);
+
+  /// Sets the authenticated user context on Sentry events.
+  ///
+  /// Call after successful login so all subsequent events are
+  /// associated with the user.
+  static void setUser({required String id, String? email, String? username}) {
+    _sentryClient?.setUser(id: id, email: email, username: username);
+  }
+
+  /// Clears the user context (e.g. on logout).
+  static void clearUser() {
+    _sentryClient?.clearUser();
+  }
+
+  /// Adds a breadcrumb for contextual tracing.
+  ///
+  /// Breadcrumbs provide a trail of events leading up to an error,
+  /// making it easier to reproduce and debug issues in Sentry.
+  static void addBreadcrumb({
+    required String message,
+    String? category,
+    Map<String, String>? data,
+  }) {
+    _sentryClient?.addBreadcrumb(
+      message: message,
+      category: category,
+      data: data,
+    );
+  }
 
   /// Maps [package:logging] levels to our [LogLevel].
   ///

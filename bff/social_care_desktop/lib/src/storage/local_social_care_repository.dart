@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:core/core.dart';
 import 'package:core/core_offline.dart';
 import 'package:drift/drift.dart';
@@ -12,6 +11,7 @@ import 'local_cache_contract.dart';
 /// Implementation of [LocalCacheContract] that uses Drift for local storage
 /// and enqueues actions for synchronization.
 class LocalSocialCareRepository implements LocalCacheContract {
+  static final _log = AcdgLogger.get('LocalSocialCareRepository');
   final DriftDatabaseService _dbService;
   final SyncQueueService _queueService;
 
@@ -33,16 +33,14 @@ class LocalSocialCareRepository implements LocalCacheContract {
     Map<String, dynamic> actionPayload,
     Patient Function(Patient) mutator,
   ) async {
-    debugPrint(
-      '[Local Repo] _mutatePatient: $actionType for ${patientId.value}',
-    );
+    _log.fine('_mutatePatient: $actionType for ${patientId.value}');
     try {
       final cached = await (_db.select(
         _db.cachedPatients,
       )..where((t) => t.patientId.equals(patientId.value))).getSingleOrNull();
 
       if (cached == null) {
-        debugPrint('[Local Repo] Patient NOT FOUND in cache.');
+        _log.warning('Patient not found in cache: ${patientId.value}');
         return Failure(_notFoundError('Patient not found in local cache'));
       }
 
@@ -51,15 +49,13 @@ class LocalSocialCareRepository implements LocalCacheContract {
       final Patient patient;
       switch (PatientTranslator.fromJson(currentJson)) {
         case Success(:final value):
-          debugPrint('[Local Repo] Patient decoded from cache.');
           patient = value;
         case Failure(:final error):
-          debugPrint('[Local Repo] FAILED to decode patient: $error');
+          _log.severe('Failed to decode patient from cache', error);
           return Failure(error);
       }
       final updatedPatient = mutator(patient);
 
-      debugPrint('[Local Repo] Updating Drift record...');
       await (_db.update(
         _db.cachedPatients,
       )..where((t) => t.patientId.equals(patientId.value))).write(
@@ -73,18 +69,16 @@ class LocalSocialCareRepository implements LocalCacheContract {
         ),
       );
 
-      debugPrint('[Local Repo] Enqueueing sync action: $actionType');
-      debugPrint('[Local Repo] Payload: $actionPayload');
+      _log.fine('Enqueueing sync action: $actionType');
       await _queueService.enqueue(
         patientId: patientId.value,
         actionType: actionType,
         payload: actionPayload,
       );
-      debugPrint('[Local Repo] Mutation and Queue COMPLETE.');
 
       return Success(updatedPatient);
-    } catch (e) {
-      debugPrint('[Local Repo] CRITICAL ERROR in _mutatePatient: $e');
+    } catch (e, st) {
+      _log.severe('CRITICAL: _mutatePatient failed ($actionType)', e, st);
       return Failure(
         AppError(
           code: 'LOC-500',

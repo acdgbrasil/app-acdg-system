@@ -29,6 +29,8 @@ ARG OIDC_WEB_POST_LOGOUT_URI
 ARG BFF_BASE_URL=/api
 ARG SENTRY_DSN=
 ARG APP_ENV=production
+ARG SENTRY_RELEASE=
+ARG SENTRY_DIST=
 
 # Generate config.json at build-time (more robust than .env for WASM)
 RUN cat <<EOF > apps/acdg_system/config.json
@@ -40,7 +42,9 @@ RUN cat <<EOF > apps/acdg_system/config.json
   "OIDC_WEB_POST_LOGOUT_URI": "$OIDC_WEB_POST_LOGOUT_URI",
   "BFF_BASE_URL": "$BFF_BASE_URL",
   "SENTRY_DSN": "$SENTRY_DSN",
-  "APP_ENV": "$APP_ENV"
+  "APP_ENV": "$APP_ENV",
+  "SENTRY_RELEASE": "$SENTRY_RELEASE",
+  "SENTRY_DIST": "$SENTRY_DIST"
 }
 EOF
 

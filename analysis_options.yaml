@@ -113,7 +113,6 @@ linter:
     # ------------------------------------------------------------------
     - unnecessary_lambdas            # (x) => foo(x) → foo (tearoff)
     - prefer_collection_literals     # [] ao invés de List(), {} ao invés de Map()
-    - prefer_for_elements_to_map_from_entries  # for em collection literal
     - prefer_iterable_whereType      # .whereType<T>() ao invés de .where + cast
     - prefer_spread_collections      # Spread [...a, ...b] ao invés de addAll
     - prefer_if_elements_to_conditional_expressions  # if em collection literal

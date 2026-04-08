@@ -6,6 +6,7 @@ import 'package:social_care/src/ui/home/view/components/detail_panel_state.dart'
 import 'package:social_care/src/ui/home/view/components/home_form_state.dart';
 
 class HomeViewModel extends BaseViewModel {
+  static final _log = AcdgLogger.get('HomeViewModel');
   HomeViewModel({
     required ListPatientsUseCase listPatientsUseCase,
     required GetPatientUseCase getPatientUseCase,
@@ -39,9 +40,14 @@ class HomeViewModel extends BaseViewModel {
 
   // ── Load patients ────────────────────────────────────────────
   Future<Result<List<PatientSummary>>> _loadPatients() async {
+    AcdgLogger.addBreadcrumb(message: 'Loading patients', category: 'home');
     final result = await _listPatientsUseCase.execute();
-    if (result case Success(:final value)) {
-      homeFormState.families.value = value;
+    switch (result) {
+      case Success(:final value):
+        homeFormState.families.value = value;
+        _log.info('Loaded ${value.length} patients');
+      case Failure(:final error):
+        _log.severe('Failed to load patients', error);
     }
     return result;
   }
@@ -65,10 +71,17 @@ class HomeViewModel extends BaseViewModel {
       final detailResult = PatientDetailTranslator.toDetailResult(patient);
       detailPanelState.patientDetail.value = detailResult.patientDetail;
       detailPanelState.fichas.value = detailResult.fichas;
+      AcdgLogger.addBreadcrumb(
+        message: 'Patient detail loaded',
+        category: 'home',
+        data: {'patientId': patientId},
+      );
       return const Success(null);
     }
 
-    return Failure((result as Failure).error);
+    final failure = result as Failure;
+    _log.severe('Failed to load patient detail: $patientId', failure.error);
+    return Failure(failure.error);
   }
 
   // ── Delegate panel actions ───────────────────────────────────

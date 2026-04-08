@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
 
@@ -15,6 +14,7 @@ import '../models/family_member_model.dart';
 /// - Domain entities as input (no JSON parsing)
 /// - Age profile delegated to domain model
 class FamilyCompositionViewModel extends BaseViewModel {
+  static final _log = AcdgLogger.get('FamilyCompositionViewModel');
   FamilyCompositionViewModel({
     required this.patientId,
     required GetPatientUseCase getPatientUseCase,
@@ -130,15 +130,13 @@ class FamilyCompositionViewModel extends BaseViewModel {
   // ── Load ────────────────────────────────────────────────────
 
   Future<void> _loadLookups() async {
-    debugPrint('[ViewModel] Loading lookups for patient: $patientId');
+    _log.info('Loading lookups for patient: $patientId');
     final errors = <String>[];
 
     final result = await _lookupRepository.getLookupTable('dominio_parentesco');
     switch (result) {
       case Success(:final value):
-        debugPrint(
-          '[ViewModel] Parentesco lookups loaded: ${value.length} items',
-        );
+        _log.info('Parentesco lookups loaded: ${value.length} items');
         _parentescoLookup = value
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
@@ -147,7 +145,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
         );
         if (pessoaRef.isNotEmpty) _prRelationshipId = pessoaRef.first.id;
       case Failure(:final error):
-        debugPrint('[ViewModel] FAILED to load parentesco lookups: $error');
+        _log.severe('Failed to load parentesco lookups', error);
         errors.add('Falha ao carregar parentescos');
     }
 
@@ -156,14 +154,12 @@ class FamilyCompositionViewModel extends BaseViewModel {
     );
     switch (specResult) {
       case Success(:final value):
-        debugPrint(
-          '[ViewModel] Especificidade lookups loaded: ${value.length} items',
-        );
+        _log.info('Especificidade lookups loaded: ${value.length} items');
         _specificityLookup = value
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
       case Failure(:final error):
-        debugPrint('[ViewModel] FAILED to load especificidade lookups: $error');
+        _log.severe('Failed to load especificidade lookups', error);
         errors.add('Falha ao carregar especificidades');
     }
 
@@ -176,22 +172,20 @@ class FamilyCompositionViewModel extends BaseViewModel {
   }
 
   Future<Result<void>> _loadPatient() async {
-    debugPrint('[ViewModel] _loadPatient start for id: $patientId');
+    _log.info('Loading patient: $patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
       case Success(:final value):
-        debugPrint(
-          '[ViewModel] _loadPatient SUCCESS. Members count: ${value.familyMembers.length}',
-        );
+        _log.info('Patient loaded. Members: ${value.familyMembers.length}');
         _members = _translateMembers(value);
         _ageProfileCache = null;
         final specId = value.socialIdentity?.typeId.value;
-        debugPrint('[ViewModel] Current Specificity from DB: $specId');
+        _log.fine('Current specificity from DB: $specId');
         _selectedSpecificityId = specId;
         _originalSpecificityId = specId;
       case Failure(:final error):
-        debugPrint('[ViewModel] _loadPatient FAILURE: $error');
+        _log.severe('Failed to load patient: $patientId', error);
         _members = [];
         _ageProfileCache = null;
     }
@@ -240,22 +234,23 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
   /// Selects a single family specificity (single choice).
   void updateSpecificity(String specificityId) {
-    debugPrint('[ViewModel] updateSpecificity called with: $specificityId');
+    _log.fine('updateSpecificity: $specificityId');
     _selectedSpecificityId = specificityId.toLowerCase();
-    debugPrint('[ViewModel] canSave is now: $canSave');
+    _log.fine('canSave: $canSave');
     notifyListeners();
   }
 
   // ── Actions ─────────────────────────────────────────────────
 
   Future<void> addMember(AddFamilyMemberIntent intent) async {
-    debugPrint('[ViewModel] addMember intent for: ${intent.firstName}');
-    await addMemberCommand.execute(intent);
-    debugPrint(
-      '[ViewModel] addMemberCommand completed: ${addMemberCommand.completed}',
+    AcdgLogger.addBreadcrumb(
+      message: 'Adding family member: ${intent.firstName}',
+      category: 'family',
     );
+    await addMemberCommand.execute(intent);
+    _log.info('addMemberCommand completed: ${addMemberCommand.completed}');
     if (addMemberCommand.completed) {
-      debugPrint('[ViewModel] Triggering reload after add...');
+      _log.fine('Triggering reload after add');
       await loadPatientCommand.execute();
     }
   }

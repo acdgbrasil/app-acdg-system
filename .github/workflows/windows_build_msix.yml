@@ -82,6 +82,8 @@ jobs:
           echo "BFF_BASE_URL=https://bff.acdgbrasil.com.br" >> .env
           echo "SENTRY_DSN=${{ env.SENTRY_DSN }}" >> .env
           echo "APP_ENV=production" >> .env
+          echo "SENTRY_RELEASE=conecta-raros@${{ steps.version.outputs.tag }}" >> .env
+          echo "SENTRY_DIST=windows" >> .env
 
       - name: Install dependencies
         run: |

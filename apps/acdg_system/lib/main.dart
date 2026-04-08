@@ -21,6 +21,8 @@ void main() async {
 
   const dsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
   const env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
+  const release = String.fromEnvironment('SENTRY_RELEASE', defaultValue: '');
+  const dist = String.fromEnvironment('SENTRY_DIST', defaultValue: '');
 
   // Initialize logging — with Sentry forwarding when DSN is configured
   final sentryAdapter = dsn.isNotEmpty ? RealSentryClientAdapter() : null;
@@ -30,7 +32,10 @@ void main() async {
     await SentryFlutter.init((options) {
       options.dsn = dsn;
       options.environment = env;
-      options.tracesSampleRate = 1.0;
+      options.tracesSampleRate = env == 'prod' ? 0.2 : 1.0;
+      options.sendDefaultPii = true;
+      if (release.isNotEmpty) options.release = release;
+      if (dist.isNotEmpty) options.dist = dist;
     }, appRunner: () => runApp(const Root()));
   } else {
     runApp(const Root());
