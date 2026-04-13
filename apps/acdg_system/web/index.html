@@ -1,46 +1,191 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Conecta Raros — Plataforma ACDG de cuidado e defesa de pacientes com doenças genéticas raras">
+  <meta name="theme-color" content="#1a1a2e">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="acdg_system">
+  <meta name="apple-mobile-web-app-title" content="Conecta Raros">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>acdg_system</title>
+  <title>Conecta Raros — ACDG</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Splash Container ── */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, #f8f9ff 0%, #e8ecf8 50%, #f0f0fa 100%);
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #splash.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── Logo ── */
+    .splash-logo {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      animation: logoEntry 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes logoEntry {
+      from {
+        opacity: 0;
+        transform: scale(0.7) translateY(20px);
+        filter: blur(8px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+      }
+    }
+
+    /* ── Title ── */
+    .splash-title {
+      margin-top: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #1b2a6b;
+      animation: textEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+    }
+
+    @keyframes textEntry {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+        letter-spacing: 12px;
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        letter-spacing: 4px;
+      }
+    }
+
+    /* ── Subtitle ── */
+    .splash-subtitle {
+      margin-top: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: #7b5ea7;
+      letter-spacing: 1.5px;
+      animation: textEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+    }
+
+    /* ── DNA Helix Loader ── */
+    .dna-loader {
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      animation: textEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.8s both;
+    }
+
+    .dna-loader .strand {
+      width: 4px;
+      height: 32px;
+      border-radius: 2px;
+      animation: dnaStrand 1.4s ease-in-out infinite;
+    }
+
+    .dna-loader .strand:nth-child(1) { background: #7b5ea7; animation-delay: 0s; }
+    .dna-loader .strand:nth-child(2) { background: #3a5fc8; animation-delay: 0.1s; }
+    .dna-loader .strand:nth-child(3) { background: #7b5ea7; animation-delay: 0.2s; }
+    .dna-loader .strand:nth-child(4) { background: #3a5fc8; animation-delay: 0.3s; }
+    .dna-loader .strand:nth-child(5) { background: #7b5ea7; animation-delay: 0.4s; }
+    .dna-loader .strand:nth-child(6) { background: #3a5fc8; animation-delay: 0.5s; }
+    .dna-loader .strand:nth-child(7) { background: #7b5ea7; animation-delay: 0.6s; }
+
+    @keyframes dnaStrand {
+      0%, 100% {
+        transform: scaleY(0.4);
+        opacity: 0.5;
+      }
+      50% {
+        transform: scaleY(1);
+        opacity: 1;
+      }
+    }
+
+    /* ── Progress text ── */
+    .splash-progress {
+      margin-top: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 11px;
+      color: #999;
+      letter-spacing: 0.5px;
+      animation: textEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) 1s both;
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <!-- Splash screen: pure HTML/CSS, renders instantly before Flutter loads -->
+  <div id="splash">
+    <img class="splash-logo" src="splash-logo.png" alt="ACDG">
+    <div class="splash-title">CONECTA RAROS</div>
+    <div class="splash-subtitle">ACDG Brasil</div>
+    <div class="dna-loader">
+      <div class="strand"></div>
+      <div class="strand"></div>
+      <div class="strand"></div>
+      <div class="strand"></div>
+      <div class="strand"></div>
+      <div class="strand"></div>
+      <div class="strand"></div>
+    </div>
+    <div class="splash-progress" id="splash-progress">Carregando...</div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    {{flutter_js}}
+    {{flutter_build_config}}
+
+    _flutter.loader.load({
+      onEntrypointLoaded: async function(engineInitializer) {
+        const progress = document.getElementById('splash-progress');
+        if (progress) progress.textContent = 'Inicializando...';
+
+        const appRunner = await engineInitializer.initializeEngine();
+
+        if (progress) progress.textContent = 'Quase pronto...';
+
+        await appRunner.runApp();
+
+        // Flutter is painting — fade out splash
+        const splash = document.getElementById('splash');
+        if (splash) {
+          splash.classList.add('fade-out');
+          splash.addEventListener('transitionend', () => splash.remove());
+        }
+      }
+    });
+  </script>
 </body>
 </html>

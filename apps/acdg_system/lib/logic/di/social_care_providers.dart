@@ -97,6 +97,28 @@ final familyCompositionViewModelOverride = familyCompositionViewModelProvider
       return vm;
     });
 
+final updateIntakeInfoUseCaseProvider = Provider<UpdateIntakeInfoUseCase>((
+  ref,
+) {
+  return UpdateIntakeInfoUseCase(
+    patientRepository: ref.watch(patientRepositoryProvider),
+  );
+});
+
+/// Override for the [intakeInfoViewModelProvider] stub in social_care.
+/// Wires the ViewModel with the shell's use case providers.
+final intakeInfoViewModelOverride = intakeInfoViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = IntakeInfoViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateIntakeInfoUseCase: ref.watch(updateIntakeInfoUseCaseProvider),
+        lookupRepository: ref.watch(lookupRepositoryProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
+
 /// Override for the [homeViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case providers.
 final homeViewModelOverride = homeViewModelProvider.overrideWith((ref) {

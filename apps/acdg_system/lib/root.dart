@@ -85,6 +85,7 @@ class _RootState extends State<Root> {
           appDependencyManagerProvider.overrideWithValue(_deps),
           patientRegistrationViewModelOverride,
           familyCompositionViewModelOverride,
+          intakeInfoViewModelOverride,
           homeViewModelOverride,
         ],
         child: AppProviders(deps: _deps, child: const AppView()),

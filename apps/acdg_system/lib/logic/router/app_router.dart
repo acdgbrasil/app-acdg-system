@@ -25,6 +25,7 @@ abstract final class AppRoutes {
   static const registrationStep2 = '/patient-registration/family-composition';
   static const registrationStep3 = '/patient-registration/specificities';
   static const familyComposition = '/family-composition';
+  static const intakeInfo = '/intake-info';
 }
 
 class AppRouter {
@@ -90,6 +91,14 @@ class AppRouter {
         builder: (context, state) {
           final patientId = state.pathParameters['patientId']!;
           return FamilyCompositionPage(patientId: patientId);
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.intakeInfo}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) {
+          final patientId = state.pathParameters['patientId']!;
+          return IntakeInfoPage(patientId: patientId);
         },
       ),
     ],
