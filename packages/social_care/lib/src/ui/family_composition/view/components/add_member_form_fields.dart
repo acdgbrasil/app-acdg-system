@@ -16,6 +16,7 @@ class AddMemberFormFields extends StatelessWidget {
   final AddMemberFormState formState;
   final bool showErrors;
   final bool isEditing;
+  final void Function(String cpf)? onCpfComplete;
 
   static const _docOptions = ['CN', 'RG', 'CTPS', 'CPF', 'TE'];
 
@@ -24,6 +25,7 @@ class AddMemberFormFields extends StatelessWidget {
     required this.formState,
     required this.showErrors,
     required this.isEditing,
+    this.onCpfComplete,
   });
 
   @override
@@ -31,6 +33,80 @@ class AddMemberFormFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!isEditing) ...[
+          AddMemberModalField(
+            label: 'CPF (opcional)',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AddMemberModalTextInput(
+                  controller: formState.cpf,
+                  placeholder: '000.000.000-00',
+                  formatters: AppMasks.cpf,
+                  keyboardType: TextInputType.number,
+                  onChanged: _handleCpfChange,
+                ),
+                const SizedBox(height: 6),
+                ValueListenableBuilder<bool>(
+                  valueListenable: formState.cpfLookupLoading,
+                  builder: (_, loading, __) {
+                    if (!loading) return const SizedBox.shrink();
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Buscando...',
+                        style: TextStyle(
+                          color: AppColors.background,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ValueListenableBuilder<String?>(
+                  valueListenable: formState.linkedPersonName,
+                  builder: (_, linkedName, __) {
+                    if (linkedName == null) return const SizedBox.shrink();
+                    return Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.person_search,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Pessoa encontrada: $linkedName',
+                              style: const TextStyle(
+                                color: AppColors.background,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
         AddMemberModalField(
           label: FamilyCompositionLn10.fieldName,
           isRequired: true,
@@ -110,5 +186,14 @@ class AddMemberFormFields extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void _handleCpfChange(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 11) {
+      onCpfComplete?.call(digits);
+    } else {
+      formState.clearLinkedPerson();
+    }
   }
 }

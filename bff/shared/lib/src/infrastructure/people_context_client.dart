@@ -98,6 +98,41 @@ class PeopleContextClient {
     }
   }
 
+  /// Finds a person by CPF in people-context.
+  ///
+  /// Returns `{id, fullName, birthDate, cpf}` on success, or a Failure
+  /// if the person is not found (404) or the service is unavailable.
+  Future<Result<Map<String, dynamic>>> findPersonByCpf(String cpf) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/people/by-cpf/$cpf',
+        options: Options(validateStatus: (status) => true),
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = response.data;
+        if (responseBody == null) {
+          return const Failure('People Context: empty response body');
+        }
+        final data = responseBody['data'] as Map<String, dynamic>?;
+        if (data == null) {
+          return const Failure('People Context: missing "data" in response');
+        }
+        return Success(data);
+      }
+
+      if (response.statusCode == 404) {
+        return const Failure('not_found');
+      }
+
+      return Failure(
+        'People Context error (${response.statusCode}): ${response.data}',
+      );
+    } catch (e) {
+      return Failure('People Context unreachable: $e');
+    }
+  }
+
   /// Retrieves a person by [personId] from people-context.
   ///
   /// Returns `{id, fullName, birthDate}` on success.

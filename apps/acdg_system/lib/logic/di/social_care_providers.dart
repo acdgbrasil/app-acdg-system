@@ -80,6 +80,11 @@ final patientRegistrationViewModelOverride =
 /// Wires the ViewModel with the shell's use case providers.
 final familyCompositionViewModelOverride = familyCompositionViewModelProvider
     .overrideWith((ref, patientId) {
+      final contract = ref.watch(socialCareContractProvider);
+      final cpfLookup = contract is HttpSocialCareClient
+          ? contract.lookupPersonByCpf
+          : null;
+
       final vm = FamilyCompositionViewModel(
         patientId: patientId,
         getPatientUseCase: ref.watch(getPatientUseCaseProvider),
@@ -92,6 +97,7 @@ final familyCompositionViewModelOverride = familyCompositionViewModelProvider
           updateSocialIdentityUseCaseProvider,
         ),
         lookupRepository: ref.watch(lookupRepositoryProvider),
+        cpfLookupFn: cpfLookup,
       );
       ref.onDispose(() => vm.dispose());
       return vm;

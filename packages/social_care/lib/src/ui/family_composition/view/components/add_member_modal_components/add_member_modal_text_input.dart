@@ -8,6 +8,7 @@ class AddMemberModalTextInput extends StatelessWidget {
   final List<TextInputFormatter>? formatters;
   final TextInputType? keyboardType;
   final bool isEnabled;
+  final void Function(String)? onChanged;
 
   const AddMemberModalTextInput({
     super.key,
@@ -16,6 +17,7 @@ class AddMemberModalTextInput extends StatelessWidget {
     this.formatters,
     this.keyboardType,
     this.isEnabled = true,
+    this.onChanged,
   });
 
   @override
@@ -25,6 +27,7 @@ class AddMemberModalTextInput extends StatelessWidget {
       keyboardType: keyboardType,
       inputFormatters: formatters,
       readOnly: !isEnabled,
+      onChanged: onChanged,
       style: const TextStyle(
         color: AppColors.background,
         fontSize: 14,

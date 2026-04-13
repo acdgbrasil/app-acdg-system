@@ -14,12 +14,15 @@ import 'relationship_selection_list.dart';
 class AddMemberModal extends StatefulWidget {
   final List<LookupItem> parentescoLookup;
   final void Function(AddMemberResult result) onSave;
+  final Future<void> Function(String cpf, AddMemberFormState formState)?
+      onCpfLookup;
   final AddMemberResult? existing;
 
   const AddMemberModal({
     super.key,
     required this.parentescoLookup,
     required this.onSave,
+    this.onCpfLookup,
     this.existing,
   });
 
@@ -118,6 +121,10 @@ class _AddMemberModalState extends State<AddMemberModal> {
                           formState: _formState,
                           showErrors: _showErrors,
                           isEditing: isEditing,
+                          onCpfComplete: widget.onCpfLookup == null
+                              ? null
+                              : (cpf) =>
+                                    widget.onCpfLookup!(cpf, _formState),
                         );
 
                         if (isWide) {

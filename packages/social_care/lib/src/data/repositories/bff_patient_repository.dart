@@ -73,9 +73,10 @@ class BffPatientRepository implements PatientRepository {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-  ) {
-    return _bff.addFamilyMember(patientId, member, prRelationshipId);
+    LookupId prRelationshipId, {
+    String? cpf,
+  }) {
+    return _bff.addFamilyMember(patientId, member, prRelationshipId, cpf: cpf);
   }
 
   @override

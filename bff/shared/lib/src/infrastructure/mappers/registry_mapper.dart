@@ -67,6 +67,7 @@ abstract final class RegistryMapper {
 
   /// Serializes a [FamilyMember] strictly per the AddFamilyMemberRequest contract.
   /// No extra fields (personId, fullName, sex) — only contract-required keys.
+  /// Uses IsoDate (YYYY-MM-DD) for birthDate as required by the contract.
   static Map<String, dynamic> addMemberRequestToJson(
     FamilyMember m,
     LookupId prRelationshipId,

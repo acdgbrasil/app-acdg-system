@@ -11,6 +11,7 @@ final class AddFamilyMemberIntent with Equatable {
     required this.birthDate,
     required this.prRelationshipId,
     this.sex,
+    this.cpf,
     this.isPrimaryCaregiver = false,
     this.residesWithPatient = true,
     this.hasDisability = false,
@@ -24,6 +25,7 @@ final class AddFamilyMemberIntent with Equatable {
   final DateTime birthDate;
   final String prRelationshipId;
   final String? sex;
+  final String? cpf;
   final bool isPrimaryCaregiver;
   final bool residesWithPatient;
   final bool hasDisability;
@@ -38,6 +40,7 @@ final class AddFamilyMemberIntent with Equatable {
     birthDate,
     prRelationshipId,
     sex,
+    cpf,
     isPrimaryCaregiver,
     residesWithPatient,
     hasDisability,

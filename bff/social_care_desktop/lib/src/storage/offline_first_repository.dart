@@ -162,9 +162,10 @@ class OfflineFirstRepository implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-  ) => _handleWrite(
-    () => _local.addFamilyMember(patientId, member, prRelationshipId),
+    LookupId prRelationshipId, {
+    String? cpf,
+  }) => _handleWrite(
+    () => _local.addFamilyMember(patientId, member, prRelationshipId, cpf: cpf),
   );
 
   @override

@@ -154,6 +154,7 @@ class _FamilyCompositionPageState extends ConsumerState<FamilyCompositionPage> {
               )
             : null,
         onSave: (r) => vm.handleModalSave(r, existing: existing),
+        onCpfLookup: vm.cpfLookupFn != null ? vm.lookupCpf : null,
       ),
     );
   }

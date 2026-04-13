@@ -8,6 +8,8 @@ class AddMemberResult {
   final bool hasDisability;
   final bool isPrimaryCaregiver;
   final Set<String> requiredDocuments;
+  final String? cpf;
+  final String? linkedPersonId;
 
   const AddMemberResult({
     required this.name,
@@ -18,5 +20,7 @@ class AddMemberResult {
     required this.hasDisability,
     required this.isPrimaryCaregiver,
     required this.requiredDocuments,
+    this.cpf,
+    this.linkedPersonId,
   });
 }

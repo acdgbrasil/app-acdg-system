@@ -30,6 +30,7 @@ class RegistryHandler {
     r.put('/patients/<id>/primary-caregiver', _assignPrimaryCaregiver);
     r.put('/patients/<id>/social-identity', _updateSocialIdentity);
     r.get('/patients/<id>/audit-trail', _getAuditTrail);
+    r.get('/people/by-cpf/<cpf>', _findPersonByCpf);
     return r;
   }
 
@@ -353,6 +354,23 @@ class RegistryHandler {
       },
       Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
     };
+  }
+
+  // ── GET /people/by-cpf/<cpf> ──────────────────────────────────
+
+  Future<Response> _findPersonByCpf(Request request, String cpf) async {
+    final session = getSession(request);
+    final peopleContext = _peopleContextFactory(session);
+
+    switch (await peopleContext.findPersonByCpf(cpf)) {
+      case Success(:final value):
+        return jsonOk(value);
+      case Failure(:final error):
+        if (error == 'not_found') {
+          return jsonError(404, 'Person not found');
+        }
+        return jsonError(502, error.toString());
+    }
   }
 
   // ── Enrichment ────────────────────────────────────────────────

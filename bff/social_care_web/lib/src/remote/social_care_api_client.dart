@@ -154,8 +154,9 @@ class SocialCareApiClient implements SocialCareContract {
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-  ) async {
+    LookupId prRelationshipId, {
+    String? cpf,
+  }) async {
     try {
       final payload = PatientTranslator.addMemberRequestToJson(
         member,

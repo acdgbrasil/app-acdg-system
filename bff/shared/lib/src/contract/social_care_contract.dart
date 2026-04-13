@@ -48,11 +48,15 @@ abstract interface class SocialCareContract {
   Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId);
 
   /// Adds a new family member to a patient's record.
+  ///
+  /// [cpf] is optional — when provided, the BFF uses it for people-context
+  /// dedup (idempotent person registration by CPF).
   Future<Result<void>> addFamilyMember(
     PatientId patientId,
     FamilyMember member,
-    LookupId prRelationshipId,
-  );
+    LookupId prRelationshipId, {
+    String? cpf,
+  });
 
   /// Removes a family member from a patient's record.
   Future<Result<void>> removeFamilyMember(

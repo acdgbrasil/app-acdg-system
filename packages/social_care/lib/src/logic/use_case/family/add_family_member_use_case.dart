@@ -24,6 +24,7 @@ class AddFamilyMemberUseCase extends BaseUseCase<AddFamilyMemberIntent, void> {
       intent.patientId,
       (memberRes as Success<FamilyMember>).value,
       (prRelIdRes as Success<LookupId>).value,
+      cpf: intent.cpf,
     );
   }
 }

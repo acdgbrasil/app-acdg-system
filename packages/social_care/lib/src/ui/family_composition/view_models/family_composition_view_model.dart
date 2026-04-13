@@ -6,6 +6,7 @@ import 'package:social_care/social_care.dart';
 
 import '../models/add_member_result.dart';
 import '../models/family_member_model.dart';
+import '../view/components/add_member_form_state.dart';
 
 /// ViewModel for the standalone Family Composition screen.
 ///
@@ -23,6 +24,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
     required UpdatePrimaryCaregiverUseCase updatePrimaryCaregiverUseCase,
     required UpdateSocialIdentityUseCase updateSocialIdentityUseCase,
     required LookupRepository lookupRepository,
+    this.cpfLookupFn,
   }) : _getPatientUseCase = getPatientUseCase,
        _updateSocialIdentityUseCase = updateSocialIdentityUseCase,
        _lookupRepository = lookupRepository {
@@ -44,6 +46,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
   final GetPatientUseCase _getPatientUseCase;
   final UpdateSocialIdentityUseCase _updateSocialIdentityUseCase;
   final LookupRepository _lookupRepository;
+
+  /// Optional CPF lookup function injected by DI.
+  final Future<Result<Map<String, dynamic>>> Function(String cpf)? cpfLookupFn;
 
   // ── Commands ────────────────────────────────────────────────
   late final Command0<void> loadPatientCommand;
@@ -240,6 +245,30 @@ class FamilyCompositionViewModel extends BaseViewModel {
     notifyListeners();
   }
 
+  // ── CPF Lookup ──────────────────────────────────────────────
+
+  /// Looks up a person by CPF and auto-fills the form if found.
+  Future<void> lookupCpf(String cpf, AddMemberFormState formState) async {
+    if (cpfLookupFn == null) return;
+
+    formState.cpfLookupLoading.value = true;
+    formState.clearLinkedPerson();
+
+    switch (await cpfLookupFn!(cpf)) {
+      case Success(:final value):
+        final personId = value['id'] as String?;
+        final fullName = value['fullName'] as String?;
+        final birthDate = value['birthDate'] as String?;
+        if (personId != null && fullName != null) {
+          formState.applyLinkedPerson(personId, fullName, birthDate);
+        }
+      case Failure():
+        break;
+    }
+
+    formState.cpfLookupLoading.value = false;
+  }
+
   // ── Actions ─────────────────────────────────────────────────
 
   Future<void> addMember(AddFamilyMemberIntent intent) async {
@@ -311,6 +340,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
       birthDate: result.birthDate,
       prRelationshipId: _prRelationshipId!,
       sex: result.sex,
+      cpf: result.cpf,
       residesWithPatient: result.residesWithPatient,
       hasDisability: result.hasDisability,
       requiredDocuments: result.requiredDocuments

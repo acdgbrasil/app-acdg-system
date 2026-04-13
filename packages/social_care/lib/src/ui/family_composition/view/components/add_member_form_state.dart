@@ -9,12 +9,22 @@ import '../../models/add_member_result.dart';
 class AddMemberFormState {
   final name = TextEditingController();
   final birthDate = TextEditingController();
+  final cpf = TextEditingController();
   final sex = ValueNotifier<String?>(null);
   final relationship = ValueNotifier<String?>(null);
   final residing = ValueNotifier<bool?>(null);
   final pcd = ValueNotifier<bool?>(null);
   final caregiver = ValueNotifier<bool?>(false);
   final requiredDocuments = ValueNotifier<Set<String>>({});
+
+  /// Person ID from people-context when CPF matches an existing person.
+  final linkedPersonId = ValueNotifier<String?>(null);
+
+  /// Name of the linked person (for display feedback).
+  final linkedPersonName = ValueNotifier<String?>(null);
+
+  /// Whether a CPF lookup is in progress.
+  final cpfLookupLoading = ValueNotifier<bool>(false);
 
   /// Populates the form from an existing [AddMemberResult] for editing.
   void populateFrom(AddMemberResult existing) {
@@ -94,6 +104,8 @@ class AddMemberFormState {
       _ => FamilyCompositionLn10.sexOther,
     };
 
+    final rawCpf = cpf.text.replaceAll(RegExp(r'\D'), '');
+
     return AddMemberResult(
       name: name.text.trim(),
       birthDate: parsedDate!,
@@ -103,6 +115,8 @@ class AddMemberFormState {
       hasDisability: pcd.value!,
       isPrimaryCaregiver: caregiver.value ?? false,
       requiredDocuments: {...requiredDocuments.value},
+      cpf: rawCpf.length == 11 ? rawCpf : null,
+      linkedPersonId: linkedPersonId.value,
     );
   }
 
@@ -116,14 +130,37 @@ class AddMemberFormState {
     requiredDocuments.value = current;
   }
 
+  /// Auto-fills form fields from a people-context person lookup result.
+  void applyLinkedPerson(String personId, String fullName, String? birthDateIso) {
+    linkedPersonId.value = personId;
+    linkedPersonName.value = fullName;
+    name.text = fullName;
+    if (birthDateIso != null && birthDateIso.length >= 10) {
+      final parts = birthDateIso.substring(0, 10).split('-');
+      if (parts.length == 3) {
+        birthDate.text = '${parts[2]}${parts[1]}${parts[0]}';
+      }
+    }
+  }
+
+  /// Clears linked person state (when CPF changes or is cleared).
+  void clearLinkedPerson() {
+    linkedPersonId.value = null;
+    linkedPersonName.value = null;
+  }
+
   void dispose() {
     name.dispose();
     birthDate.dispose();
+    cpf.dispose();
     sex.dispose();
     relationship.dispose();
     residing.dispose();
     pcd.dispose();
     caregiver.dispose();
     requiredDocuments.dispose();
+    linkedPersonId.dispose();
+    linkedPersonName.dispose();
+    cpfLookupLoading.dispose();
   }
 }
