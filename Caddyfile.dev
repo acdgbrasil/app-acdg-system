@@ -1,0 +1,30 @@
+:80 {
+    # Reverse proxy /api/* to BFF — strip /api prefix
+    handle_path /api/* {
+        reverse_proxy bff:8081
+    }
+
+    # Health check
+    handle /healthz {
+        respond "ok" 200
+    }
+
+    # Everything else: Flutter WASM SPA
+    handle {
+        root * /srv
+
+        # Cross-origin isolation for Flutter WASM (skwasm)
+        header {
+            Cross-Origin-Embedder-Policy "credentialless"
+            Cross-Origin-Opener-Policy "same-origin"
+        }
+
+        encode gzip zstd
+
+        @assets path_regexp \.(wasm|mjs|js|css|png|jpg|svg|ico|woff2?)$
+        header @assets Cache-Control "public, immutable, max-age=31536000"
+
+        try_files {path} /index.html
+        file_server
+    }
+}

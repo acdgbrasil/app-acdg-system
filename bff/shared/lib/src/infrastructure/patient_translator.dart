@@ -29,6 +29,7 @@ class PatientTranslator {
     'patientId': p.id.value,
     'personId': p.personId.value,
     'version': p.version,
+    'status': p.status,
     'prRelationshipId': p.prRelationshipId.value,
     'personalData': p.personalData == null
         ? null
@@ -316,6 +317,7 @@ class PatientTranslator {
         id: patientId,
         version: dto.version,
         personId: personId,
+        status: dto.status,
         prRelationshipId: prRelationshipId,
         personalData: personalData,
         civilDocuments: civilDocuments,
@@ -354,6 +356,10 @@ class PatientTranslator {
       RegistryMapper.addressToJson(a);
   static Map<String, dynamic> familyMemberToJson(FamilyMember m) =>
       RegistryMapper.familyMemberToJson(m);
+  static Map<String, dynamic> addMemberRequestToJson(
+    FamilyMember m,
+    LookupId prRelationshipId,
+  ) => RegistryMapper.addMemberRequestToJson(m, prRelationshipId);
   static Map<String, dynamic> diagnosisToJson(Diagnosis d) =>
       RegistryMapper.diagnosisToJson(d);
   static Map<String, dynamic> socialIdentityToJson(SocialIdentity i) =>

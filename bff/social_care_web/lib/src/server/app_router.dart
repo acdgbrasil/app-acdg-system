@@ -43,12 +43,14 @@ class AppRouter {
   }) : _sessionStore = sessionStore,
        _oidcClient = oidcClient,
        _contractFactory = contractFactory,
-       _peopleContextFactory = peopleContextFactory;
+       _peopleContextFactory = peopleContextFactory,
+       _postLoginRedirectUrl = config.postLoginRedirectUrl;
 
   final SessionStore _sessionStore;
   final OidcServerClient _oidcClient;
   final AppContractFactory _contractFactory;
   final PeopleContextFactory _peopleContextFactory;
+  final String? _postLoginRedirectUrl;
 
   /// Returns the fully assembled shelf [Handler].
   ///
@@ -69,6 +71,8 @@ class AppRouter {
     final authHandler = AuthHandler(
       oidcClient: _oidcClient,
       sessionStore: _sessionStore,
+      postLoginRedirectUrl: _postLoginRedirectUrl,
+      secureCookies: _postLoginRedirectUrl == null,
     );
 
     final authPipeline = const Pipeline()

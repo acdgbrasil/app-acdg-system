@@ -1,8 +1,6 @@
 /// UI model representing a family member in the Composição Familiar screen.
 ///
 /// Immutable. Derived from domain [FamilyMember] + lookup data.
-/// The [personId] is displayed truncated as a placeholder until
-/// the People Context service is implemented.
 final class FamilyMemberModel {
   const FamilyMemberModel({
     required this.personId,
@@ -15,6 +13,7 @@ final class FamilyMemberModel {
     required this.residesWithPatient,
     required this.hasDisability,
     required this.requiredDocuments,
+    this.fullName,
   });
 
   final String personId;
@@ -27,9 +26,10 @@ final class FamilyMemberModel {
   final bool residesWithPatient;
   final bool hasDisability;
   final Set<String> requiredDocuments;
+  final String? fullName;
 
-  /// Display name — truncated personId until People Context is available.
-  String get displayName => '${personId.substring(0, 8)}…';
+  /// Display name from People Context enrichment, or truncated personId as fallback.
+  String get displayName => fullName ?? '${personId.substring(0, 8)}…';
 
   /// Precise age calculation considering whether birthday has passed this year.
   int get age {
@@ -53,6 +53,7 @@ final class FamilyMemberModel {
     bool? residesWithPatient,
     bool? hasDisability,
     Set<String>? requiredDocuments,
+    String? fullName,
   }) {
     return FamilyMemberModel(
       personId: personId ?? this.personId,
@@ -65,6 +66,7 @@ final class FamilyMemberModel {
       residesWithPatient: residesWithPatient ?? this.residesWithPatient,
       hasDisability: hasDisability ?? this.hasDisability,
       requiredDocuments: requiredDocuments ?? this.requiredDocuments,
+      fullName: fullName ?? this.fullName,
     );
   }
 }

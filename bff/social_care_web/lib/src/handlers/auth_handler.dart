@@ -32,13 +32,19 @@ class AuthHandler {
     required OidcServerClient oidcClient,
     required SessionStore sessionStore,
     String? cookieDomain,
+    String? postLoginRedirectUrl,
+    bool secureCookies = true,
   }) : _oidcClient = oidcClient,
        _sessionStore = sessionStore,
-       _cookieDomain = cookieDomain;
+       _cookieDomain = cookieDomain,
+       _postLoginRedirectUrl = postLoginRedirectUrl ?? '/',
+       _secureCookies = secureCookies;
 
   final OidcServerClient _oidcClient;
   final SessionStore _sessionStore;
   final String? _cookieDomain;
+  final String _postLoginRedirectUrl;
+  final bool _secureCookies;
   final Random _random = Random.secure();
 
   /// In-memory PKCE state store: state -> PkceState.
@@ -122,7 +128,7 @@ class AuthHandler {
       return Response(
         302,
         headers: {
-          'Location': '/',
+          'Location': _postLoginRedirectUrl,
           'Set-Cookie': _buildSessionCookie(sessionId),
         },
       );
@@ -224,10 +230,14 @@ class AuthHandler {
     final parts = [
       '__session=$sessionId',
       'HttpOnly',
-      'Secure',
-      'SameSite=Strict',
       'Path=/',
     ];
+    if (_secureCookies) {
+      parts.addAll(['Secure', 'SameSite=Strict']);
+    } else {
+      // Local dev: HTTP (no Secure), Lax (cross-port requests)
+      parts.add('SameSite=Lax');
+    }
     if (_cookieDomain != null) {
       parts.add('Domain=$_cookieDomain');
     }
@@ -239,11 +249,14 @@ class AuthHandler {
     final parts = [
       '__session=',
       'HttpOnly',
-      'Secure',
-      'SameSite=Strict',
       'Path=/',
       'Max-Age=0',
     ];
+    if (_secureCookies) {
+      parts.addAll(['Secure', 'SameSite=Strict']);
+    } else {
+      parts.add('SameSite=Lax');
+    }
     if (_cookieDomain != null) {
       parts.add('Domain=$_cookieDomain');
     }

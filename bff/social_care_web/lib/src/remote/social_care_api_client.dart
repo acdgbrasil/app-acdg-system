@@ -157,10 +157,10 @@ class SocialCareApiClient implements SocialCareContract {
     LookupId prRelationshipId,
   ) async {
     try {
-      final payload = {
-        ...PatientTranslator.familyMemberToJson(member),
-        'prRelationshipId': prRelationshipId.value,
-      };
+      final payload = PatientTranslator.addMemberRequestToJson(
+        member,
+        prRelationshipId,
+      );
 
       final response = await _dio.post(
         '/api/v1/patients/${patientId.value}/family-members',

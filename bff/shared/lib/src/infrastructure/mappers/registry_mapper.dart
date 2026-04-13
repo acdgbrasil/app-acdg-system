@@ -61,6 +61,24 @@ abstract final class RegistryMapper {
     'hasDisability': m.hasDisability,
     'requiredDocuments': m.requiredDocuments.map((d) => d.value).toList(),
     'birthDate': m.birthDate.toIso8601(),
+    if (m.fullName != null) 'fullName': m.fullName,
+    if (m.sex != null) 'sex': m.sex,
+  };
+
+  /// Serializes a [FamilyMember] strictly per the AddFamilyMemberRequest contract.
+  /// No extra fields (personId, fullName, sex) — only contract-required keys.
+  static Map<String, dynamic> addMemberRequestToJson(
+    FamilyMember m,
+    LookupId prRelationshipId,
+  ) => {
+    'memberPersonId': m.personId.value,
+    'relationship': m.relationshipId.value,
+    'isResiding': m.residesWithPatient,
+    'isCaregiver': m.isPrimaryCaregiver,
+    'hasDisability': m.hasDisability,
+    'requiredDocuments': m.requiredDocuments.map((d) => d.value).toList(),
+    'birthDate': m.birthDate.toIso8601(),
+    'prRelationshipId': prRelationshipId.value,
   };
 
   static Map<String, dynamic> diagnosisToJson(Diagnosis d) => {
@@ -250,6 +268,8 @@ abstract final class RegistryMapper {
         hasDisability: j['hasDisability'] ?? false,
         requiredDocuments: requiredDocs,
         birthDate: birthDate,
+        fullName: j['fullName'] as String?,
+        sex: j['sex'] as String?,
       ),
     );
   }

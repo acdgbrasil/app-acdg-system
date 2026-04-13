@@ -13,6 +13,8 @@ final class FamilyMember with Equatable {
     required this.hasDisability,
     required this.requiredDocuments,
     required this.birthDate,
+    this.fullName,
+    this.sex,
   });
 
   final PersonId personId;
@@ -22,6 +24,8 @@ final class FamilyMember with Equatable {
   final bool hasDisability;
   final List<RequiredDocument> requiredDocuments;
   final TimeStamp birthDate;
+  final String? fullName;
+  final String? sex;
 
   @override
   List<Object?> get props => [personId]; // Igualdade por personId conforme design
@@ -34,6 +38,8 @@ final class FamilyMember with Equatable {
     bool hasDisability = false,
     List<RequiredDocument> requiredDocuments = const [],
     required TimeStamp birthDate,
+    String? fullName,
+    String? sex,
   }) {
     // Deduplicar e ordenar documentos requeridos
     final docs = requiredDocuments.toSet().toList();
@@ -48,6 +54,8 @@ final class FamilyMember with Equatable {
         hasDisability: hasDisability,
         requiredDocuments: List.unmodifiable(docs),
         birthDate: birthDate,
+        fullName: fullName,
+        sex: sex,
       ),
     );
   }
@@ -61,6 +69,8 @@ final class FamilyMember with Equatable {
     required bool hasDisability,
     required List<RequiredDocument> requiredDocuments,
     required TimeStamp birthDate,
+    String? fullName,
+    String? sex,
   }) {
     return FamilyMember._(
       personId: personId,
@@ -70,6 +80,8 @@ final class FamilyMember with Equatable {
       hasDisability: hasDisability,
       requiredDocuments: List.unmodifiable(requiredDocuments),
       birthDate: birthDate,
+      fullName: fullName,
+      sex: sex,
     );
   }
 
@@ -81,6 +93,8 @@ final class FamilyMember with Equatable {
     bool? hasDisability,
     List<RequiredDocument>? requiredDocuments,
     TimeStamp? birthDate,
+    String? fullName,
+    String? sex,
   }) {
     return FamilyMember._(
       personId: personId ?? this.personId,
@@ -90,6 +104,8 @@ final class FamilyMember with Equatable {
       hasDisability: hasDisability ?? this.hasDisability,
       requiredDocuments: requiredDocuments ?? this.requiredDocuments,
       birthDate: birthDate ?? this.birthDate,
+      fullName: fullName ?? this.fullName,
+      sex: sex ?? this.sex,
     );
   }
 }

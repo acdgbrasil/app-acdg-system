@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1.7
+
+# ── Dev image: JIT mode for fast restarts ──
+FROM ghcr.io/cirruslabs/flutter:3.41.6
+ENV CI=true
+WORKDIR /app
+
+# Copy workspace
+COPY pubspec.yaml ./
+COPY bff/ ./bff/
+COPY packages/ ./packages/
+COPY apps/acdg_system/pubspec.yaml ./apps/acdg_system/pubspec.yaml
+
+# Resolve dependencies
+RUN dart pub get --directory=bff/social_care_web
+
+# Code generation for shared package (json_serializable)
+RUN cd bff/shared && dart run build_runner build --delete-conflicting-outputs
+
+EXPOSE 8081
+CMD ["dart", "run", "bff/social_care_web/bin/server.dart"]

@@ -13,7 +13,10 @@ class PatientRemote {
     required this.patientId,
     required this.personId,
     this.version = 0,
+    this.status = 'admitted',
     this.prRelationshipId,
+    this.dischargeInfo,
+    this.withdrawInfo,
     this.personalData,
     this.civilDocuments,
     this.address,
@@ -41,7 +44,10 @@ class PatientRemote {
   final String patientId;
   final String personId;
   final int version;
+  final String status;
   final String? prRelationshipId;
+  final Map<String, dynamic>? dischargeInfo;
+  final Map<String, dynamic>? withdrawInfo;
 
   final Map<String, dynamic>? personalData;
   final Map<String, dynamic>? civilDocuments;

@@ -310,6 +310,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
       relationshipId: lookupItem?.id ?? result.relationshipCode,
       birthDate: result.birthDate,
       prRelationshipId: _prRelationshipId!,
+      sex: result.sex,
       residesWithPatient: result.residesWithPatient,
       hasDisability: result.hasDisability,
       requiredDocuments: result.requiredDocuments
@@ -434,18 +435,29 @@ class FamilyCompositionViewModel extends BaseViewModel {
           ? 'Pessoa de Referência'
           : lookupItem?.descricao ?? relId;
 
+      final String? memberName;
+      if (isPr) {
+        final pd = patient.personalData;
+        final first = pd?.firstName ?? '';
+        final last = pd?.lastName ?? '';
+        memberName = '$first $last'.trim();
+      } else {
+        memberName = fm.fullName;
+      }
+
       members.add(
         FamilyMemberModel(
           personId: fm.personId.value,
           relationshipLabel: relLabel,
           relationshipCode: lookupItem?.codigo ?? relId,
           birthDate: fm.birthDate.date,
-          sex: isPr ? _sexLabel(patient) : '–',
+          sex: isPr ? _sexLabel(patient) : fm.sex ?? '–',
           isReferencePerson: isPr,
           isPrimaryCaregiver: fm.isPrimaryCaregiver,
           residesWithPatient: fm.residesWithPatient,
           hasDisability: fm.hasDisability,
           requiredDocuments: fm.requiredDocuments.map((d) => d.value).toSet(),
+          fullName: memberName?.isNotEmpty == true ? memberName : null,
         ),
       );
     }
@@ -459,7 +471,14 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
     // Fallback: if no PR identified (lookup not loaded), treat first as PR
     if (members.isNotEmpty && !members.any((m) => m.isReferencePerson)) {
-      members[0] = members[0].copyWith(isReferencePerson: true);
+      final pd = patient.personalData;
+      final first = pd?.firstName ?? '';
+      final last = pd?.lastName ?? '';
+      final prName = '$first $last'.trim();
+      members[0] = members[0].copyWith(
+        isReferencePerson: true,
+        fullName: prName.isNotEmpty ? prName : null,
+      );
     }
 
     return members;

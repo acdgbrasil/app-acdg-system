@@ -1,0 +1,71 @@
+services:
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile.bff.dev
+    env_file: bff/social_care_web/.env
+    ports:
+      - "8081:8081"
+    develop:
+      watch:
+        # Dart source changes → sync + restart (JIT, no rebuild needed)
+        - action: sync+restart
+          path: ./bff/
+          target: /app/bff/
+        # Shared packages → sync + restart
+        - action: sync+restart
+          path: ./packages/
+          target: /app/packages/
+        # Dependencies changed → full rebuild
+        - action: rebuild
+          path: ./bff/social_care_web/pubspec.yaml
+        - action: rebuild
+          path: ./bff/shared/pubspec.yaml
+
+  # Full WASM build — use with: docker compose watch
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        OIDC_ISSUER: https://auth.acdgbrasil.com.br
+        OIDC_CLIENT_ID: "367349956392059030"
+        OIDC_SCOPES: "openid profile email offline_access urn:zitadel:iam:org:project:id:363109883022671995:aud"
+        OIDC_WEB_REDIRECT_URI: http://localhost/auth/callback
+        OIDC_WEB_POST_LOGOUT_URI: http://localhost
+        BFF_BASE_URL: /api
+        SENTRY_DSN: "https://625a8e9203c95cc1295d1b9f847ba00c@o4511177712664576.ingest.us.sentry.io/4511177714368512"
+        APP_ENV: dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    depends_on:
+      bff:
+        condition: service_started
+    develop:
+      watch:
+        # Flutter source changes → rebuild (WASM needs full build)
+        - action: rebuild
+          path: ./apps/
+        - action: rebuild
+          path: ./packages/
+        # Caddy config → sync + restart
+        - action: sync+restart
+          path: ./Caddyfile.dev
+          target: /etc/caddy/Caddyfile
+
+  # Hot-reload proxy — use with: docker compose up proxy
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile.hotreload:/etc/caddy/Caddyfile:ro
+    environment:
+      - FLUTTER_PORT=${FLUTTER_PORT:-8080}
+    depends_on:
+      bff:
+        condition: service_started
+    profiles:
+      - hotreload

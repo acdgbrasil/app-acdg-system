@@ -131,11 +131,16 @@ class RegistryHandler {
   Future<Response> _fetchPatient(Request request, String id) async {
     final session = getSession(request);
     final contract = _contractFactory(session);
+    final peopleContext = _peopleContextFactory(session);
 
     final patientIdResult = PatientId.create(id);
     return switch (patientIdResult) {
       Success(:final value) => switch (await contract.fetchPatient(value)) {
-        Success(:final value) => jsonOk(value.toJson()),
+        Success(:final value) => () async {
+          final json = value.toJson();
+          await _enrichFamilyMembers(json, peopleContext);
+          return jsonOk(json);
+        }(),
         Failure(:final error) => backendError(error),
       },
       Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
@@ -169,19 +174,26 @@ class RegistryHandler {
       final fullName = body['fullName'] as String? ?? '';
       final memberBirthDate = body['birthDate'] as String? ?? '';
       final cpf = body['cpf'] as String?;
+      print('[BFF:AddMember] body keys: ${body.keys.toList()}');
+      print('[BFF:AddMember] fullName="$fullName", birthDate="$memberBirthDate", sex=${body['sex']}');
 
       if (fullName.isNotEmpty && memberBirthDate.isNotEmpty) {
-        switch (await peopleContext.registerPerson(
+        final pcResult = await peopleContext.registerPerson(
           fullName: fullName,
           birthDate: memberBirthDate,
           cpf: cpf,
-        )) {
+        );
+        switch (pcResult) {
           case Success(value: final canonicalPersonId):
+            print('[BFF:AddMember] people-context OK: personId=$canonicalPersonId');
             body['personId'] = canonicalPersonId;
             body['memberPersonId'] = canonicalPersonId;
-          case Failure():
+          case Failure(:final error):
+            print('[BFF:AddMember] people-context FAILED: $error');
             break;
         }
+      } else {
+        print('[BFF:AddMember] SKIPPED people-context: fullName or birthDate empty');
       }
 
       final LookupId prRelId;
@@ -344,6 +356,50 @@ class RegistryHandler {
   }
 
   // ── Enrichment ────────────────────────────────────────────────
+
+  /// Enriches family members in a patient JSON with names from people-context.
+  ///
+  /// Also enriches the root `personId` (reference person).
+  /// Gracefully degrades — if people-context fails, the member
+  /// is returned without enrichment.
+  Future<void> _enrichFamilyMembers(
+    Map<String, dynamic> patientJson,
+    PeopleContextClient peopleContext,
+  ) async {
+    // Enrich reference person
+    final personId = patientJson['personId'] as String?;
+    if (personId != null) {
+      switch (await peopleContext.getPerson(personId)) {
+        case Success(:final value):
+          final pd = patientJson['personalData'] as Map<String, dynamic>? ?? {};
+          if (pd['firstName'] == null || pd['lastName'] == null) {
+            final fullName = value['fullName'] as String? ?? '';
+            final parts = fullName.split(' ');
+            pd['firstName'] ??= parts.first;
+            pd['lastName'] ??= parts.skip(1).join(' ');
+            patientJson['personalData'] = pd;
+          }
+        case Failure():
+          break;
+      }
+    }
+
+    // Enrich family members with people-context data
+    final members = patientJson['familyMembers'] as List<dynamic>? ?? [];
+    for (final member in members) {
+      if (member is Map<String, dynamic>) {
+        final memberId = member['personId'] as String?;
+        if (memberId != null && member['fullName'] == null) {
+          switch (await peopleContext.getPerson(memberId)) {
+            case Success(:final value):
+              member['fullName'] = value['fullName'];
+            case Failure():
+              break;
+          }
+        }
+      }
+    }
+  }
 
   /// Enriches patient overviews with person data from people-context.
   ///

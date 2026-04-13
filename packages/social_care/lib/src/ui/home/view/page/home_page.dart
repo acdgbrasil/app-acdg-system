@@ -139,6 +139,8 @@ class _SocialCareHomePageState extends ConsumerState<SocialCareHomePage> {
                   onFichaTap: (ficha, patientId) {
                     if (ficha.name.contains('Composição familiar')) {
                       context.go('/family-composition/$patientId');
+                    } else if (ficha.name.contains('ingresso')) {
+                      context.go('/intake-info/$patientId');
                     }
                   },
                 );

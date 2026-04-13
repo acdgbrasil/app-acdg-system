@@ -1,0 +1,22 @@
+:80 {
+    # Reverse proxy /api/* to BFF — strip /api prefix
+    handle_path /api/* {
+        reverse_proxy bff:8081
+    }
+
+    # Health check
+    handle /healthz {
+        respond "ok" 200
+    }
+
+    # Everything else: proxy to Flutter dev server on host machine
+    handle {
+        reverse_proxy host.docker.internal:{$FLUTTER_PORT:8080} {
+            # Rewrite Host header so DWDS accepts the connection
+            header_up Host localhost:{$FLUTTER_PORT:8080}
+            # Enable WebSocket proxying (Caddy does this automatically,
+            # but we also need to forward the origin)
+            header_up Origin http://localhost:{$FLUTTER_PORT:8080}
+        }
+    }
+}

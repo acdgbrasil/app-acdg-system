@@ -16,6 +16,8 @@ class ServerConfig {
     required this.oidcRedirectUri,
     required this.sessionSecret,
     this.sessionTtl = const Duration(hours: 1),
+    this.frontendOrigin,
+    this.postLoginRedirectUrl,
   });
 
   /// Creates config from environment variables.
@@ -54,6 +56,8 @@ class ServerConfig {
       sessionTtl: parsedTtl != null
           ? Duration(minutes: parsedTtl)
           : const Duration(hours: 1),
+      frontendOrigin: e['FRONTEND_ORIGIN'],
+      postLoginRedirectUrl: e['POST_LOGIN_REDIRECT_URL'],
     );
   }
 
@@ -86,6 +90,14 @@ class ServerConfig {
 
   /// Session time-to-live duration.
   final Duration sessionTtl;
+
+  /// Frontend origin for CORS (e.g. `http://localhost:8080`).
+  /// When set, enables CORS middleware. Only used in local development.
+  final String? frontendOrigin;
+
+  /// URL to redirect to after successful login callback.
+  /// Defaults to `/` (same-origin). Set to frontend URL for cross-origin dev.
+  final String? postLoginRedirectUrl;
 
   /// OpenID Connect discovery document URI derived from [oidcIssuer].
   Uri get discoveryDocumentUri =>

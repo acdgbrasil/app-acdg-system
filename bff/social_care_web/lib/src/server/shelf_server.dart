@@ -4,6 +4,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 
 import '../config/server_config.dart';
+import '../middleware/cors_middleware.dart';
 import 'app_router.dart';
 
 /// HTTP server wrapper that creates and manages the shelf server.
@@ -29,9 +30,17 @@ class ShelfServer {
   /// Wraps the router handler with [logRequests] middleware
   /// and binds to [config.host]:[config.port].
   Future<void> start() async {
-    final handler = const Pipeline()
-        .addMiddleware(logRequests())
-        .addHandler(appRouter.handler);
+    var pipeline = const Pipeline().addMiddleware(logRequests());
+
+    // Add CORS middleware when a frontend origin is configured (local dev)
+    final frontendOrigin = config.frontendOrigin;
+    if (frontendOrigin != null) {
+      pipeline = pipeline.addMiddleware(
+        corsMiddleware(allowedOrigin: frontendOrigin),
+      );
+    }
+
+    final handler = pipeline.addHandler(appRouter.handler);
 
     _server = await io.serve(handler, config.host, config.port);
     print('BFF Web server listening on ${config.host}:${config.port}');

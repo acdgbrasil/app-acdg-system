@@ -5,6 +5,8 @@ import 'package:core/core.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import 'browser_client_factory.dart';
+
 import '../../models/auth_role.dart';
 import '../../models/auth_status.dart';
 import '../../models/auth_token.dart';
@@ -26,7 +28,7 @@ import 'bff_auth_config.dart';
 class BffAuthService implements AuthService {
   BffAuthService({required BffAuthConfig config, http.Client? httpClient})
     : _config = config,
-      _httpClient = httpClient ?? http.Client();
+      _httpClient = httpClient ?? createBrowserClient();
 
   static final _log = AcdgLogger.get('BffAuthService');
 

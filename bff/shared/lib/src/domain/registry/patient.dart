@@ -19,6 +19,7 @@ final class Patient with Equatable {
     required this.id,
     this.version = 1,
     required this.personId,
+    this.status = 'admitted',
     required this.prRelationshipId,
     this.personalData,
     this.civilDocuments,
@@ -44,6 +45,9 @@ final class Patient with Equatable {
   final PatientId id;
   final int version;
   final PersonId personId;
+
+  /// Lifecycle status: admitted, discharged, waitlist, withdrawn.
+  final String status;
 
   /// ID da relação da Pessoa de Referência (PR) na tabela de domínios.
   final LookupId prRelationshipId;
@@ -141,6 +145,7 @@ final class Patient with Equatable {
     required PatientId id,
     required int version,
     required PersonId personId,
+    String status = 'admitted',
     required LookupId prRelationshipId,
     PersonalData? personalData,
     CivilDocuments? civilDocuments,
@@ -165,6 +170,7 @@ final class Patient with Equatable {
       id: id,
       version: version,
       personId: personId,
+      status: status,
       prRelationshipId: prRelationshipId,
       personalData: personalData,
       civilDocuments: civilDocuments,
@@ -189,6 +195,7 @@ final class Patient with Equatable {
 
   Patient copyWith({
     int? version,
+    String? status,
     LookupId? prRelationshipId,
     PersonalData? Function()? personalData,
     CivilDocuments? Function()? civilDocuments,
@@ -213,6 +220,7 @@ final class Patient with Equatable {
       id: id,
       version: version ?? this.version,
       personId: personId,
+      status: status ?? this.status,
       prRelationshipId: prRelationshipId ?? this.prRelationshipId,
       personalData: personalData != null ? personalData() : this.personalData,
       civilDocuments: civilDocuments != null

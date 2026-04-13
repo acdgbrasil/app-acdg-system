@@ -42,6 +42,10 @@ export 'src/logic/use_case/registry/update_social_identity_use_case.dart';
 export 'src/ui/family_composition/di/family_composition_providers.dart';
 export 'src/ui/family_composition/view/page/family_composition_page.dart';
 export 'src/ui/family_composition/view_models/family_composition_view_model.dart';
+// UI — Intake Info
+export 'src/ui/intake_info/di/intake_info_providers.dart';
+export 'src/ui/intake_info/view/page/intake_info_page.dart';
+export 'src/ui/intake_info/view_models/intake_info_view_model.dart';
 // UI — Home
 export 'src/ui/home/di/home_providers.dart';
 export 'src/ui/home/view/page/home_page.dart';

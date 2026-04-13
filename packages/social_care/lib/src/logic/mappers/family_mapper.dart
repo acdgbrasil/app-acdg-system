@@ -30,6 +30,8 @@ abstract final class FamilyMapper {
         return Failure(error);
     }
 
+    final fullName = '${intent.firstName} ${intent.lastName}'.trim();
+
     return FamilyMember.create(
       personId: personId,
       relationshipId: relationshipId,
@@ -38,6 +40,8 @@ abstract final class FamilyMapper {
       hasDisability: intent.hasDisability,
       requiredDocuments: intent.requiredDocuments,
       birthDate: birthDate,
+      fullName: fullName.isNotEmpty ? fullName : null,
+      sex: intent.sex,
     );
   }
 }
