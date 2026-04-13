@@ -141,6 +141,22 @@ class _SocialCareHomePageState extends ConsumerState<SocialCareHomePage> {
                       context.go('/family-composition/$patientId');
                     } else if (ficha.name.contains('ingresso')) {
                       context.go('/intake-info/$patientId');
+                    } else if (ficha.name.contains('habitacionais')) {
+                      context.go('/housing-condition/$patientId');
+                    } else if (ficha.name.contains('saúde')) {
+                      context.go('/health-status/$patientId');
+                    } else if (ficha.name.contains('Convivência')) {
+                      context.go('/community-support/$patientId');
+                    } else if (ficha.name.contains('benefícios')) {
+                      context.go('/socio-economic/$patientId');
+                    } else if (ficha.name.contains('educacionais')) {
+                      context.go('/educational-status/$patientId');
+                    } else if (ficha.name.contains('trabalho')) {
+                      context.go('/work-and-income/$patientId');
+                    } else if (ficha.name.contains('violência')) {
+                      context.go('/violation-report/$patientId');
+                    } else if (ficha.name.contains('Especificidades')) {
+                      context.go('/social-identity/$patientId');
                     }
                   },
                 );

@@ -103,6 +103,97 @@ final familyCompositionViewModelOverride = familyCompositionViewModelProvider
       return vm;
     });
 
+final updateSocioEconomicUseCaseProvider = Provider<UpdateSocioEconomicUseCase>((ref) => UpdateSocioEconomicUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
+final socioEconomicViewModelOverride = socioEconomicViewModelProvider.overrideWith((ref, patientId) {
+  final vm = SocioEconomicViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocioEconomicUseCase: ref.watch(updateSocioEconomicUseCaseProvider));
+  ref.onDispose(() => vm.dispose()); return vm;
+});
+
+final updateEducationalStatusUseCaseProvider = Provider<UpdateEducationalStatusUseCase>((ref) => UpdateEducationalStatusUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
+final educationalStatusViewModelOverride = educationalStatusViewModelProvider.overrideWith((ref, patientId) {
+  final vm = EducationalStatusViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateEducationalStatusUseCase: ref.watch(updateEducationalStatusUseCaseProvider), lookupRepository: ref.watch(lookupRepositoryProvider));
+  ref.onDispose(() => vm.dispose()); return vm;
+});
+
+final updateWorkAndIncomeUseCaseProvider = Provider<UpdateWorkAndIncomeUseCase>((ref) => UpdateWorkAndIncomeUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
+final workAndIncomeViewModelOverride = workAndIncomeViewModelProvider.overrideWith((ref, patientId) {
+  final vm = WorkAndIncomeViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateWorkAndIncomeUseCase: ref.watch(updateWorkAndIncomeUseCaseProvider), lookupRepository: ref.watch(lookupRepositoryProvider));
+  ref.onDispose(() => vm.dispose()); return vm;
+});
+
+final reportViolationUseCaseProvider = Provider<ReportViolationUseCase>((ref) => ReportViolationUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
+final violationReportViewModelOverride = violationReportViewModelProvider.overrideWith((ref, patientId) {
+  final vm = ViolationReportViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), reportViolationUseCase: ref.watch(reportViolationUseCaseProvider));
+  ref.onDispose(() => vm.dispose()); return vm;
+});
+
+final socialIdentityViewModelOverride = socialIdentityViewModelProvider.overrideWith((ref, patientId) {
+  final vm = SocialIdentityViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocialIdentityUseCase: ref.watch(updateSocialIdentityUseCaseProvider), lookupRepository: ref.watch(lookupRepositoryProvider));
+  ref.onDispose(() => vm.dispose()); return vm;
+});
+
+final updateCommunitySupportUseCaseProvider =
+    Provider<UpdateCommunitySupportUseCase>((ref) {
+      return UpdateCommunitySupportUseCase(
+        patientRepository: ref.watch(patientRepositoryProvider),
+      );
+    });
+
+final communitySupportViewModelOverride = communitySupportViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = CommunitySupportViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateCommunitySupportUseCase: ref.watch(
+          updateCommunitySupportUseCaseProvider,
+        ),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
+
+final updateHealthStatusUseCaseProvider =
+    Provider<UpdateHealthStatusUseCase>((ref) {
+      return UpdateHealthStatusUseCase(
+        patientRepository: ref.watch(patientRepositoryProvider),
+      );
+    });
+
+/// Override for the [healthStatusViewModelProvider] stub in social_care.
+final healthStatusViewModelOverride = healthStatusViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = HealthStatusViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateHealthStatusUseCase: ref.watch(updateHealthStatusUseCaseProvider),
+        lookupRepository: ref.watch(lookupRepositoryProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
+
+final updateHousingConditionUseCaseProvider =
+    Provider<UpdateHousingConditionUseCase>((ref) {
+      return UpdateHousingConditionUseCase(
+        patientRepository: ref.watch(patientRepositoryProvider),
+      );
+    });
+
+/// Override for the [housingConditionViewModelProvider] stub in social_care.
+/// Wires the ViewModel with the shell's use case providers.
+final housingConditionViewModelOverride = housingConditionViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = HousingConditionViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateHousingConditionUseCase: ref.watch(
+          updateHousingConditionUseCaseProvider,
+        ),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
+
 final updateIntakeInfoUseCaseProvider = Provider<UpdateIntakeInfoUseCase>((
   ref,
 ) {

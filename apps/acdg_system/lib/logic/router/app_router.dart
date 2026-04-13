@@ -26,6 +26,14 @@ abstract final class AppRoutes {
   static const registrationStep3 = '/patient-registration/specificities';
   static const familyComposition = '/family-composition';
   static const intakeInfo = '/intake-info';
+  static const housingCondition = '/housing-condition';
+  static const healthStatus = '/health-status';
+  static const communitySupport = '/community-support';
+  static const socioEconomic = '/socio-economic';
+  static const educationalStatus = '/educational-status';
+  static const workAndIncome = '/work-and-income';
+  static const violationReport = '/violation-report';
+  static const socialIdentity = '/social-identity';
 }
 
 class AppRouter {
@@ -100,6 +108,55 @@ class AppRouter {
           final patientId = state.pathParameters['patientId']!;
           return IntakeInfoPage(patientId: patientId);
         },
+      ),
+      GoRoute(
+        path: '${AppRoutes.housingCondition}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) {
+          final patientId = state.pathParameters['patientId']!;
+          return HousingConditionPage(patientId: patientId);
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.healthStatus}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) {
+          final patientId = state.pathParameters['patientId']!;
+          return HealthStatusPage(patientId: patientId);
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.communitySupport}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) {
+          final patientId = state.pathParameters['patientId']!;
+          return CommunitySupportPage(patientId: patientId);
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.socioEconomic}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) => SocioEconomicPage(patientId: state.pathParameters['patientId']!),
+      ),
+      GoRoute(
+        path: '${AppRoutes.educationalStatus}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) => EducationalStatusPage(patientId: state.pathParameters['patientId']!),
+      ),
+      GoRoute(
+        path: '${AppRoutes.workAndIncome}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) => WorkAndIncomePage(patientId: state.pathParameters['patientId']!),
+      ),
+      GoRoute(
+        path: '${AppRoutes.violationReport}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) => ViolationReportPage(patientId: state.pathParameters['patientId']!),
+      ),
+      GoRoute(
+        path: '${AppRoutes.socialIdentity}/:patientId',
+        redirect: _requireAuth,
+        builder: (context, state) => SocialIdentityPage(patientId: state.pathParameters['patientId']!),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

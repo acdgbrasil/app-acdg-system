@@ -1,6 +1,8 @@
 import 'package:shared/shared.dart';
 
+import 'community_support_network_detail.dart';
 import 'ficha_status.dart';
+import 'health_status_detail.dart';
 import 'patient_detail.dart';
 import 'patient_detail_result.dart';
 
@@ -153,6 +155,51 @@ class PatientDetailTranslator {
                     ),
                   )
                   .toList(),
+            )
+          : null,
+      healthStatus: patient.healthStatus != null
+          ? HealthStatusDetail(
+              foodInsecurity: patient.healthStatus!.foodInsecurity,
+              deficiencies: patient.healthStatus!.deficiencies
+                  .map(
+                    (d) => DeficiencyDetail(
+                      memberId: d.memberId.value,
+                      deficiencyTypeId: d.deficiencyTypeId.value,
+                      needsConstantCare: d.needsConstantCare,
+                      responsibleCaregiverName: d.responsibleCaregiverName,
+                    ),
+                  )
+                  .toList(),
+              gestatingMembers: patient.healthStatus!.gestatingMembers
+                  .map(
+                    (g) => GestatingMemberDetail(
+                      memberId: g.memberId.value,
+                      monthsGestation: g.monthsGestation,
+                      startedPrenatalCare: g.startedPrenatalCare,
+                    ),
+                  )
+                  .toList(),
+              constantCareNeeds: patient.healthStatus!.constantCareNeeds
+                  .map((id) => id.value)
+                  .toList(),
+            )
+          : null,
+      communitySupportNetwork: patient.communitySupportNetwork != null
+          ? CommunitySupportNetworkDetail(
+              hasRelativeSupport:
+                  patient.communitySupportNetwork!.hasRelativeSupport,
+              hasNeighborSupport:
+                  patient.communitySupportNetwork!.hasNeighborSupport,
+              familyConflicts:
+                  patient.communitySupportNetwork!.familyConflicts,
+              patientParticipatesInGroups:
+                  patient.communitySupportNetwork!.patientParticipatesInGroups,
+              familyParticipatesInGroups:
+                  patient.communitySupportNetwork!.familyParticipatesInGroups,
+              patientHasAccessToLeisure:
+                  patient.communitySupportNetwork!.patientHasAccessToLeisure,
+              facesDiscrimination:
+                  patient.communitySupportNetwork!.facesDiscrimination,
             )
           : null,
       housingCondition: patient.housingCondition != null

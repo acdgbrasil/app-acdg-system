@@ -30,19 +30,20 @@ class UserMenuButton extends StatelessWidget {
                 variant: AcdgTextVariant.headingSmall,
                 color: AppColors.textPrimary,
               ),
-              if (user.email != null)
+              if (user.email != null) ...[
+                const SizedBox(height: 4),
                 AcdgText(
                   user.email!,
                   variant: AcdgTextVariant.caption,
                   color: AppColors.textMuted,
                 ),
+              ],
               const SizedBox(height: 8),
               Wrap(
                 spacing: 4,
                 runSpacing: 4,
-                children: user.roles
-                    .map((role) => RoleBadge(role: role))
-                    .toList(),
+                children:
+                    user.roles.map((role) => RoleBadge(role: role)).toList(),
               ),
             ],
           ),
@@ -69,30 +70,43 @@ class UserMenuButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             CircleAvatar(
-              radius: 16,
+              radius: 18,
               backgroundColor: AppColors.primary,
               child: Text(
                 _initials(user),
                 style: const TextStyle(
                   fontFamily: 'Satoshi',
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textOnDark,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Flexible(
-              child: AcdgText(
-                user.displayName,
-                variant: AcdgTextVariant.bodyMedium,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AcdgText(
+                    _shortName(user),
+                    variant: AcdgTextVariant.bodyMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (user.roles.isNotEmpty)
+                    AcdgText(
+                      _roleLabel(user),
+                      variant: AcdgTextVariant.caption,
+                      color: AppColors.textMuted,
+                    ),
+                ],
               ),
             ),
+            const SizedBox(width: 4),
             const Icon(
               Icons.keyboard_arrow_down,
               size: 20,
-              color: AppColors.textPrimary,
+              color: AppColors.textMuted,
             ),
           ],
         ),
@@ -111,4 +125,28 @@ class UserMenuButton extends StatelessWidget {
     final last = parts.last[0].toUpperCase();
     return '$first$last';
   }
+
+  /// Shows first name + last initial instead of full ID.
+  String _shortName(AuthUser user) {
+    final name = user.name ?? user.preferredUsername;
+    if (name == null || name.trim().isEmpty) {
+      // Fallback: show email or truncated ID
+      if (user.email != null) return user.email!;
+      final id = user.id;
+      return id.length > 12 ? '${id.substring(0, 12)}...' : id;
+    }
+
+    final parts = name.trim().split(' ').where((s) => s.isNotEmpty).toList();
+    if (parts.length <= 2) return name.trim();
+
+    // "Joao da Silva Pereira" -> "Joao S. Pereira"
+    return '${parts.first} ${parts.last}';
+  }
+
+  String _roleLabel(AuthUser user) => switch (user.roles.firstOrNull) {
+    AuthRole.socialWorker => 'Assistente Social',
+    AuthRole.owner => 'Responsavel',
+    AuthRole.admin => 'Administrador',
+    null => '',
+  };
 }

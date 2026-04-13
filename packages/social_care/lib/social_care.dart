@@ -46,6 +46,38 @@ export 'src/ui/family_composition/view_models/family_composition_view_model.dart
 export 'src/ui/intake_info/di/intake_info_providers.dart';
 export 'src/ui/intake_info/view/page/intake_info_page.dart';
 export 'src/ui/intake_info/view_models/intake_info_view_model.dart';
+// UI — Educational Status
+export 'src/ui/educational_status/di/educational_status_providers.dart';
+export 'src/ui/educational_status/view/page/educational_status_page.dart';
+export 'src/ui/educational_status/view_models/educational_status_view_model.dart' hide MemberOption;
+// UI — Socio Economic
+export 'src/ui/socio_economic/di/socio_economic_providers.dart';
+export 'src/ui/socio_economic/view/page/socio_economic_page.dart';
+export 'src/ui/socio_economic/view_models/socio_economic_view_model.dart' hide MemberOption, BenefitRow;
+// UI — Work and Income
+export 'src/ui/work_and_income/di/work_and_income_providers.dart';
+export 'src/ui/work_and_income/view/page/work_and_income_page.dart';
+export 'src/ui/work_and_income/view_models/work_and_income_view_model.dart' hide MemberOption, BenefitRow, IncomeRow;
+// UI — Violation Report
+export 'src/ui/violation_report/di/violation_report_providers.dart';
+export 'src/ui/violation_report/view/page/violation_report_page.dart';
+export 'src/ui/violation_report/view_models/violation_report_view_model.dart' hide MemberOption;
+// UI — Social Identity
+export 'src/ui/social_identity/di/social_identity_providers.dart';
+export 'src/ui/social_identity/view/page/social_identity_page.dart';
+export 'src/ui/social_identity/view_models/social_identity_view_model.dart';
+// UI — Community Support
+export 'src/ui/community_support/di/community_support_providers.dart';
+export 'src/ui/community_support/view/page/community_support_page.dart';
+export 'src/ui/community_support/view_models/community_support_view_model.dart';
+// UI — Health Status
+export 'src/ui/health_status/di/health_status_providers.dart';
+export 'src/ui/health_status/view/page/health_status_page.dart';
+export 'src/ui/health_status/view_models/health_status_view_model.dart';
+// UI — Housing Condition
+export 'src/ui/housing_condition/di/housing_condition_providers.dart';
+export 'src/ui/housing_condition/view/page/housing_condition_page.dart';
+export 'src/ui/housing_condition/view_models/housing_condition_view_model.dart';
 // UI — Home
 export 'src/ui/home/di/home_providers.dart';
 export 'src/ui/home/view/page/home_page.dart';
