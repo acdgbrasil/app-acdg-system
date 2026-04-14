@@ -6,7 +6,7 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Conecta Raros — Plataforma ACDG de cuidado e defesa de pacientes com doenças genéticas raras">
-  <meta name="theme-color" content="#1a1a2e">
+  <meta name="theme-color" content="#F4F2EC">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -33,7 +33,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(160deg, #f8f9ff 0%, #e8ecf8 50%, #f0f0fa 100%);
+      background: linear-gradient(160deg, #FAF8F4 0%, #F4F2EC 50%, #EDEAE2 100%);
       transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -70,7 +70,7 @@
       font-size: 28px;
       font-weight: 700;
       letter-spacing: 4px;
-      color: #1b2a6b;
+      color: #1C1B18;
       animation: textEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
     }
 
@@ -93,7 +93,7 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 13px;
       font-weight: 400;
-      color: #7b5ea7;
+      color: #E65C3B;
       letter-spacing: 1.5px;
       animation: textEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
     }
@@ -115,13 +115,13 @@
       animation: dnaStrand 1.4s ease-in-out infinite;
     }
 
-    .dna-loader .strand:nth-child(1) { background: #7b5ea7; animation-delay: 0s; }
-    .dna-loader .strand:nth-child(2) { background: #3a5fc8; animation-delay: 0.1s; }
-    .dna-loader .strand:nth-child(3) { background: #7b5ea7; animation-delay: 0.2s; }
-    .dna-loader .strand:nth-child(4) { background: #3a5fc8; animation-delay: 0.3s; }
-    .dna-loader .strand:nth-child(5) { background: #7b5ea7; animation-delay: 0.4s; }
-    .dna-loader .strand:nth-child(6) { background: #3a5fc8; animation-delay: 0.5s; }
-    .dna-loader .strand:nth-child(7) { background: #7b5ea7; animation-delay: 0.6s; }
+    .dna-loader .strand:nth-child(1) { background: #E65C3B; animation-delay: 0s; }
+    .dna-loader .strand:nth-child(2) { background: #C94D2A; animation-delay: 0.1s; }
+    .dna-loader .strand:nth-child(3) { background: #E65C3B; animation-delay: 0.2s; }
+    .dna-loader .strand:nth-child(4) { background: #C94D2A; animation-delay: 0.3s; }
+    .dna-loader .strand:nth-child(5) { background: #E65C3B; animation-delay: 0.4s; }
+    .dna-loader .strand:nth-child(6) { background: #C94D2A; animation-delay: 0.5s; }
+    .dna-loader .strand:nth-child(7) { background: #E65C3B; animation-delay: 0.6s; }
 
     @keyframes dnaStrand {
       0%, 100% {
@@ -164,10 +164,58 @@
   </div>
 
   <script>
+    // ── Version gate ──
+    // On every page load, fetches version.json (always fresh via no-store)
+    // and compares with the last known version in localStorage.
+    // If a new deploy is detected:
+    //   1. Calls /cache-invalidate → server responds with Clear-Site-Data: "cache"
+    //      which nukes ALL HTTP disk cache entries for this origin (including
+    //      stale "immutable" .wasm/.js files from previous builds)
+    //   2. Clears Service Worker caches (separate storage layer)
+    //   3. Saves new version to localStorage
+    //   4. Reloads the page → fresh assets load from server
+    // If versions match: zero overhead, Flutter boots immediately.
+    (async function() {
+      try {
+        var resp = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!resp.ok) return;
+        var data = await resp.json();
+        var deployed = data.version || data.build_number || '';
+        var stored = localStorage.getItem('acdg_app_version');
+
+        if (stored !== null && stored !== deployed) {
+          // New deploy detected — clear all caches
+          await fetch('/cache-invalidate', { cache: 'no-store' });
+
+          if ('caches' in window) {
+            var names = await caches.keys();
+            await Promise.all(names.map(function(n) { return caches.delete(n); }));
+          }
+          if ('serviceWorker' in navigator) {
+            var regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(function(r) { return r.unregister(); }));
+          }
+
+          localStorage.setItem('acdg_app_version', deployed);
+          window.location.reload();
+          return;
+        }
+
+        if (stored === null) localStorage.setItem('acdg_app_version', deployed);
+      } catch (e) { /* never block app boot */ }
+    })();
+
     {{flutter_js}}
     {{flutter_build_config}}
 
+    // Cache busting: Flutter does not content-hash filenames, so we
+    // append a unique build version to the entrypoint URL. The token
+    // {{flutter_service_worker_version}} is replaced at build time
+    // with a unique integer per build.
+    var buildVersion = "{{flutter_service_worker_version}}";
+
     _flutter.loader.load({
+      entrypointUrl: "main.dart.js?v=" + buildVersion,
       onEntrypointLoaded: async function(engineInitializer) {
         const progress = document.getElementById('splash-progress');
         if (progress) progress.textContent = 'Inicializando...';

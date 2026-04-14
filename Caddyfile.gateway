@@ -1,0 +1,69 @@
+:80 {
+    # ── Security Headers (global) ──
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # ── 1. BFF API — /api/* → bff:8081 ──
+    handle_path /api/* {
+        reverse_proxy bff:8081 {
+            header_up X-Real-IP {remote_host}
+            health_uri /health/live
+            health_interval 10s
+            health_timeout 3s
+        }
+    }
+
+    # ── 2. Flutter Web App — /app/* → app:80 ──
+    handle_path /app/* {
+        reverse_proxy app:80
+    }
+
+    # ── 3. Cache invalidation (version gate) ──
+    handle /cache-invalidate {
+        header Cache-Control "no-store"
+        header Clear-Site-Data "\"cache\""
+        respond "cache cleared" 200
+    }
+
+    # ── 4. Health check ──
+    handle /healthz {
+        respond "ok" 200
+    }
+
+    # ── 5. Static site — /* (everything else) ──
+    handle {
+        root * /srv/site
+
+        encode gzip zstd
+
+        # Static assets: cache aggressively (images, fonts, css)
+        @static_assets path_regexp \.(woff2?|png|jpg|jpeg|gif|svg|ico|css)$
+        header @static_assets Cache-Control "public, max-age=86400"
+
+        # JS: no-store (site scripts change on deploy, no content hash)
+        @js_files path_regexp \.js$
+        header @js_files Cache-Control "no-store, must-revalidate"
+
+        # HTML entry points: never cache
+        @html path_regexp \.(html?)$
+        header @html Cache-Control "no-store, must-revalidate"
+
+        # Root path: never cache
+        @root path /
+        header @root Cache-Control "no-store, must-revalidate"
+
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

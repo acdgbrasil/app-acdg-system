@@ -15,7 +15,6 @@ import '../view/components/add_member_form_state.dart';
 /// - Domain entities as input (no JSON parsing)
 /// - Age profile delegated to domain model
 class FamilyCompositionViewModel extends BaseViewModel {
-  static final _log = AcdgLogger.get('FamilyCompositionViewModel');
   FamilyCompositionViewModel({
     required this.patientId,
     required GetPatientUseCase getPatientUseCase,
@@ -23,11 +22,11 @@ class FamilyCompositionViewModel extends BaseViewModel {
     required RemoveFamilyMemberUseCase removeFamilyMemberUseCase,
     required UpdatePrimaryCaregiverUseCase updatePrimaryCaregiverUseCase,
     required UpdateSocialIdentityUseCase updateSocialIdentityUseCase,
-    required LookupRepository lookupRepository,
+    required GetLookupTableUseCase getLookupTableUseCase,
     this.cpfLookupFn,
   }) : _getPatientUseCase = getPatientUseCase,
        _updateSocialIdentityUseCase = updateSocialIdentityUseCase,
-       _lookupRepository = lookupRepository {
+       _getLookupTableUseCase = getLookupTableUseCase {
     loadPatientCommand = Command0<void>(_loadPatient);
     saveChangesCommand = Command0<void>(_saveChanges);
     addMemberCommand = Command1<void, AddFamilyMemberIntent>(
@@ -45,7 +44,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateSocialIdentityUseCase _updateSocialIdentityUseCase;
-  final LookupRepository _lookupRepository;
+  final GetLookupTableUseCase _getLookupTableUseCase;
 
   /// Optional CPF lookup function injected by DI.
   final Future<Result<Map<String, dynamic>>> Function(String cpf)? cpfLookupFn;
@@ -135,13 +134,13 @@ class FamilyCompositionViewModel extends BaseViewModel {
   // ── Load ────────────────────────────────────────────────────
 
   Future<void> _loadLookups() async {
-    _log.info('Loading lookups for patient: $patientId');
+    print('Loading lookups for patient: $patientId');
     final errors = <String>[];
 
-    final result = await _lookupRepository.getLookupTable('dominio_parentesco');
+    final result = await _getLookupTableUseCase.execute('dominio_parentesco');
     switch (result) {
       case Success(:final value):
-        _log.info('Parentesco lookups loaded: ${value.length} items');
+        print('Parentesco lookups loaded: ${value.length} items');
         _parentescoLookup = value
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
@@ -150,21 +149,21 @@ class FamilyCompositionViewModel extends BaseViewModel {
         );
         if (pessoaRef.isNotEmpty) _prRelationshipId = pessoaRef.first.id;
       case Failure(:final error):
-        _log.severe('Failed to load parentesco lookups', error);
+        print('Failed to load parentesco lookups ${error}');
         errors.add('Falha ao carregar parentescos');
     }
 
-    final specResult = await _lookupRepository.getLookupTable(
+    final specResult = await _getLookupTableUseCase.execute(
       'dominio_tipo_identidade',
     );
     switch (specResult) {
       case Success(:final value):
-        _log.info('Especificidade lookups loaded: ${value.length} items');
+        print('Especificidade lookups loaded: ${value.length} items');
         _specificityLookup = value
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
       case Failure(:final error):
-        _log.severe('Failed to load especificidade lookups', error);
+        print('Failed to load especificidade lookups ${error}');
         errors.add('Falha ao carregar especificidades');
     }
 
@@ -177,20 +176,20 @@ class FamilyCompositionViewModel extends BaseViewModel {
   }
 
   Future<Result<void>> _loadPatient() async {
-    _log.info('Loading patient: $patientId');
+    print('Loading patient: $patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
       case Success(:final value):
-        _log.info('Patient loaded. Members: ${value.familyMembers.length}');
+        print('Patient loaded. Members: ${value.familyMembers.length}');
         _members = _translateMembers(value);
         _ageProfileCache = null;
-        final specId = value.socialIdentity?.typeId.value;
-        _log.fine('Current specificity from DB: $specId');
+        final specId = value.socialIdentity?.typeId.value.toUpperCase();
+        print('Current specificity from DB: $specId');
         _selectedSpecificityId = specId;
         _originalSpecificityId = specId;
       case Failure(:final error):
-        _log.severe('Failed to load patient: $patientId', error);
+        print('Failed to load patient: $patientId ${error}');
         _members = [];
         _ageProfileCache = null;
     }
@@ -239,9 +238,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
 
   /// Selects a single family specificity (single choice).
   void updateSpecificity(String specificityId) {
-    _log.fine('updateSpecificity: $specificityId');
+    print('updateSpecificity: $specificityId');
     _selectedSpecificityId = specificityId.toLowerCase();
-    _log.fine('canSave: $canSave');
+    print('canSave: $canSave');
     notifyListeners();
   }
 
@@ -277,9 +276,9 @@ class FamilyCompositionViewModel extends BaseViewModel {
       category: 'family',
     );
     await addMemberCommand.execute(intent);
-    _log.info('addMemberCommand completed: ${addMemberCommand.completed}');
+    print('addMemberCommand completed: ${addMemberCommand.completed}');
     if (addMemberCommand.completed) {
-      _log.fine('Triggering reload after add');
+      print('Triggering reload after add');
       await loadPatientCommand.execute();
     }
   }
@@ -522,5 +521,14 @@ class FamilyCompositionViewModel extends BaseViewModel {
       Sex.feminino => 'Feminino',
       _ => 'Outro',
     };
+  }
+
+  @override
+  void onDispose() {
+    loadPatientCommand.dispose();
+    saveChangesCommand.dispose();
+    addMemberCommand.dispose();
+    removeMemberCommand.dispose();
+    assignCaregiverCommand.dispose();
   }
 }

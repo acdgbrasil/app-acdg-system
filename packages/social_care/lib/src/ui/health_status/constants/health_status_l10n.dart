@@ -1,30 +1,30 @@
 abstract final class HealthStatusL10n {
   // Nav
-  static const navFamilies = 'Familias';
-  static const navRegistration = 'Condicoes de Saude';
+  static const navFamilies = 'Famílias';
+  static const navRegistration = 'Condições de Saúde';
 
   // Header
-  static const pageTitle = 'Condicoes de Saude da Familia';
+  static const pageTitle = 'Condições de Saúde da Família';
 
   // Sections
-  static const sectionDeficiencies = 'Deficiencias';
+  static const sectionDeficiencies = 'Deficiências';
   static const sectionGestating = 'Membros gestantes';
   static const sectionCareNeeds = 'Necessidade de cuidados constantes';
-  static const sectionFoodInsecurity = 'Inseguranca alimentar';
+  static const sectionFoodInsecurity = 'Insegurança alimentar';
 
   // Labels — Deficiencies
-  static const deficiencyMemberLabel = 'Membro da familia';
-  static const deficiencyTypeLabel = 'Tipo de deficiencia';
+  static const deficiencyMemberLabel = 'Membro da família';
+  static const deficiencyTypeLabel = 'Tipo de deficiência';
   static const deficiencyNeedsConstantCareLabel = 'Necessita cuidado constante';
-  static const deficiencyResponsibleLabel = 'Nome do cuidador responsavel';
+  static const deficiencyResponsibleLabel = 'Nome do cuidador responsável';
   static const deficiencyResponsibleHint = 'Ex: Maria da Silva';
-  static const addDeficiency = 'Adicionar deficiencia';
+  static const addDeficiency = 'Adicionar deficiência';
   static const removeDeficiency = 'Remover';
 
   // Labels — Gestating
   static const gestatingMemberLabel = 'Membro gestante';
-  static const gestatingMonthsLabel = 'Meses de gestacao';
-  static const gestatingPrenatalLabel = 'Iniciou pre-natal';
+  static const gestatingMonthsLabel = 'Meses de gestação';
+  static const gestatingPrenatalLabel = 'Iniciou pré-natal';
   static const addGestating = 'Adicionar gestante';
   static const removeGestating = 'Remover';
 
@@ -35,13 +35,15 @@ abstract final class HealthStatusL10n {
 
   // Labels — Food
   static const foodInsecurityLabel =
-      'A familia vivencia situacao de inseguranca alimentar';
+      'A família vivencia situação de insegurança alimentar';
 
   // Validation
-  static const gestationMonthsError = 'Gestacao deve ser entre 1 e 10 meses';
+  static const gestationMonthsError = 'Gestação deve ser entre 1 e 11 meses';
+  static const gestatingOnlyFemaleError =
+      'Apenas membros do sexo feminino podem ser gestantes';
 
   // Empty states
-  static const noDeficiencies = 'Nenhuma deficiencia registrada';
+  static const noDeficiencies = 'Nenhuma deficiência registrada';
   static const noGestating = 'Nenhum membro gestante';
   static const noCareNeeds = 'Nenhuma necessidade de cuidado registrada';
 

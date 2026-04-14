@@ -1,0 +1,49 @@
+## docker-compose.prod.yml — Production simulation
+## Usage: docker compose -f docker-compose.prod.yml up --build
+##
+## Simulates the production topology:
+##   Browser → Caddy (:80) → [static files | /api/* → BFF (:8081)]
+##
+## BFF is compiled AOT (distroless, ~20MB).
+## Web is Flutter WASM served by Caddy.
+## Same-origin: no CORS needed.
+
+services:
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile.bff
+    env_file: .env.prod.local
+    expose:
+      - "8081"
+    restart: unless-stopped
+    # distroless has no curl/wget — Caddy health_uri handles BFF health
+    networks:
+      - internal
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        OIDC_ISSUER: https://auth.acdgbrasil.com.br
+        OIDC_CLIENT_ID: "367349956392059030"
+        OIDC_SCOPES: "openid profile email offline_access urn:zitadel:iam:org:project:id:363109883022671995:aud"
+        OIDC_WEB_REDIRECT_URI: http://localhost/auth/callback
+        OIDC_WEB_POST_LOGOUT_URI: http://localhost
+        BFF_BASE_URL: /api
+        SENTRY_DSN: "https://625a8e9203c95cc1295d1b9f847ba00c@o4511177712664576.ingest.us.sentry.io/4511177714368512"
+        APP_ENV: production
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - bff
+    restart: unless-stopped
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

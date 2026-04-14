@@ -6,7 +6,6 @@ import 'package:social_care/src/ui/home/view/components/detail_panel_state.dart'
 import 'package:social_care/src/ui/home/view/components/home_form_state.dart';
 
 class HomeViewModel extends BaseViewModel {
-  static final _log = AcdgLogger.get('HomeViewModel');
   HomeViewModel({
     required ListPatientsUseCase listPatientsUseCase,
     required GetPatientUseCase getPatientUseCase,
@@ -45,9 +44,9 @@ class HomeViewModel extends BaseViewModel {
     switch (result) {
       case Success(:final value):
         homeFormState.families.value = value;
-        _log.info('Loaded ${value.length} patients');
+        print('Loaded ${value.length} patients');
       case Failure(:final error):
-        _log.severe('Failed to load patients', error);
+        print('Failed to load patients ${error}');
     }
     return result;
   }
@@ -80,7 +79,7 @@ class HomeViewModel extends BaseViewModel {
     }
 
     final failure = result as Failure;
-    _log.severe('Failed to load patient detail: $patientId', failure.error);
+    print('Failed to load patient detail: $patientId ${failure.error}');
     return Failure(failure.error);
   }
 

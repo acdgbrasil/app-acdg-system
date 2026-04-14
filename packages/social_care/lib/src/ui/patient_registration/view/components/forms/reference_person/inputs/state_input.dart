@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/brazilian_states.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
@@ -23,7 +24,7 @@ final class StateInput extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: ' *',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: AppColors.danger),
                   ),
                 ],
               ),

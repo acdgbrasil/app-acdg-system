@@ -18,6 +18,12 @@ final lookupRepositoryProvider = Provider<LookupRepository>((ref) {
   return BffLookupRepository(bff: ref.watch(socialCareContractProvider));
 });
 
+final getLookupTableUseCaseProvider = Provider<GetLookupTableUseCase>((ref) {
+  return GetLookupTableUseCase(
+    lookupRepository: ref.watch(lookupRepositoryProvider),
+  );
+});
+
 final registerPatientUseCaseProvider = Provider<RegisterPatientUseCase>((ref) {
   return RegisterPatientUseCase(
     patientRepository: ref.watch(patientRepositoryProvider),
@@ -70,7 +76,7 @@ final patientRegistrationViewModelOverride =
     patientRegistrationViewModelProvider.overrideWith((ref) {
       final vm = PatientRegistrationViewModel(
         useCase: ref.watch(registerPatientUseCaseProvider),
-        lookupRepository: ref.watch(lookupRepositoryProvider),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
       );
       ref.onDispose(() => vm.dispose());
       return vm;
@@ -96,7 +102,7 @@ final familyCompositionViewModelOverride = familyCompositionViewModelProvider
         updateSocialIdentityUseCase: ref.watch(
           updateSocialIdentityUseCaseProvider,
         ),
-        lookupRepository: ref.watch(lookupRepositoryProvider),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
         cpfLookupFn: cpfLookup,
       );
       ref.onDispose(() => vm.dispose());
@@ -105,19 +111,19 @@ final familyCompositionViewModelOverride = familyCompositionViewModelProvider
 
 final updateSocioEconomicUseCaseProvider = Provider<UpdateSocioEconomicUseCase>((ref) => UpdateSocioEconomicUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
 final socioEconomicViewModelOverride = socioEconomicViewModelProvider.overrideWith((ref, patientId) {
-  final vm = SocioEconomicViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocioEconomicUseCase: ref.watch(updateSocioEconomicUseCaseProvider));
+  final vm = SocioEconomicViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocioEconomicUseCase: ref.watch(updateSocioEconomicUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
   ref.onDispose(() => vm.dispose()); return vm;
 });
 
 final updateEducationalStatusUseCaseProvider = Provider<UpdateEducationalStatusUseCase>((ref) => UpdateEducationalStatusUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
 final educationalStatusViewModelOverride = educationalStatusViewModelProvider.overrideWith((ref, patientId) {
-  final vm = EducationalStatusViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateEducationalStatusUseCase: ref.watch(updateEducationalStatusUseCaseProvider), lookupRepository: ref.watch(lookupRepositoryProvider));
+  final vm = EducationalStatusViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateEducationalStatusUseCase: ref.watch(updateEducationalStatusUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
   ref.onDispose(() => vm.dispose()); return vm;
 });
 
 final updateWorkAndIncomeUseCaseProvider = Provider<UpdateWorkAndIncomeUseCase>((ref) => UpdateWorkAndIncomeUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
 final workAndIncomeViewModelOverride = workAndIncomeViewModelProvider.overrideWith((ref, patientId) {
-  final vm = WorkAndIncomeViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateWorkAndIncomeUseCase: ref.watch(updateWorkAndIncomeUseCaseProvider), lookupRepository: ref.watch(lookupRepositoryProvider));
+  final vm = WorkAndIncomeViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateWorkAndIncomeUseCase: ref.watch(updateWorkAndIncomeUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
   ref.onDispose(() => vm.dispose()); return vm;
 });
 
@@ -128,7 +134,7 @@ final violationReportViewModelOverride = violationReportViewModelProvider.overri
 });
 
 final socialIdentityViewModelOverride = socialIdentityViewModelProvider.overrideWith((ref, patientId) {
-  final vm = SocialIdentityViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocialIdentityUseCase: ref.watch(updateSocialIdentityUseCaseProvider), lookupRepository: ref.watch(lookupRepositoryProvider));
+  final vm = SocialIdentityViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocialIdentityUseCase: ref.watch(updateSocialIdentityUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
   ref.onDispose(() => vm.dispose()); return vm;
 });
 
@@ -166,7 +172,7 @@ final healthStatusViewModelOverride = healthStatusViewModelProvider
         patientId: patientId,
         getPatientUseCase: ref.watch(getPatientUseCaseProvider),
         updateHealthStatusUseCase: ref.watch(updateHealthStatusUseCaseProvider),
-        lookupRepository: ref.watch(lookupRepositoryProvider),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
       );
       ref.onDispose(() => vm.dispose());
       return vm;
@@ -210,7 +216,7 @@ final intakeInfoViewModelOverride = intakeInfoViewModelProvider
         patientId: patientId,
         getPatientUseCase: ref.watch(getPatientUseCaseProvider),
         updateIntakeInfoUseCase: ref.watch(updateIntakeInfoUseCaseProvider),
-        lookupRepository: ref.watch(lookupRepositoryProvider),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
       );
       ref.onDispose(() => vm.dispose());
       return vm;

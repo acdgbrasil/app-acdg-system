@@ -21,6 +21,8 @@ dependencies:
     path: ../../packages/persistence
   social_care:
     path: ../../packages/social_care
+  people_admin:
+    path: ../../packages/people_admin
   design_system:
     path: ../../packages/design_system
   shared:
@@ -50,6 +52,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
   fonts:
     - family: Satoshi
       fonts:

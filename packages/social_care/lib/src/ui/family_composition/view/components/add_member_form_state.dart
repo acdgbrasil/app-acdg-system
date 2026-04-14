@@ -131,7 +131,11 @@ class AddMemberFormState {
   }
 
   /// Auto-fills form fields from a people-context person lookup result.
-  void applyLinkedPerson(String personId, String fullName, String? birthDateIso) {
+  void applyLinkedPerson(
+    String personId,
+    String fullName,
+    String? birthDateIso,
+  ) {
     linkedPersonId.value = personId;
     linkedPersonName.value = fullName;
     name.text = fullName;

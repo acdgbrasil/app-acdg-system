@@ -15,7 +15,7 @@ class AddMemberModal extends StatefulWidget {
   final List<LookupItem> parentescoLookup;
   final void Function(AddMemberResult result) onSave;
   final Future<void> Function(String cpf, AddMemberFormState formState)?
-      onCpfLookup;
+  onCpfLookup;
   final AddMemberResult? existing;
 
   const AddMemberModal({
@@ -123,8 +123,7 @@ class _AddMemberModalState extends State<AddMemberModal> {
                           isEditing: isEditing,
                           onCpfComplete: widget.onCpfLookup == null
                               ? null
-                              : (cpf) =>
-                                    widget.onCpfLookup!(cpf, _formState),
+                              : (cpf) => widget.onCpfLookup!(cpf, _formState),
                         );
 
                         if (isWide) {

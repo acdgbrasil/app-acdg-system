@@ -6,6 +6,7 @@ import 'package:social_care/src/logic/use_case/family/remove_family_member_use_c
 import 'package:social_care/src/logic/use_case/family/update_primary_caregiver_use_case.dart';
 import 'package:social_care/src/logic/use_case/registry/get_patient_use_case.dart';
 import 'package:social_care/src/logic/use_case/registry/update_social_identity_use_case.dart';
+import 'package:social_care/src/logic/use_case/shared/get_lookup_table_use_case.dart';
 import 'package:social_care/src/ui/family_composition/models/add_member_result.dart';
 import 'package:social_care/src/ui/family_composition/models/family_member_model.dart';
 import 'package:social_care/src/ui/family_composition/view_models/family_composition_view_model.dart';
@@ -87,7 +88,9 @@ void main() {
         updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(
           patientRepository: fakeRepo,
         ),
-        lookupRepository: fakeLookup,
+        getLookupTableUseCase: GetLookupTableUseCase(
+          lookupRepository: fakeLookup,
+        ),
       );
 
       // Wait a bit for lookups to load (constructor call)

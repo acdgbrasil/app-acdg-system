@@ -13,7 +13,7 @@ void main() {
             'email': 'maria@acdg.com.br',
             'preferred_username': 'maria.silva',
             'urn:zitadel:iam:org:project:roles': {
-              'social_worker': {'363110312318140539': 'acdgbrasil.com.br'},
+              'social-care:worker': {'363110312318140539': 'acdgbrasil.com.br'},
               'admin': {'363110312318140539': 'acdgbrasil.com.br'},
             },
           },
@@ -23,7 +23,7 @@ void main() {
         expect(user.name, 'Maria Silva');
         expect(user.email, 'maria@acdg.com.br');
         expect(user.preferredUsername, 'maria.silva');
-        expect(user.roles, {AuthRole.socialWorker, AuthRole.admin});
+        expect(user.roles, {AuthRole.worker, AuthRole.admin});
       });
 
       test('falls back to sub claim when uid is null', () {
@@ -75,14 +75,14 @@ void main() {
           uid: 'uid',
           claims: {
             'urn:zitadel:iam:org:project:roles': {
-              'social_worker': {'id': 'org'},
+              'social-care:worker': {'id': 'org'},
               'superuser': {'id': 'org'},
               'root': {'id': 'org'},
             },
           },
         );
 
-        expect(user.roles, {AuthRole.socialWorker});
+        expect(user.roles, {AuthRole.worker});
       });
 
       test('extracts single role correctly', () {

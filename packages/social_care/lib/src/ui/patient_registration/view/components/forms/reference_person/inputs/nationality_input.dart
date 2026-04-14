@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/models/enums/nationality.dart';
@@ -29,7 +30,7 @@ final class NationalityInput extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: ' *',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: AppColors.danger),
                   ),
                 ],
               ),

@@ -18,6 +18,7 @@ abstract final class SocioEconomicL10n {
   static const addBenefit = 'Adicionar beneficio';
   static const removeBenefit = 'Remover';
   static const noBenefits = 'Nenhum beneficio cadastrado';
+  static const loadError = 'Falha ao carregar dados socioeconomicos.';
   static const btnCancel = 'Cancelar';
   static const btnSave = 'Salvar';
 }

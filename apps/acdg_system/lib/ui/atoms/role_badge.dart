@@ -8,7 +8,8 @@ class RoleBadge extends StatelessWidget {
   final AuthRole role;
 
   String get _label => switch (role) {
-    AuthRole.socialWorker => 'Assistente Social',
+    AuthRole.superAdmin => 'Super Administrador',
+    AuthRole.worker => 'Assistente Social',
     AuthRole.owner => 'Responsável',
     AuthRole.admin => 'Administrador',
   };
@@ -16,10 +17,9 @@ class RoleBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (role) {
-      AuthRole.socialWorker => AppColors.primary,
-      AuthRole.owner => const Color(
-        0xFF0477BF,
-      ), // Azul secundário (provisório até novo token)
+      AuthRole.superAdmin => AppColors.danger,
+      AuthRole.worker => AppColors.primary,
+      AuthRole.owner => const Color(0xFF0477BF),
       AuthRole.admin => AppColors.textPrimary,
     };
 

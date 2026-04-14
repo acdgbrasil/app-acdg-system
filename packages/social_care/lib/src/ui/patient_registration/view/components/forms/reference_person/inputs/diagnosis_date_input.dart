@@ -32,7 +32,7 @@ final class DiagnosisDateInput extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: ' *',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: AppColors.danger),
                   ),
                 ],
               ),

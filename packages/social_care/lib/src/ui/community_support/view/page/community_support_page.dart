@@ -1,12 +1,21 @@
-import 'package:design_system/design_system.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import 'package:design_system/design_system.dart';
+import '../../view_models/community_support_view_model.dart';
+import 'package:flutter/material.dart';
+import '../../view_models/community_support_view_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../view_models/community_support_view_model.dart';
+import 'package:go_router/go_router.dart';
+import '../../view_models/community_support_view_model.dart';
+
+import '../../../shared/components/acdg_toast.dart';
+import '../../view_models/community_support_view_model.dart';
 import '../../constants/community_support_l10n.dart';
+import '../../view_models/community_support_view_model.dart';
 import '../../di/community_support_providers.dart';
 import '../../view_models/community_support_view_model.dart';
 import '../components/community_support_content.dart';
+import '../../view_models/community_support_view_model.dart';
 
 class CommunitySupportPage extends ConsumerStatefulWidget {
   const CommunitySupportPage({super.key, required this.patientId});
@@ -22,13 +31,43 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
   @override
   void initState() {
     super.initState();
-    ref.read(communitySupportViewModelProvider(widget.patientId))
-        .loadCommand.execute();
+    print(
+      '📱 initState — calling loadCommand.execute()',
+    );
+    final vm = ref.read(communitySupportViewModelProvider(widget.patientId));
+    vm.loadCommand.execute();
+    vm.saveCommand.addListener(() => _onSaveStateChanged(vm));
+  }
+
+  void _onSaveStateChanged(CommunitySupportViewModel vm) {
+    if (!mounted) return;
+    if (vm.saveCommand.completed) {
+      AcdgToast.show(
+        context,
+        message: 'Dados salvos com sucesso!',
+        type: ToastType.success,
+      );
+    } else if (vm.saveCommand.error) {
+      AcdgToast.show(
+        context,
+        message: 'Falha ao salvar. Tente novamente.',
+        type: ToastType.error,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    print('💀 dispose CommunitySupportPage');
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(communitySupportViewModelProvider(widget.patientId));
+    print(
+      '🎨 build — vm.loadCommand.running=${vm.loadCommand.running}, vm.hasData=${vm.hasData}',
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -41,11 +80,23 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
                 children: [
                   Column(
                     children: [
-                      Container(height: 2, width: 24, color: AppColors.textPrimary),
+                      Container(
+                        height: 2,
+                        width: 24,
+                        color: AppColors.textPrimary,
+                      ),
                       const SizedBox(height: 5),
-                      Container(height: 2, width: 24, color: AppColors.textPrimary),
+                      Container(
+                        height: 2,
+                        width: 24,
+                        color: AppColors.textPrimary,
+                      ),
                       const SizedBox(height: 5),
-                      Container(height: 2, width: 24, color: AppColors.textPrimary),
+                      Container(
+                        height: 2,
+                        width: 24,
+                        color: AppColors.textPrimary,
+                      ),
                     ],
                   ),
                   const SizedBox(width: 24),
@@ -114,13 +165,18 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
               child: ListenableBuilder(
                 listenable: vm.loadCommand,
                 builder: (context, _) {
+                  print(
+                    '🔄 ListenableBuilder rebuilt — running=${vm.loadCommand.running}, error=${vm.loadCommand.error}, errorMsg=${vm.errorMessage}',
+                  );
                   if (vm.loadCommand.running) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (vm.errorMessage != null && !vm.hasData) {
                     return Center(
-                      child: Text(vm.errorMessage!,
-                          style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        vm.errorMessage!,
+                        style: const TextStyle(color: AppColors.danger),
+                      ),
                     );
                   }
                   return CommunitySupportContent(viewModel: vm);
@@ -132,7 +188,10 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
             ListenableBuilder(
               listenable: vm,
               builder: (context, _) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 16,
+                ),
                 decoration: const BoxDecoration(
                   border: Border(top: BorderSide(color: AppColors.inputLine)),
                 ),
@@ -150,33 +209,60 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.danger,
                         shape: const StadiumBorder(),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.close, size: 16),
                           SizedBox(width: 7),
-                          Text(CommunitySupportL10n.btnCancel,
-                              style: TextStyle(fontFamily: 'Playfair Display', fontStyle: FontStyle.italic, fontSize: 14)),
+                          Text(
+                            CommunitySupportL10n.btnCancel,
+                            style: TextStyle(
+                              fontFamily: 'Playfair Display',
+                              fontStyle: FontStyle.italic,
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     FilledButton(
-                      onPressed: vm.canSave ? () => vm.saveCommand.execute() : null,
+                      onPressed: vm.canSave
+                          ? () => vm.saveCommand.execute()
+                          : null,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
+                        disabledBackgroundColor: AppColors.primary.withValues(
+                          alpha: 0.4,
+                        ),
                         shape: const StadiumBorder(),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(CommunitySupportL10n.btnSave,
-                              style: TextStyle(fontFamily: 'Playfair Display', fontStyle: FontStyle.italic, fontSize: 14, color: AppColors.background)),
+                          Text(
+                            CommunitySupportL10n.btnSave,
+                            style: TextStyle(
+                              fontFamily: 'Playfair Display',
+                              fontStyle: FontStyle.italic,
+                              fontSize: 14,
+                              color: AppColors.background,
+                            ),
+                          ),
                           SizedBox(width: 7),
-                          Icon(Icons.check, size: 16, color: AppColors.background),
+                          Icon(
+                            Icons.check,
+                            size: 16,
+                            color: AppColors.background,
+                          ),
                         ],
                       ),
                     ),

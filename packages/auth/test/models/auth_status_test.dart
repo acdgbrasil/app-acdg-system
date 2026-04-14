@@ -6,7 +6,7 @@ void main() {
     const user = AuthUser(
       id: '123',
       name: 'Maria',
-      roles: {AuthRole.socialWorker},
+      roles: {AuthRole.worker},
     );
 
     group('Authenticated', () {

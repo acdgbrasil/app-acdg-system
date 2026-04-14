@@ -48,7 +48,17 @@ RUN cat <<EOF > apps/acdg_system/config.json
 }
 EOF
 
-RUN cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=config.json
+# BASE_HREF: set to /app/ when behind a gateway, or / for standalone
+ARG BASE_HREF=/
+RUN cd apps/acdg_system && flutter build web --wasm --release --pwa-strategy=none --base-href=$BASE_HREF --dart-define-from-file=config.json
+
+# Cache busting: Flutter does not content-hash filenames, so we inject
+# a build timestamp as query param into flutter_bootstrap.js references.
+RUN BUILD_AT=$(date +%s) && \
+    cd apps/acdg_system/build/web && \
+    sed -i "s|main\.dart\.mjs|main.dart.mjs?v=${BUILD_AT}|g" flutter_bootstrap.js && \
+    sed -i "s|main\.dart\.wasm|main.dart.wasm?v=${BUILD_AT}|g" flutter_bootstrap.js && \
+    sed -i "s|main\.dart\.js|main.dart.js?v=${BUILD_AT}|g" flutter_bootstrap.js
 
 # ── Stage 2: Serve with Caddy ──
 FROM caddy:2-alpine
@@ -74,9 +84,17 @@ RUN cat > /etc/caddy/Caddyfile <<'CADDYFILE'
     # Gzip + Brotli compression
     encode gzip zstd
 
-    # Aggressive cache for hashed assets
-    @assets path_regexp \.(wasm|mjs|js|css|png|jpg|svg|ico|woff2?)$
-    header @assets Cache-Control "public, immutable, max-age=31536000"
+    # Immutable: fonts and images only (Flutter does not content-hash code files)
+    @immutable path_regexp \.(woff2?|png|jpg|jpeg|svg|ico|gif|css)$
+    header @immutable Cache-Control "public, immutable, max-age=31536000"
+
+    # Flutter app code: never cache (Cloudflare CDN caches .js by default)
+    @flutter_code path_regexp \.(wasm|mjs|js)$
+    header @flutter_code Cache-Control "no-store, must-revalidate"
+
+    # Entry points: never cache
+    @entrypoints path / /index.html /version.json /flutter_bootstrap.js /manifest.json
+    header @entrypoints Cache-Control "no-store, must-revalidate"
 
     # SPA fallback
     try_files {path} /index.html
@@ -84,6 +102,13 @@ RUN cat > /etc/caddy/Caddyfile <<'CADDYFILE'
     # Health check
     handle /healthz {
         respond "ok" 200
+    }
+
+    # Cache invalidation (called by version-gate JS on deploy detection)
+    handle /cache-invalidate {
+        header Cache-Control "no-store"
+        header Clear-Site-Data "\"cache\""
+        respond "cache cleared" 200
     }
 }
 CADDYFILE

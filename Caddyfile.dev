@@ -9,6 +9,13 @@
         respond "ok" 200
     }
 
+    # Cache invalidation (called by version-gate JS on deploy detection)
+    handle /cache-invalidate {
+        header Cache-Control "no-store"
+        header Clear-Site-Data "\"cache\""
+        respond "cache cleared" 200
+    }
+
     # Everything else: Flutter WASM SPA
     handle {
         root * /srv
@@ -21,8 +28,15 @@
 
         encode gzip zstd
 
-        @assets path_regexp \.(wasm|mjs|js|css|png|jpg|svg|ico|woff2?)$
-        header @assets Cache-Control "public, immutable, max-age=31536000"
+        @immutable path_regexp \.(woff2?|png|jpg|jpeg|svg|ico|gif|css)$
+        header @immutable Cache-Control "public, immutable, max-age=31536000"
+
+        @flutter_code path_regexp \.(wasm|mjs|js)$
+        header @flutter_code Cache-Control "no-store, must-revalidate"
+
+        # Entry points: never cache
+        @entrypoints path / /index.html /version.json /flutter_bootstrap.js /manifest.json
+        header @entrypoints Cache-Control "no-store, must-revalidate"
 
         try_files {path} /index.html
         file_server

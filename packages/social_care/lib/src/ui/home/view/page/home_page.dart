@@ -148,13 +148,17 @@ class _SocialCareHomePageState extends ConsumerState<SocialCareHomePage> {
                     } else if (ficha.name.contains('Convivência')) {
                       context.go('/community-support/$patientId');
                     } else if (ficha.name.contains('benefícios')) {
-                      context.go('/socio-economic/$patientId');
+                      // TODO: Hidden — see GitHub issue #43
+                      // context.go('/socio-economic/$patientId');
                     } else if (ficha.name.contains('educacionais')) {
-                      context.go('/educational-status/$patientId');
+                      // TODO: Hidden — under investigation
+                      // context.go('/educational-status/$patientId');
                     } else if (ficha.name.contains('trabalho')) {
-                      context.go('/work-and-income/$patientId');
+                      // TODO: Hidden — dominio_ocupacao lookup missing in backend
+                      // context.go('/work-and-income/$patientId');
                     } else if (ficha.name.contains('violência')) {
-                      context.go('/violation-report/$patientId');
+                      // TODO: Hidden — UX needs full redesign
+                      // context.go('/violation-report/$patientId');
                     } else if (ficha.name.contains('Especificidades')) {
                       context.go('/social-identity/$patientId');
                     }

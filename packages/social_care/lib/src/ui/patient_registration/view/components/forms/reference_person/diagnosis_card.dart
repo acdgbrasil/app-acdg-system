@@ -1,3 +1,4 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 import 'package:social_care/src/ui/patient_registration/view/components/forms/reference_person/diagnoses_form_state.dart';
@@ -45,7 +46,11 @@ class DiagnosisCard extends StatelessWidget {
               ),
               if (onRemove != null)
                 IconButton(
-                  icon: const Icon(Icons.close, size: 20, color: Colors.red),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 20,
+                    color: AppColors.danger,
+                  ),
                   onPressed: onRemove,
                 ),
             ],

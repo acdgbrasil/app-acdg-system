@@ -1,8 +1,6 @@
 import 'package:shared/shared.dart';
 
-import 'community_support_network_detail.dart';
 import 'ficha_status.dart';
-import 'health_status_detail.dart';
 import 'patient_detail.dart';
 import 'patient_detail_result.dart';
 
@@ -190,8 +188,7 @@ class PatientDetailTranslator {
                   patient.communitySupportNetwork!.hasRelativeSupport,
               hasNeighborSupport:
                   patient.communitySupportNetwork!.hasNeighborSupport,
-              familyConflicts:
-                  patient.communitySupportNetwork!.familyConflicts,
+              familyConflicts: patient.communitySupportNetwork!.familyConflicts,
               patientParticipatesInGroups:
                   patient.communitySupportNetwork!.patientParticipatesInGroups,
               familyParticipatesInGroups:

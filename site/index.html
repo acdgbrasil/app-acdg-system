@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conecta Raros — Gestão de Assistência Social para Doenças Raras</title>
+    <meta name="description" content="Conecta Raros: sistema de gestão de assistência social para pacientes com doenças genéticas raras. Prontuário digital inspirado no SUAS, desenvolvido pela ACDG Brasil.">
+    <link rel="canonical" href="https://conectararos.org.br/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="Conecta Raros">
+    <meta property="og:title" content="Conecta Raros — Gestão de Assistência Social para Doenças Raras">
+    <meta property="og:description" content="Sistema de gestão de assistência social para pacientes com doenças genéticas raras. Prontuário digital desenvolvido pela ACDG Brasil, em operação desde 2001.">
+    <meta property="og:url" content="https://conectararos.org.br/">
+    <meta property="og:image" content="https://conectararos.org.br/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Conecta Raros — Gestão de Assistência Social para Doenças Raras">
+    <meta name="twitter:description" content="Prontuário digital de assistência social para pacientes com doenças genéticas raras. Cadastro de pacientes, avaliações sociais e acompanhamento familiar.">
+    <meta name="twitter:image" content="https://conectararos.org.br/assets/og-image.png">
+
+    <!-- Extra SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="ACDG Brasil — Associação Brasileira de Profissionais Atuantes em Doenças Genéticas">
+    <meta name="theme-color" content="#E65C3B">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Prefetch Flutter WASM while user reads the landing page -->
+    <link rel="prefetch" href="/app/main.dart.wasm" as="fetch" crossorigin>
+    <link rel="prefetch" href="/app/main.dart.mjs" as="fetch" crossorigin>
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Conecta Raros",
+        "url": "https://conectararos.org.br",
+        "description": "Sistema de gestão de assistência social para pacientes com doenças genéticas raras, desenvolvido pela ACDG Brasil.",
+        "email": "pesquisa@conectararos.org.br",
+        "areaServed": "BR",
+        "sameAs": []
+    }
+    </script>
+
+    <!-- Structured Data: FAQPage -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Como é garantida a privacidade dos pacientes?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "O Conecta Raros opera em 3 níveis de segurança. Os dados sensíveis ficam no 'cofre local' (servidor da instituição), nunca saem de lá. Apenas dados anonimizados e estatísticos são transmitidos para a rede. Seguimos a LGPD, com trilha de auditoria completa — cada alteração registra quem fez, quando e por quê."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "O sistema está em conformidade com a LGPD?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sim, nativamente. Adotamos Privacy by Design e Security by Default. O sistema foi projetado com minimização de dados, controle de acesso por perfil (RBAC), e toda mutação é auditável via header X-Actor-Id. Não é um extra — é a base."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Como funciona para se tornar um parceiro?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Entre em contato pelo nosso formulário ou WhatsApp. A ACDG oferece desde a ferramenta open source (para quem tem equipe técnica) até uma solução sob medida e acompanhada (para quem quer focar no problema real e não na tecnologia). O primeiro alpha está em testes no Centro Social Maria Fernandes."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Existe custo para usar o sistema?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "O código é open source e gratuito — acreditamos em transparência. Se o público quer, ele cuida. Mas se você prefere uma solução personalizada, sem lidar com a parte técnica, a ACDG oferece implantação acompanhada com equipe dedicada."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Por que o sistema é open source?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Transparência. Quando se trata de dados de saúde de populações vulneráveis, acreditamos que o código deve estar aberto para inspeção. Qualquer pessoa pode verificar como os dados são tratados. E se outra associação de doenças raras quiser usar, contribuir ou adaptar — por favor, faça."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "O sistema funciona sem internet?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sim. O Conecta Raros foi projetado como offline-first. O aplicativo desktop funciona completamente sem conexão, armazena tudo localmente e sincroniza automaticamente quando a internet volta. Essencial para regiões com infraestrutura limitada."
+                }
+            }
+        ]
+    }
+    </script>
+</head>
+
+<body class="theme-light">
+
+    <!-- ═══════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════ -->
+    <header class="header" id="site-header">
+        <div class="container header-container">
+            <a href="#" class="logo">Conecta Raros</a>
+            <nav class="nav">
+                <a href="#sobre" class="nav-link">Sobre</a>
+                <a href="#publico" class="nav-link">Benefícios</a>
+                <a href="#faq" class="nav-link">FAQ</a>
+                <a href="arquitetura.html" class="nav-link">Arquitetura</a>
+                <a href="contato.html" class="nav-link">Contato</a>
+            </nav>
+            <div class="header-actions">
+                <a href="dashboard.html" class="nav-link" style="margin-right: 8px; font-weight: 500; opacity: 0.65; font-size:13px;">Dashboard</a>
+                <a href="/app/" class="nav-link" style="margin-right: 8px; font-weight: 500; font-size:13px;">Acessar Sistema</a>
+                <a href="contato.html" class="btn btn-primary">Entrar em Contato</a>
+            </div>
+            <button class="menu-toggle" id="menu-toggle" aria-label="Menu" aria-expanded="false">
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+        <nav class="mobile-menu-nav">
+            <a href="#sobre" class="mobile-menu-link">Sobre</a>
+            <a href="#publico" class="mobile-menu-link">Benefícios</a>
+            <a href="#faq" class="mobile-menu-link">FAQ</a>
+            <a href="arquitetura.html" class="mobile-menu-link">Arquitetura</a>
+            <a href="contato.html" class="mobile-menu-link">Contato</a>
+            <a href="dashboard.html" class="mobile-menu-link mobile-menu-link-muted">Dashboard</a>
+        </nav>
+        <div class="mobile-menu-footer">
+            <a href="contato.html" class="btn btn-primary" style="width:100%; justify-content:center;">Entrar em Contato</a>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         HERO — Editorial Typographic
+    ═══════════════════════════════════════ -->
+    <section class="hero" id="hero-section">
+
+        <!-- Decorative arc -->
+        <div class="hero-arc hero-parallax-layer" data-depth="0.005"></div>
+
+        <!-- Floating dots (subtle) -->
+        <div class="hero-float hero-float-1 hero-parallax-layer" data-depth="-0.01"></div>
+        <div class="hero-float hero-float-2 hero-parallax-layer" data-depth="-0.012"></div>
+        <div class="hero-float hero-float-3 hero-parallax-layer" data-depth="-0.008"></div>
+
+        <!-- Watermark number -->
+        <div class="hero-number" aria-hidden="true">01</div>
+
+        <!-- Main content -->
+        <div class="hero-inner">
+            <div class="container">
+                <div class="hero-top">
+                    <p class="hero-eyebrow">Tecnologia Social para Doenças Raras</p>
+
+                    <h1 class="hero-title hero-parallax-layer" data-depth="0.002">
+                        O fio dental do SUS para <em class="text-accent">Doenças Raras</em> no Brasil.
+                    </h1>
+
+                    <div class="hero-bottom-block">
+                        <p class="hero-subtitle">
+                            O SUS é a escovação — o principal, o mais ativo, focado no geral. Mas não chega em tudo. O Conecta Raros é o fio dental: um auxílio que se concentra onde a escova não alcança. Levamos tecnologia de ponta para os cantos onde o sistema público ainda não consegue chegar.
+                        </p>
+                        <div class="hero-actions">
+                            <a href="#sobre" class="btn btn-primary">Conheça o Projeto</a>
+                            <a href="/app/" class="btn btn-outline">Acessar o Sistema</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats bar — dark bottom strip -->
+        <div class="hero-stats-bar">
+            <div class="container hero-stats-inner">
+                <div class="hero-stat-item">
+                    <span class="hero-stat-label">ACDG</span>
+                    <span class="hero-stat-value">25 anos de atuação</span>
+                </div>
+                <div class="hero-stat-item">
+                    <span class="hero-stat-label">Alpha</span>
+                    <span class="hero-stat-value">Centro Social Maria Fernandes</span>
+                </div>
+                <div class="hero-stat-item">
+                    <span class="hero-stat-label">Código</span>
+                    <span class="hero-stat-value">Open Source</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Partners -->
+        <div class="hero-partners">
+            <div class="container hero-partners-inner">
+                <span class="hero-partners-label">Uma iniciativa ACDG Brasil</span>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         SOBRE — Section 02
+    ═══════════════════════════════════════ -->
+    <section id="sobre" class="sobre-section">
+
+        <!-- Watermark -->
+        <div class="section-number" aria-hidden="true" style="top:-5%; left:-2%;">02</div>
+
+        <div class="container" style="position:relative; z-index:1;">
+            <div style="display:flex; flex-wrap:nowrap; gap:0; align-items:stretch; border:1.5px solid var(--text);">
+
+                <!-- Left: Text content -->
+                <div class="sobre-content reveal-up" style="flex:1 1 500px; border-right:1.5px solid var(--text);">
+                    <p class="eyebrow">A Relevância da Causa</p>
+                    <h2 class="section-title" style="margin-bottom:32px;">
+                        Uma nação<br>invisível<br>dentro do<br>Brasil.
+                    </h2>
+                    <p style="font-size:19px; line-height:1.55; margin-bottom:0; font-weight:400; color:var(--text);">
+                        As doenças genéticas raras representam um dos desafios mais complexos para a Saúde Pública global. O Ministério da Saúde define como rara a doença que afeta até 65 pessoas a cada 100.000 indivíduos. Mas o termo 'rara' esconde um paradoxo: existem entre 6.000 e 8.000 tipos diferentes dessas enfermidades. Quando somadas, deixam de ser um problema de minorias para se tornarem uma questão de <strong style='color:var(--accent);'>13 milhões de brasileiros</strong>.
+                    </p>
+
+                    <div class="sobre-info-row">
+                        <div class="sobre-info-item">
+                            <h4>A 'Nação dos Raros'</h4>
+                            <p>Se as pessoas com doenças raras no Brasil formassem um país, ele seria maior que Portugal (10.4 Mi), maior que a Bélgica (11.7 Mi). Uma população inteira, invisível aos olhos do sistema.</p>
+                        </div>
+                        <div class="sobre-info-item">
+                            <h4>O Vazio Assistencial</h4>
+                            <p>O Brasil tem menos de 450 médicos geneticistas em atividade. No Norte, há 1 especialista para cada 2,6 milhões de habitantes. A ACDG existe para preencher esse vazio — e o Conecta Raros é a ferramenta.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Orange panel -->
+                <div class="sobre-visual reveal-up delay-2" style="flex:1 1 340px;">
+                    <h3>5 a 7<br>Anos.</h3>
+                    <p>É o tempo médio que um paciente com doença rara leva para receber o diagnóstico correto no Brasil. Enquanto isso, famílias repetem suas histórias a cada novo contato, em um labirinto de dados desconexos.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         DASHBOARD PREVIEW — Section 03
+    ═══════════════════════════════════════ -->
+    <section id="dashboard-preview" class="dp-section">
+
+        <!-- Watermark CR -->
+        <div aria-hidden="true" style="position:absolute; top:-5%; right:-4%; font-size:clamp(200px,28vw,480px); font-weight:800; color:rgba(255,255,255,0.02); line-height:0.8; pointer-events:none; z-index:0; letter-spacing:-0.06em; user-select:none;">CR</div>
+
+        <div class="container" style="position:relative; z-index:1;">
+
+            <!-- Heading -->
+            <div class="dp-heading-block reveal-up">
+                <p class="dp-eyebrow">O Problema</p>
+                <h2 class="dp-title">A fragmentação<br>do cuidado.</h2>
+                <p class="dp-subtitle">A jornada de um paciente raro é marcada por uma luta em duas frentes: a luta de uma vida inteira na esfera social e de saúde, e a luta de um único dia dentro da instituição.</p>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="dp-kpi-grid reveal-up delay-1">
+
+                <!-- KPI 1 -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+                        <span style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.35); font-weight:700;">PACIENTES COM DOENÇAS RARAS NO BRASIL</span>
+                        <span style="font-size:10px; padding:3px 8px; font-weight:700; background:rgba(230,92,59,0.15); color:var(--accent); letter-spacing:0.5px;">ESTIMATIVA</span>
+                    </div>
+                    <div style="font-size:clamp(48px,5vw,72px); font-weight:800; color:#FFFFFF; letter-spacing:-0.04em; line-height:1; margin-bottom:24px;">13Mi</div>
+                    <div style="display:flex; align-items:flex-end; gap:2px; height:40px;">
+                        <div style="flex:1; height:12%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:18%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:25%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:32%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:40%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:50%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:58%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:65%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:72%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:80%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:88%; background:rgba(255,255,255,0.06);"></div>
+                        <div style="flex:1; height:100%; background:#FFFFFF;"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 2 -->
+                <div>
+                    <div style="margin-bottom:20px;">
+                        <span style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.35); font-weight:700;">DOENÇAS RARAS IDENTIFICADAS</span>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <span style="font-size:clamp(48px,5vw,72px); font-weight:800; color:#FFFFFF; letter-spacing:-0.04em; line-height:1;">9.600</span>
+                        <span style="font-size:13px; color:rgba(255,255,255,0.35); font-weight:500; margin-left:8px;">70-80% de origem genética</span>
+                    </div>
+                    <div style="height:2px; background:rgba(255,255,255,0.06);">
+                        <div style="height:100%; width:75%; background:var(--accent);"></div>
+                    </div>
+                    <div style="margin-top:8px; font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:1px;">SEM SISTEMA CENTRALIZADO COMO O SINAN</div>
+                </div>
+
+                <!-- KPI 3 -->
+                <div style="background:var(--accent) !important;">
+                    <div style="margin-bottom:20px;">
+                        <span style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(0,0,0,0.45); font-weight:700;">MÉDICOS GENETICISTAS NO BRASIL</span>
+                    </div>
+                    <div style="font-size:clamp(48px,5vw,72px); font-weight:800; color:var(--dark); letter-spacing:-0.04em; line-height:1; margin-bottom:16px;">&lt;450</div>
+                    <p style="font-size:13px; color:rgba(0,0,0,0.55); line-height:1.5; font-weight:500;">1 para cada 2,6 milhões de habitantes no Norte do país.</p>
+                </div>
+            </div>
+
+            <!-- Recent records table -->
+            <div class="dp-table-wrap reveal-up delay-2">
+                <div class="dp-table-header">
+                    <span style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.35); font-weight:700;">O DESAFIO EM 3 DIMENSÕES</span>
+                    <a href="#publico" style="font-size:11px; color:rgba(255,255,255,0.4); text-decoration:none; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; display:flex; align-items:center; gap:6px; transition:color 0.2s;">
+                        Ver solução <i class="ph ph-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="dp-table-row dp-table-head" style="color:rgba(255,255,255,0.3);">
+                    <span>DIMENSÃO</span><span>DESCRIÇÃO</span><span></span><span>STATUS</span>
+                </div>
+                <div class="dp-table-row" style="color:rgba(255,255,255,0.7);">
+                    <span>Informação Dispersa</span><span>Prontuários em papel, planilhas e WhatsApp</span><span></span>
+                    <span style="display:inline-block; padding:3px 10px; font-weight:700; font-size:10px; letter-spacing:1px; background:rgba(230,92,59,0.15); color:var(--accent);">Crítico</span>
+                </div>
+                <div class="dp-table-row" style="color:rgba(255,255,255,0.7);">
+                    <span>Vazio de Dados</span><span>Gestor público não enxerga a demanda real</span><span></span>
+                    <span style="display:inline-block; padding:3px 10px; font-weight:700; font-size:10px; letter-spacing:1px; background:rgba(230,92,59,0.15); color:var(--accent);">Crítico</span>
+                </div>
+                <div class="dp-table-row" style="color:rgba(255,255,255,0.7);">
+                    <span>Insegurança</span><span>Dados sensíveis circulam em canais não oficiais</span><span></span>
+                    <span style="display:inline-block; padding:3px 10px; font-weight:700; font-size:10px; letter-spacing:1px; background:rgba(230,92,59,0.15); color:var(--accent);">Crítico</span>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="dp-cta reveal-up delay-3">
+                <p style="font-size:15px; color:rgba(255,255,255,0.4); max-width:380px; line-height:1.5;">Conheça a solução que a ACDG construiu para atacar cada uma dessas dimensões.</p>
+                <a href="#publico" class="btn btn-outline-light">
+                    Conhecer a Solução <i class="ph ph-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         BENEFÍCIOS — Section 04
+    ═══════════════════════════════════════ -->
+    <section id="publico" class="audience">
+
+        <!-- Watermark -->
+        <div class="section-number" aria-hidden="true" style="top:0; right:-8%; opacity:0.025;">Raros</div>
+
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="audience-header reveal-up">
+                <p class="eyebrow">A Solução</p>
+                <h2 class="section-title">Um prontuário digital que nasce na ponta e chega onde o sistema não alcança.</h2>
+            </div>
+
+            <div class="audience-grid cols-3">
+
+                <!-- Chart 1: Area Chart -->
+                <div class="audience-card reveal-up delay-1" style="overflow:hidden;">
+                    <div style="padding:20px 24px 12px; border-bottom:1px solid var(--border);">
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--muted);">COBERTURA DO PRONTUÁRIO SOCIAL</span>
+                    </div>
+                    <div style="padding:16px 24px 0; position:relative;">
+                        <div style="position:absolute; left:8px; top:16px; bottom:40px; display:flex; flex-direction:column; justify-content:space-between;">
+                            <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                            <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                            <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                            <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                        </div>
+                        <svg viewBox="0 0 300 120" style="width:100%; height:auto; display:block; margin-left:20px;" preserveAspectRatio="none">
+                            <line x1="0" y1="15" x2="300" y2="15" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+                            <line x1="0" y1="45" x2="300" y2="45" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+                            <line x1="0" y1="75" x2="300" y2="75" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+                            <line x1="0" y1="105" x2="300" y2="105" stroke="var(--border)" stroke-width="0.5"/>
+                            <defs>
+                                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.5"/>
+                                    <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.03"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,85 C20,80 40,75 60,70 C80,68 100,62 120,55 C140,50 160,48 180,42 C200,38 220,35 240,30 C260,27 280,24 300,22 L300,105 L0,105 Z" fill="url(#areaGrad)"/>
+                            <path d="M0,85 C20,80 40,75 60,70 C80,68 100,62 120,55 C140,50 160,48 180,42 C200,38 220,35 240,30 C260,27 280,24 300,22" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+                            <circle cx="0" cy="85" r="2.5" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5"/>
+                            <circle cx="120" cy="55" r="2.5" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5"/>
+                            <circle cx="240" cy="30" r="2.5" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5"/>
+                            <circle cx="300" cy="22" r="2.5" fill="var(--bg)" stroke="var(--accent)" stroke-width="1.5"/>
+                        </svg>
+                        <div style="display:flex; justify-content:space-between; margin-left:20px; padding:8px 0 16px;">
+                            <span style="font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.5px;">Cadastro</span>
+                            <span style="font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.5px;">Família</span>
+                            <span style="font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.5px;">Saúde</span>
+                            <span style="font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.5px;">Moradia</span>
+                            <span style="font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.5px;">Renda</span>
+                            <span style="font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.5px;">Proteção</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Bar Chart -->
+                <div class="audience-card reveal-up delay-2" style="overflow:hidden;">
+                    <div style="padding:20px 24px 12px; border-bottom:1px solid var(--border);">
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--muted);">SEGURANÇA EM 3 NÍVEIS</span>
+                    </div>
+                    <div style="padding:24px;">
+                        <div style="display:flex; gap:8px; align-items:flex-end;">
+                            <div style="display:flex; flex-direction:column; justify-content:space-between; height:160px; padding-bottom:4px;">
+                                <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                                <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                                <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                                <span style="font-size:10px; color:var(--muted); font-weight:500;"></span>
+                            </div>
+                            <div style="flex:1; display:flex; align-items:flex-end; gap:16px; justify-content:center; height:160px; border-bottom:1px solid var(--border); border-left:1px solid var(--border); padding:0 16px 0 8px;">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+                                    <span style="font-size:10px; font-weight:700; color:var(--text); border:1px solid var(--border); padding:2px 6px;">Sensível</span>
+                                    <div style="width:100%; height:78px; background:var(--border-light); border:1px solid var(--border);"></div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+                                    <span style="font-size:10px; font-weight:700; color:var(--text); border:1px solid var(--border); padding:2px 6px;">Filtrado</span>
+                                    <div style="width:100%; height:93px; background:var(--border-light); border:1px solid var(--border);"></div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+                                    <span style="font-size:10px; font-weight:700; color:var(--accent); border:1px solid var(--accent); padding:2px 6px;">Anônimo</span>
+                                    <div style="width:100%; height:117px; background:var(--accent); opacity:0.85;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:center; gap:16px; margin-left:28px; padding-top:12px;">
+                            <span style="font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; flex:1; text-align:center; letter-spacing:1px;">COFRE LOCAL</span>
+                            <span style="font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; flex:1; text-align:center; letter-spacing:1px;">PONTE SEGURA</span>
+                            <span style="font-size:10px; color:var(--accent); font-weight:700; text-transform:uppercase; flex:1; text-align:center; letter-spacing:1px;">DADOS PÚBLICOS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Testimonial + Impact -->
+                <div class="audience-card reveal-up delay-3" style="overflow:hidden; display:flex; flex-direction:column;">
+                    <div style="padding:20px 24px 12px; border-bottom:1px solid var(--border);">
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--muted);">IMPACTO REAL DA ACDG</span>
+                    </div>
+                    <div style="padding:32px 24px; flex:1; display:flex; flex-direction:column; justify-content:center;">
+                        <div style="margin-bottom:24px;">
+                            <span style="font-size:clamp(40px,4vw,56px); font-weight:800; color:var(--text); letter-spacing:-0.04em; line-height:1;">1.064</span>
+                            <div style="margin-top:6px;"><span style="font-size:12px; color:var(--muted); font-weight:500; letter-spacing:0.5px; text-transform:uppercase;">Sessões de cuidado especializado nos últimos 2 meses de 2025</span></div>
+                        </div>
+                        <p class="testimonial-quote">
+                            "A ACDG atua há <span style="background:var(--accent); color:#fff; padding:1px 5px;">25 anos</span> no cuidado e defesa de pacientes com doenças genéticas raras. O Conecta Raros nasceu aqui, dentro da nossa vivência diária, para resolver o problema que <span style="background:var(--accent); color:#fff; padding:1px 5px;">nós mesmos enfrentamos.</span>"
+                        </p>
+                        <div class="testimonial-attr">
+                            ACDG Brasil — Fundada em 2001 no Ceará
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         POR TRÁS DOS DADOS — Section 05
+    ═══════════════════════════════════════ -->
+    <section id="origem" class="credibility-section">
+        <div class="container">
+            <div class="credibility-header reveal-up">
+                <p class="eyebrow">A Tecnologia</p>
+                <h2 class="section-title">Edge Computing:<br>o fio dental chega<br>em qualquer lugar.</h2>
+                <p class="credibility-subtitle">Nossa infraestrutura foi projetada para funcionar onde o governo ainda não tem como chegar. Um Raspberry Pi, uma conexão básica de internet e o sistema inteiro roda na ponta — sem depender de data centers caros ou conexões estáveis.</p>
+            </div>
+
+            <div class="flowchart-container reveal-up delay-2">
+
+                <div class="flow-step">
+                    <div class="step-icon"><i class="ph ph-stethoscope"></i></div>
+                    <h4>Nível Coletor</h4>
+                    <p>Intra-Web Privada, self-hosted. O prontuário social completo roda na ponta, com acesso exclusivo da equipe multidisciplinar.</p>
+                </div>
+
+                <div class="flow-arrow" aria-hidden="true">
+                    <i class="ph ph-arrow-right" style="font-size:16px;"></i>
+                </div>
+
+                <div class="flow-step highlight-step">
+                    <div class="step-icon"><i class="ph ph-shield-check"></i></div>
+                    <h4>A Ponte Segura</h4>
+                    <p>Um agente de publicação processa os dados, realizando a anonimização e sanitização antes de qualquer transmissão.</p>
+                </div>
+
+                <div class="flow-arrow" aria-hidden="true">
+                    <i class="ph ph-arrow-right" style="font-size:16px;"></i>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-icon"><i class="ph ph-globe-hemisphere-west"></i></div>
+                    <h4>Nível Público</h4>
+                    <p>Apenas dados estatísticos e anônimos chegam aqui — para gestão, pesquisa e tomada de decisão baseada em evidências.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         FAQ — Section 06
+    ═══════════════════════════════════════ -->
+    <section id="faq" class="faq-section">
+        <div class="container" style="max-width:820px;">
+
+            <div class="reveal-up" style="text-align:center; margin-bottom:72px;">
+                <p class="eyebrow" style="justify-content:center;">Dúvidas Frequentes</p>
+                <h2 class="section-title" style="font-size:clamp(32px,4vw,56px);">Perguntas Frequentes</h2>
+            </div>
+
+            <div class="reveal-up delay-1">
+
+                <details class="faq-item" open>
+                    <summary>
+                        <span class="faq-number">01</span>
+                        Como é garantida a privacidade dos pacientes no Conecta Raros?
+                        <span style="display:inline-flex; flex-shrink:0; font-size:18px; color:var(--muted-light);">
+                            <i class="ph ph-plus icon-plus"></i>
+                            <i class="ph ph-minus icon-minus"></i>
+                        </span>
+                    </summary>
+                    <div class="faq-content">
+                        <div class="faq-content-inner">
+                            <p>Utilizamos protocolos de anonimização nativa. Isso significa que nenhum dado pessoal identificável (PII) é armazenado ou exibido na vitrine pública. Seguimos rigorosamente a LGPD (Lei Geral de Proteção de Dados) e os padrões internacionais de segurança em saúde.</p>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary>
+                        <span class="faq-number">02</span>
+                        A plataforma está em conformidade com a LGPD?
+                        <span style="display:inline-flex; flex-shrink:0; font-size:18px; color:var(--muted-light);">
+                            <i class="ph ph-plus icon-plus"></i>
+                            <i class="ph ph-minus icon-minus"></i>
+                        </span>
+                    </summary>
+                    <div class="faq-content">
+                        <div class="faq-content-inner">
+                            <p>Sim. O Conecta Raros foi desenvolvido sob o conceito de Privacy by Design. Toda a jornada do dado — da coleta à visualização — é protegida por criptografia de ponta a ponta e camadas de acesso restrito, garantindo segurança jurídica total para as instituições parceiras.</p>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary>
+                        <span class="faq-number">03</span>
+                        Como minha instituição pode se tornar uma parceira pioneira?
+                        <span style="display:inline-flex; flex-shrink:0; font-size:18px; color:var(--muted-light);">
+                            <i class="ph ph-plus icon-plus"></i>
+                            <i class="ph ph-minus icon-minus"></i>
+                        </span>
+                    </summary>
+                    <div class="faq-content">
+                        <div class="faq-content-inner">
+                            <p>Estamos selecionando um grupo restrito de instituições para o nosso programa de integração inicial. Para participar, basta preencher o formulário de contato ou falar diretamente com nossa equipe técnica via WhatsApp para agendar uma demonstração da plataforma de cadastro.</p>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary>
+                        <span class="faq-number">04</span>
+                        Existe algum custo para integrar meu hospital ou ONG ao ecossistema?
+                        <span style="display:inline-flex; flex-shrink:0; font-size:18px; color:var(--muted-light);">
+                            <i class="ph ph-plus icon-plus"></i>
+                            <i class="ph ph-minus icon-minus"></i>
+                        </span>
+                    </summary>
+                    <div class="faq-content">
+                        <div class="faq-content-inner">
+                            <p>Atualmente, possuímos modelos de parceria que visam democratizar o acesso à tecnologia para instituições de impacto social. Os custos de implementação variam conforme a complexidade da integração de dados e o volume de usuários.</p>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary>
+                        <span class="faq-number">05</span>
+                        De onde vêm os dados exibidos nos dashboards?
+                        <span style="display:inline-flex; flex-shrink:0; font-size:18px; color:var(--muted-light);">
+                            <i class="ph ph-plus icon-plus"></i>
+                            <i class="ph ph-minus icon-minus"></i>
+                        </span>
+                    </summary>
+                    <div class="faq-content">
+                        <div class="faq-content-inner">
+                            <p>Os dados refletem o volume consolidado das instituições parceiras já integradas e projeções epidemiológicas validadas pela nossa equipe técnica. O portal é atualizado continuamente conforme novas integrações são concluídas.</p>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary>
+                        <span class="faq-number">06</span>
+                        Posso exportar os relatórios para uso em pesquisas acadêmicas?
+                        <span style="display:inline-flex; flex-shrink:0; font-size:18px; color:var(--muted-light);">
+                            <i class="ph ph-plus icon-plus"></i>
+                            <i class="ph ph-minus icon-minus"></i>
+                        </span>
+                    </summary>
+                    <div class="faq-content">
+                        <div class="faq-content-inner">
+                            <p>Sim. Um dos objetivos do Conecta Raros é fomentar a ciência aberta. Instituições parceiras têm níveis de acesso diferenciados que permitem a exportação de dados consolidados para embasar estudos clínicos e publicações científicas.</p>
+                        </div>
+                    </div>
+                </details>
+
+            </div>
+
+            <div class="faq-cta reveal-up delay-2">
+                <p>Ainda com dúvidas ou deseja iniciar uma parceria oficial?</p>
+                <a href="contato.html" class="btn btn-primary">Falar com a Equipe</a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════ -->
+    <footer class="footer">
+
+        <!-- Giant watermark -->
+        <div class="footer-watermark" aria-hidden="true">RAROS</div>
+
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col reveal-up">
+                    <h2>Conecta Raros</h2>
+                    <p>Democratizando o acesso a microdados epidemiológicos robustos. Tecnologia aplicada para acelerar terapias e curas no Brasil.</p>
+                    <a href="contato.html" class="btn btn-primary" style="margin-top:4px;">
+                        Faça parte da rede
+                        <i class="ph ph-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="footer-col footer-links reveal-up delay-1">
+                    <h4>Plataforma</h4>
+                    <a href="#">Painel Demográfico</a>
+                    <a href="#">Painel Clínico</a>
+                    <a href="#">Portal do Pesquisador</a>
+                    <a href="#">API de Saúde</a>
+                </div>
+
+                <div class="footer-col footer-links reveal-up delay-2">
+                    <h4>Institucional & Ética</h4>
+                    <a href="#">Comitê de Ética (CONEP)</a>
+                    <a href="#">Política de Dados e LGPD</a>
+                    <a href="#">Segurança da Informação</a>
+                    <a href="#">Governança Compartilhada</a>
+                </div>
+
+                <div class="footer-col reveal-up delay-3">
+                    <h4>Fale Conosco</h4>
+                    <p>pesquisa@conectararos.org.br</p>
+                    <div class="social-icons">
+                        <i class="ph-fill ph-linkedin-logo"></i>
+                        <i class="ph-fill ph-twitter-logo"></i>
+                        <i class="ph-fill ph-github-logo"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-copyright reveal-up">
+                <p>&copy; 2026 Associação Conecta Raros Brasil. Todos os direitos reservados.</p>
+                <p style="opacity:0.5;">Plataforma em conformidade com a LGPD</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/5585996967404?text=Ol%C3%A1%21%20Gostaria%20de%20saber%20como%20integrar%20minha%20institui%C3%A7%C3%A3o%20ao%20Conecta%20Raros."
+        target="_blank" rel="noopener noreferrer" class="whatsapp-float hidden" aria-label="WhatsApp">
+        <i class="ph ph-whatsapp-logo" style="font-size:26px;"></i>
+    </a>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

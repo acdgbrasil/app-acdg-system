@@ -1,7 +1,7 @@
 abstract final class WorkAndIncomeL10n {
   static const navFamilies = 'Familias';
   static const navRegistration = 'Trabalho e Rendimento';
-  static const pageTitle = 'Condicoes de Trabalho e Rendimento da Familia';
+  static const pageTitle = 'Condições de Trabalho e Rendimento da Família';
   static const sectionIncomes = 'Rendimentos individuais';
   static const sectionBenefits = 'Beneficios sociais';
   static const sectionRetirement = 'Aposentadoria';

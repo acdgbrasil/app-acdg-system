@@ -111,17 +111,137 @@ class RegistryHandler {
         }
       }
 
+      // Separate PR member from extra members.
+      // Backend RegisterPatient only accepts the PR — extra members
+      // must be added via POST /patients/:id/family-members.
+      final prRelationshipId = body['prRelationshipId'] as String?;
+      final extraMembers = <Map<String, dynamic>>[];
+
+      for (final m in familyMembers) {
+        if (m is Map<String, dynamic>) {
+          final rel = m['relationship'] as String?;
+          if (rel != prRelationshipId) {
+            extraMembers.add(m);
+          }
+        }
+      }
+
+      print('[BFF:Register] Total members: ${familyMembers.length}, PR rel: $prRelationshipId, extra: ${extraMembers.length}');
+
+      // Keep only the PR member for the initial registration
+      body['familyMembers'] = familyMembers
+          .where((m) => m is Map<String, dynamic> && m['relationship'] == prRelationshipId)
+          .toList();
+
       final patientResult = PatientTranslator.fromJson(body);
 
-      return switch (patientResult) {
-        Success(:final value) => switch (await contract.registerPatient(
-          value,
-        )) {
-          Success(:final value) => jsonOk({'id': value.value}),
-          Failure(:final error) => backendError(error),
-        },
-        Failure(:final error) => jsonError(400, error.toString()),
-      };
+      if (patientResult case Failure(:final error)) {
+        return jsonError(400, error.toString());
+      }
+
+      final patient = (patientResult as Success).value;
+      final registerResult = await contract.registerPatient(patient);
+
+      if (registerResult case Failure(:final error)) {
+        return backendError(error);
+      }
+
+      final patientId = (registerResult as Success).value;
+
+      // Now add each extra member via POST /patients/:id/family-members
+      if (extraMembers.isNotEmpty && prRelationshipId != null) {
+        final LookupId prRelId;
+        switch (LookupId.create(prRelationshipId)) {
+          case Success(:final value):
+            prRelId = value;
+          case Failure():
+            print('[BFF:Register] ⚠️ Invalid prRelationshipId, skipping extra members');
+            return jsonOk({'id': patientId.value});
+        }
+
+        for (final memberJson in extraMembers) {
+          final memberName = memberJson['fullName'] as String? ?? '';
+          final memberBirth = memberJson['birthDate'] as String? ?? '';
+          final memberCpf = memberJson['cpf'] as String?;
+
+          print('[BFF:Register] Adding extra member: rel=${memberJson['relationship']}, name=$memberName');
+
+          // 1. Register in People Context (same logic as _addFamilyMember)
+          if (memberName.isNotEmpty && memberBirth.isNotEmpty) {
+            final pcResult = await peopleContext.registerPerson(
+              fullName: memberName,
+              birthDate: memberBirth,
+              cpf: memberCpf,
+            );
+            switch (pcResult) {
+              case Success(value: final canonicalId):
+                print('[BFF:Register] People Context OK: personId=$canonicalId');
+                memberJson['personId'] = canonicalId;
+                memberJson['memberPersonId'] = canonicalId;
+              case Failure(:final error):
+                print('[BFF:Register] People Context failed (non-blocking): $error');
+            }
+          }
+
+          // 2. Add to patient via contract
+          memberJson['prRelationshipId'] = prRelationshipId;
+
+          final memberResult = PatientTranslator.familyMemberFromJson(memberJson);
+          switch (memberResult) {
+            case Success(:final value):
+              final addResult = await contract.addFamilyMember(patientId, value, prRelId);
+              switch (addResult) {
+                case Success():
+                  print('[BFF:Register] ✅ Extra member added');
+                case Failure(:final error):
+                  print('[BFF:Register] ⚠️ Failed to add extra member: $error');
+              }
+            case Failure(:final error):
+              print('[BFF:Register] ⚠️ Failed to parse extra member: $error');
+          }
+        }
+      }
+
+      // Persist optional sections that backend ignores during register
+      // (intakeInfo, socialIdentity are attached via copyWith but not saved)
+
+      final intakeInfoJson = body['intakeInfo'] as Map<String, dynamic>?;
+      if (intakeInfoJson != null) {
+        print('[BFF:Register] Saving intakeInfo via PUT');
+        final intakeResult = PatientTranslator.intakeInfoFromJson(intakeInfoJson);
+        switch (intakeResult) {
+          case Success(:final value):
+            final putResult = await contract.updateIntakeInfo(patientId, value);
+            switch (putResult) {
+              case Success():
+                print('[BFF:Register] ✅ IntakeInfo saved');
+              case Failure(:final error):
+                print('[BFF:Register] ⚠️ IntakeInfo save failed: $error');
+            }
+          case Failure(:final error):
+            print('[BFF:Register] ⚠️ IntakeInfo parse failed: $error');
+        }
+      }
+
+      final socialIdentityJson = body['socialIdentity'] as Map<String, dynamic>?;
+      if (socialIdentityJson != null) {
+        print('[BFF:Register] Saving socialIdentity via PUT');
+        final idResult = PatientTranslator.socialIdentityFromJson(socialIdentityJson);
+        switch (idResult) {
+          case Success(:final value):
+            final putResult = await contract.updateSocialIdentity(patientId, value);
+            switch (putResult) {
+              case Success():
+                print('[BFF:Register] ✅ SocialIdentity saved');
+              case Failure(:final error):
+                print('[BFF:Register] ⚠️ SocialIdentity save failed: $error');
+            }
+          case Failure(:final error):
+            print('[BFF:Register] ⚠️ SocialIdentity parse failed: $error');
+        }
+      }
+
+      return jsonOk({'id': patientId.value});
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
     }

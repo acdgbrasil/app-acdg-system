@@ -1,0 +1,69 @@
+## docker-compose.full.yml — Full platform simulation
+## Usage: docker compose -f docker-compose.full.yml up --build
+##
+## Simulates the production topology:
+##   Browser → Gateway (:80)
+##     ├── /*       → Static site (landing, dashboard, contato)
+##     ├── /app/*   → Flutter Web WASM app
+##     └── /api/*   → BFF (Dart AOT)
+##
+## Three containers, all Caddy + Dart:
+##   site (gateway) — Caddy serving static HTML + reverse proxy
+##   app            — Caddy serving Flutter WASM
+##   bff            — Dart AOT binary (distroless)
+
+services:
+  # ── Gateway: static site + reverse proxy ──
+  site:
+    build:
+      context: .
+      dockerfile: Dockerfile.site
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile.gateway:/etc/caddy/Caddyfile:ro
+    environment:
+      - API_BASE_URL=/api
+    depends_on:
+      - app
+      - bff
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # ── Flutter Web WASM app ──
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        OIDC_ISSUER: https://auth.acdgbrasil.com.br
+        OIDC_CLIENT_ID: "367349956392059030"
+        OIDC_SCOPES: "openid profile email offline_access urn:zitadel:iam:org:project:id:363109883022671995:aud"
+        OIDC_WEB_REDIRECT_URI: http://localhost/api/auth/callback
+        OIDC_WEB_POST_LOGOUT_URI: http://localhost
+        BFF_BASE_URL: /api
+        SENTRY_DSN: "https://625a8e9203c95cc1295d1b9f847ba00c@o4511177712664576.ingest.us.sentry.io/4511177714368512"
+        APP_ENV: production
+        BASE_HREF: /app/
+    expose:
+      - "80"
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # ── BFF (Dart AOT, distroless) ──
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile.bff
+    env_file: .env.prod.local
+    expose:
+      - "8081"
+    restart: unless-stopped
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

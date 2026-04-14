@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Dados Epidemiológicos — Conecta Raros</title>
+    <meta name="description" content="Painel de dados epidemiológicos do Conecta Raros. Indicadores de doenças raras, registros de pacientes e modelos preditivos com IA em tempo real.">
+    <link rel="canonical" href="https://conectararos.org.br/dashboard.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="Conecta Raros">
+    <meta property="og:title" content="Dashboard de Dados Epidemiológicos — Conecta Raros">
+    <meta property="og:description" content="Visualize indicadores nacionais de doenças raras em tempo real. Registros de pacientes, relatórios clínicos e modelos preditivos com inteligência artificial.">
+    <meta property="og:url" content="https://conectararos.org.br/dashboard.html">
+    <meta property="og:image" content="https://conectararos.org.br/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dashboard Epidemiológico — Conecta Raros">
+    <meta name="twitter:description" content="Dados nacionais de doenças raras em tempo real. Dashboards, KPIs e modelos preditivos com IA.">
+    <meta name="twitter:image" content="https://conectararos.org.br/assets/og-image.png">
+
+    <!-- Extra SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Associação Conecta Raros Brasil">
+    <meta name="theme-color" content="#E65C3B">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="dashboard.css">
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Conecta Raros",
+        "url": "https://conectararos.org.br",
+        "description": "Plataforma integrada de mapeamento de doenças genéticas e raras no Brasil.",
+        "email": "pesquisa@conectararos.org.br",
+        "areaServed": "BR"
+    }
+    </script>
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="logo" title="Voltar ao início">
+                    <i class="ph-fill ph-dna"></i>
+                    <span class="logo-text">CR</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="page-visao" title="Visão Geral">
+                    <i class="ph ph-squares-four"></i>
+                </a>
+                <a href="#" class="nav-item" data-target="page-pacientes" title="Pacientes">
+                    <i class="ph ph-users"></i>
+                </a>
+                <a href="contato.html" class="nav-item" title="Contato">
+                    <i class="ph ph-envelope-simple"></i>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item" title="Configurações">
+                    <i class="ph ph-gear"></i>
+                </a>
+                <a href="#" class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=E65C3B&color=fff" alt="Perfil Admin">
+                </a>
+            </div>
+        </aside>
+
+        <!-- Viewport -->
+        <div class="viewport-3d" id="viewport-3d">
+            <div class="canvas-3d" id="canvas-3d">
+
+                <!-- Page 1: Visão Geral -->
+                <main class="dashboard-page page-visao active" id="page-visao">
+                    <!-- Loading overlay -->
+                    <div class="loading-overlay" id="loading-page-visao" style="display:none;">
+                        <div class="loading-spinner"></div>
+                        <span>Carregando dados...</span>
+                    </div>
+                    <!-- Error state -->
+                    <div class="error-state" id="error-page-visao" style="display:none;">
+                        <i class="ph ph-warning-circle" style="font-size:40px; color:var(--color-warning);"></i>
+                        <p class="error-message">Não foi possível carregar os dados.</p>
+                        <button class="btn-retry">Tentar novamente</button>
+                    </div>
+
+                    <header class="topbar">
+                        <div class="topbar-left">
+                            <h1 class="page-title">Painel de Dados Epidemiológicos</h1>
+                        </div>
+                        <div class="topbar-right">
+                            <a href="index.html" class="btn-return">
+                                <i class="ph ph-arrow-left"></i> Voltar
+                            </a>
+                            <div class="search-box">
+                                <i class="ph ph-magnifying-glass"></i>
+                                <input type="text" id="search-input" placeholder="Buscar pacientes, CIDs...">
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="bento-grid">
+                        <!-- Card 1: Total Patients -->
+                        <div class="bento-card card-hero">
+                            <div class="card-header">
+                                <span class="card-title">TOTAL DE PACIENTES</span>
+                            </div>
+                            <div class="card-body main-metric-body">
+                                <div class="huge-metric" id="metric-total-registros"><span class="skeleton-metric"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Diagnosed -->
+                        <div class="bento-card card-small">
+                            <div class="card-header"><span class="card-title">DIAGNOSTICADOS</span></div>
+                            <div class="card-body metric-body">
+                                <div class="large-number" id="metric-sindromes"><span class="skeleton-text"></span></div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-track"><div class="progress-fill" id="progress-sindromes" style="width: 0%;"></div></div>
+                            </div>
+                            <div style="margin-top:8px; font-size:10px; color:var(--color-text-muted); letter-spacing:1px;" id="progress-sindromes-label">— DIAGNOSTICADOS</div>
+                        </div>
+
+                        <!-- Card 3: Awaiting Analysis -->
+                        <div class="bento-card card-small">
+                            <div class="card-header"><span class="card-title">AGUARDANDO ANÁLISE</span></div>
+                            <div class="card-body metric-body">
+                                <div class="large-number" id="metric-aguardando-visao" style="color: var(--color-warning);"><span class="skeleton-text"></span></div>
+                            </div>
+                            <p class="sub-text">Pacientes sem diagnóstico confirmado</p>
+                        </div>
+
+                        <!-- Card 4: Recent Patients Table -->
+                        <div class="bento-card card-wide" style="grid-column: span 4;">
+                            <div class="card-header solid">
+                                <span class="card-title">PACIENTES RECENTES</span>
+                                <button class="icon-btn"><i class="ph ph-arrow-up-right"></i></button>
+                            </div>
+                            <div class="card-body table-body" id="table-novos-pacientes">
+                                <div class="table-row head"><span>ID</span><span>NOME</span><span>DIAGNÓSTICO</span><span>STATUS</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Page 2: Pacientes -->
+                <main class="dashboard-page page-pacientes" id="page-pacientes">
+                    <!-- Loading overlay -->
+                    <div class="loading-overlay" id="loading-page-pacientes" style="display:none;">
+                        <div class="loading-spinner"></div>
+                        <span>Carregando dados...</span>
+                    </div>
+                    <!-- Error state -->
+                    <div class="error-state" id="error-page-pacientes" style="display:none;">
+                        <i class="ph ph-warning-circle" style="font-size:40px; color:var(--color-warning);"></i>
+                        <p class="error-message">Não foi possível carregar os dados.</p>
+                        <button class="btn-retry">Tentar novamente</button>
+                    </div>
+
+                    <header class="topbar">
+                        <div class="topbar-left"><h2 class="page-title">Gestão de Pacientes</h2></div>
+                        <div class="topbar-right">
+                            <a href="index.html" class="btn-return"><i class="ph ph-arrow-left"></i> Voltar</a>
+                        </div>
+                    </header>
+                    <div class="bento-grid">
+                        <!-- Summary Cards -->
+                        <div class="bento-card card-small">
+                            <div class="card-header"><span class="card-title">TOTAL PACIENTES</span></div>
+                            <div class="card-body metric-body">
+                                <div class="large-number" id="metric-total-pacientes"><span class="skeleton-text"></span></div>
+                            </div>
+                            <p class="sub-text">Cadastros na plataforma</p>
+                        </div>
+                        <div class="bento-card card-small">
+                            <div class="card-header"><span class="card-title">DIAGNÓSTICOS CONFIRMADOS</span></div>
+                            <div class="card-body metric-body">
+                                <div class="large-number" id="metric-diagnosticos"><span class="skeleton-text"></span></div>
+                            </div>
+                        </div>
+                        <div class="bento-card card-small">
+                            <div class="card-header"><span class="card-title">AGUARDANDO ANÁLISE</span></div>
+                            <div class="card-body metric-body">
+                                <div class="large-number" id="metric-aguardando" style="color: var(--color-warning);"><span class="skeleton-text"></span></div>
+                            </div>
+                        </div>
+                        <div class="bento-card card-small accent-bg">
+                            <div class="card-header"><span class="card-title" style="color: rgba(255,255,255,0.7);">MEMBROS FAMILIARES</span></div>
+                            <div class="card-body metric-body">
+                                <div class="large-number" id="metric-membros"><span class="skeleton-text"></span></div>
+                            </div>
+                            <p class="sub-text" style="color: rgba(255,255,255,0.7);">Total de membros no núcleo familiar</p>
+                        </div>
+                        <!-- Table -->
+                        <div class="bento-card" style="grid-column: span 4;">
+                            <div class="card-header solid">
+                                <span class="card-title">TODOS OS PACIENTES</span>
+                                <button class="icon-btn"><i class="ph ph-arrow-up-right"></i></button>
+                            </div>
+                            <div class="card-body table-body" id="table-todos-pacientes">
+                                <div class="table-row head"><span>NOME</span><span>MEMBROS</span><span>PRONTUÁRIO</span><span>STATUS</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+            </div>
+        </div>
+    </div>
+    <script src="runtime-config.js" onerror=""></script>
+    <script src="config.js"></script>
+    <script src="api-client.js"></script>
+    <script src="dashboard-data.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

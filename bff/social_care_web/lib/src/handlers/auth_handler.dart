@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:core_contracts/core_contracts.dart';
+import 'package:shared/shared.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
@@ -27,21 +29,27 @@ class _PkceState {
 /// - `POST /auth/logout`   - Destroy session, revoke token
 /// - `GET  /auth/me`       - Return current user info
 /// - `POST /auth/refresh`  - Refresh tokens
+/// Factory that creates a [PeopleContextClient] for enrichment during auth.
+typedef AuthPeopleContextFactory = PeopleContextClient Function(Session session);
+
 class AuthHandler {
   AuthHandler({
     required OidcServerClient oidcClient,
     required SessionStore sessionStore,
+    AuthPeopleContextFactory? peopleContextFactory,
     String? cookieDomain,
     String? postLoginRedirectUrl,
     bool secureCookies = true,
   }) : _oidcClient = oidcClient,
        _sessionStore = sessionStore,
+       _peopleContextFactory = peopleContextFactory,
        _cookieDomain = cookieDomain,
        _postLoginRedirectUrl = postLoginRedirectUrl ?? '/',
        _secureCookies = secureCookies;
 
   final OidcServerClient _oidcClient;
   final SessionStore _sessionStore;
+  final AuthPeopleContextFactory? _peopleContextFactory;
   final String? _cookieDomain;
   final String _postLoginRedirectUrl;
   final bool _secureCookies;
@@ -118,11 +126,40 @@ class AuthHandler {
       final userId = claims['sub'] as String;
       final roles = _extractRoles(claims);
 
+      // Enrich with display name from People Context (best-effort)
+      String? displayName;
+      if (_peopleContextFactory != null) {
+        final tempSession = Session(
+          id: '',
+          accessToken: tokenResponse.accessToken,
+          refreshToken: tokenResponse.refreshToken,
+          userId: userId,
+          roles: roles,
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        );
+        try {
+          final pc = _peopleContextFactory(tempSession);
+          print('[AuthHandler] People Context enrichment: calling getPerson($userId)');
+          final result = await pc.getPerson(userId);
+          switch (result) {
+            case Success(:final value):
+              displayName = value['fullName'] as String?;
+              print('[AuthHandler] People Context enrichment OK: displayName=$displayName');
+            case Failure(:final error):
+              print('[AuthHandler] People Context enrichment FAILED: $error');
+          }
+        } catch (e, st) {
+          print('[AuthHandler] People Context enrichment EXCEPTION: $e');
+          print('[AuthHandler] Stack trace: $st');
+        }
+      }
+
       final sessionId = _sessionStore.create(
         accessToken: tokenResponse.accessToken,
         refreshToken: tokenResponse.refreshToken,
         userId: userId,
         roles: roles,
+        displayName: displayName,
       );
 
       return Response(
@@ -174,7 +211,11 @@ class AuthHandler {
     }
 
     return Response.ok(
-      jsonEncode({'userId': session.userId, 'roles': session.roles.toList()}),
+      jsonEncode({
+        'userId': session.userId,
+        'roles': session.roles.toList(),
+        if (session.displayName != null) 'displayName': session.displayName,
+      }),
       headers: {'Content-Type': 'application/json'},
     );
   }

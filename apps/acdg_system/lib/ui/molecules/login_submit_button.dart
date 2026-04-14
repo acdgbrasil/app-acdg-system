@@ -2,7 +2,10 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import '../view_models/auth_view_model.dart';
 
-/// A molecule representing the login button with loading state.
+/// Login button with loading state.
+///
+/// Shows "Entrar" by default, "Redirecionando..." with spinner while
+/// the OIDC redirect is in progress.
 class LoginSubmitButton extends StatelessWidget {
   const LoginSubmitButton({super.key, required this.viewModel});
 
@@ -19,8 +22,8 @@ class LoginSubmitButton extends StatelessWidget {
           width: double.infinity,
           child: AcdgPillButton.primary(
             onPressed: busy ? null : viewModel.login.execute,
-            icon: busy ? null : Icons.login,
-            label: busy ? 'Entrando...' : 'Entrar com ACDG',
+            icon: busy ? null : Icons.arrow_forward_rounded,
+            label: busy ? 'Redirecionando...' : 'Entrar',
           ),
         );
       },

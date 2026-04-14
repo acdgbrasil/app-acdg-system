@@ -38,7 +38,9 @@ void main() {
       updateSocialIdentityUseCase: UpdateSocialIdentityUseCase(
         patientRepository: FakePatientRepository(),
       ),
-      lookupRepository: FakeLookupRepository(),
+      getLookupTableUseCase: GetLookupTableUseCase(
+        lookupRepository: FakeLookupRepository(),
+      ),
     );
   });
 

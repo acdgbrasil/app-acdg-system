@@ -91,7 +91,8 @@ class BffAuthService implements AuthService {
             .whereType<AuthRole>()
             .toSet();
 
-        _currentUser = AuthUser(id: userId, roles: roles);
+        final displayName = json['displayName'] as String?;
+        _currentUser = AuthUser(id: userId, roles: roles, name: displayName);
         _updateStatus(Authenticated(_currentUser!));
       } else {
         _log.info('Session restore returned ${response.statusCode}');

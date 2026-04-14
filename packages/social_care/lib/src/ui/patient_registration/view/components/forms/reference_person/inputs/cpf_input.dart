@@ -32,7 +32,7 @@ final class CpfInput extends StatelessWidget {
                 children: <TextSpan>[
                   TextSpan(
                     text: ' *',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: AppColors.danger),
                   ),
                 ],
               ),

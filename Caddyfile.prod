@@ -1,0 +1,83 @@
+:80 {
+    # ── Security Headers ──
+    header {
+        # HSTS (browser remembers HTTPS — in real prod Caddy does auto TLS)
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        # Prevent MIME sniffing
+        X-Content-Type-Options "nosniff"
+        # Clickjacking protection
+        X-Frame-Options "DENY"
+        # XSS filter
+        X-XSS-Protection "1; mode=block"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Cross-origin isolation for Flutter WASM (skwasm multi-threaded renderer)
+        Cross-Origin-Embedder-Policy "credentialless"
+        Cross-Origin-Opener-Policy "same-origin"
+        # Remove server banner
+        -Server
+    }
+
+    # ── Reverse proxy /api/* to BFF — strip /api prefix ──
+    handle_path /api/* {
+        reverse_proxy bff:8081 {
+            header_up X-Real-IP {remote_host}
+            # Health check on BFF
+            health_uri /health/live
+            health_interval 10s
+            health_timeout 3s
+        }
+    }
+
+    # ── Health check endpoint ──
+    handle /healthz {
+        respond "ok" 200
+    }
+
+    # ── Cache invalidation endpoint ──
+    # Called by the version-gate JS in index.html ONLY when a new deploy
+    # is detected (version.json mismatch). Nukes the HTTP disk cache for
+    # this origin, clearing stale "immutable" entries from previous builds.
+    # This is NOT called on every page load — only on version transitions.
+    handle /cache-invalidate {
+        header Cache-Control "no-store"
+        header Clear-Site-Data "\"cache\""
+        respond "cache cleared" 200
+    }
+
+    # ── Flutter WASM SPA ──
+    handle {
+        root * /srv
+
+        # Compression
+        encode gzip zstd
+
+        # Immutable: fonts and images only (filenames stable across builds)
+        @immutable path_regexp \.(woff2?|png|jpg|jpeg|svg|ico|gif|css)$
+        header @immutable Cache-Control "public, immutable, max-age=31536000"
+
+        # Flutter app code: never cache at edge or browser.
+        # Flutter does NOT content-hash filenames (main.dart.wasm, main.dart.mjs, etc.)
+        # Using no-store (not no-cache) because Cloudflare CDN treats no-cache as
+        # "cache + revalidate" when Origin Cache Control is enabled, and .js is in
+        # Cloudflare's default cached extensions list.
+        # The ?v=<buildVersion> query param in flutter_bootstrap.js handles efficient
+        # cache invalidation on the browser side.
+        @flutter_code path_regexp \.(wasm|mjs|js)$
+        header @flutter_code Cache-Control "no-store, must-revalidate"
+
+        # Entry points: never cache (root "/" and key bootstrap files)
+        @entrypoints path / /index.html /version.json /flutter_bootstrap.js /manifest.json
+        header @entrypoints Cache-Control "no-store, must-revalidate"
+
+        # SPA fallback
+        try_files {path} /index.html
+        file_server
+    }
+
+    # ── Access log ──
+    log {
+        output stdout
+        format json
+    }
+}

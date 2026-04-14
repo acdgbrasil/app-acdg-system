@@ -1,5 +1,6 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../constants/housing_condition_l10n.dart';
 
@@ -12,16 +13,20 @@ class HousingConditionNavBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
       child: Row(
         children: [
-          Column(
-            children: [
-              Container(height: 2, width: 24, color: AppColors.textPrimary),
-              const SizedBox(height: 5),
-              Container(height: 2, width: 24, color: AppColors.textPrimary),
-              const SizedBox(height: 5),
-              Container(height: 2, width: 24, color: AppColors.textPrimary),
-            ],
+          IconButton(
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/social-care');
+              }
+            },
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            tooltip: 'Voltar',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 16),
           Text(
             HousingConditionL10n.navFamilies,
             style: TextStyle(

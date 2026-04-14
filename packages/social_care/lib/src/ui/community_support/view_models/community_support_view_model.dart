@@ -14,9 +14,9 @@ class CommunitySupportViewModel extends BaseViewModel {
        _updateCommunitySupportUseCase = updateCommunitySupportUseCase {
     loadCommand = Command0<void>(_load);
     saveCommand = Command0<void>(_save);
+    print('🏗️ Created with patientId=$patientId');
   }
 
-  static final _log = AcdgLogger.get('CommunitySupportViewModel');
 
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
@@ -67,10 +67,8 @@ class CommunitySupportViewModel extends BaseViewModel {
 
   bool get hasData => _hasLoadedData;
 
-  /// CSN-001: familyConflicts cannot be whitespace only
   /// CSN-002: familyConflicts max 300 characters
-  bool get _conflictsValid =>
-      _familyConflicts.trim().isNotEmpty && _familyConflicts.length <= 300;
+  bool get _conflictsValid => _familyConflicts.length <= 300;
 
   bool get canSave => _conflictsValid && _isDirty;
 
@@ -125,7 +123,7 @@ class CommunitySupportViewModel extends BaseViewModel {
   // ── Load ───────────────────────────────────────────────────
 
   Future<Result<void>> _load() async {
-    _log.info('Loading patient: $patientId');
+    print('⬇️ _load START for patient=$patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
@@ -147,19 +145,27 @@ class CommunitySupportViewModel extends BaseViewModel {
           _saveOriginals();
         }
         _hasLoadedData = true;
+        print(
+          '⬇️ _load SUCCESS — hasData=$_hasLoadedData, patientName=$_patientName',
+        );
       case Failure(:final error):
-        _log.severe('Failed to load patient', error);
+        print('⬇️ _load FAILED ${error}');
         _errorMessage = 'Falha ao carregar paciente';
     }
 
     notifyListeners();
+    print('🔔 notifyListeners() called after _load');
     return const Success(null);
   }
 
   // ── Save ───────────────────────────────────────────────────
 
   Future<Result<void>> _save() async {
-    if (!canSave) return const Success(null);
+    print('⬆️ _save START — canSave=$canSave');
+    if (!canSave) {
+      print('⬆️ _save SKIPPED — canSave is false');
+      return const Success(null);
+    }
 
     final PatientId patId;
     switch (PatientId.create(patientId)) {
@@ -182,8 +188,11 @@ class CommunitySupportViewModel extends BaseViewModel {
 
     final result = await _updateCommunitySupportUseCase.execute(intent);
     if (result.isSuccess) {
+      print('⬆️ _save SUCCESS');
       _saveOriginals();
       notifyListeners();
+    } else {
+      print('⬆️ _save FAILED ${'see error above'}');
     }
     return result;
   }
@@ -200,7 +209,7 @@ class CommunitySupportViewModel extends BaseViewModel {
 
   @override
   void onDispose() {
-    _log.info('Disposing CommunitySupportViewModel');
+    print('🗑️ Disposing');
     loadCommand.dispose();
     saveCommand.dispose();
   }

@@ -1,8 +1,9 @@
-import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/community_support_l10n.dart';
 import '../../view_models/community_support_view_model.dart';
+import 'community_support_section_title.dart';
+import 'community_support_toggle_row.dart';
 
 class CommunitySupportContent extends StatefulWidget {
   const CommunitySupportContent({super.key, required this.viewModel});
@@ -49,16 +50,17 @@ class _CommunitySupportContentState extends State<CommunitySupportContent> {
         builder: (context, _) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section: Rede de apoio
-            _sectionTitle(CommunitySupportL10n.sectionSupport),
+            const CommunitySupportSectionTitle(
+              text: CommunitySupportL10n.sectionSupport,
+            ),
             const SizedBox(height: 16),
-            _toggleRow(
+            CommunitySupportToggleRow(
               label: CommunitySupportL10n.hasRelativeSupportLabel,
               value: vm.hasRelativeSupport,
               onToggle: vm.toggleRelativeSupport,
             ),
             const SizedBox(height: 8),
-            _toggleRow(
+            CommunitySupportToggleRow(
               label: CommunitySupportL10n.hasNeighborSupportLabel,
               value: vm.hasNeighborSupport,
               onToggle: vm.toggleNeighborSupport,
@@ -68,8 +70,9 @@ class _CommunitySupportContentState extends State<CommunitySupportContent> {
             const Divider(),
             const SizedBox(height: 24),
 
-            // Section: Conflitos familiares
-            _sectionTitle(CommunitySupportL10n.sectionConflicts),
+            const CommunitySupportSectionTitle(
+              text: CommunitySupportL10n.sectionConflicts,
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _conflictsController,
@@ -87,22 +90,23 @@ class _CommunitySupportContentState extends State<CommunitySupportContent> {
             const Divider(),
             const SizedBox(height: 24),
 
-            // Section: Participacao social
-            _sectionTitle(CommunitySupportL10n.sectionParticipation),
+            const CommunitySupportSectionTitle(
+              text: CommunitySupportL10n.sectionParticipation,
+            ),
             const SizedBox(height: 16),
-            _toggleRow(
+            CommunitySupportToggleRow(
               label: CommunitySupportL10n.patientParticipatesLabel,
               value: vm.patientParticipatesInGroups,
               onToggle: vm.togglePatientParticipates,
             ),
             const SizedBox(height: 8),
-            _toggleRow(
+            CommunitySupportToggleRow(
               label: CommunitySupportL10n.familyParticipatesLabel,
               value: vm.familyParticipatesInGroups,
               onToggle: vm.toggleFamilyParticipates,
             ),
             const SizedBox(height: 8),
-            _toggleRow(
+            CommunitySupportToggleRow(
               label: CommunitySupportL10n.hasLeisureAccessLabel,
               value: vm.patientHasAccessToLeisure,
               onToggle: vm.toggleLeisureAccess,
@@ -112,64 +116,17 @@ class _CommunitySupportContentState extends State<CommunitySupportContent> {
             const Divider(),
             const SizedBox(height: 24),
 
-            // Section: Discriminacao
-            _sectionTitle(CommunitySupportL10n.sectionDiscrimination),
+            const CommunitySupportSectionTitle(
+              text: CommunitySupportL10n.sectionDiscrimination,
+            ),
             const SizedBox(height: 16),
-            _toggleRow(
+            CommunitySupportToggleRow(
               label: CommunitySupportL10n.facesDiscriminationLabel,
               value: vm.facesDiscrimination,
               onToggle: vm.toggleDiscrimination,
             ),
 
             const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String text) => Text(
-    text,
-    style: const TextStyle(
-      fontFamily: 'Satoshi',
-      fontWeight: FontWeight.w700,
-      fontSize: 16,
-      color: AppColors.textPrimary,
-    ),
-  );
-
-  Widget _toggleRow({
-    required String label,
-    required bool value,
-    required VoidCallback onToggle,
-  }) {
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: value,
-                onChanged: (_) => onToggle(),
-                activeColor: AppColors.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontFamily: 'Satoshi',
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
           ],
         ),
       ),

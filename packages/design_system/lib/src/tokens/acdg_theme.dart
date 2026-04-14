@@ -4,6 +4,7 @@ import 'app_colors.dart';
 /// Centralized theme definition for ACDG System.
 ///
 /// Uses Material 3 and custom [ThemeExtension] for ACDG specific tokens.
+/// Color palette aligned with the Conecta Raros site: warm beige + coral accent.
 abstract final class AcdgTheme {
   /// Light theme definition.
   static ThemeData get light => ThemeData(

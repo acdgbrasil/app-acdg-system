@@ -25,6 +25,7 @@ export 'src/handlers/assessment_handler.dart';
 export 'src/handlers/care_handler.dart';
 export 'src/handlers/protection_handler.dart';
 export 'src/handlers/lookup_handler.dart';
+export 'src/handlers/team_handler.dart';
 
 // Remote
 export 'src/remote/social_care_api_client.dart';

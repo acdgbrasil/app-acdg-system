@@ -82,9 +82,16 @@ class HttpSocialCareClient implements SocialCareContract {
   @override
   Future<Result<PatientId>> registerPatient(Patient patient) async {
     try {
+      final payload = PatientTranslator.toJson(patient);
+      final members = payload['familyMembers'] as List?;
+      print('📤 POST /patients — familyMembers count: ${members?.length ?? 0}');
+      for (final m in members ?? []) {
+        print('📤   member: personId=${m['personId']}, rel=${m['relationship']}, name=${m['fullName']}');
+      }
+
       final response = await _dio.post<Map<String, dynamic>>(
         '/patients',
-        data: PatientTranslator.toJson(patient),
+        data: payload,
         options: Options(validateStatus: (status) => true),
       );
 
@@ -145,7 +152,7 @@ class HttpSocialCareClient implements SocialCareContract {
       final payload = {
         ...PatientTranslator.familyMemberToJson(member),
         'prRelationshipId': prRelationshipId.value,
-        if (cpf != null) 'cpf': cpf,
+        'cpf': cpf,
       };
 
       final response = await _dio.post<dynamic>(

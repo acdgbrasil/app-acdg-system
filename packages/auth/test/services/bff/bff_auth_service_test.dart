@@ -67,7 +67,7 @@ void main() {
       mockClient.handler = (_) => http.Response(
         jsonEncode({
           'userId': 'user-123',
-          'roles': ['social_worker', 'admin'],
+          'roles': ['social-care:worker', 'admin'],
         }),
         200,
       );
@@ -137,7 +137,7 @@ void main() {
       mockClient.handler = (_) => http.Response(
         jsonEncode({
           'userId': 'user-123',
-          'roles': ['social_worker'],
+          'roles': ['social-care:worker'],
         }),
         200,
       );
@@ -157,7 +157,7 @@ void main() {
       mockClient.handler = (_) => http.Response(
         jsonEncode({
           'userId': 'user-123',
-          'roles': ['social_worker'],
+          'roles': ['social-care:worker'],
         }),
         200,
       );
@@ -189,7 +189,7 @@ void main() {
       mockClient.handler = (_) => http.Response(
         jsonEncode({
           'userId': 'user-123',
-          'roles': ['social_worker'],
+          'roles': ['social-care:worker'],
         }),
         200,
       );
@@ -211,7 +211,7 @@ void main() {
       mockClient.handler = (_) => http.Response(
         jsonEncode({
           'userId': 'user-123',
-          'roles': ['social_worker'],
+          'roles': ['social-care:worker'],
         }),
         200,
       );
@@ -227,7 +227,7 @@ void main() {
       mockClient.handler = (_) => http.Response(
         jsonEncode({
           'userId': 'user-123',
-          'roles': ['social_worker'],
+          'roles': ['social-care:worker'],
         }),
         200,
       );

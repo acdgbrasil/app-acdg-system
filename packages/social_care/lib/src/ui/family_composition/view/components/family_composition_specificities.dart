@@ -51,7 +51,7 @@ class FamilyCompositionSpecificities extends StatelessWidget {
         if (items.isEmpty)
           const Text(
             'Nenhuma especificidade carregada (Lista Vazia)',
-            style: TextStyle(color: Colors.red, fontSize: 12),
+            style: TextStyle(color: AppColors.danger, fontSize: 12),
           ),
         for (final item in items)
           SpecificityTile(

@@ -8,7 +8,7 @@ void main() {
       name: 'Maria Silva',
       email: 'maria@acdg.com.br',
       preferredUsername: 'maria.silva',
-      roles: {AuthRole.socialWorker},
+      roles: {AuthRole.worker},
     );
 
     test('stores all fields correctly', () {
@@ -16,7 +16,7 @@ void main() {
       expect(user.name, 'Maria Silva');
       expect(user.email, 'maria@acdg.com.br');
       expect(user.preferredUsername, 'maria.silva');
-      expect(user.roles, {AuthRole.socialWorker});
+      expect(user.roles, {AuthRole.worker});
     });
 
     group('displayName', () {
@@ -42,7 +42,7 @@ void main() {
 
     group('role checks', () {
       test('hasRole returns true for matching role', () {
-        expect(user.hasRole(AuthRole.socialWorker), isTrue);
+        expect(user.hasRole(AuthRole.worker), isTrue);
       });
 
       test('hasRole returns false for non-matching role', () {
@@ -51,7 +51,7 @@ void main() {
 
       test('hasAnyRole returns true when intersection exists', () {
         expect(
-          user.hasAnyRole({AuthRole.socialWorker, AuthRole.admin}),
+          user.hasAnyRole({AuthRole.worker, AuthRole.admin}),
           isTrue,
         );
       });
@@ -119,7 +119,7 @@ void main() {
           name: 'Maria Silva',
           email: 'maria@acdg.com.br',
           preferredUsername: 'maria.silva',
-          roles: {AuthRole.socialWorker},
+          roles: {AuthRole.worker},
         );
         expect(user, other);
         expect(user.hashCode, other.hashCode);

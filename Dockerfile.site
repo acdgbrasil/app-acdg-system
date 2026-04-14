@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1.7
+
+# ── Conecta Raros Gateway ──
+# Serves the static landing site and acts as reverse proxy:
+#   /*       → static HTML/CSS/JS (this container)
+#   /app/*   → Flutter Web WASM (app container)
+#   /api/*   → BFF shelf server (bff container)
+
+FROM caddy:2-alpine
+
+LABEL org.opencontainers.image.source="https://github.com/acdgbrasil/app-acdg-system"
+LABEL org.opencontainers.image.description="Conecta Raros — Static Site Gateway"
+LABEL org.opencontainers.image.licenses="Proprietary"
+
+COPY site/ /srv/site/
+COPY scripts/site-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 80
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]

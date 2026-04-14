@@ -42,7 +42,10 @@ final class AuthUser with Equatable {
       roles.intersection(required).isNotEmpty;
 
   /// Whether this user can write data in social-care modules.
-  bool get canWrite => hasRole(AuthRole.socialWorker);
+  bool get canWrite => hasRole(AuthRole.worker);
+
+  /// Whether this user is a global superadmin.
+  bool get isSuperAdmin => hasRole(AuthRole.superAdmin);
 
   /// Whether this user can read social-care data.
   bool get canRead => roles.isNotEmpty;

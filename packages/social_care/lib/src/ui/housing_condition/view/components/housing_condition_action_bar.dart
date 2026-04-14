@@ -8,7 +8,7 @@ class HousingConditionActionBar extends StatelessWidget {
     super.key,
     required this.onCancel,
     required this.onSave,
-    this.canSave = true,
+    this.canSave = false,
   });
 
   final VoidCallback onCancel;
@@ -25,42 +25,42 @@ class HousingConditionActionBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextButton(
-            onPressed: onCancel,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.danger,
-              shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.close, size: 16),
-                SizedBox(width: 7),
-                Text(
-                  HousingConditionL10n.btnCancel,
-                  style: TextStyle(
-                    fontFamily: 'Playfair Display',
-                    fontStyle: FontStyle.italic,
-                    fontSize: 14,
-                  ),
+          if (canSave)
+            TextButton(
+              onPressed: onCancel,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
                 ),
-              ],
-            ),
-          ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.close, size: 16),
+                  SizedBox(width: 7),
+                  Text(
+                    HousingConditionL10n.btnCancel,
+                    style: TextStyle(
+                      fontFamily: 'Playfair Display',
+                      fontStyle: FontStyle.italic,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            const SizedBox.shrink(),
           FilledButton(
             onPressed: canSave ? onSave : null,
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
               shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,

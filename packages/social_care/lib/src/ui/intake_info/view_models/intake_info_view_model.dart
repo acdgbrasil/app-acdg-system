@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
-import '../../../data/repositories/lookup_repository.dart';
 import '../../../logic/use_case/care/update_intake_info_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
+import '../../../logic/use_case/shared/get_lookup_table_use_case.dart';
 import '../../home/mappers/intake_info_detail_mapper.dart';
 import '../../home/models/intake_info_detail.dart';
 
@@ -12,21 +12,20 @@ class IntakeInfoViewModel extends BaseViewModel {
     required this.patientId,
     required GetPatientUseCase getPatientUseCase,
     required UpdateIntakeInfoUseCase updateIntakeInfoUseCase,
-    required LookupRepository lookupRepository,
+    required GetLookupTableUseCase getLookupTableUseCase,
   }) : _getPatientUseCase = getPatientUseCase,
        _updateIntakeInfoUseCase = updateIntakeInfoUseCase,
-       _lookupRepository = lookupRepository {
+       _getLookupTableUseCase = getLookupTableUseCase {
     loadCommand = Command0<void>(_load);
     saveCommand = Command0<void>(_save);
     _loadLookups();
   }
 
-  static final _log = AcdgLogger.get('IntakeInfoViewModel');
 
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateIntakeInfoUseCase _updateIntakeInfoUseCase;
-  final LookupRepository _lookupRepository;
+  final GetLookupTableUseCase _getLookupTableUseCase;
 
   late final Command0<void> loadCommand;
   late final Command0<void> saveCommand;
@@ -74,9 +73,7 @@ class IntakeInfoViewModel extends BaseViewModel {
   List<LinkedProgramDetail> _originalLinkedPrograms = [];
 
   bool get canSave =>
-      _ingressTypeId != null &&
-      _serviceReason.trim().isNotEmpty &&
-      _isDirty;
+      _ingressTypeId != null && _serviceReason.trim().isNotEmpty && _isDirty;
 
   bool get _isDirty =>
       _ingressTypeId != _originalIngressTypeId ||
@@ -127,28 +124,28 @@ class IntakeInfoViewModel extends BaseViewModel {
   // ── Load ───────────────────────────────────────────────────
 
   Future<void> _loadLookups() async {
-    _log.info('Loading lookups');
+    print('Loading lookups');
     final errors = <String>[];
 
-    final ingressResult = await _lookupRepository.getLookupTable(
+    final ingressResult = await _getLookupTableUseCase.execute(
       'dominio_tipo_ingresso',
     );
     switch (ingressResult) {
       case Success(:final value):
         _ingressTypeLookup = value;
       case Failure(:final error):
-        _log.severe('Failed to load ingress type lookups', error);
+        print('Failed to load ingress type lookups ${error}');
         errors.add('Falha ao carregar tipos de ingresso');
     }
 
-    final programsResult = await _lookupRepository.getLookupTable(
+    final programsResult = await _getLookupTableUseCase.execute(
       'dominio_programa_social',
     );
     switch (programsResult) {
       case Success(:final value):
         _socialProgramsLookup = value;
       case Failure(:final error):
-        _log.severe('Failed to load social programs lookups', error);
+        print('Failed to load social programs lookups ${error}');
         errors.add('Falha ao carregar programas sociais');
     }
 
@@ -161,7 +158,7 @@ class IntakeInfoViewModel extends BaseViewModel {
   }
 
   Future<Result<void>> _load() async {
-    _log.info('Loading patient: $patientId');
+    print('Loading patient: $patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
@@ -172,15 +169,20 @@ class IntakeInfoViewModel extends BaseViewModel {
         _patientName = '$first $last'.trim();
 
         final intake = value.intakeInfo;
+        print('📋 IntakeInfo from backend: ${intake != null ? 'EXISTS' : 'NULL'}');
         if (intake != null) {
-          _ingressTypeId = intake.ingressTypeId.value;
+          print('📋 ingressTypeId: ${intake.ingressTypeId.value}');
+          print('📋 linkedPrograms: ${intake.linkedSocialPrograms.map((p) => p.programId.value).toList()}');
+          print('📋 lookup ingress IDs: ${_ingressTypeLookup.map((l) => l.id).toList()}');
+          print('📋 lookup program IDs: ${_socialProgramsLookup.map((l) => l.id).toList()}');
+          _ingressTypeId = intake.ingressTypeId.value.toUpperCase();
           _originName = intake.originName ?? '';
           _originContact = intake.originContact ?? '';
           _serviceReason = intake.serviceReason;
           _linkedPrograms = intake.linkedSocialPrograms
               .map(
                 (p) => LinkedProgramDetail(
-                  programId: p.programId.value,
+                  programId: p.programId.value.toUpperCase(),
                   observation: p.observation,
                 ),
               )
@@ -193,7 +195,7 @@ class IntakeInfoViewModel extends BaseViewModel {
           _originalLinkedPrograms = List.of(_linkedPrograms);
         }
       case Failure(:final error):
-        _log.severe('Failed to load patient', error);
+        print('Failed to load patient ${error}');
         _errorMessage = 'Falha ao carregar paciente';
     }
 
@@ -256,7 +258,7 @@ class IntakeInfoViewModel extends BaseViewModel {
 
   @override
   void onDispose() {
-    _log.info('Disposing IntakeInfoViewModel');
+    print('Disposing IntakeInfoViewModel');
     loadCommand.dispose();
     saveCommand.dispose();
   }

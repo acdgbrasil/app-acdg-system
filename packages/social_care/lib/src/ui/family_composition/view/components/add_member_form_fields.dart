@@ -49,7 +49,7 @@ class AddMemberFormFields extends StatelessWidget {
                 const SizedBox(height: 6),
                 ValueListenableBuilder<bool>(
                   valueListenable: formState.cpfLookupLoading,
-                  builder: (_, loading, __) {
+                  builder: (_, loading, _) {
                     if (!loading) return const SizedBox.shrink();
                     return const Padding(
                       padding: EdgeInsets.only(top: 2),
@@ -66,7 +66,7 @@ class AddMemberFormFields extends StatelessWidget {
                 ),
                 ValueListenableBuilder<String?>(
                   valueListenable: formState.linkedPersonName,
-                  builder: (_, linkedName, __) {
+                  builder: (_, linkedName, _) {
                     if (linkedName == null) return const SizedBox.shrink();
                     return Container(
                       margin: const EdgeInsets.only(top: 6),

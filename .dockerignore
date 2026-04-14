@@ -1,0 +1,50 @@
+# Build artifacts
+**/build/
+**/.dart_tool/
+**/.packages
+
+# IDE
+**/.idea/
+**/.vscode/
+**/*.iml
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test/CI
+**/coverage/
+**/.coverage/
+.github/
+
+# Melos
+.melos/
+
+# Pipeline
+.pipeline/
+
+# Docs
+handbook/
+tcc-content/
+profile/
+**/*.md
+!pubspec.yaml
+
+# Other services (not needed for frontend Docker)
+social-care/
+social-care-deno/
+edge-cloud-infra/
+people-context/
+analysis-bi/
+form-conversions/
+queue-manager/
+
+# Node (if any)
+**/node_modules/
+
+# Env files (injected via docker-compose)
+**/.env.example

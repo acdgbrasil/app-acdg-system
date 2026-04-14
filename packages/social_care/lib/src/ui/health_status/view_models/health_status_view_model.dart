@@ -1,81 +1,34 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
-import '../../../data/repositories/lookup_repository.dart';
 import '../../../logic/use_case/assessment/update_health_status_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
+import '../../../logic/use_case/shared/get_lookup_table_use_case.dart';
 import '../../home/mappers/health_status_detail_mapper.dart';
 import '../../home/models/health_status_detail.dart';
-
-/// Mutable UI model for a deficiency row.
-class DeficiencyRow {
-  String? memberId;
-  String? deficiencyTypeId;
-  bool needsConstantCare;
-  String responsibleCaregiverName;
-
-  DeficiencyRow({
-    this.memberId,
-    this.deficiencyTypeId,
-    this.needsConstantCare = false,
-    this.responsibleCaregiverName = '',
-  });
-
-  DeficiencyRow copy() => DeficiencyRow(
-    memberId: memberId,
-    deficiencyTypeId: deficiencyTypeId,
-    needsConstantCare: needsConstantCare,
-    responsibleCaregiverName: responsibleCaregiverName,
-  );
-}
-
-/// Mutable UI model for a gestating member row.
-class GestatingRow {
-  String? memberId;
-  int monthsGestation;
-  bool startedPrenatalCare;
-
-  GestatingRow({
-    this.memberId,
-    this.monthsGestation = 1,
-    this.startedPrenatalCare = false,
-  });
-
-  GestatingRow copy() => GestatingRow(
-    memberId: memberId,
-    monthsGestation: monthsGestation,
-    startedPrenatalCare: startedPrenatalCare,
-  );
-}
-
-/// Simple member reference for dropdowns.
-class MemberOption {
-  final String id;
-  final String label;
-
-  const MemberOption({required this.id, required this.label});
-}
+import '../../shared/models/member_option.dart';
+import '../models/deficiency_row.dart';
+import '../models/gestating_row.dart';
 
 class HealthStatusViewModel extends BaseViewModel {
   HealthStatusViewModel({
     required this.patientId,
     required GetPatientUseCase getPatientUseCase,
     required UpdateHealthStatusUseCase updateHealthStatusUseCase,
-    required LookupRepository lookupRepository,
+    required GetLookupTableUseCase getLookupTableUseCase,
   }) : _getPatientUseCase = getPatientUseCase,
        _updateHealthStatusUseCase = updateHealthStatusUseCase,
-       _lookupRepository = lookupRepository {
+       _getLookupTableUseCase = getLookupTableUseCase {
     loadCommand = Command0<void>(_load);
     saveCommand = Command0<void>(_save);
     _loadLookups();
   }
 
-  static final _log = AcdgLogger.get('HealthStatusViewModel');
 
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateHealthStatusUseCase _updateHealthStatusUseCase;
-  final LookupRepository _lookupRepository;
+  final GetLookupTableUseCase _getLookupTableUseCase;
 
   late final Command0<void> loadCommand;
   late final Command0<void> saveCommand;
@@ -95,6 +48,8 @@ class HealthStatusViewModel extends BaseViewModel {
 
   List<MemberOption> _familyMembers = [];
   List<MemberOption> get familyMembers => _familyMembers;
+  List<MemberOption> get femaleFamilyMembers =>
+      _familyMembers.where((m) => m.sex?.toLowerCase() == 'feminino').toList();
 
   // ── Form state ─────────────────────────────────────────────
 
@@ -129,9 +84,7 @@ class HealthStatusViewModel extends BaseViewModel {
       _foodInsecurity != _originalFoodInsecurity ||
       _deficiencies.length != _originalDeficienciesCount ||
       _gestatingMembers.length != _originalGestatingCount ||
-      _constantCareNeeds.length != _originalCareNeedsCount ||
-      _deficiencies.isNotEmpty ||
-      _gestatingMembers.isNotEmpty;
+      _constantCareNeeds.length != _originalCareNeedsCount;
 
   // ── Actions: Food insecurity ───────────────────────────────
 
@@ -223,15 +176,15 @@ class HealthStatusViewModel extends BaseViewModel {
   // ── Load ───────────────────────────────────────────────────
 
   Future<void> _loadLookups() async {
-    _log.info('Loading deficiency type lookups');
-    final result = await _lookupRepository.getLookupTable(
+    print('Loading deficiency type lookups');
+    final result = await _getLookupTableUseCase.execute(
       'dominio_tipo_deficiencia',
     );
     switch (result) {
       case Success(:final value):
         _deficiencyTypeLookup = value;
       case Failure(:final error):
-        _log.severe('Failed to load deficiency type lookups', error);
+        print('Failed to load deficiency type lookups ${error}');
         _errorMessage = 'Falha ao carregar tipos de deficiencia';
     }
     _lookupsLoaded = true;
@@ -239,7 +192,7 @@ class HealthStatusViewModel extends BaseViewModel {
   }
 
   Future<Result<void>> _load() async {
-    _log.info('Loading patient: $patientId');
+    print('Loading patient: $patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
@@ -252,16 +205,23 @@ class HealthStatusViewModel extends BaseViewModel {
         // Build family member options for dropdowns
         final members = <MemberOption>[];
         // Add reference person
-        members.add(MemberOption(
-          id: value.personId.value,
-          label: _patientName.isNotEmpty ? _patientName : 'Pessoa de referencia',
-        ));
+        final prSex = pd?.sex?.name;
+        members.add(
+          MemberOption(
+            id: value.personId.value,
+            label: _patientName.isNotEmpty
+                ? _patientName
+                : 'Pessoa de referencia',
+            sex: prSex,
+          ),
+        );
         // Add family members
         for (final member in value.familyMembers) {
           final name = member.fullName ?? 'Membro';
           members.add(MemberOption(
             id: member.personId.value,
             label: name,
+            sex: member.sex,
           ));
         }
         _familyMembers = members;
@@ -272,31 +232,35 @@ class HealthStatusViewModel extends BaseViewModel {
           _foodInsecurity = health.foodInsecurity;
 
           _deficiencies = health.deficiencies
-              .map((d) => DeficiencyRow(
-                    memberId: d.memberId.value,
-                    deficiencyTypeId: d.deficiencyTypeId.value,
-                    needsConstantCare: d.needsConstantCare,
-                    responsibleCaregiverName:
-                        d.responsibleCaregiverName ?? '',
-                  ))
+              .map(
+                (d) => DeficiencyRow(
+                  memberId: d.memberId.value,
+                  deficiencyTypeId: d.deficiencyTypeId.value.toUpperCase(),
+                  needsConstantCare: d.needsConstantCare,
+                  responsibleCaregiverName: d.responsibleCaregiverName ?? '',
+                ),
+              )
               .toList();
 
           _gestatingMembers = health.gestatingMembers
-              .map((g) => GestatingRow(
-                    memberId: g.memberId.value,
-                    monthsGestation: g.monthsGestation,
-                    startedPrenatalCare: g.startedPrenatalCare,
-                  ))
+              .map(
+                (g) => GestatingRow(
+                  memberId: g.memberId.value,
+                  monthsGestation: g.monthsGestation,
+                  startedPrenatalCare: g.startedPrenatalCare,
+                ),
+              )
               .toList();
 
-          _constantCareNeeds =
-              health.constantCareNeeds.map((id) => id.value).toList();
+          _constantCareNeeds = health.constantCareNeeds
+              .map((id) => id.value)
+              .toList();
 
           _saveOriginals();
         }
         _hasLoadedData = true;
       case Failure(:final error):
-        _log.severe('Failed to load patient', error);
+        print('Failed to load patient ${error}');
         _errorMessage = 'Falha ao carregar paciente';
     }
 
@@ -313,26 +277,30 @@ class HealthStatusViewModel extends BaseViewModel {
       foodInsecurity: _foodInsecurity,
       deficiencies: _deficiencies
           .where((d) => d.memberId != null && d.deficiencyTypeId != null)
-          .map((d) => DeficiencyDetail(
-                memberId: d.memberId!,
-                deficiencyTypeId: d.deficiencyTypeId!,
-                needsConstantCare: d.needsConstantCare,
-                responsibleCaregiverName:
-                    d.responsibleCaregiverName.isEmpty
-                        ? null
-                        : d.responsibleCaregiverName,
-              ))
+          .map(
+            (d) => DeficiencyDetail(
+              memberId: d.memberId!,
+              deficiencyTypeId: d.deficiencyTypeId!,
+              needsConstantCare: d.needsConstantCare,
+              responsibleCaregiverName: d.responsibleCaregiverName.isEmpty
+                  ? null
+                  : d.responsibleCaregiverName,
+            ),
+          )
           .toList(),
       gestatingMembers: _gestatingMembers
           .where((g) => g.memberId != null)
-          .map((g) => GestatingMemberDetail(
-                memberId: g.memberId!,
-                monthsGestation: g.monthsGestation,
-                startedPrenatalCare: g.startedPrenatalCare,
-              ))
+          .map(
+            (g) => GestatingMemberDetail(
+              memberId: g.memberId!,
+              monthsGestation: g.monthsGestation,
+              startedPrenatalCare: g.startedPrenatalCare,
+            ),
+          )
           .toList(),
-      constantCareNeeds:
-          _constantCareNeeds.where((id) => id.isNotEmpty).toList(),
+      constantCareNeeds: _constantCareNeeds
+          .where((id) => id.isNotEmpty)
+          .toList(),
     );
 
     final PatientId patId;
@@ -372,7 +340,7 @@ class HealthStatusViewModel extends BaseViewModel {
 
   @override
   void onDispose() {
-    _log.info('Disposing HealthStatusViewModel');
+    print('Disposing HealthStatusViewModel');
     loadCommand.dispose();
     saveCommand.dispose();
   }

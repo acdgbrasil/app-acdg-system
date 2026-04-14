@@ -25,8 +25,9 @@ class HomeContent extends StatelessWidget {
   }
 
   String get _roleLabel => switch (user.roles.firstOrNull) {
-    AuthRole.socialWorker => 'Assistente Social',
-    AuthRole.owner => 'Responsavel',
+    AuthRole.superAdmin => 'Super Administrador',
+    AuthRole.worker => 'Assistente Social',
+    AuthRole.owner => 'Responsável',
     AuthRole.admin => 'Administrador',
     null => '',
   };

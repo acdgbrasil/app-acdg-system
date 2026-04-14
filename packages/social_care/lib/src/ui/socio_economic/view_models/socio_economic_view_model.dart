@@ -4,155 +4,189 @@ import 'package:shared/shared.dart';
 import '../../../data/commands/assessment_intents.dart';
 import '../../../logic/use_case/assessment/update_socio_economic_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
+import '../../../logic/use_case/shared/get_lookup_table_use_case.dart';
+import '../../shared/models/benefit_row.dart';
+import '../../shared/models/member_option.dart';
+import '../models/socio_economic_form_state.dart';
 
-class BenefitRow {
-  String benefitName;
-  double amount;
-  String? beneficiaryId;
-  BenefitRow({this.benefitName = '', this.amount = 0, this.beneficiaryId});
-}
-
-class MemberOption {
-  final String id;
-  final String label;
-  const MemberOption({required this.id, required this.label});
-}
-
+/// ViewModel for the Socio-Economic assessment page.
+///
+/// Follows MVVM Gold Standard:
+/// - Commands for all async operations (no manual notifyListeners)
+/// - FormState holds mutable UI state + dirty tracking
+/// - Zero domain serialization — delegates to UseCase/Mapper
 class SocioEconomicViewModel extends BaseViewModel {
   SocioEconomicViewModel({
     required this.patientId,
     required GetPatientUseCase getPatientUseCase,
     required UpdateSocioEconomicUseCase updateSocioEconomicUseCase,
+    required GetLookupTableUseCase getLookupTableUseCase,
   }) : _getPatientUseCase = getPatientUseCase,
-       _updateSocioEconomicUseCase = updateSocioEconomicUseCase {
+       _updateSocioEconomicUseCase = updateSocioEconomicUseCase,
+       _getLookupTableUseCase = getLookupTableUseCase {
     loadCommand = Command0<void>(_load);
     saveCommand = Command0<void>(_save);
+    _loadLookups();
   }
 
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateSocioEconomicUseCase _updateSocioEconomicUseCase;
+  final GetLookupTableUseCase _getLookupTableUseCase;
 
   late final Command0<void> loadCommand;
   late final Command0<void> saveCommand;
 
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
-  String _patientName = '';
-  String get patientName => _patientName;
+  // ── FormState (owns all mutable UI state) ───────────────────
 
-  List<MemberOption> _familyMembers = [];
-  List<MemberOption> get familyMembers => _familyMembers;
+  final formState = SocioEconomicFormState();
 
-  double _totalFamilyIncome = 0;
-  double get totalFamilyIncome => _totalFamilyIncome;
-  double _incomePerCapita = 0;
-  double get incomePerCapita => _incomePerCapita;
-  bool _receivesSocialBenefit = false;
-  bool get receivesSocialBenefit => _receivesSocialBenefit;
-  String _mainSourceOfIncome = '';
-  String get mainSourceOfIncome => _mainSourceOfIncome;
-  bool _hasUnemployed = false;
-  bool get hasUnemployed => _hasUnemployed;
-  List<BenefitRow> _socialBenefits = [];
-  List<BenefitRow> get socialBenefits => _socialBenefits;
+  // ── Lookups ─────────────────────────────────────────────────
 
-  double _origTotalIncome = 0;
-  double _origPerCapita = 0;
-  bool _origReceivesBenefit = false;
-  String _origMainSource = '';
-  bool _origHasUnemployed = false;
-  int _origBenefitsCount = 0;
-  bool _hasLoadedData = false;
+  List<LookupItem> _benefitTypeLookup = [];
+  List<LookupItem> get benefitTypeLookup => _benefitTypeLookup;
 
-  bool get hasData => _hasLoadedData;
+  Future<void> _loadLookups() async {
+    final r = await _getLookupTableUseCase.execute('dominio_tipo_beneficio');
+    if (r case Success(:final value)) {
+      _benefitTypeLookup = value;
+    }
+    notifyListeners();
+  }
 
-  bool get canSave =>
-      _totalFamilyIncome >= 0 &&
-      _incomePerCapita >= 0 &&
-      _incomePerCapita <= _totalFamilyIncome &&
-      _mainSourceOfIncome.trim().isNotEmpty &&
-      (!_receivesSocialBenefit || _socialBenefits.isNotEmpty) &&
-      (_receivesSocialBenefit || _socialBenefits.isEmpty) &&
-      _isDirty;
-
-  bool get _isDirty =>
-      _totalFamilyIncome != _origTotalIncome ||
-      _incomePerCapita != _origPerCapita ||
-      _receivesSocialBenefit != _origReceivesBenefit ||
-      _mainSourceOfIncome != _origMainSource ||
-      _hasUnemployed != _origHasUnemployed ||
-      _socialBenefits.length != _origBenefitsCount;
-
-  void updateTotalIncome(double v) { _totalFamilyIncome = v; notifyListeners(); }
-  void updatePerCapita(double v) { _incomePerCapita = v; notifyListeners(); }
-  void toggleReceivesBenefit() { _receivesSocialBenefit = !_receivesSocialBenefit; notifyListeners(); }
-  void updateMainSource(String v) { _mainSourceOfIncome = v; notifyListeners(); }
-  void toggleHasUnemployed() { _hasUnemployed = !_hasUnemployed; notifyListeners(); }
-
-  void addBenefit() { _socialBenefits = [..._socialBenefits, BenefitRow()]; notifyListeners(); }
-  void removeBenefit(int i) { _socialBenefits = List.of(_socialBenefits)..removeAt(i); notifyListeners(); }
-  void updateBenefitName(int i, String v) { _socialBenefits[i].benefitName = v; notifyListeners(); }
-  void updateBenefitAmount(int i, double v) { _socialBenefits[i].amount = v; notifyListeners(); }
-  void updateBenefitBeneficiary(int i, String v) { _socialBenefits[i].beneficiaryId = v; notifyListeners(); }
+  // ── Load ────────────────────────────────────────────────────
 
   Future<Result<void>> _load() async {
     final result = await _getPatientUseCase.execute(patientId);
+
     switch (result) {
       case Success(:final value):
-        final pd = value.personalData;
-        _patientName = '${pd?.firstName ?? ''} ${pd?.lastName ?? ''}'.trim();
-        final members = <MemberOption>[MemberOption(id: value.personId.value, label: _patientName.isNotEmpty ? _patientName : 'Pessoa de referencia')];
-        for (final m in value.familyMembers) { members.add(MemberOption(id: m.personId.value, label: m.fullName ?? 'Membro')); }
-        _familyMembers = members;
-
-        final ses = value.socioeconomicSituation;
-        if (ses != null) {
-          _totalFamilyIncome = ses.totalFamilyIncome;
-          _incomePerCapita = ses.incomePerCapita;
-          _receivesSocialBenefit = ses.receivesSocialBenefit;
-          _mainSourceOfIncome = ses.mainSourceOfIncome;
-          _hasUnemployed = ses.hasUnemployed;
-          _socialBenefits = ses.socialBenefits.items.map((b) => BenefitRow(benefitName: b.benefitName, amount: b.amount, beneficiaryId: b.beneficiaryId.value)).toList();
-          _saveOriginals();
-        }
-        _hasLoadedData = true;
-      case Failure(:final error):
-        _errorMessage = 'Falha ao carregar paciente';
+        _populateFormState(value);
+      case Failure():
+        formState.patientName = '';
     }
-    notifyListeners();
+
     return const Success(null);
   }
 
-  Future<Result<void>> _save() async {
-    if (!canSave) return const Success(null);
-    final PatientId patId;
-    switch (PatientId.create(patientId)) { case Success(:final value): patId = value; case Failure(:final error): return Failure(error); }
+  void _populateFormState(Patient patient) {
+    final pd = patient.personalData;
+    formState.patientName =
+        '${pd?.firstName ?? ''} ${pd?.lastName ?? ''}'.trim();
 
-    final benefits = <SocialBenefit>[];
-    for (final b in _socialBenefits) {
-      if (b.benefitName.isEmpty || b.beneficiaryId == null) continue;
-      final PersonId bid;
-      switch (PersonId.create(b.beneficiaryId!)) { case Success(:final value): bid = value; case Failure(:final error): return Failure(error); }
-      // benefitTypeId defaults to a placeholder lookup — the backend resolves it
-      final LookupId typeId; switch (LookupId.create('00000000-0000-0000-0000-000000000000')) { case Success(:final value): typeId = value; case Failure(:final error): return Failure(error); }
-      final sbResult = SocialBenefit.create(benefitName: b.benefitName, benefitTypeId: typeId, amount: b.amount, beneficiaryId: bid);
-      if (sbResult case Success(:final value)) benefits.add(value);
-      if (sbResult case Failure(:final error)) return Failure(error);
+    formState.familyMembers = [
+      MemberOption(
+        id: patient.personId.value,
+        label: formState.patientName.isNotEmpty
+            ? formState.patientName
+            : 'Pessoa de referencia',
+      ),
+      ...patient.familyMembers.map(
+        (m) => MemberOption(
+          id: m.personId.value,
+          label: m.fullName ?? 'Membro',
+        ),
+      ),
+    ];
+
+    final ses = patient.socioeconomicSituation;
+    if (ses != null) {
+      formState
+        ..totalFamilyIncome = ses.totalFamilyIncome
+        ..receivesSocialBenefit = ses.receivesSocialBenefit
+        ..mainSourceOfIncome = ses.mainSourceOfIncome
+        ..hasUnemployed = ses.hasUnemployed
+        ..socialBenefits = ses.socialBenefits.items
+            .map(
+              (b) => BenefitRow(
+                benefitName: b.benefitName,
+                amount: b.amount,
+                beneficiaryId: b.beneficiaryId.value,
+                benefitTypeId: b.benefitTypeId.value.toUpperCase(),
+              ),
+            )
+            .toList()
+        ..saveOriginals();
+    }
+  }
+
+  // ── Save ────────────────────────────────────────────────────
+
+  Future<Result<void>> _save() async {
+    if (!formState.canSave) {
+      return const Success(null);
     }
 
-    final intent = UpdateSocioEconomicIntent(patientId: patId, totalFamilyIncome: _totalFamilyIncome, incomePerCapita: _incomePerCapita, receivesSocialBenefit: _receivesSocialBenefit, socialBenefits: benefits, mainSourceOfIncome: _mainSourceOfIncome.trim(), hasUnemployed: _hasUnemployed);
+    final PatientId patId;
+    switch (PatientId.create(patientId)) {
+      case Success(:final value):
+        patId = value;
+      case Failure(:final error):
+        return Failure(error);
+    }
+
+    // Build domain benefits from form rows
+    final benefits = <SocialBenefit>[];
+    for (final b in formState.socialBenefits) {
+      if (b.benefitName.isEmpty ||
+          b.beneficiaryId == null ||
+          b.benefitTypeId == null) {
+        continue;
+      }
+
+      final PersonId bid;
+      switch (PersonId.create(b.beneficiaryId!)) {
+        case Success(:final value):
+          bid = value;
+        case Failure(:final error):
+          return Failure(error);
+      }
+
+      final LookupId typeId;
+      switch (LookupId.create(b.benefitTypeId!)) {
+        case Success(:final value):
+          typeId = value;
+        case Failure(:final error):
+          return Failure(error);
+      }
+
+      final sbResult = SocialBenefit.create(
+        benefitName: b.benefitName,
+        benefitTypeId: typeId,
+        amount: b.amount,
+        beneficiaryId: bid,
+      );
+
+      switch (sbResult) {
+        case Success(:final value):
+          benefits.add(value);
+        case Failure(:final error):
+          return Failure(error);
+      }
+    }
+
+    final intent = UpdateSocioEconomicIntent(
+      patientId: patId,
+      totalFamilyIncome: formState.totalFamilyIncome,
+      incomePerCapita: formState.incomePerCapita,
+      receivesSocialBenefit: formState.receivesSocialBenefit,
+      socialBenefits: benefits,
+      mainSourceOfIncome: formState.mainSourceOfIncome.trim(),
+      hasUnemployed: formState.hasUnemployed,
+    );
+
     final result = await _updateSocioEconomicUseCase.execute(intent);
-    if (result.isSuccess) { _saveOriginals(); notifyListeners(); }
+
+    if (result.isSuccess) {
+      formState.saveOriginals();
+    }
+
     return result;
   }
 
-  void _saveOriginals() {
-    _origTotalIncome = _totalFamilyIncome; _origPerCapita = _incomePerCapita;
-    _origReceivesBenefit = _receivesSocialBenefit; _origMainSource = _mainSourceOfIncome;
-    _origHasUnemployed = _hasUnemployed; _origBenefitsCount = _socialBenefits.length;
-  }
-
   @override
-  void onDispose() { loadCommand.dispose(); saveCommand.dispose(); }
+  void onDispose() {
+    loadCommand.dispose();
+    saveCommand.dispose();
+  }
 }

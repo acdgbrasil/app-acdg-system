@@ -23,16 +23,18 @@ class _FichaRowState extends State<FichaRow> {
 
   @override
   Widget build(BuildContext context) {
+    final disabled = widget.ficha.disabled;
+
     return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
+      onEnter: disabled ? null : (_) => setState(() => _hovered = true),
+      onExit: disabled ? null : (_) => setState(() => _hovered = false),
+      cursor: disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
+        onTap: disabled ? null : widget.onTap,
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 150),
-          opacity: _hovered ? 1.0 : (widget.ficha.filled ? 0.9 : 0.5),
+          opacity: disabled ? 0.35 : (_hovered ? 1.0 : (widget.ficha.filled ? 0.9 : 0.5)),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 18),
             decoration: BoxDecoration(
@@ -57,11 +59,22 @@ class _FichaRowState extends State<FichaRow> {
                     ),
                   ),
                 ),
-                Icon(
-                  widget.ficha.filled ? Icons.chevron_right : Icons.add,
-                  size: 20,
-                  color: AppColors.background.withValues(alpha: 0.6),
-                ),
+                if (disabled)
+                  const Text(
+                    'Em breve...',
+                    style: TextStyle(
+                      fontFamily: 'Playfair Display',
+                      fontStyle: FontStyle.italic,
+                      fontSize: 13,
+                      color: AppColors.background,
+                    ),
+                  )
+                else
+                  Icon(
+                    widget.ficha.filled ? Icons.chevron_right : Icons.add,
+                    size: 20,
+                    color: AppColors.background.withValues(alpha: 0.6),
+                  ),
               ],
             ),
           ),

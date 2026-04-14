@@ -1,6 +1,9 @@
-import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 
+/// The ACDG brand logo.
+///
+/// Renders the PNG logo asset at the specified size.
+/// Works on both web (WASM) and desktop (native).
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 80});
 
@@ -8,14 +11,11 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Image.asset(
+      'assets/images/acdg_logo.png',
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(16), // Múltiplo de 8
-      ),
-      child: Icon(Icons.favorite, color: AppColors.textOnDark, size: size / 2),
+      fit: BoxFit.contain,
     );
   }
 }

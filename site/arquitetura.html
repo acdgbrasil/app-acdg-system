@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitetura — Conecta Raros</title>
+    <meta name="description" content="Arquitetura técnica do Conecta Raros: ecossistema open source para gestão de assistência social a pacientes com doenças genéticas raras. Flutter, Swift/Vapor, Edge Computing, CQRS e Event Sourcing.">
+    <link rel="canonical" href="https://conectararos.org.br/arquitetura">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="Conecta Raros">
+    <meta property="og:title" content="Arquitetura — Conecta Raros">
+    <meta property="og:description" content="Ecossistema open source projetado para cuidado social de pacientes com doenças genéticas raras. Conheça as decisões arquiteturais, infraestrutura edge e stack tecnológica.">
+    <meta property="og:url" content="https://conectararos.org.br/arquitetura">
+    <meta property="og:image" content="https://conectararos.org.br/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Arquitetura — Conecta Raros">
+    <meta name="twitter:description" content="Ecossistema open source projetado para cuidado social de pacientes com doenças genéticas raras.">
+    <meta name="twitter:image" content="https://conectararos.org.br/assets/og-image.png">
+
+    <!-- Extra SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="ACDG Brasil — Associação Brasileira de Profissionais Atuantes em Doenças Genéticas">
+    <meta name="theme-color" content="#E65C3B">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Structured Data: TechArticle -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "Arquitetura do Conecta Raros",
+        "description": "Documentação técnica da arquitetura do ecossistema Conecta Raros: Flutter, Swift/Vapor, Edge Computing, CQRS, Event Sourcing e infraestrutura K3s.",
+        "author": {
+            "@type": "Organization",
+            "name": "ACDG Brasil",
+            "url": "https://conectararos.org.br"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Conecta Raros"
+        },
+        "inLanguage": "pt-BR",
+        "about": {
+            "@type": "SoftwareApplication",
+            "name": "Conecta Raros",
+            "applicationCategory": "HealthApplication",
+            "operatingSystem": "Web, macOS, Windows, Linux"
+        }
+    }
+    </script>
+
+    <style>
+        /* ============================================================
+           ARCHITECTURE PAGE — SCOPED STYLES
+           ============================================================ */
+
+        /* Hero (simpler than homepage — no parallax/decorative elements) */
+        .arch-hero {
+            position: relative;
+            padding: 180px 0 100px;
+            background-color: var(--bg);
+            overflow: hidden;
+        }
+
+        .arch-hero-number {
+            position: absolute;
+            font-size: clamp(280px, 35vw, 520px);
+            font-weight: 800;
+            color: var(--text);
+            opacity: 0.03;
+            letter-spacing: -0.06em;
+            line-height: 1;
+            pointer-events: none;
+            user-select: none;
+            bottom: -40px;
+            right: -40px;
+            z-index: 0;
+        }
+
+        .arch-hero-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .arch-hero-title {
+            font-family: var(--font-sans);
+            font-size: clamp(36px, 5.5vw, 96px);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+            color: var(--text);
+            text-transform: uppercase;
+            max-width: 900px;
+            margin-bottom: 32px;
+        }
+
+        .arch-hero-subtitle {
+            font-size: var(--size-body-lg);
+            color: var(--muted);
+            line-height: 1.55;
+            max-width: 620px;
+            font-weight: 400;
+        }
+
+        /* Origin section */
+        .arch-origin {
+            position: relative;
+            padding: var(--space-section) 0;
+            background-color: var(--bg);
+            border-top: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .arch-origin-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0;
+            align-items: stretch;
+            border: 1.5px solid var(--text);
+        }
+
+        .arch-origin-content {
+            flex: 1 1 500px;
+            padding: 72px 80px 72px 56px;
+            border-right: 1.5px solid var(--text);
+        }
+
+        .arch-origin-content p {
+            font-size: 19px;
+            line-height: 1.55;
+            color: var(--text);
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .arch-origin-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .arch-origin-highlight {
+            flex: 1 1 340px;
+            background: var(--accent);
+            padding: 72px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .arch-origin-highlight::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .arch-origin-highlight h3 {
+            font-size: clamp(32px, 3.8vw, 56px);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1.05;
+            color: var(--dark);
+            margin-bottom: 28px;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+        }
+
+        .arch-origin-highlight p {
+            font-size: 18px;
+            line-height: 1.45;
+            color: rgba(13, 13, 11, 0.75);
+            font-weight: 500;
+            max-width: 360px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Architecture diagram */
+        .arch-diagram-section {
+            background: var(--dark);
+            position: relative;
+            overflow: hidden;
+            padding: var(--space-section) 0;
+        }
+
+        .arch-diagram-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 48px;
+        }
+
+        .arch-diagram {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            width: 100%;
+            max-width: 900px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .arch-box {
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            padding: 32px 28px;
+            text-align: center;
+            min-width: 200px;
+            flex: 1;
+            max-width: 260px;
+            transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
+        }
+
+        .arch-box:hover {
+            border-color: var(--accent);
+            background: rgba(230, 92, 59, 0.06);
+        }
+
+        .arch-box-name {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #F5F4F0;
+            margin-bottom: 8px;
+        }
+
+        .arch-box-tech {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .arch-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .arch-arrow-down {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+        }
+
+        .arch-box-accent {
+            border-color: var(--accent);
+            background: rgba(230, 92, 59, 0.08);
+        }
+
+        .arch-box-accent .arch-box-name {
+            color: var(--accent);
+        }
+
+        .arch-infra-row {
+            display: flex;
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.06);
+            width: 100%;
+            max-width: 900px;
+            flex-wrap: wrap;
+        }
+
+        .arch-infra-item {
+            flex: 1;
+            min-width: 140px;
+            background: var(--dark-2);
+            padding: 24px 20px;
+            text-align: center;
+            transition: background var(--dur-fast) ease;
+        }
+
+        .arch-infra-item:hover {
+            background: #1A1A18;
+        }
+
+        .arch-infra-icon {
+            font-size: 24px;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .arch-infra-name {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .arch-infra-desc {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        /* Services grid */
+        .arch-services {
+            position: relative;
+            padding: var(--space-section) 0;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .arch-services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .arch-service-card {
+            background: var(--bg);
+            padding: 48px 36px;
+            transition: background var(--dur-fast) ease, transform var(--dur-medium) var(--ease-expo);
+            position: relative;
+        }
+
+        .arch-service-card:hover {
+            background: var(--cream);
+            transform: translateY(-3px);
+        }
+
+        .arch-service-icon {
+            width: 48px;
+            height: 48px;
+            border: 1.5px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 22px;
+            color: var(--text);
+            transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+        }
+
+        .arch-service-card:hover .arch-service-icon {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .arch-service-name {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .arch-service-stack {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .arch-service-desc {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.55;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .arch-service-status {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .arch-status-prod {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10B981;
+        }
+
+        .arch-status-dev {
+            background: rgba(230, 92, 59, 0.12);
+            color: var(--accent);
+        }
+
+        .arch-status-planned {
+            background: rgba(122, 120, 114, 0.12);
+            color: var(--muted);
+        }
+
+        .arch-status-contracts {
+            background: rgba(59, 130, 246, 0.12);
+            color: #3B82F6;
+        }
+
+        /* ADR cards */
+        .arch-adr-section {
+            position: relative;
+            padding: var(--space-section) 0;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .arch-adr-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .arch-adr-card {
+            background: var(--bg);
+            padding: 48px 40px;
+            transition: background var(--dur-fast) ease;
+        }
+
+        .arch-adr-card:hover {
+            background: var(--cream);
+        }
+
+        .arch-adr-card:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+        }
+
+        .arch-adr-number {
+            font-size: var(--size-label);
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--muted-light);
+            margin-bottom: 16px;
+        }
+
+        .arch-adr-question {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .arch-adr-answer {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        /* Infra section */
+        .arch-edge-section {
+            background: var(--dark);
+            position: relative;
+            overflow: hidden;
+            padding: var(--space-section) 0;
+        }
+
+        .arch-edge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .arch-edge-item {
+            background: var(--dark-2);
+            padding: 40px 32px;
+            transition: background var(--dur-fast) ease;
+        }
+
+        .arch-edge-item:hover {
+            background: #1A1A18;
+        }
+
+        .arch-edge-icon {
+            font-size: 28px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .arch-edge-name {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #F5F4F0;
+            margin-bottom: 10px;
+        }
+
+        .arch-edge-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            line-height: 1.55;
+            font-weight: 400;
+        }
+
+        /* Security section */
+        .arch-security {
+            position: relative;
+            padding: var(--space-section) 0;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .arch-security-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .arch-security-item {
+            background: var(--bg);
+            padding: 36px 32px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            transition: background var(--dur-fast) ease;
+        }
+
+        .arch-security-item:hover {
+            background: var(--cream);
+        }
+
+        .arch-security-icon {
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--text);
+            flex-shrink: 0;
+            transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+        }
+
+        .arch-security-item:hover .arch-security-icon {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .arch-security-name {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .arch-security-desc {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        /* Open source section */
+        .arch-oss {
+            position: relative;
+            padding: var(--space-section) 0;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .arch-oss-inner {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0;
+            align-items: stretch;
+            border: 1.5px solid var(--text);
+        }
+
+        .arch-oss-content {
+            flex: 1 1 500px;
+            padding: 72px 80px 72px 56px;
+            border-right: 1.5px solid var(--text);
+        }
+
+        .arch-oss-content p {
+            font-size: 19px;
+            line-height: 1.55;
+            color: var(--text);
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .arch-oss-visual {
+            flex: 1 1 340px;
+            background: var(--dark);
+            padding: 72px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 360px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .arch-oss-github {
+            font-size: 64px;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 32px;
+        }
+
+        .arch-oss-url {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            transition: color var(--dur-fast) ease;
+        }
+
+        .arch-oss-url:hover {
+            color: var(--accent);
+        }
+
+        /* Responsive overrides */
+        @media (max-width: 1024px) {
+            .arch-services-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .arch-hero {
+                padding: 140px 0 60px;
+            }
+
+            .arch-origin-grid {
+                flex-direction: column;
+            }
+
+            .arch-origin-content {
+                border-right: none;
+                border-bottom: 1.5px solid var(--text);
+                padding: 48px 32px;
+            }
+
+            .arch-origin-highlight {
+                min-height: 300px;
+                padding: 48px 32px;
+            }
+
+            .arch-diagram {
+                flex-direction: column;
+            }
+
+            .arch-arrow {
+                transform: rotate(90deg);
+                width: auto;
+                height: 48px;
+            }
+
+            .arch-box {
+                min-width: 100%;
+                max-width: 100%;
+            }
+
+            .arch-services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-adr-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-adr-card:last-child:nth-child(odd) {
+                grid-column: auto;
+            }
+
+            .arch-oss-inner {
+                flex-direction: column;
+            }
+
+            .arch-oss-content {
+                border-right: none;
+                border-bottom: 1.5px solid var(--text);
+                padding: 48px 32px;
+            }
+
+            .arch-oss-visual {
+                min-height: 240px;
+                padding: 48px 32px;
+            }
+        }
+    </style>
+</head>
+
+<body class="theme-light">
+
+    <!-- ═══════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════ -->
+    <header class="header" id="site-header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">Conecta Raros</a>
+            <nav class="nav">
+                <a href="index.html#sobre" class="nav-link">Sobre</a>
+                <a href="index.html#publico" class="nav-link">Benefícios</a>
+                <a href="arquitetura.html" class="nav-link" style="opacity:1; color:var(--accent);">Arquitetura</a>
+                <a href="contato.html" class="nav-link">Contato</a>
+            </nav>
+            <div class="header-actions">
+                <a href="dashboard.html" class="nav-link" style="margin-right: 8px; font-weight: 500; opacity: 0.65; font-size:13px;">Dashboard</a>
+                <a href="/app/" class="nav-link" style="margin-right: 8px; font-weight: 500; font-size:13px;">Acessar Sistema</a>
+                <a href="contato.html" class="btn btn-primary">Entrar em Contato</a>
+            </div>
+            <button class="menu-toggle" id="menu-toggle" aria-label="Menu" aria-expanded="false">
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+        <nav class="mobile-menu-nav">
+            <a href="index.html#sobre" class="mobile-menu-link">Sobre</a>
+            <a href="index.html#publico" class="mobile-menu-link">Benefícios</a>
+            <a href="arquitetura.html" class="mobile-menu-link">Arquitetura</a>
+            <a href="contato.html" class="mobile-menu-link">Contato</a>
+            <a href="dashboard.html" class="mobile-menu-link mobile-menu-link-muted">Dashboard</a>
+        </nav>
+        <div class="mobile-menu-footer">
+            <a href="contato.html" class="btn btn-primary" style="width:100%; justify-content:center;">Entrar em Contato</a>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         HERO — Section 01
+    ═══════════════════════════════════════ -->
+    <section class="arch-hero">
+        <div class="arch-hero-number" aria-hidden="true">AR</div>
+        <div class="container arch-hero-inner">
+            <p class="eyebrow" style="opacity:0; animation: heroFadeUp 0.7s var(--ease-expo) 0.2s both;">Documentação Técnica</p>
+            <h1 class="arch-hero-title" style="opacity:0; animation: heroFadeUp 1.5s var(--ease-expo) 0.35s both;">
+                Arquitetura do<br><em class="text-accent">Conecta Raros</em>
+            </h1>
+            <p class="arch-hero-subtitle" style="opacity:0; animation: heroFadeUp 0.9s var(--ease-expo) 0.6s both;">
+                Um ecossistema open source projetado para cuidado social de pacientes com doenças genéticas raras.
+            </p>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         ORIGEM — Section 02
+    ═══════════════════════════════════════ -->
+    <section class="arch-origin">
+        <div class="section-number" aria-hidden="true" style="top:-5%; left:-2%;">02</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="arch-origin-grid">
+                <div class="arch-origin-content reveal-up">
+                    <p class="eyebrow">A Origem</p>
+                    <h2 class="section-title" style="margin-bottom:32px;">De um TCC<br>à Produção.</h2>
+                    <p>
+                        O projeto nasceu como um Trabalho de Conclusão de Curso (TCC) sobre <strong>Edge Cloud Computing</strong>. A tese explorou como construir uma nuvem privada usando K3s, GitOps com FluxCD e Tailscale para conectividade mesh.
+                    </p>
+                    <p>
+                        Mas a motivação real sempre foi a mesma: <strong style="color:var(--accent);">13 milhões de brasileiros afetados por doenças raras, sem nenhum sistema centralizado de dados para ajudá-los.</strong>
+                    </p>
+                    <p>
+                        A tese se tornou a fundação de um sistema real de produção, agora utilizado pela ACDG para gestão de assistência social a pacientes com doenças genéticas raras.
+                    </p>
+                </div>
+                <div class="arch-origin-highlight reveal-up delay-2">
+                    <h3>Da teoria<br>à prática.</h3>
+                    <p>Um TCC que virou infraestrutura real. Um servidor Xeon e Raspberry Pis que viraram uma edge cloud privada rodando Kubernetes em produção.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         VISÃO GERAL DA ARQUITETURA — Section 03
+    ═══════════════════════════════════════ -->
+    <section class="arch-diagram-section">
+        <div aria-hidden="true" style="position:absolute; top:-5%; right:-4%; font-size:clamp(200px,28vw,480px); font-weight:800; color:rgba(255,255,255,0.02); line-height:0.8; pointer-events:none; z-index:0; letter-spacing:-0.06em; user-select:none;">03</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="reveal-up" style="margin-bottom:64px;">
+                <p class="eyebrow-light">Visão Geral</p>
+                <h2 class="dp-title">Fluxo de<br>dados.</h2>
+                <p class="dp-subtitle">Do aplicativo Flutter ao banco de dados PostgreSQL, passando pelo BFF e pela API Social Care.</p>
+            </div>
+
+            <div class="arch-diagram-wrap reveal-up delay-1">
+                <div class="arch-diagram">
+                    <div class="arch-box">
+                        <div style="font-size:28px; color:var(--accent); margin-bottom:12px;"><i class="ph ph-device-mobile"></i></div>
+                        <div class="arch-box-name">Flutter App</div>
+                        <div class="arch-box-tech">Web (WASM) + Desktop Nativo</div>
+                    </div>
+
+                    <div class="arch-arrow"><i class="ph ph-arrow-right"></i></div>
+
+                    <div class="arch-box">
+                        <div style="font-size:28px; color:var(--accent); margin-bottom:12px;"><i class="ph ph-plugs-connected"></i></div>
+                        <div class="arch-box-name">BFF</div>
+                        <div class="arch-box-tech">Dart AOT (shelf / in-process)</div>
+                    </div>
+
+                    <div class="arch-arrow"><i class="ph ph-arrow-right"></i></div>
+
+                    <div class="arch-box arch-box-accent">
+                        <div style="font-size:28px; color:var(--accent); margin-bottom:12px;"><i class="ph ph-heart"></i></div>
+                        <div class="arch-box-name">Social Care API</div>
+                        <div class="arch-box-tech">Swift 6.2 + Vapor 4</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow-down"><i class="ph ph-arrow-down" style="font-size:24px;"></i></div>
+
+                <div class="arch-diagram" style="max-width:260px;">
+                    <div class="arch-box" style="width:100%; max-width:100%;">
+                        <div style="font-size:28px; color:var(--accent); margin-bottom:12px;"><i class="ph ph-database"></i></div>
+                        <div class="arch-box-name">PostgreSQL</div>
+                        <div class="arch-box-tech">Persistência + Event Sourcing</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:48px; width:100%;">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <span style="font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.3); font-weight:700;">INFRAESTRUTURA DE SUPORTE</span>
+                    </div>
+                    <div class="arch-infra-row">
+                        <div class="arch-infra-item">
+                            <div class="arch-infra-icon"><i class="ph ph-shield-check"></i></div>
+                            <div class="arch-infra-name">Zitadel</div>
+                            <div class="arch-infra-desc">Auth OIDC</div>
+                        </div>
+                        <div class="arch-infra-item">
+                            <div class="arch-infra-icon"><i class="ph ph-globe"></i></div>
+                            <div class="arch-infra-name">Caddy</div>
+                            <div class="arch-infra-desc">Reverse Proxy</div>
+                        </div>
+                        <div class="arch-infra-item">
+                            <div class="arch-infra-icon"><i class="ph ph-cube"></i></div>
+                            <div class="arch-infra-name">K3s</div>
+                            <div class="arch-infra-desc">Kubernetes</div>
+                        </div>
+                        <div class="arch-infra-item">
+                            <div class="arch-infra-icon"><i class="ph ph-git-branch"></i></div>
+                            <div class="arch-infra-name">FluxCD</div>
+                            <div class="arch-infra-desc">GitOps</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         SERVIÇOS — Section 04
+    ═══════════════════════════════════════ -->
+    <section class="arch-services">
+        <div class="section-number" aria-hidden="true" style="top:0; right:-8%; opacity:0.025;">04</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="reveal-up" style="margin-bottom:64px;">
+                <p class="eyebrow">Ecossistema</p>
+                <h2 class="section-title" style="max-width:700px;">Os serviços que compõem o Conecta Raros.</h2>
+            </div>
+
+            <div class="arch-services-grid reveal-up delay-1">
+
+                <!-- Social Care API -->
+                <div class="arch-service-card">
+                    <div class="arch-service-icon"><i class="ph ph-heartbeat"></i></div>
+                    <div class="arch-service-name">Social Care API</div>
+                    <div class="arch-service-stack">Swift 6.2 + Vapor 4 + PostgreSQL</div>
+                    <p class="arch-service-desc">Backend principal. Clean Architecture com DDD, CQRS e Event Sourcing. 17 use cases, 24+ value objects. 95% de cobertura de testes.</p>
+                    <span class="arch-service-status arch-status-prod">Produção</span>
+                </div>
+
+                <!-- Frontend -->
+                <div class="arch-service-card">
+                    <div class="arch-service-icon"><i class="ph ph-monitor"></i></div>
+                    <div class="arch-service-name">Frontend</div>
+                    <div class="arch-service-stack">Flutter 3.x (WASM + Desktop)</div>
+                    <p class="arch-service-desc">Web com WASM e desktop nativo. MVVM com UseCase pattern. Offline-first com sync reativo. Atomic Design para componentização.</p>
+                    <span class="arch-service-status arch-status-dev">Desenvolvimento Ativo</span>
+                </div>
+
+                <!-- BFF -->
+                <div class="arch-service-card">
+                    <div class="arch-service-icon"><i class="ph ph-plugs-connected"></i></div>
+                    <div class="arch-service-name">BFF</div>
+                    <div class="arch-service-stack">Dart AOT (shelf + in-process)</div>
+                    <p class="arch-service-desc">Desktop: in-process sem HTTP. Web: shelf server com Split-Token Pattern. Proxy seguro entre Flutter e API, com validação de contratos.</p>
+                    <span class="arch-service-status arch-status-prod">Produção</span>
+                </div>
+
+                <!-- People Context -->
+                <div class="arch-service-card">
+                    <div class="arch-service-icon"><i class="ph ph-users-three"></i></div>
+                    <div class="arch-service-name">People Context</div>
+                    <div class="arch-service-stack">19 Schemas Definidos</div>
+                    <p class="arch-service-desc">Serviço de identidade. Gestão canônica de pessoas (PersonId) com deduplicação cross-service para evitar cadastros duplicados.</p>
+                    <span class="arch-service-status arch-status-contracts">Contratos Prontos</span>
+                </div>
+
+                <!-- Analysis BI -->
+                <div class="arch-service-card">
+                    <div class="arch-service-icon"><i class="ph ph-chart-line-up"></i></div>
+                    <div class="arch-service-name">Analysis BI</div>
+                    <div class="arch-service-stack">23 Schemas</div>
+                    <p class="arch-service-desc">Business intelligence para saúde pública. Dados agregados e anonimizados para advocacy, pesquisa acadêmica e políticas públicas.</p>
+                    <span class="arch-service-status arch-status-planned">Planejado</span>
+                </div>
+
+                <!-- Queue Manager -->
+                <div class="arch-service-card">
+                    <div class="arch-service-icon"><i class="ph ph-queue"></i></div>
+                    <div class="arch-service-name">Queue Manager</div>
+                    <div class="arch-service-stack">59 Schemas</div>
+                    <p class="arch-service-desc">Gestão de filas e triagem de atendimentos. Coordenação de fluxo entre profissionais de saúde e assistentes sociais.</p>
+                    <span class="arch-service-status arch-status-planned">Planejado</span>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         DECISÕES ARQUITETURAIS — Section 05
+    ═══════════════════════════════════════ -->
+    <section class="arch-adr-section">
+        <div class="section-number" aria-hidden="true" style="top:-5%; left:-2%;">05</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="reveal-up" style="margin-bottom:64px;">
+                <p class="eyebrow">Decisões Arquiteturais</p>
+                <h2 class="section-title" style="max-width:700px;">Cada escolha tem um motivo.</h2>
+            </div>
+
+            <div class="arch-adr-grid reveal-up delay-1">
+
+                <div class="arch-adr-card">
+                    <div class="arch-adr-number">ADR 01</div>
+                    <h3 class="arch-adr-question">Por que Swift no backend?</h3>
+                    <p class="arch-adr-answer">Strict concurrency nativa com actors e Sendable. Type safety extrema que previne bugs em tempo de compilação. Performance próxima de C. Não é o mainstream, mas é a escolha certa para dados sensíveis de saúde onde cada byte de memória e cada thread importam.</p>
+                </div>
+
+                <div class="arch-adr-card">
+                    <div class="arch-adr-number">ADR 02</div>
+                    <h3 class="arch-adr-question">Por que Flutter e não React?</h3>
+                    <p class="arch-adr-answer">Um único codebase para Web, Desktop e Mobile. Offline-first nativo com Drift para storage local. Sem dependência de browser para desktop — nada de Electron consumindo 500MB de RAM. Web compila para WASM com performance nativa.</p>
+                </div>
+
+                <div class="arch-adr-card">
+                    <div class="arch-adr-number">ADR 03</div>
+                    <h3 class="arch-adr-question">Por que Edge Computing?</h3>
+                    <p class="arch-adr-answer">A ACDG opera em regiões com infraestrutura limitada. K3s rodando em Raspberry Pi permite processamento local com custo mínimo. Tailscale mesh VPN conecta todos os nós com segurança WireGuard, sem expor portas na internet.</p>
+                </div>
+
+                <div class="arch-adr-card">
+                    <div class="arch-adr-number">ADR 04</div>
+                    <h3 class="arch-adr-question">Por que CQRS + Event Sourcing?</h3>
+                    <p class="arch-adr-answer">Histórico social é sagrado — nunca deletamos dados de pacientes. Event Sourcing mantém toda a história de mudanças como uma sequência de eventos imutáveis. CQRS separa leitura de escrita para performance, com Transactional Outbox para consistência.</p>
+                </div>
+
+                <div class="arch-adr-card">
+                    <div class="arch-adr-number">ADR 05</div>
+                    <h3 class="arch-adr-question">Por que OpenAPI + AsyncAPI?</h3>
+                    <p class="arch-adr-answer">Contratos primeiro, código depois. Todos os serviços definem seus contratos ANTES da implementação. São aproximadamente 163 schemas YAML que cobrem todo o domínio de doenças raras — desde cadastro até triagem e proteção social.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         INFRAESTRUTURA — Section 06
+    ═══════════════════════════════════════ -->
+    <section class="arch-edge-section">
+        <div aria-hidden="true" style="position:absolute; top:-5%; right:-4%; font-size:clamp(200px,28vw,480px); font-weight:800; color:rgba(255,255,255,0.02); line-height:0.8; pointer-events:none; z-index:0; letter-spacing:-0.06em; user-select:none;">06</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="reveal-up" style="margin-bottom:64px;">
+                <p class="eyebrow-light">Infraestrutura</p>
+                <h2 class="dp-title">Edge Cloud<br>Privada.</h2>
+                <p class="dp-subtitle">Uma nuvem privada construída com hardware acessível e software open source. Sem vendor lock-in, sem custos recorrentes de cloud.</p>
+            </div>
+
+            <div class="arch-edge-grid reveal-up delay-1">
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-cloud"></i></div>
+                    <div class="arch-edge-name">VPS Gateway</div>
+                    <p class="arch-edge-desc">Servidor na internet pública com Caddy para HTTPS automático. Ponto de entrada para todo o tráfego externo.</p>
+                </div>
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-lock"></i></div>
+                    <div class="arch-edge-name">Tailscale Mesh</div>
+                    <p class="arch-edge-desc">VPN mesh baseada em WireGuard que conecta todos os nós com segurança, sem expor portas na internet pública.</p>
+                </div>
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-cpu"></i></div>
+                    <div class="arch-edge-name">Xeon Master</div>
+                    <p class="arch-edge-desc">Servidor Xeon como master node K3s. Control plane do cluster Kubernetes que orquestra todos os workloads.</p>
+                </div>
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-raspberry-pi"></i></div>
+                    <div class="arch-edge-name">Raspberry Pi Workers</div>
+                    <p class="arch-edge-desc">Raspberry Pis como worker nodes na edge. Processamento distribuído com custo mínimo e consumo baixo de energia.</p>
+                </div>
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-git-branch"></i></div>
+                    <div class="arch-edge-name">FluxCD GitOps</div>
+                    <p class="arch-edge-desc">Deploy pull-based, não push. O cluster sincroniza automaticamente com o repositório Git. Rollback é um git revert.</p>
+                </div>
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-key"></i></div>
+                    <div class="arch-edge-name">Bitwarden Secrets</div>
+                    <p class="arch-edge-desc">Zero segredos no Git. Bitwarden Secrets Manager injeta credenciais diretamente nos pods do Kubernetes.</p>
+                </div>
+
+                <div class="arch-edge-item">
+                    <div class="arch-edge-icon"><i class="ph ph-fingerprint"></i></div>
+                    <div class="arch-edge-name">Zitadel Self-Hosted</div>
+                    <p class="arch-edge-desc">Identity Provider OIDC self-hosted. Controle total sobre autenticação e autorização, sem depender de SaaS externo.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         SEGURANÇA — Section 07
+    ═══════════════════════════════════════ -->
+    <section class="arch-security">
+        <div class="section-number" aria-hidden="true" style="top:-5%; left:-2%;">07</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="credibility-header reveal-up">
+                <p class="eyebrow" style="justify-content:center;">Segurança</p>
+                <h2 class="section-title" style="font-size:clamp(28px,3.5vw,52px); margin-bottom:20px;">Privacidade como<br>princípio fundamental.</h2>
+                <p class="credibility-subtitle">Dados de pacientes com doenças raras exigem o mais alto nível de proteção. Cada camada do sistema foi projetada com segurança desde o início.</p>
+            </div>
+
+            <div class="arch-security-grid reveal-up delay-1">
+
+                <div class="arch-security-item">
+                    <div class="arch-security-icon"><i class="ph ph-scales"></i></div>
+                    <div>
+                        <div class="arch-security-name">LGPD Nativa</div>
+                        <p class="arch-security-desc">Conformidade com a Lei Geral de Proteção de Dados desde a concepção. Privacy by Design em todas as camadas.</p>
+                    </div>
+                </div>
+
+                <div class="arch-security-item">
+                    <div class="arch-security-icon"><i class="ph ph-split-horizontal"></i></div>
+                    <div>
+                        <div class="arch-security-name">Split-Token Pattern</div>
+                        <p class="arch-security-desc">Access token em memória Dart, refresh token em cookie HttpOnly. Nenhum token acessível por JavaScript no browser.</p>
+                    </div>
+                </div>
+
+                <div class="arch-security-item">
+                    <div class="arch-security-icon"><i class="ph ph-users"></i></div>
+                    <div>
+                        <div class="arch-security-name">RBAC</div>
+                        <p class="arch-security-desc">Três papéis definidos: assistente social (CRUD), responsável legal (leitura) e administrador (leitura + gestão).</p>
+                    </div>
+                </div>
+
+                <div class="arch-security-item">
+                    <div class="arch-security-icon"><i class="ph ph-note-pencil"></i></div>
+                    <div>
+                        <div class="arch-security-name">Audit Trail</div>
+                        <p class="arch-security-desc">Header X-Actor-Id obrigatório em toda mutação. Rastreabilidade completa de quem alterou o quê e quando.</p>
+                    </div>
+                </div>
+
+                <div class="arch-security-item">
+                    <div class="arch-security-icon"><i class="ph ph-shield-checkered"></i></div>
+                    <div>
+                        <div class="arch-security-name">Headers de Segurança</div>
+                        <p class="arch-security-desc">CSP com nonce, HSTS, X-Content-Type-Options: nosniff, X-Frame-Options: DENY, CORS strict mode.</p>
+                    </div>
+                </div>
+
+                <div class="arch-security-item">
+                    <div class="arch-security-icon"><i class="ph ph-prohibit"></i></div>
+                    <div>
+                        <div class="arch-security-name">CRU (sem Delete)</div>
+                        <p class="arch-security-desc">Create, Read, Update. Dados sociais nunca são deletados. Histórico completo preservado via Event Sourcing.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         OPEN SOURCE — Section 08
+    ═══════════════════════════════════════ -->
+    <section class="arch-oss">
+        <div class="section-number" aria-hidden="true" style="top:-5%; right:-2%;">08</div>
+        <div class="container" style="position:relative; z-index:1;">
+            <div class="arch-oss-inner">
+                <div class="arch-oss-content reveal-up">
+                    <p class="eyebrow">Open Source</p>
+                    <h2 class="section-title" style="margin-bottom:32px;">Código aberto<br>para a<br>comunidade.</h2>
+                    <p>
+                        Todo o código do Conecta Raros é aberto no GitHub. A missão é que <strong style="color:var(--accent);">outras associações de doenças raras possam reutilizar</strong> a tecnologia para seus próprios pacientes.
+                    </p>
+                    <p>
+                        Os contratos de API são definidos em OpenAPI e AsyncAPI, garantindo interoperabilidade entre diferentes instituições. Qualquer organização pode se integrar ao ecossistema seguindo os schemas compartilhados.
+                    </p>
+                    <div style="margin-top:32px;">
+                        <a href="https://github.com/acdgbrasil" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                            Ver no GitHub <i class="ph ph-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="arch-oss-visual reveal-up delay-2">
+                    <div class="arch-oss-github"><i class="ph-fill ph-github-logo"></i></div>
+                    <a href="https://github.com/acdgbrasil" target="_blank" rel="noopener noreferrer" class="arch-oss-url">
+                        github.com/acdgbrasil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════ -->
+    <footer class="footer">
+
+        <!-- Giant watermark -->
+        <div class="footer-watermark" aria-hidden="true">RAROS</div>
+
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col reveal-up">
+                    <h2>Conecta Raros</h2>
+                    <p>Democratizando o acesso a microdados epidemiológicos robustos. Tecnologia aplicada para acelerar terapias e curas no Brasil.</p>
+                    <a href="contato.html" class="btn btn-primary" style="margin-top:4px;">
+                        Faça parte da rede
+                        <i class="ph ph-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="footer-col footer-links reveal-up delay-1">
+                    <h4>Plataforma</h4>
+                    <a href="index.html">Página Inicial</a>
+                    <a href="arquitetura.html">Arquitetura</a>
+                    <a href="dashboard.html">Dashboard</a>
+                    <a href="contato.html">Contato</a>
+                </div>
+
+                <div class="footer-col footer-links reveal-up delay-2">
+                    <h4>Institucional & Ética</h4>
+                    <a href="#">Comitê de Ética (CONEP)</a>
+                    <a href="#">Política de Dados e LGPD</a>
+                    <a href="#">Segurança da Informação</a>
+                    <a href="#">Governança Compartilhada</a>
+                </div>
+
+                <div class="footer-col reveal-up delay-3">
+                    <h4>Fale Conosco</h4>
+                    <p>pesquisa@conectararos.org.br</p>
+                    <div class="social-icons">
+                        <i class="ph-fill ph-linkedin-logo"></i>
+                        <i class="ph-fill ph-twitter-logo"></i>
+                        <i class="ph-fill ph-github-logo"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-copyright reveal-up">
+                <p>&copy; 2026 Associação Conecta Raros Brasil. Todos os direitos reservados.</p>
+                <p style="opacity:0.5;">Plataforma em conformidade com a LGPD</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/5585996967404?text=Ol%C3%A1%21%20Gostaria%20de%20saber%20como%20integrar%20minha%20institui%C3%A7%C3%A3o%20ao%20Conecta%20Raros."
+        target="_blank" rel="noopener noreferrer" class="whatsapp-float hidden" aria-label="WhatsApp">
+        <i class="ph ph-whatsapp-logo" style="font-size:26px;"></i>
+    </a>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

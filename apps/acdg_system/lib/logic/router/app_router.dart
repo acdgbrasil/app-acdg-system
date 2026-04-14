@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart' hide Consumer;
+import 'package:people_admin/people_admin.dart';
 import 'package:social_care/social_care.dart';
 
 import '../di/infrastructure_providers.dart';
@@ -34,6 +35,7 @@ abstract final class AppRoutes {
   static const workAndIncome = '/work-and-income';
   static const violationReport = '/violation-report';
   static const socialIdentity = '/social-identity';
+  static const team = '/team';
 }
 
 class AppRouter {
@@ -133,30 +135,39 @@ class AppRouter {
           return CommunitySupportPage(patientId: patientId);
         },
       ),
-      GoRoute(
-        path: '${AppRoutes.socioEconomic}/:patientId',
-        redirect: _requireAuth,
-        builder: (context, state) => SocioEconomicPage(patientId: state.pathParameters['patientId']!),
-      ),
-      GoRoute(
-        path: '${AppRoutes.educationalStatus}/:patientId',
-        redirect: _requireAuth,
-        builder: (context, state) => EducationalStatusPage(patientId: state.pathParameters['patientId']!),
-      ),
-      GoRoute(
-        path: '${AppRoutes.workAndIncome}/:patientId',
-        redirect: _requireAuth,
-        builder: (context, state) => WorkAndIncomePage(patientId: state.pathParameters['patientId']!),
-      ),
-      GoRoute(
-        path: '${AppRoutes.violationReport}/:patientId',
-        redirect: _requireAuth,
-        builder: (context, state) => ViolationReportPage(patientId: state.pathParameters['patientId']!),
-      ),
+      // TODO: Hidden — benefitTypeId dropdown missing (see GitHub issue #43)
+      // GoRoute(
+      //   path: '${AppRoutes.socioEconomic}/:patientId',
+      //   redirect: _requireAuth,
+      //   builder: (context, state) => SocioEconomicPage(patientId: state.pathParameters['patientId']!),
+      // ),
+      // TODO: Hidden — under investigation (see GitHub issue)
+      // GoRoute(
+      //   path: '${AppRoutes.educationalStatus}/:patientId',
+      //   redirect: _requireAuth,
+      //   builder: (context, state) => EducationalStatusPage(patientId: state.pathParameters['patientId']!),
+      // ),
+      // TODO: Hidden — dominio_ocupacao lookup missing in backend (see GitHub issue)
+      // GoRoute(
+      //   path: '${AppRoutes.workAndIncome}/:patientId',
+      //   redirect: _requireAuth,
+      //   builder: (context, state) => WorkAndIncomePage(patientId: state.pathParameters['patientId']!),
+      // ),
+      // TODO: Hidden — UX needs full redesign (see GitHub issue)
+      // GoRoute(
+      //   path: '${AppRoutes.violationReport}/:patientId',
+      //   redirect: _requireAuth,
+      //   builder: (context, state) => ViolationReportPage(patientId: state.pathParameters['patientId']!),
+      // ),
       GoRoute(
         path: '${AppRoutes.socialIdentity}/:patientId',
         redirect: _requireAuth,
         builder: (context, state) => SocialIdentityPage(patientId: state.pathParameters['patientId']!),
+      ),
+      GoRoute(
+        path: AppRoutes.team,
+        redirect: requireRole({AuthRole.admin, AuthRole.superAdmin}),
+        builder: (context, state) => const PeopleAdminShell(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

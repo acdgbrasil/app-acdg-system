@@ -23,18 +23,17 @@ enum SubmitResult {
 }
 
 class PatientRegistrationViewModel extends BaseViewModel {
-  static final _log = AcdgLogger.get('PatientRegistrationViewModel');
   PatientRegistrationViewModel({
     required RegisterPatientUseCase useCase,
-    required LookupRepository lookupRepository,
-  }) : _lookupRepository = lookupRepository {
+    required GetLookupTableUseCase getLookupTableUseCase,
+  }) : _getLookupTableUseCase = getLookupTableUseCase {
     registerPatientCommand = Command1<PatientId, RegisterPatientIntent>(
       (intent) => useCase.execute(intent),
     );
     _loadLookups();
   }
 
-  final LookupRepository _lookupRepository;
+  final GetLookupTableUseCase _getLookupTableUseCase;
   late final Command1<PatientId, RegisterPatientIntent> registerPatientCommand;
   String? _prRelationshipId;
 
@@ -56,10 +55,10 @@ class PatientRegistrationViewModel extends BaseViewModel {
   Future<void> _loadLookups() async {
     // Load all lookups in parallel
     final results = await Future.wait([
-      _lookupRepository.getLookupTable('dominio_parentesco'),
-      _lookupRepository.getLookupTable('dominio_tipo_identidade'),
-      _lookupRepository.getLookupTable('dominio_tipo_ingresso'),
-      _lookupRepository.getLookupTable('dominio_programa_social'),
+      _getLookupTableUseCase.execute('dominio_parentesco'),
+      _getLookupTableUseCase.execute('dominio_tipo_identidade'),
+      _getLookupTableUseCase.execute('dominio_tipo_ingresso'),
+      _getLookupTableUseCase.execute('dominio_programa_social'),
     ]);
 
     if (results[0] case Success(:final value)) {
@@ -197,7 +196,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
 
     final result = registerPatientCommand.result;
     if (result != null && result.isSuccess) {
-      _log.info('Patient registered successfully');
+      print('Patient registered successfully');
       return SubmitResult.success;
     }
 
@@ -205,7 +204,7 @@ class PatientRegistrationViewModel extends BaseViewModel {
       Failure(:final error) => error,
       _ => null,
     };
-    _log.severe('Patient registration failed: $error');
+    print('Patient registration failed: $error');
 
     return switch (error) {
       NetworkError() => SubmitResult.networkError,
@@ -351,23 +350,46 @@ class PatientRegistrationViewModel extends BaseViewModel {
   List<FamilyMember> _buildFamilyMembers() {
     final snapshots = familyCompositionFormState.members.value;
     final members = <FamilyMember>[];
+    print('👨‍👩‍👧 Building ${snapshots.length} family members from snapshots');
+    print('👨‍👩‍👧 Lookups available: ${_parentescoLookup.length} parentesco items');
 
     for (final snap in snapshots) {
+      print('👨‍👩‍👧 Processing member: name=${snap.name}, rel=${snap.relationshipCode}, birth=${snap.birthDate}');
+
       final personIdRes = PersonId.create(UuidUtil.generateV4());
-      if (personIdRes case Failure()) continue;
+      if (personIdRes case Failure(:final error)) {
+        print('👨‍👩‍👧 SKIPPED — PersonId creation failed: $error');
+        continue;
+      }
       final personId = (personIdRes as Success<PersonId>).value;
 
       // Resolve relationship code → lookup UUID
+      // Try matching by codigo first, then by id (case-insensitive)
       final relItem = _parentescoLookup
-          .where((item) => item.codigo == snap.relationshipCode)
+          .where((item) =>
+              item.codigo == snap.relationshipCode ||
+              item.id == snap.relationshipCode ||
+              item.codigo.toLowerCase() == snap.relationshipCode.toLowerCase())
           .firstOrNull;
-      final relIdStr = relItem?.id ?? snap.relationshipCode;
-      final relIdRes = LookupId.create(relIdStr);
-      if (relIdRes case Failure()) continue;
+
+      if (relItem == null) {
+        final available = _parentescoLookup.map((i) => '${i.codigo}(${i.id})').join(', ');
+        print('👨‍👩‍👧 SKIPPED — No lookup match for rel="${snap.relationshipCode}". Available: $available');
+        continue;
+      }
+
+      final relIdRes = LookupId.create(relItem.id);
+      if (relIdRes case Failure(:final error)) {
+        print('👨‍👩‍👧 SKIPPED — LookupId.create failed for "${relItem.id}": $error');
+        continue;
+      }
       final relId = (relIdRes as Success<LookupId>).value;
 
       final birthRes = TimeStamp.fromDate(snap.birthDate);
-      if (birthRes case Failure()) continue;
+      if (birthRes case Failure(:final error)) {
+        print('👨‍👩‍👧 SKIPPED — TimeStamp.fromDate failed for "${snap.birthDate}": $error');
+        continue;
+      }
       final birthTs = (birthRes as Success<TimeStamp>).value;
 
       final memberRes = FamilyMember.create(
@@ -377,6 +399,8 @@ class PatientRegistrationViewModel extends BaseViewModel {
         residesWithPatient: snap.isResiding,
         hasDisability: snap.hasDisability,
         birthDate: birthTs,
+        fullName: snap.name.isNotEmpty ? snap.name : null,
+        sex: snap.sex.isNotEmpty ? snap.sex : null,
         requiredDocuments: snap.requiredDocuments
             .map(
               (d) => RequiredDocument.values
@@ -386,9 +410,16 @@ class PatientRegistrationViewModel extends BaseViewModel {
             .whereType<RequiredDocument>()
             .toList(),
       );
-      if (memberRes case Success(:final value)) members.add(value);
+      if (memberRes case Success(:final value)) {
+        members.add(value);
+        print('👨‍👩‍👧 ✅ Member added: ${snap.name}');
+      }
+      if (memberRes case Failure(:final error)) {
+        print('👨‍👩‍👧 SKIPPED — FamilyMember.create failed: $error');
+      }
     }
 
+    print('👨‍👩‍👧 Final result: ${members.length}/${snapshots.length} members built');
     return members;
   }
 

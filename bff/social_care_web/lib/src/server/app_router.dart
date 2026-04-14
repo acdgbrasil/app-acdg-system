@@ -13,6 +13,7 @@ import '../handlers/care_handler.dart';
 import '../handlers/lookup_handler.dart';
 import '../handlers/protection_handler.dart';
 import '../handlers/registry_handler.dart';
+import '../handlers/team_handler.dart';
 import '../middleware/auth_guard_middleware.dart';
 import '../middleware/session_middleware.dart';
 
@@ -71,6 +72,7 @@ class AppRouter {
     final authHandler = AuthHandler(
       oidcClient: _oidcClient,
       sessionStore: _sessionStore,
+      peopleContextFactory: _peopleContextFactory,
       postLoginRedirectUrl: _postLoginRedirectUrl,
       secureCookies: _postLoginRedirectUrl == null,
     );
@@ -97,6 +99,10 @@ class AppRouter {
 
     final lookupHandler = LookupHandler(contractFactory: _contractFactory);
 
+    final teamHandler = TeamHandler(
+      peopleContextFactory: _peopleContextFactory,
+    );
+
     final protectedPipeline = const Pipeline()
         .addMiddleware(sessionMiddleware(_sessionStore))
         .addMiddleware(authGuardMiddleware());
@@ -110,7 +116,8 @@ class AppRouter {
         .add(protectedPipeline.addHandler(assessmentHandler.router.call))
         .add(protectedPipeline.addHandler(careHandler.router.call))
         .add(protectedPipeline.addHandler(protectionHandler.router.call))
-        .add(protectedPipeline.addHandler(lookupHandler.router.call));
+        .add(protectedPipeline.addHandler(lookupHandler.router.call))
+        .add(protectedPipeline.addHandler(teamHandler.router.call));
 
     return cascade.handler;
   }

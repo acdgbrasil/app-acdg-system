@@ -25,37 +25,71 @@ class _SocialIdentityContentState extends State<SocialIdentityContent> {
   }
 
   void _sync() {
-    if (_otherController.text != vm.otherDescription) _otherController.text = vm.otherDescription;
+    if (_otherController.text != vm.otherDescription) {
+      _otherController.text = vm.otherDescription;
+    }
   }
 
   @override
-  void dispose() { vm.removeListener(_sync); _otherController.dispose(); super.dispose(); }
+  void dispose() {
+    vm.removeListener(_sync);
+    _otherController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 8),
-      child: ListenableBuilder(listenable: vm, builder: (context, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(SocialIdentityL10n.sectionIdentity, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary)),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: vm.typeId != null && vm.identityTypeLookup.any((i) => i.id == vm.typeId) ? vm.typeId : null,
-            decoration: const InputDecoration(labelText: SocialIdentityL10n.typeLabel),
-            items: vm.identityTypeLookup.map((i) => DropdownMenuItem(value: i.id, child: Text(i.descricao))).toList(),
-            onChanged: (v) { if (v != null) vm.updateTypeId(v); },
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _otherController,
-            maxLines: 3,
-            maxLength: 500,
-            decoration: const InputDecoration(labelText: SocialIdentityL10n.otherDescriptionLabel, hintText: SocialIdentityL10n.otherDescriptionHint, alignLabelWithHint: true),
-          ),
-          const SizedBox(height: 40),
-        ],
-      )),
+      child: ListenableBuilder(
+        listenable: vm,
+        builder: (context, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              SocialIdentityL10n.sectionIdentity,
+              style: TextStyle(
+                fontFamily: 'Satoshi',
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue:
+                  vm.typeId != null &&
+                      vm.identityTypeLookup.any((i) => i.id == vm.typeId)
+                  ? vm.typeId
+                  : null,
+              decoration: const InputDecoration(
+                labelText: SocialIdentityL10n.typeLabel,
+              ),
+              items: vm.identityTypeLookup
+                  .map(
+                    (i) =>
+                        DropdownMenuItem(value: i.id, child: Text(i.descricao)),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) vm.updateTypeId(v);
+              },
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _otherController,
+              maxLines: 3,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: SocialIdentityL10n.otherDescriptionLabel,
+                hintText: SocialIdentityL10n.otherDescriptionHint,
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 }

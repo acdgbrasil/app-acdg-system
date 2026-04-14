@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contato e Parcerias — Conecta Raros</title>
+    <meta name="description" content="Solicite parceria institucional com o Conecta Raros. Integração técnica para hospitais, centros de pesquisa acadêmicos e órgãos governamentais de saúde no Brasil.">
+    <link rel="canonical" href="https://conectararos.org.br/contato.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="Conecta Raros">
+    <meta property="og:title" content="Contato e Parcerias — Conecta Raros">
+    <meta property="og:description" content="Fale com nossa equipe para integrar sua instituição de saúde ao ecossistema Conecta Raros. Parcerias para hospitais, universidades e órgãos públicos.">
+    <meta property="og:url" content="https://conectararos.org.br/contato.html">
+    <meta property="og:image" content="https://conectararos.org.br/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contato e Parcerias — Conecta Raros">
+    <meta name="twitter:description" content="Solicite parceria institucional. Integração técnica para hospitais e centros de pesquisa no Brasil.">
+    <meta name="twitter:image" content="https://conectararos.org.br/assets/og-image.png">
+
+    <!-- Extra SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Associação Conecta Raros Brasil">
+    <meta name="theme-color" content="#E65C3B">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Conecta Raros",
+        "url": "https://conectararos.org.br",
+        "description": "Plataforma integrada de mapeamento de doenças genéticas e raras no Brasil.",
+        "email": "pesquisa@conectararos.org.br",
+        "areaServed": "BR"
+    }
+    </script>
+
+    <style>
+        /* ─── Contact Page Specifics ─── */
+        .contact-section {
+            min-height: 100vh;
+            padding: clamp(120px, 14vw, 200px) 0 clamp(80px, 10vw, 140px);
+            background-color: var(--bg);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .contact-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(48px, 6vw, 96px);
+            align-items: start;
+        }
+
+        /* Left — editorial description */
+        .contact-info {
+            position: sticky;
+            top: 120px;
+        }
+
+        .contact-info .eyebrow {
+            margin-bottom: 28px;
+        }
+
+        .contact-title {
+            font-size: clamp(40px, 5vw, 72px);
+            font-weight: 800;
+            line-height: 1.0;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin-bottom: 28px;
+        }
+
+        .contact-desc {
+            font-size: clamp(16px, 1.3vw, 18px);
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 400px;
+        }
+
+        .contact-divider {
+            width: 48px;
+            height: 1px;
+            background: var(--border);
+            margin: 36px 0;
+        }
+
+        .contact-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .contact-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .contact-meta-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .contact-meta-value {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        /* Right — form card */
+        .contact-card {
+            background: var(--bg-warm);
+            border: 1px solid var(--border);
+            padding: clamp(32px, 4vw, 56px);
+            position: relative;
+        }
+
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        /* Progress */
+        .progress-track-wrap {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 40px;
+        }
+
+        .progress-seg {
+            flex: 1;
+            height: 2px;
+            background: var(--border);
+            transition: background 0.4s var(--ease-expo);
+        }
+
+        .progress-seg.active {
+            background: var(--accent);
+        }
+
+        /* Step labels */
+        .step-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        /* Form elements — editorial style */
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .form-field label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            padding: 12px 0;
+            font-family: var(--font-sans);
+            font-size: clamp(20px, 2.2vw, 26px);
+            font-weight: 400;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.3s ease;
+            -webkit-appearance: none;
+        }
+
+        .form-input::placeholder {
+            color: var(--muted-light);
+            font-weight: 300;
+        }
+
+        .form-input:focus {
+            border-bottom-color: var(--accent);
+        }
+
+        .form-step-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 36px;
+        }
+
+        /* Success state */
+        .success-state {
+            display: none;
+            padding: 16px 0;
+        }
+
+        .success-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #10B981;
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+        }
+
+        .success-title {
+            font-size: clamp(22px, 2.5vw, 30px);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 12px;
+            line-height: 1.1;
+        }
+
+        .success-desc {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 32px;
+            max-width: 380px;
+        }
+
+        .success-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-whatsapp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #25D366;
+            color: #fff;
+            font-family: var(--font-sans);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 16px 28px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn-whatsapp:hover {
+            background: #1DAD53;
+            transform: translateY(-1px);
+        }
+
+        .btn-whatsapp i {
+            font-size: 20px;
+        }
+
+        .privacy-note {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--muted-light);
+            text-align: center;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        /* Responsive */
+        @media (max-width: 860px) {
+            .contact-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-info {
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════ -->
+    <header class="header" id="site-header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">Conecta Raros</a>
+            <nav class="nav">
+                <a href="index.html#sobre" class="nav-link">Sobre</a>
+                <a href="index.html#publico" class="nav-link">Benefícios</a>
+                <a href="index.html#faq" class="nav-link">FAQ</a>
+                <a href="contato.html" class="nav-link" style="color: var(--accent);">Contato</a>
+            </nav>
+            <div class="header-actions">
+                <a href="dashboard.html" class="nav-link" style="margin-right: 8px; font-weight: 500; opacity: 0.65; font-size:13px;">Dashboard</a>
+                <a href="index.html" class="btn btn-outline">Voltar à Home</a>
+            </div>
+            <button class="menu-toggle" id="menu-toggle" aria-label="Menu" aria-expanded="false">
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+        <nav class="mobile-menu-nav">
+            <a href="index.html#sobre" class="mobile-menu-link">Sobre</a>
+            <a href="index.html#publico" class="mobile-menu-link">Benefícios</a>
+            <a href="index.html#faq" class="mobile-menu-link">FAQ</a>
+            <a href="contato.html" class="mobile-menu-link">Contato</a>
+            <a href="dashboard.html" class="mobile-menu-link mobile-menu-link-muted">Dashboard</a>
+        </nav>
+        <div class="mobile-menu-footer">
+            <a href="contato.html" class="btn btn-primary" style="width:100%; justify-content:center;">Entrar em Contato</a>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         CONTACT SECTION
+    ═══════════════════════════════════════ -->
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-inner">
+
+                <!-- Left: editorial description -->
+                <div class="contact-info reveal-up">
+                    <p class="eyebrow">Adesão &amp; Parcerias Institucionais</p>
+
+                    <h1 class="contact-title">Fale com a nossa equipe.</h1>
+
+                    <p class="contact-desc">
+                        Preencha o formulário abaixo se você representa uma instituição de saúde, hospital, centro de pesquisa acadêmico ou órgão governamental buscando integração técnica ou acadêmica.
+                    </p>
+
+                    <div class="contact-divider"></div>
+
+                    <div class="contact-meta">
+                        <div class="contact-meta-item">
+                            <span class="contact-meta-label">E-mail</span>
+                            <span class="contact-meta-value">pesquisa@conectararos.org.br</span>
+                        </div>
+                        <div class="contact-meta-item">
+                            <span class="contact-meta-label">Conformidade</span>
+                            <span class="contact-meta-value">LGPD — Lei nº 13.709/2018</span>
+                        </div>
+                        <div class="contact-meta-item">
+                            <span class="contact-meta-label">Cobertura</span>
+                            <span class="contact-meta-value">Abrangência Nacional</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: form card -->
+                <div class="contact-card reveal-up delay-1">
+
+                    <!-- Form -->
+                    <form id="multiStepForm" novalidate>
+
+                        <!-- Progress segments -->
+                        <div class="progress-track-wrap" id="progress-wrap">
+                            <div class="progress-seg active" id="prog-1"></div>
+                            <div class="progress-seg" id="prog-2"></div>
+                            <div class="progress-seg" id="prog-3"></div>
+                        </div>
+
+                        <!-- Step 1 -->
+                        <div id="step-1" class="form-step">
+                            <span class="step-label">Passo 01 / 03</span>
+                            <div class="form-field">
+                                <label for="nome">Nome Completo</label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    id="nome"
+                                    name="nome"
+                                    placeholder="Dr. Nome Sobrenome"
+                                    autocomplete="name"
+                                    required>
+                            </div>
+                            <div class="form-step-nav">
+                                <button type="button" onclick="nextStep(1)" class="btn btn-primary" style="flex:1;">Próximo</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div id="step-2" class="form-step" style="display:none;">
+                            <span class="step-label">Passo 02 / 03</span>
+                            <div class="form-field">
+                                <label for="email">E-mail Institucional</label>
+                                <input
+                                    class="form-input"
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    placeholder="nome@hospital.com.br"
+                                    autocomplete="email"
+                                    required>
+                            </div>
+                            <div class="form-step-nav">
+                                <button type="button" onclick="prevStep(2)" class="btn btn-outline" style="flex:1;">Voltar</button>
+                                <button type="button" onclick="nextStep(2)" class="btn btn-primary" style="flex:1;">Próximo</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div id="step-3" class="form-step" style="display:none;">
+                            <span class="step-label">Passo 03 / 03</span>
+                            <div class="form-field">
+                                <label for="instituicao">Nome da Instituição</label>
+                                <input
+                                    class="form-input"
+                                    type="text"
+                                    id="instituicao"
+                                    name="instituicao"
+                                    placeholder="Hospital das Clínicas UF"
+                                    autocomplete="organization"
+                                    required>
+                            </div>
+                            <div class="form-step-nav">
+                                <button type="button" onclick="prevStep(3)" class="btn btn-outline" style="flex:1;">Voltar</button>
+                                <button type="button" onclick="submitForm()" class="btn btn-primary" style="flex:1;">Solicitar Parceria</button>
+                            </div>
+                        </div>
+
+                        <p class="privacy-note">Sua privacidade é importante. Respeitamos a LGPD.</p>
+
+                    </form>
+
+                    <!-- Success State -->
+                    <div class="success-state" id="success-message">
+                        <div class="success-icon">
+                            <i class="ph-fill ph-check"></i>
+                        </div>
+                        <h3 class="success-title">Recebemos o seu interesse!</h3>
+                        <p class="success-desc">
+                            Nossa equipe de parcerias já recebeu sua requisição e entrará em contato via e-mail. Para um atendimento prioritário e tirar dúvidas técnicas agora, clique no botão abaixo.
+                        </p>
+                        <div class="success-actions">
+                            <a href="https://wa.me/5585996967404?text=Ol%C3%A1%21%20Acabei%20de%20solicitar%20parceria%20pelo%20site%20Conecta%20Raros%20e%20gostaria%20de%20agilizar%20o%20atendimento."
+                                target="_blank" rel="noopener noreferrer" class="btn-whatsapp">
+                                <i class="ph ph-whatsapp-logo"></i>
+                                Falar com um Especialista Agora
+                            </a>
+                            <a href="index.html" class="btn btn-outline" style="width:100%; justify-content:center;">Voltar para a Home</a>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /contact-card -->
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════ -->
+    <footer class="footer">
+        <div class="footer-watermark" aria-hidden="true">RAROS</div>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col reveal-up">
+                    <h2>Conecta Raros</h2>
+                    <p>Democratizando o acesso a microdados epidemiológicos robustos. Tecnologia aplicada para acelerar terapias e curas no Brasil.</p>
+                    <a href="contato.html" class="btn btn-primary" style="margin-top:4px;">
+                        Faça parte da rede
+                        <i class="ph ph-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="footer-col footer-links reveal-up delay-1">
+                    <h4>Plataforma</h4>
+                    <a href="#">Painel Demográfico</a>
+                    <a href="#">Painel Clínico</a>
+                    <a href="#">Portal do Pesquisador</a>
+                    <a href="#">API de Saúde</a>
+                </div>
+
+                <div class="footer-col footer-links reveal-up delay-2">
+                    <h4>Institucional &amp; Ética</h4>
+                    <a href="#">Comitê de Ética (CONEP)</a>
+                    <a href="#">Política de Dados e LGPD</a>
+                    <a href="#">Segurança da Informação</a>
+                    <a href="#">Governança Compartilhada</a>
+                </div>
+
+                <div class="footer-col reveal-up delay-3">
+                    <h4>Fale Conosco</h4>
+                    <p>pesquisa@conectararos.org.br</p>
+                    <div class="social-icons">
+                        <i class="ph-fill ph-linkedin-logo"></i>
+                        <i class="ph-fill ph-twitter-logo"></i>
+                        <i class="ph-fill ph-github-logo"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-copyright reveal-up">
+                <p>&copy; 2026 Associação Conecta Raros Brasil. Todos os direitos reservados.</p>
+                <p style="opacity:0.5;">Plataforma em conformidade com a LGPD</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/5585996967404?text=Ol%C3%A1%21%20Gostaria%20de%20saber%20como%20integrar%20minha%20institui%C3%A7%C3%A3o%20ao%20Conecta%20Raros."
+        target="_blank" rel="noopener noreferrer" class="whatsapp-float hidden" aria-label="WhatsApp">
+        <i class="ph ph-whatsapp-logo" style="font-size:26px;"></i>
+    </a>
+
+    <script>
+        function nextStep(current) {
+            if (current === 1) {
+                const val = document.getElementById('nome').value.trim();
+                if (!val) { document.getElementById('nome').focus(); return; }
+            } else if (current === 2) {
+                const val = document.getElementById('email').value.trim();
+                if (!val || !val.includes('@')) { document.getElementById('email').focus(); return; }
+            }
+            document.getElementById('step-' + current).style.display = 'none';
+            document.getElementById('step-' + (current + 1)).style.display = 'block';
+            document.getElementById('prog-' + (current + 1)).classList.add('active');
+        }
+
+        function prevStep(current) {
+            document.getElementById('step-' + current).style.display = 'none';
+            document.getElementById('step-' + (current - 1)).style.display = 'block';
+            document.getElementById('prog-' + current).classList.remove('active');
+        }
+
+        function submitForm() {
+            const val = document.getElementById('instituicao').value.trim();
+            if (!val) { document.getElementById('instituicao').focus(); return; }
+            document.getElementById('multiStepForm').style.display = 'none';
+            document.getElementById('success-message').style.display = 'block';
+        }
+    </script>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

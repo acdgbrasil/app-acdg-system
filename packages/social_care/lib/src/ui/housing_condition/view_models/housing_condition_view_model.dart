@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 
-import '../../../data/commands/assessment_intents.dart';
 import '../../../logic/use_case/assessment/update_housing_condition_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
 import '../../home/mappers/housing_condition_detail_mapper.dart';
@@ -18,7 +17,6 @@ class HousingConditionViewModel extends BaseViewModel {
     saveCommand = Command0<void>(_save);
   }
 
-  static final _log = AcdgLogger.get('HousingConditionViewModel');
 
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
@@ -207,7 +205,7 @@ class HousingConditionViewModel extends BaseViewModel {
   // ── Load ───────────────────────────────────────────────────
 
   Future<Result<void>> _load() async {
-    _log.info('Loading patient: $patientId');
+    print('Loading patient: $patientId');
     final result = await _getPatientUseCase.execute(patientId);
 
     switch (result) {
@@ -238,7 +236,7 @@ class HousingConditionViewModel extends BaseViewModel {
           _saveOriginals();
         }
       case Failure(:final error):
-        _log.severe('Failed to load patient', error);
+        print('Failed to load patient ${error}');
         _errorMessage = 'Falha ao carregar paciente';
     }
 
@@ -312,7 +310,7 @@ class HousingConditionViewModel extends BaseViewModel {
 
   @override
   void onDispose() {
-    _log.info('Disposing HousingConditionViewModel');
+    print('Disposing HousingConditionViewModel');
     loadCommand.dispose();
     saveCommand.dispose();
   }

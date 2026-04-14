@@ -8,6 +8,7 @@ import 'package:network/network.dart';
 import 'logic/di/app_providers.dart';
 import 'logic/di/auth_providers.dart';
 import 'logic/di/dependency_manager.dart';
+import 'logic/di/people_admin_providers.dart';
 import 'logic/di/social_care_providers.dart';
 import 'ui/app_view.dart';
 import 'ui/widgets/boot_views.dart';
@@ -95,6 +96,8 @@ class _RootState extends State<Root> {
           healthStatusViewModelOverride,
           housingConditionViewModelOverride,
           homeViewModelOverride,
+          peopleListViewModelOverride,
+          personDetailViewModelOverride,
         ],
         child: AppProviders(deps: _deps, child: const AppView()),
       ),

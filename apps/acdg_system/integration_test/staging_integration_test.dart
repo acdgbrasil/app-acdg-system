@@ -179,7 +179,7 @@ void main() {
       final realUser = AuthUser(
         id: userId,
         name: 'Social Care Integration Tests',
-        roles: {AuthRole.socialWorker},
+        roles: {AuthRole.worker},
       );
 
       final fakeRepository = _RealTokenAuthRepository(accessToken, realUser);

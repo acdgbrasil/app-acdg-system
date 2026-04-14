@@ -11,6 +11,7 @@ workspace:
   - packages/auth
   - packages/network
   - packages/social_care
+  - packages/people_admin
   - packages/design_system
   - packages/persistence
   - bff/shared

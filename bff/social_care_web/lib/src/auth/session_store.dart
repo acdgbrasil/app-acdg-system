@@ -10,6 +10,7 @@ class Session {
     required this.userId,
     required Set<String> roles,
     required this.expiresAt,
+    this.displayName,
   }) : roles = UnmodifiableSetView(Set.of(roles));
 
   /// Unique session identifier.
@@ -30,6 +31,9 @@ class Session {
   /// UTC timestamp when this session expires.
   final DateTime expiresAt;
 
+  /// Display name enriched from People Context. May be null if enrichment failed.
+  final String? displayName;
+
   /// Returns `true` if this session has expired relative to [now].
   ///
   /// Defaults to [DateTime.now] in UTC if [now] is not provided.
@@ -41,6 +45,7 @@ class Session {
     String? accessToken,
     String? refreshToken,
     DateTime? expiresAt,
+    String? Function()? displayName,
   }) {
     return Session(
       id: id,
@@ -49,6 +54,7 @@ class Session {
       userId: userId,
       roles: roles,
       expiresAt: expiresAt ?? this.expiresAt,
+      displayName: displayName != null ? displayName() : this.displayName,
     );
   }
 }
@@ -74,6 +80,7 @@ class SessionStore {
     required String refreshToken,
     required String userId,
     required Set<String> roles,
+    String? displayName,
   }) {
     final id = _generateId();
     final now = _clock();
@@ -84,6 +91,7 @@ class SessionStore {
       userId: userId,
       roles: roles,
       expiresAt: now.add(_ttl),
+      displayName: displayName,
     );
     return id;
   }

@@ -122,4 +122,53 @@ abstract final class AppMasks {
     LengthLimitingTextInputFormatter(12),
     _MaskFormatter(mask: '##.###.###-#', charTest: _isAlphaNumeric),
   ];
+
+  /// BRL Currency: digits → R$ #.###,## (max 99.999.999,99)
+  static final List<TextInputFormatter> currency = [
+    FilteringTextInputFormatter.digitsOnly,
+    _CurrencyBRLFormatter(),
+  ];
+}
+
+/// Formats raw digit input as Brazilian Real currency.
+///
+/// Interprets all digits as centavos and formats with R$ prefix,
+/// dot thousand separators and comma decimal separator.
+/// Example: '500000' → 'R$ 5.000,00'
+class _CurrencyBRLFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.isEmpty) {
+      return const TextEditingValue(
+        text: 'R\$ 0,00',
+        selection: TextSelection.collapsed(offset: 7),
+      );
+    }
+
+    // Limit to 10 digits (99.999.999,99)
+    final capped = digits.length > 10 ? digits.substring(0, 10) : digits;
+    final cents = int.parse(capped);
+    final intPart = cents ~/ 100;
+    final decPart = (cents % 100).toString().padLeft(2, '0');
+
+    // Format integer part with dot separators
+    final intStr = intPart.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < intStr.length; i++) {
+      if (i > 0 && (intStr.length - i) % 3 == 0) {
+        buf.write('.');
+      }
+      buf.write(intStr[i]);
+    }
+
+    final formatted = 'R\$ $buf,$decPart';
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }

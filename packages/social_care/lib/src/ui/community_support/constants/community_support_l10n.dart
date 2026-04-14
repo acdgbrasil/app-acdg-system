@@ -11,10 +11,8 @@ abstract final class CommunitySupportL10n {
   static const sectionDiscrimination = 'Discriminacao';
 
   // Labels
-  static const hasRelativeSupportLabel =
-      'Possui apoio de parentes';
-  static const hasNeighborSupportLabel =
-      'Possui apoio de vizinhos';
+  static const hasRelativeSupportLabel = 'Possui apoio de parentes';
+  static const hasNeighborSupportLabel = 'Possui apoio de vizinhos';
   static const familyConflictsLabel = 'Descreva os conflitos familiares';
   static const familyConflictsHint =
       'Descreva brevemente os conflitos existentes na familia';
