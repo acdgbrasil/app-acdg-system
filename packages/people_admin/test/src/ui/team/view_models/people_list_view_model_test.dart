@@ -15,7 +15,7 @@ void main() {
   setUp(() {
     registerFallbackValue((limit: null, name: null, cpf: null, cursor: null) as SearchPeopleParams);
     mockUseCase = MockSearchPeopleUseCase();
-    viewModel = PeopleListViewModel(searchPeopleUseCase: mockUseCase);
+    viewModel = PeopleListViewModel;
   });
 
   group('PeopleListViewModel', () {
