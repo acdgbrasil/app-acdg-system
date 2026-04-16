@@ -1,172 +1,74 @@
 import 'package:core_contracts/core_contracts.dart';
-import '../domain/assessment/assessment_vos.dart';
-import '../domain/assessment/community_support.dart';
-import '../domain/assessment/educational_status.dart';
-import '../domain/assessment/health_status.dart';
-import '../domain/assessment/social_health_summary.dart';
-import '../domain/assessment/work_and_income.dart';
-import '../domain/care/care_vos.dart';
-import '../domain/kernel/ids.dart';
-import '../domain/models/lookup.dart';
-import '../domain/audit/audit_event.dart';
-import '../domain/registry/family_member.dart';
-import '../domain/registry/patient.dart';
-import '../domain/registry/registry_vos.dart';
-import '../domain/protection/protection_vos.dart';
-import '../infrastructure/dtos/patient_remote.dart';
-import '../infrastructure/dtos/patient_overview.dart';
+
+import 'dto/responses/registry/patient_response.dart';
+import 'dto/shared/standard_response.dart';
+import 'sub_contracts/analytics_contract.dart';
+import 'sub_contracts/assessment_contract.dart';
+import 'sub_contracts/audit_contract.dart';
+import 'sub_contracts/care_contract.dart';
+import 'sub_contracts/health_contract.dart';
+import 'sub_contracts/people_contract.dart';
+import 'sub_contracts/protection_contract.dart';
+import 'sub_contracts/registry_contract.dart';
+
+export 'sub_contracts/analytics_contract.dart';
+export 'sub_contracts/assessment_contract.dart';
+export 'sub_contracts/audit_contract.dart';
+export 'sub_contracts/care_contract.dart';
+export 'sub_contracts/health_contract.dart';
+export 'sub_contracts/people_contract.dart';
+export 'sub_contracts/protection_contract.dart';
+export 'sub_contracts/registry_contract.dart';
 
 /// Main Backend For Frontend (BFF) contract for the Social Care module.
 ///
+/// Composed of 8 sub-contracts by bounded context:
+/// - [HealthContract] — liveness and readiness probes
+/// - [RegistryContract] — patients, family members, social identity, lifecycle
+/// - [AssessmentContract] — all 7 assessment fichas
+/// - [CareContract] — appointments and intake information
+/// - [ProtectionContract] — referrals, violations, and placement history
+/// - [AuditContract] — audit trail for patient events
+/// - [PeopleContract] — person CRUD and role management (People Context)
+/// - [AnalyticsContract] — anonymized indicators (Analysis BI)
+///
+/// All methods use DTOs (Request/Response) instead of domain objects,
+/// forming an Anti-Corruption Layer (ACL) that protects the domain model
+/// from backend changes.
+///
 /// All implementations (Web/Desktop) must adhere to this interface,
 /// ensuring the application logic layer remains platform agnostic.
-abstract interface class SocialCareContract {
-  // ==========================================
-  // HEALTH (Public)
-  // ==========================================
+abstract interface class SocialCareContract
+    implements
+        HealthContract,
+        RegistryContract,
+        AssessmentContract,
+        CareContract,
+        ProtectionContract,
+        AuditContract,
+        PeopleContract,
+        AnalyticsContract {
+  // ── Lookup (cross-cutting, not a sub-contract) ────────────────────────
 
-  /// Liveness probe - returns success if the service is running.
-  Future<Result<void>> checkHealth();
-
-  /// Readiness probe - checks connectivity with dependencies (e.g., database).
-  Future<Result<void>> checkReady();
-
-  // ==========================================
-  // REGISTRY (Patients & Family)
-  // ==========================================
-
-  /// Lists all patients (lightweight overview for offline cache sync).
-  Future<Result<List<PatientOverview>>> fetchPatients();
-
-  /// Registers a new patient. Returns the generated [PatientId].
-  Future<Result<PatientId>> registerPatient(Patient patient);
-
-  /// Retrieves a patient by their unique [id].
-  Future<Result<PatientRemote>> fetchPatient(PatientId id);
-
-  /// Retrieves a patient by their associated [personId].
-  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId);
-
-  /// Adds a new family member to a patient's record.
+  /// Fetches items from a domain lookup table (e.g., `dominio_parentesco`).
   ///
-  /// [cpf] is optional — when provided, the BFF uses it for people-context
-  /// dedup (idempotent person registration by CPF).
-  Future<Result<void>> addFamilyMember(
-    PatientId patientId,
-    FamilyMember member,
-    LookupId prRelationshipId, {
-    String? cpf,
-  });
-
-  /// Removes a family member from a patient's record.
-  Future<Result<void>> removeFamilyMember(
-    PatientId patientId,
-    PersonId memberId,
+  /// Returns a list of lookup items wrapped in [StandardResponse].
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupTable(
+    String tableName,
   );
 
-  /// Assigns a primary caregiver for the patient.
-  Future<Result<void>> assignPrimaryCaregiver(
-    PatientId patientId,
-    PersonId memberId,
+  // ── Composite queries (cross-BC convenience) ──────────────────────────
+
+  /// Fetches a full patient aggregate with people-context enrichment.
+  ///
+  /// This is a composite operation that:
+  /// 1. Fetches the patient from social-care backend
+  /// 2. Enriches family member names from people-context
+  /// 3. Returns the fully hydrated [PatientResponse]
+  ///
+  /// Implementations may override [fetchPatient] from [RegistryContract]
+  /// to include enrichment, or provide this as a separate method.
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientEnriched(
+    String patientId,
   );
-
-  /// Updates the social identity of a patient.
-  Future<Result<void>> updateSocialIdentity(
-    PatientId patientId,
-    SocialIdentity identity,
-  );
-
-  /// Retrieves the audit trail for a specific patient.
-  Future<Result<List<AuditEvent>>> getAuditTrail(
-    PatientId patientId, {
-    String? eventType,
-  });
-
-  // ==========================================
-  // ASSESSMENT (Evaluations)
-  // ==========================================
-
-  /// Updates housing condition assessment.
-  Future<Result<void>> updateHousingCondition(
-    PatientId patientId,
-    HousingCondition condition,
-  );
-
-  /// Updates socioeconomic situation assessment.
-  Future<Result<void>> updateSocioEconomicSituation(
-    PatientId patientId,
-    SocioEconomicSituation situation,
-  );
-
-  /// Updates work and income assessment.
-  Future<Result<void>> updateWorkAndIncome(
-    PatientId patientId,
-    WorkAndIncome data,
-  );
-
-  /// Updates educational status assessment.
-  Future<Result<void>> updateEducationalStatus(
-    PatientId patientId,
-    EducationalStatus status,
-  );
-
-  /// Updates health status assessment.
-  Future<Result<void>> updateHealthStatus(
-    PatientId patientId,
-    HealthStatus status,
-  );
-
-  /// Updates community support network assessment.
-  Future<Result<void>> updateCommunitySupportNetwork(
-    PatientId patientId,
-    CommunitySupportNetwork network,
-  );
-
-  /// Updates social health summary assessment.
-  Future<Result<void>> updateSocialHealthSummary(
-    PatientId patientId,
-    SocialHealthSummary summary,
-  );
-
-  // ==========================================
-  // CARE (Appointments & Intake)
-  // ==========================================
-
-  /// Registers a new social care appointment. Returns the generated [AppointmentId].
-  Future<Result<AppointmentId>> registerAppointment(
-    PatientId patientId,
-    SocialCareAppointment appointment,
-  );
-
-  /// Updates the intake (acolhimento) information.
-  Future<Result<void>> updateIntakeInfo(PatientId patientId, IngressInfo info);
-
-  // ==========================================
-  // PROTECTION (Referrals & Violations)
-  // ==========================================
-
-  /// Updates the institutional placement history.
-  Future<Result<void>> updatePlacementHistory(
-    PatientId patientId,
-    PlacementHistory history,
-  );
-
-  /// Reports a new rights violation. Returns the generated [ViolationReportId].
-  Future<Result<ViolationReportId>> reportViolation(
-    PatientId patientId,
-    RightsViolationReport report,
-  );
-
-  /// Creates a new referral. Returns the generated [ReferralId].
-  Future<Result<ReferralId>> createReferral(
-    PatientId patientId,
-    Referral referral,
-  );
-
-  // ==========================================
-  // LOOKUP (Domain Tables)
-  // ==========================================
-
-  /// Fetches items from a domain table (e.g., `dominio_parentesco`).
-  Future<Result<List<LookupItem>>> getLookupTable(String tableName);
 }

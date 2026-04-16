@@ -1,29 +1,53 @@
 import 'package:core_contracts/core_contracts.dart';
+
 import '../contract/social_care_contract.dart';
-import '../infrastructure/dtos/patient_remote.dart';
-import '../infrastructure/dtos/patient_overview.dart';
-import '../infrastructure/patient_translator.dart';
-import '../domain/assessment/assessment_vos.dart';
-import '../domain/assessment/community_support.dart';
-import '../domain/assessment/educational_status.dart';
-import '../domain/assessment/health_status.dart';
-import '../domain/assessment/social_health_summary.dart';
-import '../domain/assessment/work_and_income.dart';
-import '../domain/care/care_vos.dart';
-import '../domain/kernel/ids.dart';
-import '../domain/models/lookup.dart';
-import '../domain/audit/audit_event.dart';
-import '../domain/registry/family_member.dart';
-import '../domain/registry/patient.dart';
-import '../domain/registry/registry_vos.dart';
-import '../domain/protection/protection_vos.dart';
+import '../contract/dto/requests/assessment/update_community_support_network_request.dart';
+import '../contract/dto/requests/assessment/update_educational_status_request.dart';
+import '../contract/dto/requests/assessment/update_health_status_request.dart';
+import '../contract/dto/requests/assessment/update_housing_condition_request.dart';
+import '../contract/dto/requests/assessment/update_social_health_summary_request.dart';
+import '../contract/dto/requests/assessment/update_socio_economic_situation_request.dart';
+import '../contract/dto/requests/assessment/update_work_and_income_request.dart';
+import '../contract/dto/requests/care/register_appointment_request.dart';
+import '../contract/dto/requests/care/register_intake_info_request.dart';
+import '../contract/dto/requests/people/assign_role_request.dart';
+import '../contract/dto/requests/people/register_person_request.dart';
+import '../contract/dto/requests/people/register_person_with_login_request.dart';
+import '../contract/dto/requests/protection/create_referral_request.dart';
+import '../contract/dto/requests/protection/report_rights_violation_request.dart';
+import '../contract/dto/requests/protection/update_placement_history_request.dart';
+import '../contract/dto/requests/registry/add_family_member_request.dart';
+import '../contract/dto/requests/registry/assign_primary_caregiver_request.dart';
+import '../contract/dto/requests/registry/discharge_patient_request.dart';
+import '../contract/dto/requests/registry/readmit_patient_request.dart';
+import '../contract/dto/requests/registry/register_patient_request.dart';
+import '../contract/dto/requests/registry/update_social_identity_request.dart';
+import '../contract/dto/requests/registry/withdraw_patient_request.dart';
+import '../contract/dto/responses/analytics/axis_metadata_response.dart';
+import '../contract/dto/responses/analytics/indicator_response.dart';
+import '../contract/dto/responses/audit/audit_trail_entry_response.dart';
+import '../contract/dto/responses/people/person_response.dart';
+import '../contract/dto/responses/people/person_role_response.dart';
+import '../contract/dto/responses/registry/patient_response.dart';
+import '../contract/dto/responses/registry/patient_summary_response.dart';
+import '../contract/dto/shared/paginated_list.dart';
+import '../contract/dto/shared/pagination_meta.dart';
+import '../contract/dto/shared/standard_response.dart';
 
 /// Implementation of [SocialCareContract] for testing and local simulation.
 class FakeSocialCareBff implements SocialCareContract {
   FakeSocialCareBff({this.delay = const Duration(milliseconds: 200)});
 
   final Duration delay;
-  final Map<String, Patient> _patients = {};
+
+  StandardResponse<T> _wrap<T>(T data) => StandardResponse(
+    data: data,
+    meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()),
+  );
+
+  StandardIdResponse _wrapId(String id) => _wrap(IdData(id: id));
+
+  // ── Health ──────────────────────────────────────────────────────────────
 
   @override
   Future<Result<void>> checkHealth() async => const Success(null);
@@ -31,164 +55,279 @@ class FakeSocialCareBff implements SocialCareContract {
   @override
   Future<Result<void>> checkReady() async => const Success(null);
 
+  // ── Registry ────────────────────────────────────────────────────────────
+
   @override
-  Future<Result<List<PatientOverview>>> fetchPatients() async {
+  Future<Result<PaginatedList<PatientSummaryResponse>>> fetchPatients({
+    String? search,
+    String? status,
+    String? cursor,
+    int? limit,
+  }) async {
     await Future.delayed(delay);
     return Success(
-      _patients.values
-          .map(
-            (p) => PatientOverview(
-              patientId: p.id.value,
-              personId: p.personId.value,
-              firstName: p.personalData?.firstName,
-              lastName: p.personalData?.lastName,
-              fullName:
-                  '${p.personalData?.firstName ?? ''} ${p.personalData?.lastName ?? ''}'
-                      .trim(),
-              primaryDiagnosis: p.diagnoses.isNotEmpty
-                  ? p.diagnoses.first.description
-                  : null,
-              memberCount: p.familyMembers.length,
-            ),
-          )
-          .toList(),
+      PaginatedList(
+        data: const [],
+        meta: PaginationMeta(
+          pageSize: limit ?? 20,
+          totalCount: 0,
+          hasMore: false,
+        ),
+      ),
     );
   }
 
   @override
-  Future<Result<PatientId>> registerPatient(Patient patient) async {
-    await Future.delayed(delay);
-    _patients[patient.id.value] = patient;
-    return Success(patient.id);
-  }
-
-  @override
-  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
-    await Future.delayed(delay);
-    final p = _patients[id.value];
-    if (p == null) return Failure('Patient not found: ${id.value}');
-    return Success(PatientRemote.fromJson(PatientTranslator.toJson(p)));
-  }
-
-  @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(
-    PersonId personId,
+  Future<Result<StandardIdResponse>> registerPatient(
+    RegisterPatientRequest request,
   ) async {
     await Future.delayed(delay);
-    try {
-      final p = _patients.values.firstWhere((p) => p.personId == personId);
-      return Success(PatientRemote.fromJson(PatientTranslator.toJson(p)));
-    } catch (_) {
-      return Failure('Patient not found for person: ${personId.value}');
-    }
+    return Success(_wrapId('fake-patient-id'));
   }
+
+  @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatient(
+    String patientId,
+  ) async {
+    await Future.delayed(delay);
+    return Failure('Patient not found: $patientId');
+  }
+
+  @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientByPersonId(
+    String personId,
+  ) async {
+    await Future.delayed(delay);
+    return Failure('Patient not found for person: $personId');
+  }
+
+  @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientEnriched(
+    String patientId,
+  ) async => fetchPatient(patientId);
 
   @override
   Future<Result<void>> addFamilyMember(
-    PatientId patientId,
-    FamilyMember member,
-    LookupId prRelationshipId, {
+    String patientId,
+    AddFamilyMemberRequest request, {
     String? cpf,
   }) async => const Success(null);
 
   @override
   Future<Result<void>> removeFamilyMember(
-    PatientId patientId,
-    PersonId memberId,
+    String patientId,
+    String memberId,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> assignPrimaryCaregiver(
-    PatientId patientId,
-    PersonId memberId,
+    String patientId,
+    AssignPrimaryCaregiverRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateSocialIdentity(
-    PatientId patientId,
-    SocialIdentity identity,
+    String patientId,
+    UpdateSocialIdentityRequest request,
   ) async => const Success(null);
 
   @override
-  Future<Result<List<AuditEvent>>> getAuditTrail(
-    PatientId patientId, {
-    String? eventType,
-  }) async => const Success([]);
+  Future<Result<void>> dischargePatient(
+    String patientId,
+    DischargePatientRequest request,
+  ) async => const Success(null);
+
+  @override
+  Future<Result<void>> readmitPatient(
+    String patientId,
+    ReadmitPatientRequest request,
+  ) async => const Success(null);
+
+  @override
+  Future<Result<void>> admitPatient(String patientId) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> withdrawPatient(
+    String patientId,
+    WithdrawPatientRequest request,
+  ) async => const Success(null);
+
+  // ── Assessment ──────────────────────────────────────────────────────────
 
   @override
   Future<Result<void>> updateHousingCondition(
-    PatientId patientId,
-    HousingCondition condition,
+    String patientId,
+    UpdateHousingConditionRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateSocioEconomicSituation(
-    PatientId patientId,
-    SocioEconomicSituation situation,
+    String patientId,
+    UpdateSocioEconomicSituationRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateWorkAndIncome(
-    PatientId patientId,
-    WorkAndIncome data,
+    String patientId,
+    UpdateWorkAndIncomeRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateEducationalStatus(
-    PatientId patientId,
-    EducationalStatus status,
+    String patientId,
+    UpdateEducationalStatusRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateHealthStatus(
-    PatientId patientId,
-    HealthStatus status,
+    String patientId,
+    UpdateHealthStatusRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateCommunitySupportNetwork(
-    PatientId patientId,
-    CommunitySupportNetwork network,
+    String patientId,
+    UpdateCommunitySupportNetworkRequest request,
   ) async => const Success(null);
 
   @override
   Future<Result<void>> updateSocialHealthSummary(
-    PatientId patientId,
-    SocialHealthSummary summary,
+    String patientId,
+    UpdateSocialHealthSummaryRequest request,
   ) async => const Success(null);
 
+  // ── Care ────────────────────────────────────────────────────────────────
+
   @override
-  Future<Result<AppointmentId>> registerAppointment(
-    PatientId patientId,
-    SocialCareAppointment appointment,
-  ) async => Success(appointment.id);
+  Future<Result<StandardIdResponse>> registerAppointment(
+    String patientId,
+    RegisterAppointmentRequest request,
+  ) async => Success(_wrapId('fake-appointment-id'));
 
   @override
   Future<Result<void>> updateIntakeInfo(
-    PatientId patientId,
-    IngressInfo info,
+    String patientId,
+    RegisterIntakeInfoRequest request,
   ) async => const Success(null);
+
+  // ── Protection ──────────────────────────────────────────────────────────
 
   @override
   Future<Result<void>> updatePlacementHistory(
-    PatientId patientId,
-    PlacementHistory history,
+    String patientId,
+    UpdatePlacementHistoryRequest request,
   ) async => const Success(null);
 
   @override
-  Future<Result<ViolationReportId>> reportViolation(
-    PatientId patientId,
-    RightsViolationReport report,
-  ) async => Success(report.id);
+  Future<Result<StandardIdResponse>> reportViolation(
+    String patientId,
+    ReportRightsViolationRequest request,
+  ) async => Success(_wrapId('fake-violation-id'));
 
   @override
-  Future<Result<ReferralId>> createReferral(
-    PatientId patientId,
-    Referral referral,
-  ) async => Success(referral.id);
+  Future<Result<StandardIdResponse>> createReferral(
+    String patientId,
+    CreateReferralRequest request,
+  ) async => Success(_wrapId('fake-referral-id'));
+
+  // ── Audit ───────────────────────────────────────────────────────────────
 
   @override
-  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
-    return const Success([]);
-  }
+  Future<Result<StandardResponse<List<AuditTrailEntryResponse>>>> getAuditTrail(
+    String patientId, {
+    String? eventType,
+    int? limit,
+    int? offset,
+  }) async => Success(_wrap(const <AuditTrailEntryResponse>[]));
+
+  // ── Lookup ──────────────────────────────────────────────────────────────
+
+  @override
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupTable(
+    String tableName,
+  ) async => Success(_wrap(const <Map<String, dynamic>>[]));
+
+  // ── People ──────────────────────────────────────────────────────────────
+
+  @override
+  Future<Result<StandardIdResponse>> registerPerson(
+    RegisterPersonRequest request,
+  ) async => Success(_wrapId('fake-person-id'));
+
+  @override
+  Future<Result<StandardIdResponse>> registerPersonWithLogin(
+    RegisterPersonWithLoginRequest request,
+  ) async => Success(_wrapId('fake-person-id'));
+
+  @override
+  Future<Result<PersonResponse>> getPerson(String personId) async =>
+      Success(PersonResponse(id: personId, fullName: 'Fake Person'));
+
+  @override
+  Future<Result<PersonResponse>> findPersonByCpf(String cpf) async =>
+      const Failure('Person not found');
+
+  @override
+  Future<Result<StandardResponse<List<PersonResponse>>>> fetchPeople({
+    int? limit,
+    String? name,
+    String? cpf,
+    String? cursor,
+  }) async => Success(_wrap(const <PersonResponse>[]));
+
+  @override
+  Future<Result<void>> deactivatePerson(String personId) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> reactivatePerson(String personId) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> requestPasswordReset(String personId) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> assignRole(
+    String personId,
+    AssignRoleRequest request,
+  ) async => const Success(null);
+
+  @override
+  Future<Result<List<PersonRoleResponse>>> listPersonRoles(
+    String personId, {
+    bool? active,
+  }) async => const Success([]);
+
+  @override
+  Future<Result<List<PersonRoleResponse>>> queryRoles({
+    required String system,
+    String? role,
+    bool active = true,
+  }) async => const Success([]);
+
+  @override
+  Future<Result<void>> deactivateRole({
+    required String personId,
+    required String roleId,
+  }) async => const Success(null);
+
+  @override
+  Future<Result<void>> reactivateRole({
+    required String personId,
+    required String roleId,
+  }) async => const Success(null);
+
+  // ── Analytics ───────────────────────────────────────────────────────────
+
+  @override
+  Future<Result<StandardResponse<IndicatorResponse>>> getIndicators(
+    String axis, {
+    String? period,
+  }) async => Success(_wrap(IndicatorResponse(axis: axis, rows: const [])));
+
+  @override
+  Future<Result<StandardResponse<List<AxisMetadataResponse>>>>
+  getAxesMetadata() async => Success(_wrap(const <AxisMetadataResponse>[]));
 }
