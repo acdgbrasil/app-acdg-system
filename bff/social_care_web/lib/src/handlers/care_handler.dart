@@ -33,23 +33,14 @@ class CareHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final appointmentResult = PatientTranslator.appointmentFromJson(body);
+      final dto = RegisterAppointmentRequest.fromJson(body);
 
-      return switch ((patientIdResult, appointmentResult)) {
-        (Success(:final value), Success(value: final appointment)) =>
-          switch (await contract.registerAppointment(value, appointment)) {
-            Success(:final value) => jsonOk({'id': value.value}),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid appointment: $error',
-        ),
+      return switch (await contract.registerAppointment(id, dto)) {
+        Success(:final value) => jsonOk({
+          'data': {'id': value.data.id},
+          'meta': {'timestamp': value.meta.timestamp},
+        }),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -62,23 +53,11 @@ class CareHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final intakeResult = PatientTranslator.intakeInfoFromJson(body);
+      final dto = RegisterIntakeInfoRequest.fromJson(body);
 
-      return switch ((patientIdResult, intakeResult)) {
-        (Success(:final value), Success(value: final intake)) =>
-          switch (await contract.updateIntakeInfo(value, intake)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid intake info: $error',
-        ),
+      return switch (await contract.updateIntakeInfo(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');

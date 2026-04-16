@@ -47,23 +47,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.housingConditionFromJson(body);
+      final dto = UpdateHousingConditionRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateHousingCondition(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid housing condition: $error',
-        ),
+      return switch (await contract.updateHousingCondition(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -76,23 +64,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.socioEconomicFromJson(body);
+      final dto = UpdateSocioEconomicSituationRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateSocioEconomicSituation(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid socioeconomic situation: $error',
-        ),
+      return switch (await contract.updateSocioEconomicSituation(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -105,23 +81,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.workAndIncomeFromJson(body);
+      final dto = UpdateWorkAndIncomeRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateWorkAndIncome(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid work and income: $error',
-        ),
+      return switch (await contract.updateWorkAndIncome(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -134,23 +98,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.educationalStatusFromJson(body);
+      final dto = UpdateEducationalStatusRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateEducationalStatus(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid educational status: $error',
-        ),
+      return switch (await contract.updateEducationalStatus(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -163,23 +115,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.healthStatusFromJson(body);
+      final dto = UpdateHealthStatusRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateHealthStatus(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid health status: $error',
-        ),
+      return switch (await contract.updateHealthStatus(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -192,23 +132,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.communitySupportFromJson(body);
+      final dto = UpdateCommunitySupportNetworkRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateCommunitySupportNetwork(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid community support network: $error',
-        ),
+      return switch (await contract.updateCommunitySupportNetwork(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -221,23 +149,11 @@ class AssessmentHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final dataResult = PatientTranslator.socialHealthSummaryFromJson(body);
+      final dto = UpdateSocialHealthSummaryRequest.fromJson(body);
 
-      return switch ((patientIdResult, dataResult)) {
-        (Success(:final value), Success(value: final data)) =>
-          switch (await contract.updateSocialHealthSummary(value, data)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid social health summary: $error',
-        ),
+      return switch (await contract.updateSocialHealthSummary(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');

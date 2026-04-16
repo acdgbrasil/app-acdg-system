@@ -2,22 +2,22 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
 
-import '../handlers/handler_utils.dart';
-
 /// Implementation of [SocialCareContract] that communicates with the real
 /// backend API (Swift/Vapor) via HTTP.
 ///
-/// This is the pure-Dart equivalent of `SocialCareBffRemote` from the desktop
-/// BFF, without Flutter dependencies. It is used by the Web BFF server to
-/// proxy authenticated requests to the backend.
+/// This is the pure-Dart BFF API client for the Web BFF server.
+/// It proxies authenticated requests to the backend, preserving
+/// structured error responses.
+///
+/// People and Analytics methods are NOT implemented here — they
+/// require separate service clients (PeopleContextClient, AnalyticsBiClient).
 class SocialCareApiClient implements SocialCareContract {
   SocialCareApiClient({
     required String baseUrl,
     required String actorId,
     required String accessToken,
     Dio? dio,
-  }) : _dio =
-           dio ??
+  }) : _dio = dio ??
            Dio(
              BaseOptions(
                baseUrl: baseUrl,
@@ -31,23 +31,58 @@ class SocialCareApiClient implements SocialCareContract {
 
   final Dio _dio;
 
-  /// Extracts a typed [BackendError] from a non-success Dio [Response].
-  Failure<T> _backendFailure<T>(Response response, String fallbackMessage) {
+  // ── Error Handling ──────────────────────────────────────────────────
+
+  /// Extracts a structured [BackendErrorResponse] from a non-success response.
+  ///
+  /// Preserves the full error structure (id, code, message, bc, module,
+  /// severity, etc.) without concatenating fields.
+  Failure<T> _backendFailure<T>(Response<dynamic> response, String fallbackMessage) {
     final data = response.data;
-    String message = fallbackMessage;
-    if (data is Map<String, dynamic>) {
-      final errorMap = data['error'] as Map<String, dynamic>?;
-      final code = errorMap?['code'] as String?;
-      final msg =
-          errorMap?['message'] as String? ??
-          data['message'] as String? ??
-          fallbackMessage;
-      message = code != null ? '$code: $msg' : msg;
+    if (data is Map<String, dynamic> && data.containsKey('error')) {
+      try {
+        final errorResponse = BackendErrorResponse.fromJson(data);
+        return Failure(errorResponse);
+      } catch (_) {
+        // Fallback if error structure does not match expected schema
+      }
     }
+    final message = (data is Map<String, dynamic>)
+        ? (data['message'] as String? ?? fallbackMessage)
+        : fallbackMessage;
     return Failure(
-      BackendError(statusCode: response.statusCode ?? 502, message: message),
+      BackendErrorResponse(
+        error: BackendError(
+          id: '',
+          code: 'UNKNOWN',
+          message: message,
+          http: response.statusCode ?? 502,
+        ),
+      ),
     );
   }
+
+  // ── Response Helpers ────────────────────────────────────────────────
+
+  StandardResponse<T> _wrapResponse<T>(T data) => StandardResponse(
+    data: data,
+    meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()),
+  );
+
+  StandardIdResponse _extractIdResponse(Map<String, dynamic> responseData) {
+    final data = responseData['data'] as Map<String, dynamic>;
+    return StandardResponse(
+      data: IdData(id: data['id'] as String),
+      meta: ResponseMeta(
+        timestamp:
+            (responseData['meta'] as Map<String, dynamic>?)?['timestamp']
+                    as String? ??
+                DateTime.now().toIso8601String(),
+      ),
+    );
+  }
+
+  // ── Health ──────────────────────────────────────────────────────────
 
   @override
   Future<Result<void>> checkHealth() async {
@@ -69,22 +104,40 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
+  // ── Registry — Patients ─────────────────────────────────────────────
+
   @override
-  Future<Result<List<PatientOverview>>> fetchPatients() async {
+  Future<Result<PaginatedList<PatientSummaryResponse>>> fetchPatients({
+    String? search,
+    String? status,
+    String? cursor,
+    int? limit,
+  }) async {
     try {
+      final params = <String, dynamic>{
+        if (search != null) 'search': search,
+        if (status != null) 'status': status,
+        if (cursor != null) 'cursor': cursor,
+        'limit': limit ?? 20,
+      };
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/patients',
-        queryParameters: {'limit': 100},
+        queryParameters: params,
         options: Options(validateStatus: (status) => true),
       );
 
       if (response.statusCode == 200) {
         final data = response.data!['data'] as List<dynamic>;
-        final summaries = data
-            .cast<Map<String, dynamic>>()
-            .map(PatientOverview.fromJson)
-            .toList();
-        return Success(summaries);
+        final meta = response.data!['meta'] as Map<String, dynamic>;
+        return Success(
+          PaginatedList(
+            data: data
+                .cast<Map<String, dynamic>>()
+                .map(PatientSummaryResponse.fromJson)
+                .toList(),
+            meta: PaginationMeta.fromJson(meta),
+          ),
+        );
       }
       return _backendFailure(response, 'Failed to list patients');
     } catch (e) {
@@ -93,56 +146,36 @@ class SocialCareApiClient implements SocialCareContract {
   }
 
   @override
-  Future<Result<PatientId>> registerPatient(Patient patient) async {
+  Future<Result<StandardIdResponse>> registerPatient(
+    RegisterPatientRequest request,
+  ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/v1/patients',
-        data: PatientTranslator.toJson(patient),
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
-        return PatientId.create(data['id'] as String);
+        return Success(_extractIdResponse(response.data!));
       }
-      return _backendFailure(response, 'Unknown backend error');
+      return _backendFailure(response, 'Failed to register patient');
     } catch (e) {
       return Failure(e);
     }
   }
 
   @override
-  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
-    try {
-      final url = '/api/v1/patients/${id.value}';
-      final response = await _dio.get<Map<String, dynamic>>(
-        url,
-        options: Options(validateStatus: (status) => true),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
-        return Success(PatientRemote.fromJson(data));
-      }
-      return _backendFailure(response, 'Patient not found');
-    } catch (e) {
-      return Failure(e);
-    }
-  }
-
-  @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(
-    PersonId personId,
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatient(
+    String patientId,
   ) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/api/v1/patients/by-person/${personId.value}',
+        '/api/v1/patients/$patientId',
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 200) {
         final data = response.data!['data'] as Map<String, dynamic>;
-        return Success(PatientRemote.fromJson(data));
+        return Success(_wrapResponse(PatientResponse.fromJson(data)));
       }
       return _backendFailure(response, 'Patient not found');
     } catch (e) {
@@ -151,24 +184,45 @@ class SocialCareApiClient implements SocialCareContract {
   }
 
   @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientByPersonId(
+    String personId,
+  ) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/patients/by-person/$personId',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 200) {
+        final data = response.data!['data'] as Map<String, dynamic>;
+        return Success(_wrapResponse(PatientResponse.fromJson(data)));
+      }
+      return _backendFailure(response, 'Patient not found');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientEnriched(
+    String patientId,
+  ) async {
+    return fetchPatient(patientId);
+  }
+
+  // ── Registry — Family Members ───────────────────────────────────────
+
+  @override
   Future<Result<void>> addFamilyMember(
-    PatientId patientId,
-    FamilyMember member,
-    LookupId prRelationshipId, {
+    String patientId,
+    AddFamilyMemberRequest request, {
     String? cpf,
   }) async {
     try {
-      final payload = PatientTranslator.addMemberRequestToJson(
-        member,
-        prRelationshipId,
-      );
-
       final response = await _dio.post(
-        '/api/v1/patients/${patientId.value}/family-members',
-        data: payload,
+        '/api/v1/patients/$patientId/family-members',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 ||
           response.statusCode == 201 ||
           response.statusCode == 200) {
@@ -182,15 +236,14 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> removeFamilyMember(
-    PatientId patientId,
-    PersonId memberId,
+    String patientId,
+    String memberId,
   ) async {
     try {
       final response = await _dio.delete(
-        '/api/v1/patients/${patientId.value}/family-members/${memberId.value}',
+        '/api/v1/patients/$patientId/family-members/$memberId',
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -202,16 +255,15 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> assignPrimaryCaregiver(
-    PatientId patientId,
-    PersonId memberId,
+    String patientId,
+    AssignPrimaryCaregiverRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/primary-caregiver',
-        data: {'memberPersonId': memberId.value},
+        '/api/v1/patients/$patientId/primary-caregiver',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -221,18 +273,19 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
+  // ── Registry — Social Identity ──────────────────────────────────────
+
   @override
   Future<Result<void>> updateSocialIdentity(
-    PatientId patientId,
-    SocialIdentity identity,
+    String patientId,
+    UpdateSocialIdentityRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/social-identity',
-        data: PatientTranslator.socialIdentityToJson(identity),
+        '/api/v1/patients/$patientId/social-identity',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -242,52 +295,97 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
+  // ── Registry — Lifecycle ────────────────────────────────────────────
+
   @override
-  Future<Result<List<AuditEvent>>> getAuditTrail(
-    PatientId patientId, {
-    String? eventType,
-  }) async {
+  Future<Result<void>> dischargePatient(
+    String patientId,
+    DischargePatientRequest request,
+  ) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/v1/patients/${patientId.value}/audit-trail',
-        queryParameters: eventType != null ? {'eventType': eventType} : null,
+      final response = await _dio.post(
+        '/api/v1/patients/$patientId/discharge',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data!['data'];
-        return Success(data.map((item) => _mapApiToAuditEvent(item)).toList());
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
       }
-      return _backendFailure(response, 'Failed to fetch audit trail');
+      return _backendFailure(response, 'Failed to discharge patient');
     } catch (e) {
       return Failure(e);
     }
   }
 
-  AuditEvent _mapApiToAuditEvent(Map<String, dynamic> data) {
-    return AuditEvent.reconstitute(
-      id: data['id'] as String,
-      aggregateId: data['aggregateId'] as String,
-      eventType: data['eventType'] as String,
-      actorId: data['actorId'] as String?,
-      payload: data['payload'] as Map<String, dynamic>,
-      occurredAt: TimeStamp.fromIso(data['occurredAt'] as String).valueOrNull!,
-      recordedAt: TimeStamp.fromIso(data['recordedAt'] as String).valueOrNull!,
-    );
+  @override
+  Future<Result<void>> readmitPatient(
+    String patientId,
+    ReadmitPatientRequest request,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/patients/$patientId/readmit',
+        data: request.toJson(),
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to readmit patient');
+    } catch (e) {
+      return Failure(e);
+    }
   }
 
   @override
+  Future<Result<void>> admitPatient(String patientId) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/patients/$patientId/admit',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to admit patient');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> withdrawPatient(
+    String patientId,
+    WithdrawPatientRequest request,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/patients/$patientId/withdraw',
+        data: request.toJson(),
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to withdraw patient');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  // ── Assessment ──────────────────────────────────────────────────────
+
+  @override
   Future<Result<void>> updateHousingCondition(
-    PatientId patientId,
-    HousingCondition condition,
+    String patientId,
+    UpdateHousingConditionRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/housing-condition',
-        data: PatientTranslator.housingConditionToJson(condition),
+        '/api/v1/patients/$patientId/housing-condition',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -299,21 +397,21 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateSocioEconomicSituation(
-    PatientId patientId,
-    SocioEconomicSituation situation,
+    String patientId,
+    UpdateSocioEconomicSituationRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/socioeconomic-situation',
-        data: PatientTranslator.socioEconomicToJson(situation),
+        '/api/v1/patients/$patientId/socioeconomic-situation',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(
-        response.data ?? 'Failed to update socio-economic situation',
+      return _backendFailure(
+        response,
+        'Failed to update socio-economic situation',
       );
     } catch (e) {
       return Failure(e);
@@ -322,16 +420,15 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateWorkAndIncome(
-    PatientId patientId,
-    WorkAndIncome data,
+    String patientId,
+    UpdateWorkAndIncomeRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/work-and-income',
-        data: PatientTranslator.workAndIncomeToJson(data),
+        '/api/v1/patients/$patientId/work-and-income',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -343,16 +440,15 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateEducationalStatus(
-    PatientId patientId,
-    EducationalStatus status,
+    String patientId,
+    UpdateEducationalStatusRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/educational-status',
-        data: PatientTranslator.educationalStatusToJson(status),
+        '/api/v1/patients/$patientId/educational-status',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -364,16 +460,15 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateHealthStatus(
-    PatientId patientId,
-    HealthStatus status,
+    String patientId,
+    UpdateHealthStatusRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/health-status',
-        data: PatientTranslator.healthStatusToJson(status),
+        '/api/v1/patients/$patientId/health-status',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -385,21 +480,21 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateCommunitySupportNetwork(
-    PatientId patientId,
-    CommunitySupportNetwork network,
+    String patientId,
+    UpdateCommunitySupportNetworkRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/community-support-network',
-        data: PatientTranslator.communitySupportToJson(network),
+        '/api/v1/patients/$patientId/community-support-network',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
-      return Failure(
-        response.data ?? 'Failed to update community support network',
+      return _backendFailure(
+        response,
+        'Failed to update community support network',
       );
     } catch (e) {
       return Failure(e);
@@ -408,16 +503,15 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateSocialHealthSummary(
-    PatientId patientId,
-    SocialHealthSummary summary,
+    String patientId,
+    UpdateSocialHealthSummaryRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/social-health-summary',
-        data: PatientTranslator.socialHealthSummaryToJson(summary),
+        '/api/v1/patients/$patientId/social-health-summary',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -430,21 +524,21 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
+  // ── Care ────────────────────────────────────────────────────────────
+
   @override
-  Future<Result<AppointmentId>> registerAppointment(
-    PatientId patientId,
-    SocialCareAppointment appointment,
+  Future<Result<StandardIdResponse>> registerAppointment(
+    String patientId,
+    RegisterAppointmentRequest request,
   ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
-        '/api/v1/patients/${patientId.value}/appointments',
-        data: PatientTranslator.appointmentToJson(appointment),
+        '/api/v1/patients/$patientId/appointments',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
-        return AppointmentId.create(data['id'] as String);
+        return Success(_extractIdResponse(response.data!));
       }
       return _backendFailure(response, 'Failed to register appointment');
     } catch (e) {
@@ -454,16 +548,15 @@ class SocialCareApiClient implements SocialCareContract {
 
   @override
   Future<Result<void>> updateIntakeInfo(
-    PatientId patientId,
-    IngressInfo info,
+    String patientId,
+    RegisterIntakeInfoRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/intake-info',
-        data: PatientTranslator.intakeInfoToJson(info),
+        '/api/v1/patients/$patientId/intake-info',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -473,18 +566,19 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
+  // ── Protection ──────────────────────────────────────────────────────
+
   @override
   Future<Result<void>> updatePlacementHistory(
-    PatientId patientId,
-    PlacementHistory history,
+    String patientId,
+    UpdatePlacementHistoryRequest request,
   ) async {
     try {
       final response = await _dio.put(
-        '/api/v1/patients/${patientId.value}/placement-history',
-        data: PatientTranslator.placementHistoryToJson(history),
+        '/api/v1/patients/$patientId/placement-history',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 204 || response.statusCode == 200) {
         return const Success(null);
       }
@@ -495,20 +589,18 @@ class SocialCareApiClient implements SocialCareContract {
   }
 
   @override
-  Future<Result<ViolationReportId>> reportViolation(
-    PatientId patientId,
-    RightsViolationReport report,
+  Future<Result<StandardIdResponse>> reportViolation(
+    String patientId,
+    ReportRightsViolationRequest request,
   ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
-        '/api/v1/patients/${patientId.value}/violation-reports',
-        data: PatientTranslator.violationReportToJson(report),
+        '/api/v1/patients/$patientId/violation-reports',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
-        return ViolationReportId.create(data['id'] as String);
+        return Success(_extractIdResponse(response.data!));
       }
       return _backendFailure(response, 'Failed to report violation');
     } catch (e) {
@@ -517,20 +609,18 @@ class SocialCareApiClient implements SocialCareContract {
   }
 
   @override
-  Future<Result<ReferralId>> createReferral(
-    PatientId patientId,
-    Referral referral,
+  Future<Result<StandardIdResponse>> createReferral(
+    String patientId,
+    CreateReferralRequest request,
   ) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
-        '/api/v1/patients/${patientId.value}/referrals',
-        data: PatientTranslator.referralToJson(referral),
+        '/api/v1/patients/$patientId/referrals',
+        data: request.toJson(),
         options: Options(validateStatus: (status) => true),
       );
-
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data!['data'] as Map<String, dynamic>;
-        return ReferralId.create(data['id'] as String);
+        return Success(_extractIdResponse(response.data!));
       }
       return _backendFailure(response, 'Failed to create referral');
     } catch (e) {
@@ -538,30 +628,154 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
-  @override
-  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/v1/dominios/$tableName',
-      );
+  // ── Audit ───────────────────────────────────────────────────────────
 
+  @override
+  Future<Result<StandardResponse<List<AuditTrailEntryResponse>>>> getAuditTrail(
+    String patientId, {
+    String? eventType,
+    int? limit,
+    int? offset,
+  }) async {
+    try {
+      final params = <String, dynamic>{
+        if (eventType != null) 'eventType': eventType,
+        if (limit != null) 'limit': limit,
+        if (offset != null) 'offset': offset,
+      };
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/patients/$patientId/audit-trail',
+        queryParameters: params.isEmpty ? null : params,
+        options: Options(validateStatus: (status) => true),
+      );
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data!['data'];
+        final data = response.data!['data'] as List<dynamic>;
         return Success(
-          data
-              .map(
-                (item) => LookupItem(
-                  id: item['id'] as String,
-                  codigo: item['codigo'] as String,
-                  descricao: item['descricao'] as String,
-                ),
-              )
-              .toList(),
+          _wrapResponse(
+            data
+                .cast<Map<String, dynamic>>()
+                .map(AuditTrailEntryResponse.fromJson)
+                .toList(),
+          ),
         );
       }
-      return Failure('Lookup table $tableName not found');
+      return _backendFailure(response, 'Failed to fetch audit trail');
     } catch (e) {
       return Failure(e);
     }
   }
+
+  // ── Lookup ──────────────────────────────────────────────────────────
+
+  @override
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupTable(
+    String tableName,
+  ) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/dominios/$tableName',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 200) {
+        final data = response.data!['data'] as List<dynamic>;
+        return Success(_wrapResponse(data.cast<Map<String, dynamic>>()));
+      }
+      return _backendFailure(response, 'Lookup table $tableName not found');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  // ── People (delegated to PeopleContextClient) ──────────────────────
+
+  @override
+  Future<Result<StandardIdResponse>> registerPerson(
+    RegisterPersonRequest request,
+  ) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<StandardIdResponse>> registerPersonWithLogin(
+    RegisterPersonWithLoginRequest request,
+  ) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<PersonResponse>> getPerson(String personId) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<PersonResponse>> findPersonByCpf(String cpf) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<StandardResponse<List<PersonResponse>>>> fetchPeople({
+    int? limit,
+    String? name,
+    String? cpf,
+    String? cursor,
+  }) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<void>> deactivatePerson(String personId) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<void>> reactivatePerson(String personId) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<void>> requestPasswordReset(String personId) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<void>> assignRole(
+    String personId,
+    AssignRoleRequest request,
+  ) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<List<PersonRoleResponse>>> listPersonRoles(
+    String personId, {
+    bool? active,
+  }) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<List<PersonRoleResponse>>> queryRoles({
+    required String system,
+    String? role,
+    bool active = true,
+  }) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<void>> deactivateRole({
+    required String personId,
+    required String roleId,
+  }) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  @override
+  Future<Result<void>> reactivateRole({
+    required String personId,
+    required String roleId,
+  }) =>
+      throw UnimplementedError('Use PeopleContextClient directly');
+
+  // ── Analytics (delegated to AnalyticsBiClient) ─────────────────────
+
+  @override
+  Future<Result<StandardResponse<IndicatorResponse>>> getIndicators(
+    String axis, {
+    String? period,
+  }) =>
+      throw UnimplementedError('Use AnalyticsBiClient directly');
+
+  @override
+  Future<Result<StandardResponse<List<AxisMetadataResponse>>>>
+      getAxesMetadata() =>
+          throw UnimplementedError('Use AnalyticsBiClient directly');
 }

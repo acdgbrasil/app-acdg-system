@@ -36,23 +36,11 @@ class ProtectionHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final historyResult = PatientTranslator.placementHistoryFromJson(body);
+      final dto = UpdatePlacementHistoryRequest.fromJson(body);
 
-      return switch ((patientIdResult, historyResult)) {
-        (Success(:final value), Success(value: final history)) =>
-          switch (await contract.updatePlacementHistory(value, history)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid placement history: $error',
-        ),
+      return switch (await contract.updatePlacementHistory(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -65,23 +53,14 @@ class ProtectionHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final reportResult = PatientTranslator.violationReportFromJson(body);
+      final dto = ReportRightsViolationRequest.fromJson(body);
 
-      return switch ((patientIdResult, reportResult)) {
-        (Success(:final value), Success(value: final report)) =>
-          switch (await contract.reportViolation(value, report)) {
-            Success(:final value) => jsonOk({'id': value.value}),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid violation report: $error',
-        ),
+      return switch (await contract.reportViolation(id, dto)) {
+        Success(:final value) => jsonOk({
+          'data': {'id': value.data.id},
+          'meta': {'timestamp': value.meta.timestamp},
+        }),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -94,23 +73,14 @@ class ProtectionHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final referralResult = PatientTranslator.referralFromJson(body);
+      final dto = CreateReferralRequest.fromJson(body);
 
-      return switch ((patientIdResult, referralResult)) {
-        (Success(:final value), Success(value: final referral)) =>
-          switch (await contract.createReferral(value, referral)) {
-            Success(:final value) => jsonOk({'id': value.value}),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid referral: $error',
-        ),
+      return switch (await contract.createReferral(id, dto)) {
+        Success(:final value) => jsonOk({
+          'data': {'id': value.data.id},
+          'meta': {'timestamp': value.meta.timestamp},
+        }),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');

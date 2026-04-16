@@ -44,8 +44,11 @@ class RegistryHandler {
 
     return switch (result) {
       Success(:final value) => () async {
-        final enriched = await _enrichOverviews(value, peopleContext);
-        return jsonOk(enriched);
+        final enriched = await _enrichSummaries(value.data, peopleContext);
+        return jsonOk({
+          'data': enriched,
+          'meta': value.meta.toJson(),
+        });
       }(),
       Failure(:final error) => backendError(error),
     };
@@ -133,32 +136,18 @@ class RegistryHandler {
           .where((m) => m is Map<String, dynamic> && m['relationship'] == prRelationshipId)
           .toList();
 
-      final patientResult = PatientTranslator.fromJson(body);
-
-      if (patientResult case Failure(:final error)) {
-        return jsonError(400, error.toString());
-      }
-
-      final patient = (patientResult as Success).value;
-      final registerResult = await contract.registerPatient(patient);
+      final registerRequest = RegisterPatientRequest.fromJson(body);
+      final registerResult = await contract.registerPatient(registerRequest);
 
       if (registerResult case Failure(:final error)) {
         return backendError(error);
       }
 
-      final patientId = (registerResult as Success).value;
+      final idResponse = (registerResult as Success<StandardIdResponse>).value;
+      final patientId = idResponse.data.id;
 
       // Now add each extra member via POST /patients/:id/family-members
       if (extraMembers.isNotEmpty && prRelationshipId != null) {
-        final LookupId prRelId;
-        switch (LookupId.create(prRelationshipId)) {
-          case Success(:final value):
-            prRelId = value;
-          case Failure():
-            print('[BFF:Register] ⚠️ Invalid prRelationshipId, skipping extra members');
-            return jsonOk({'id': patientId.value});
-        }
-
         for (final memberJson in extraMembers) {
           final memberName = memberJson['fullName'] as String? ?? '';
           final memberBirth = memberJson['birthDate'] as String? ?? '';
@@ -186,62 +175,60 @@ class RegistryHandler {
           // 2. Add to patient via contract
           memberJson['prRelationshipId'] = prRelationshipId;
 
-          final memberResult = PatientTranslator.familyMemberFromJson(memberJson);
-          switch (memberResult) {
-            case Success(:final value):
-              final addResult = await contract.addFamilyMember(patientId, value, prRelId);
-              switch (addResult) {
-                case Success():
-                  print('[BFF:Register] ✅ Extra member added');
-                case Failure(:final error):
-                  print('[BFF:Register] ⚠️ Failed to add extra member: $error');
-              }
-            case Failure(:final error):
-              print('[BFF:Register] ⚠️ Failed to parse extra member: $error');
+          try {
+            final memberDto = AddFamilyMemberRequest.fromJson(memberJson);
+            final addResult = await contract.addFamilyMember(patientId, memberDto);
+            switch (addResult) {
+              case Success():
+                print('[BFF:Register] Extra member added');
+              case Failure(:final error):
+                print('[BFF:Register] Failed to add extra member: $error');
+            }
+          } catch (e) {
+            print('[BFF:Register] Failed to parse extra member: $e');
           }
         }
       }
 
       // Persist optional sections that backend ignores during register
-      // (intakeInfo, socialIdentity are attached via copyWith but not saved)
-
       final intakeInfoJson = body['intakeInfo'] as Map<String, dynamic>?;
       if (intakeInfoJson != null) {
         print('[BFF:Register] Saving intakeInfo via PUT');
-        final intakeResult = PatientTranslator.intakeInfoFromJson(intakeInfoJson);
-        switch (intakeResult) {
-          case Success(:final value):
-            final putResult = await contract.updateIntakeInfo(patientId, value);
-            switch (putResult) {
-              case Success():
-                print('[BFF:Register] ✅ IntakeInfo saved');
-              case Failure(:final error):
-                print('[BFF:Register] ⚠️ IntakeInfo save failed: $error');
-            }
-          case Failure(:final error):
-            print('[BFF:Register] ⚠️ IntakeInfo parse failed: $error');
+        try {
+          final intakeDto = RegisterIntakeInfoRequest.fromJson(intakeInfoJson);
+          final putResult = await contract.updateIntakeInfo(patientId, intakeDto);
+          switch (putResult) {
+            case Success():
+              print('[BFF:Register] IntakeInfo saved');
+            case Failure(:final error):
+              print('[BFF:Register] IntakeInfo save failed: $error');
+          }
+        } catch (e) {
+          print('[BFF:Register] IntakeInfo parse failed: $e');
         }
       }
 
       final socialIdentityJson = body['socialIdentity'] as Map<String, dynamic>?;
       if (socialIdentityJson != null) {
         print('[BFF:Register] Saving socialIdentity via PUT');
-        final idResult = PatientTranslator.socialIdentityFromJson(socialIdentityJson);
-        switch (idResult) {
-          case Success(:final value):
-            final putResult = await contract.updateSocialIdentity(patientId, value);
-            switch (putResult) {
-              case Success():
-                print('[BFF:Register] ✅ SocialIdentity saved');
-              case Failure(:final error):
-                print('[BFF:Register] ⚠️ SocialIdentity save failed: $error');
-            }
-          case Failure(:final error):
-            print('[BFF:Register] ⚠️ SocialIdentity parse failed: $error');
+        try {
+          final identityDto = UpdateSocialIdentityRequest.fromJson(socialIdentityJson);
+          final putResult = await contract.updateSocialIdentity(patientId, identityDto);
+          switch (putResult) {
+            case Success():
+              print('[BFF:Register] SocialIdentity saved');
+            case Failure(:final error):
+              print('[BFF:Register] SocialIdentity save failed: $error');
+          }
+        } catch (e) {
+          print('[BFF:Register] SocialIdentity parse failed: $e');
         }
       }
 
-      return jsonOk({'id': patientId.value});
+      return jsonOk({
+        'data': {'id': patientId},
+        'meta': {'timestamp': idResponse.meta.timestamp},
+      });
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
     }
@@ -254,17 +241,16 @@ class RegistryHandler {
     final contract = _contractFactory(session);
     final peopleContext = _peopleContextFactory(session);
 
-    final patientIdResult = PatientId.create(id);
-    return switch (patientIdResult) {
-      Success(:final value) => switch (await contract.fetchPatient(value)) {
-        Success(:final value) => () async {
-          final json = value.toJson();
-          await _enrichFamilyMembers(json, peopleContext);
-          return jsonOk(json);
-        }(),
-        Failure(:final error) => backendError(error),
-      },
-      Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
+    return switch (await contract.fetchPatient(id)) {
+      Success(:final value) => () async {
+        final json = value.data.toJson();
+        await _enrichFamilyMembers(json, peopleContext);
+        return jsonOk({
+          'data': json,
+          'meta': {'timestamp': value.meta.timestamp},
+        });
+      }(),
+      Failure(:final error) => backendError(error),
     };
   }
 
@@ -277,19 +263,6 @@ class RegistryHandler {
 
     try {
       final body = await readJsonBody(request);
-
-      final PatientId patientId;
-      switch (PatientId.create(id)) {
-        case Success(:final value):
-          patientId = value;
-        case Failure(:final error):
-          return jsonError(400, 'Invalid patient ID: $error');
-      }
-
-      final prRelationshipIdStr = body['prRelationshipId'] as String?;
-      if (prRelationshipIdStr == null) {
-        return jsonError(400, 'Missing prRelationshipId');
-      }
 
       // Register person in people-context if name available (non-blocking)
       final fullName = body['fullName'] as String? ?? '';
@@ -317,27 +290,9 @@ class RegistryHandler {
         print('[BFF:AddMember] SKIPPED people-context: fullName or birthDate empty');
       }
 
-      final LookupId prRelId;
-      switch (LookupId.create(prRelationshipIdStr)) {
-        case Success(:final value):
-          prRelId = value;
-        case Failure(:final error):
-          return jsonError(400, 'Invalid prRelationshipId: $error');
-      }
+      final dto = AddFamilyMemberRequest.fromJson(body);
 
-      final FamilyMember member;
-      switch (PatientTranslator.familyMemberFromJson(body)) {
-        case Success(:final value):
-          member = value;
-        case Failure(:final error):
-          return jsonError(400, 'Invalid family member: $error');
-      }
-
-      return switch (await contract.addFamilyMember(
-        patientId,
-        member,
-        prRelId,
-      )) {
+      return switch (await contract.addFamilyMember(id, dto, cpf: cpf)) {
         Success() => jsonNoContent(),
         Failure(:final error) => backendError(error),
       };
@@ -356,20 +311,9 @@ class RegistryHandler {
     final session = getSession(request);
     final contract = _contractFactory(session);
 
-    final patientIdResult = PatientId.create(id);
-    final memberIdResult = PersonId.create(memberId);
-
-    return switch ((patientIdResult, memberIdResult)) {
-      (Success(:final value), Success(value: final member)) =>
-        switch (await contract.removeFamilyMember(value, member)) {
-          Success() => jsonNoContent(),
-          Failure(:final error) => backendError(error),
-        },
-      (Failure(:final error), _) => jsonError(
-        400,
-        'Invalid patient ID: $error',
-      ),
-      (_, Failure(:final error)) => jsonError(400, 'Invalid member ID: $error'),
+    return switch (await contract.removeFamilyMember(id, memberId)) {
+      Success() => jsonNoContent(),
+      Failure(:final error) => backendError(error),
     };
   }
 
@@ -381,29 +325,11 @@ class RegistryHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final memberPersonId = body['memberPersonId'] as String?;
+      final dto = AssignPrimaryCaregiverRequest.fromJson(body);
 
-      if (memberPersonId == null) {
-        return jsonError(400, 'Missing memberPersonId');
-      }
-
-      final memberIdResult = PersonId.create(memberPersonId);
-
-      return switch ((patientIdResult, memberIdResult)) {
-        (Success(:final value), Success(value: final member)) =>
-          switch (await contract.assignPrimaryCaregiver(value, member)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid member person ID: $error',
-        ),
+      return switch (await contract.assignPrimaryCaregiver(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -418,23 +344,11 @@ class RegistryHandler {
 
     try {
       final body = await readJsonBody(request);
-      final patientIdResult = PatientId.create(id);
-      final identityResult = PatientTranslator.socialIdentityFromJson(body);
+      final dto = UpdateSocialIdentityRequest.fromJson(body);
 
-      return switch ((patientIdResult, identityResult)) {
-        (Success(:final value), Success(value: final identity)) =>
-          switch (await contract.updateSocialIdentity(value, identity)) {
-            Success() => jsonNoContent(),
-            Failure(:final error) => backendError(error),
-          },
-        (Failure(:final error), _) => jsonError(
-          400,
-          'Invalid patient ID: $error',
-        ),
-        (_, Failure(:final error)) => jsonError(
-          400,
-          'Invalid social identity: $error',
-        ),
+      return switch (await contract.updateSocialIdentity(id, dto)) {
+        Success() => jsonNoContent(),
+        Failure(:final error) => backendError(error),
       };
     } catch (e) {
       return jsonError(400, 'Invalid request body: $e');
@@ -446,33 +360,14 @@ class RegistryHandler {
   Future<Response> _getAuditTrail(Request request, String id) async {
     final session = getSession(request);
     final contract = _contractFactory(session);
-
-    final patientIdResult = PatientId.create(id);
     final eventType = request.requestedUri.queryParameters['eventType'];
 
-    return switch (patientIdResult) {
-      Success(:final value) => switch (await contract.getAuditTrail(
-        value,
-        eventType: eventType,
-      )) {
-        Success(:final value) => jsonOk(
-          value
-              .map(
-                (e) => {
-                  'id': e.id,
-                  'aggregateId': e.aggregateId,
-                  'eventType': e.eventType,
-                  'actorId': e.actorId,
-                  'payload': e.payload,
-                  'occurredAt': e.occurredAt.toISOString(),
-                  'recordedAt': e.recordedAt.toISOString(),
-                },
-              )
-              .toList(),
-        ),
-        Failure(:final error) => backendError(error),
-      },
-      Failure(:final error) => jsonError(400, 'Invalid patient ID: $error'),
+    return switch (await contract.getAuditTrail(id, eventType: eventType)) {
+      Success(:final value) => jsonOk({
+        'data': value.data.map((e) => e.toJson()).toList(),
+        'meta': {'timestamp': value.meta.timestamp},
+      }),
+      Failure(:final error) => backendError(error),
     };
   }
 
@@ -495,11 +390,6 @@ class RegistryHandler {
 
   // ── Enrichment ────────────────────────────────────────────────
 
-  /// Enriches family members in a patient JSON with names from people-context.
-  ///
-  /// Also enriches the root `personId` (reference person).
-  /// Gracefully degrades — if people-context fails, the member
-  /// is returned without enrichment.
   Future<void> _enrichFamilyMembers(
     Map<String, dynamic> patientJson,
     PeopleContextClient peopleContext,
@@ -539,25 +429,19 @@ class RegistryHandler {
     }
   }
 
-  /// Enriches patient overviews with person data from people-context.
-  ///
-  /// For each overview, calls `getPerson(personId)` and injects
-  /// `fullName` and `birthDate` into the JSON response.
-  /// Gracefully degrades — if people-context fails, the overview
-  /// is returned without enrichment.
-  Future<List<Map<String, dynamic>>> _enrichOverviews(
-    List<PatientOverview> overviews,
+  Future<List<Map<String, dynamic>>> _enrichSummaries(
+    List<PatientSummaryResponse> summaries,
     PeopleContextClient peopleContext,
   ) async {
     final enriched = <Map<String, dynamic>>[];
-    for (final overview in overviews) {
-      final json = overview.toJson();
-      switch (await peopleContext.getPerson(overview.personId)) {
+    for (final summary in summaries) {
+      final json = summary.toJson();
+      switch (await peopleContext.getPerson(summary.personId)) {
         case Success(:final value):
           json['fullName'] = value['fullName'];
           json['birthDate'] = value['birthDate'];
         case Failure():
-          break; // Graceful degradation
+          break;
       }
       enriched.add(json);
     }

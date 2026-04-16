@@ -39,21 +39,14 @@ class LookupHandler {
     final result = await contract.getLookupTable(tableName);
     print(
       '[BFF:Lookup] GET /lookups/$tableName — '
-      'result=${result.isSuccess ? "SUCCESS(${(result as Success).value.length} items)" : "FAIL(${(result as Failure).error})"}',
+      'result=${result.isSuccess ? "SUCCESS" : "FAIL"}',
     );
 
     return switch (result) {
-      Success(:final value) => jsonOk(
-        value
-            .map(
-              (item) => {
-                'id': item.id,
-                'codigo': item.codigo,
-                'descricao': item.descricao,
-              },
-            )
-            .toList(),
-      ),
+      Success(:final value) => jsonOk({
+        'data': value.data,
+        'meta': {'timestamp': value.meta.timestamp},
+      }),
       Failure(:final error) => backendError(error),
     };
   }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:shared/shared.dart' show BackendError, BackendErrorResponse;
 import 'package:shelf/shelf.dart';
 
 import '../auth/session_store.dart';
@@ -38,27 +39,28 @@ Response jsonError(int status, String message) => Response(
   headers: {'Content-Type': 'application/json'},
 );
 
-/// Typed error representing a backend API rejection.
-///
-/// Created by [SocialCareApiClient] when the backend returns a non-success
-/// status, preserving the original HTTP status code and error message.
-final class BackendError {
-  const BackendError({required this.statusCode, required this.message});
-
-  final int statusCode;
-  final String message;
-
-  @override
-  String toString() => 'BackendError($statusCode: $message)';
-}
-
 /// Creates an error [Response] from a [Failure]'s error object.
 ///
-/// If the error is a [BackendError], forwards the original HTTP status code.
+/// If the error is a [BackendErrorResponse], forwards the full structured error
+/// with the original HTTP status code and all fields preserved.
+/// If the error is a [BackendError], extracts HTTP status and message.
 /// Otherwise falls back to 502 Bad Gateway.
 Response backendError(Object error) {
+  if (error is BackendErrorResponse) {
+    return Response(
+      error.error.http ?? 502,
+      body: jsonEncode(error.toJson()),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
   if (error is BackendError) {
-    return jsonError(error.statusCode, error.message);
+    return Response(
+      error.http ?? 502,
+      body: jsonEncode({
+        'error': {'code': error.code, 'message': error.message},
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
   }
   return jsonError(502, error.toString());
 }
