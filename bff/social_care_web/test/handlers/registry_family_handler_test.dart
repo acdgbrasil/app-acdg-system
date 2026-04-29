@@ -12,6 +12,8 @@ import 'package:social_care_web/src/use_cases/get_audit_trail_use_case.dart';
 import 'package:social_care_web/src/use_cases/remove_family_member_use_case.dart';
 import 'package:social_care_web/src/use_cases/update_social_identity_use_case.dart';
 
+import '../_test_uuids.dart';
+
 /// Wave 0 RED for the new unified [RegistryFamilyHandler].
 ///
 /// Routes (mounted on the shared `/` namespace; real server prefixes `/api`):
@@ -109,7 +111,7 @@ class _CapturingAudit extends FakeAuditBff {
   }
 }
 
-AuditTrailEntryResponse _entry(String id, {String aggregateId = 'pat-1'}) =>
+AuditTrailEntryResponse _entry(String id, {String aggregateId = kPatientUuid}) =>
     AuditTrailEntryResponse(
       id: id,
       aggregateId: aggregateId,
@@ -156,7 +158,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/family-members'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
           body: jsonEncode(_validAddFamilyMemberBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -173,7 +175,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/family-members'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -193,7 +195,7 @@ void main() {
           final body = _validAddFamilyMemberBody()..remove('relationship');
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/family-members'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -215,7 +217,7 @@ void main() {
         final body = _validAddFamilyMemberBody()..remove('relationship');
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/family-members'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
           body: jsonEncode(body),
           headers: {'content-type': 'application/json'},
         );
@@ -243,7 +245,7 @@ void main() {
           ..['memberPersonId'] = 'per-42';
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/family-members'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
           body: jsonEncode(body),
           headers: {'content-type': 'application/json'},
         );
@@ -263,7 +265,7 @@ void main() {
             ..['memberPersonId'] = 'per-42';
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/family-members'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -276,6 +278,34 @@ void main() {
           expect(text, isNot(contains('leak marker xyz')));
         },
       );
+
+      test(
+        'returns 400 INVALID_ADD_FAMILY_MEMBER_BODY when path id is not UUID v4',
+        () async {
+          final handler = _buildHandler();
+
+          final request = Request(
+            'POST',
+            Uri.parse('http://localhost/patients/$kNonUuid/family-members'),
+            body: jsonEncode(_validAddFamilyMemberBody()),
+            headers: {'content-type': 'application/json'},
+          );
+          final response = await handler.router.call(request);
+          final text = await response.readAsString();
+
+          expect(response.statusCode, equals(400));
+          final decoded = jsonDecode(text) as Map<String, dynamic>;
+          expect(
+            (decoded['error'] as Map)['code'],
+            equals('INVALID_ADD_FAMILY_MEMBER_BODY'),
+          );
+          expect(
+            text,
+            isNot(contains(kNonUuid)),
+            reason: 'PII safety — must not echo raw path input',
+          );
+        },
+      );
     });
 
     // ── DELETE /patients/<id>/family-members/<memberId> ───────────────────
@@ -285,7 +315,7 @@ void main() {
 
         final request = Request(
           'DELETE',
-          Uri.parse('http://localhost/patients/pat-1/family-members/mem-42'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members/$kFamilyMemberUuid'),
         );
         final response = await handler.router.call(request);
 
@@ -305,12 +335,62 @@ void main() {
 
         final request = Request(
           'DELETE',
-          Uri.parse('http://localhost/patients/pat-1/family-members/mem-99'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members/$kFamilyMemberUuidAlt'),
         );
         final response = await handler.router.call(request);
 
         expect(response.statusCode, equals(404));
       });
+
+      test(
+        'returns 400 INVALID_REMOVE_FAMILY_MEMBER_PARAMS when patientId is not UUID v4',
+        () async {
+          final handler = _buildHandler();
+
+          final request = Request(
+            'DELETE',
+            Uri.parse(
+              'http://localhost/patients/$kNonUuid/family-members/$kFamilyMemberUuid',
+            ),
+          );
+          final response = await handler.router.call(request);
+          final text = await response.readAsString();
+
+          expect(response.statusCode, equals(400));
+          final decoded = jsonDecode(text) as Map<String, dynamic>;
+          expect(
+            (decoded['error'] as Map)['code'],
+            equals('INVALID_REMOVE_FAMILY_MEMBER_PARAMS'),
+          );
+          expect((decoded['error'] as Map)['message'], contains('patientId'));
+          expect(text, isNot(contains(kNonUuid)));
+        },
+      );
+
+      test(
+        'returns 400 INVALID_REMOVE_FAMILY_MEMBER_PARAMS when memberId is not UUID v4',
+        () async {
+          final handler = _buildHandler();
+
+          final request = Request(
+            'DELETE',
+            Uri.parse(
+              'http://localhost/patients/$kPatientUuid/family-members/$kNonUuid',
+            ),
+          );
+          final response = await handler.router.call(request);
+          final text = await response.readAsString();
+
+          expect(response.statusCode, equals(400));
+          final decoded = jsonDecode(text) as Map<String, dynamic>;
+          expect(
+            (decoded['error'] as Map)['code'],
+            equals('INVALID_REMOVE_FAMILY_MEMBER_PARAMS'),
+          );
+          expect((decoded['error'] as Map)['message'], contains('memberId'));
+          expect(text, isNot(contains(kNonUuid)));
+        },
+      );
     });
 
     // ── PUT /patients/<id>/primary-caregiver ──────────────────────────────
@@ -320,7 +400,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/primary-caregiver'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/primary-caregiver'),
           body: jsonEncode(const {'memberPersonId': 'per-42'}),
           headers: {'content-type': 'application/json'},
         );
@@ -334,7 +414,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/primary-caregiver'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/primary-caregiver'),
           body: jsonEncode(const {}),
           headers: {'content-type': 'application/json'},
         );
@@ -358,13 +438,37 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/primary-caregiver'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/primary-caregiver'),
             body: jsonEncode(const {'memberPersonId': 'per-42'}),
             headers: {'content-type': 'application/json'},
           );
           final response = await handler.router.call(request);
 
           expect(response.statusCode, equals(404));
+        },
+      );
+
+      test(
+        'returns 400 INVALID_PRIMARY_CAREGIVER_BODY when path id is not UUID v4',
+        () async {
+          final handler = _buildHandler();
+
+          final request = Request(
+            'PUT',
+            Uri.parse('http://localhost/patients/$kNonUuid/primary-caregiver'),
+            body: jsonEncode(const {'memberPersonId': 'per-42'}),
+            headers: {'content-type': 'application/json'},
+          );
+          final response = await handler.router.call(request);
+          final text = await response.readAsString();
+
+          expect(response.statusCode, equals(400));
+          final decoded = jsonDecode(text) as Map<String, dynamic>;
+          expect(
+            (decoded['error'] as Map)['code'],
+            equals('INVALID_PRIMARY_CAREGIVER_BODY'),
+          );
+          expect(text, isNot(contains(kNonUuid)));
         },
       );
     });
@@ -376,7 +480,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/social-identity'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/social-identity'),
           body: jsonEncode(const {'typeId': 'type-1', 'description': 'desc'}),
           headers: {'content-type': 'application/json'},
         );
@@ -390,7 +494,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/social-identity'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/social-identity'),
           body: jsonEncode(const {}),
           headers: {'content-type': 'application/json'},
         );
@@ -412,7 +516,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/social-identity'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/social-identity'),
           body: jsonEncode(const {'typeId': 'type-1'}),
           headers: {'content-type': 'application/json'},
         );
@@ -420,6 +524,30 @@ void main() {
 
         expect(response.statusCode, equals(404));
       });
+
+      test(
+        'returns 400 INVALID_SOCIAL_IDENTITY_BODY when path id is not UUID v4',
+        () async {
+          final handler = _buildHandler();
+
+          final request = Request(
+            'PUT',
+            Uri.parse('http://localhost/patients/$kNonUuid/social-identity'),
+            body: jsonEncode(const {'typeId': 'type-1'}),
+            headers: {'content-type': 'application/json'},
+          );
+          final response = await handler.router.call(request);
+          final text = await response.readAsString();
+
+          expect(response.statusCode, equals(400));
+          final decoded = jsonDecode(text) as Map<String, dynamic>;
+          expect(
+            (decoded['error'] as Map)['code'],
+            equals('INVALID_SOCIAL_IDENTITY_BODY'),
+          );
+          expect(text, isNot(contains(kNonUuid)));
+        },
+      );
     });
 
     // ── GET /patients/<id>/audit-trail ────────────────────────────────────
@@ -429,7 +557,7 @@ void main() {
 
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/patients/pat-1/audit-trail'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/audit-trail'),
         );
         final response = await handler.router.call(request);
 
@@ -442,13 +570,13 @@ void main() {
 
       test('returns 200 with seeded entries', () async {
         final fake = FakeAuditBff();
-        fake.seed('pat-1', [_entry('ev-1'), _entry('ev-2')]);
+        fake.seed(kPatientUuid, [_entry('ev-1'), _entry('ev-2')]);
 
         final handler = _buildHandler(audit: fake);
 
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/patients/pat-1/audit-trail'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/audit-trail'),
         );
         final response = await handler.router.call(request);
 
@@ -465,7 +593,7 @@ void main() {
         final request = Request(
           'GET',
           Uri.parse(
-            'http://localhost/patients/pat-1/audit-trail'
+            'http://localhost/patients/$kPatientUuid/audit-trail'
             '?eventType=PATIENT_REGISTERED&limit=25&offset=10',
           ),
         );
@@ -490,12 +618,35 @@ void main() {
 
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/patients/pat-1/audit-trail'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/audit-trail'),
         );
         final response = await handler.router.call(request);
 
         expect(response.statusCode, equals(502));
       });
+
+      test(
+        'returns 400 INVALID_GET_AUDIT_TRAIL_PARAMS when path id is not UUID v4',
+        () async {
+          final handler = _buildHandler();
+
+          final request = Request(
+            'GET',
+            Uri.parse('http://localhost/patients/$kNonUuid/audit-trail'),
+          );
+          final response = await handler.router.call(request);
+          final text = await response.readAsString();
+
+          expect(response.statusCode, equals(400));
+          final decoded = jsonDecode(text) as Map<String, dynamic>;
+          expect(
+            (decoded['error'] as Map)['code'],
+            equals('INVALID_GET_AUDIT_TRAIL_PARAMS'),
+          );
+          expect((decoded['error'] as Map)['message'], contains('patientId'));
+          expect(text, isNot(contains(kNonUuid)));
+        },
+      );
     });
 
     // ── Cross-cutting PII / state matrix ─────────────────────────────────
@@ -510,7 +661,7 @@ void main() {
           ..['memberPersonId'] = 'per-42';
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/family-members'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/family-members'),
           body: jsonEncode(body),
           headers: {'content-type': 'application/json'},
         );

@@ -1,14 +1,14 @@
 import 'package:core_contracts/core_contracts.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `DELETE /api/patients/{id}/family-members/{memberId}`.
 ///
-/// No request body — only the two route params. [parseFromParams] returns a
-/// [Result] for symmetry with the other A09 intents so the handler can
-/// short-circuit via the same P1 switch shape.
-///
-/// Both ids must be non-empty; otherwise the parser returns a [Failure]
-/// carrying a [_RemoveFamilyMemberParseError] with a purely structural
-/// message.
+/// No request body — only the two route params, both validated as UUID v4
+/// via [validateUuidPathParam]. Returns a [Result] for symmetry with the
+/// other A09 intents so the handler can short-circuit via the same P1
+/// switch shape; failure modes are exclusively [UuidPathParamError]
+/// (PII-safe — only the fieldName surfaces, never the raw input).
 final class RemoveFamilyMemberIntent with Equatable {
   const RemoveFamilyMemberIntent({
     required this.patientId,
@@ -21,39 +21,33 @@ final class RemoveFamilyMemberIntent with Equatable {
   @override
   List<Object?> get props => [patientId, memberId];
 
-  /// Parses the route params into an intent. Both ids are required.
+  /// Parses the route params into an intent. Both ids must be UUID v4.
+  ///
+  /// Validates [rawPatientId] first; on failure returns immediately
+  /// without inspecting [rawMemberId]. The named-args signature is kept
+  /// (deviation from the verbatim 2-id Template B) — the call site in
+  /// `RegistryFamilyHandler._handleRemove` already uses named args.
   static Result<RemoveFamilyMemberIntent> parseFromParams({
-    required String patientId,
-    required String memberId,
+    required String rawPatientId,
+    required String rawMemberId,
   }) {
-    final missing = <String>[];
-    if (patientId.isEmpty) missing.add('patientId');
-    if (memberId.isEmpty) missing.add('memberId');
+    final patientResult = validateUuidPathParam(
+      rawPatientId,
+      fieldName: 'patientId',
+    );
+    if (patientResult case Failure(:final error)) return Failure(error);
 
-    if (missing.isEmpty) {
-      return Success(
-        RemoveFamilyMemberIntent(patientId: patientId, memberId: memberId),
-      );
-    }
+    final memberResult = validateUuidPathParam(
+      rawMemberId,
+      fieldName: 'memberId',
+    );
+    if (memberResult case Failure(:final error)) return Failure(error);
 
-    return Failure(
-      _RemoveFamilyMemberParseError(
-        'Invalid remove family member params: missing or empty '
-        '[${missing.join(', ')}]',
+    return Success(
+      RemoveFamilyMemberIntent(
+        patientId: (patientResult as Success<String>).value,
+        memberId: (memberResult as Success<String>).value,
       ),
     );
   }
-}
-
-/// Internal parse error for [RemoveFamilyMemberIntent.parseFromParams].
-final class _RemoveFamilyMemberParseError with Equatable implements Exception {
-  const _RemoveFamilyMemberParseError(this.message);
-
-  final String message;
-
-  @override
-  List<Object?> get props => [message];
-
-  @override
-  String toString() => message;
 }

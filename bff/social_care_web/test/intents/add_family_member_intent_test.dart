@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/add_family_member_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for the REWRITTEN [AddFamilyMemberIntent].
 ///
@@ -64,13 +67,13 @@ void main() {
       );
 
       const intent = AddFamilyMemberIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
         cpf: '11144477735',
         fullName: 'Ana Silva',
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
       expect(intent.cpf, equals('11144477735'));
       expect(intent.fullName, equals('Ana Silva'));
@@ -87,8 +90,8 @@ void main() {
         prRelationshipId: 'rel-child',
       );
 
-      const a = AddFamilyMemberIntent(patientId: 'pat-1', request: request);
-      const b = AddFamilyMemberIntent(patientId: 'pat-1', request: request);
+      const a = AddFamilyMemberIntent(patientId: kPatientUuid, request: request);
+      const b = AddFamilyMemberIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -105,8 +108,8 @@ void main() {
         prRelationshipId: 'rel-child',
       );
 
-      const a = AddFamilyMemberIntent(patientId: 'pat-1', request: request);
-      const b = AddFamilyMemberIntent(patientId: 'pat-2', request: request);
+      const a = AddFamilyMemberIntent(patientId: kPatientUuid, request: request);
+      const b = AddFamilyMemberIntent(patientId: kPatientUuidAlt, request: request);
 
       expect(a, isNot(equals(b)));
     });
@@ -114,7 +117,7 @@ void main() {
     group('parseFromBody — Result<AddFamilyMemberIntent> (P2 if-case)', () {
       test('returns Success when required fields are present (CPF path)', () {
         final result = AddFamilyMemberIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBodyWithCpf(),
         );
 
@@ -126,13 +129,13 @@ void main() {
         'cpf and fullName',
         () {
           final result = AddFamilyMemberIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBodyWithCpf(),
           );
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.relationship, equals('CHILD'));
               expect(value.request.birthDate, equals('2018-05-10'));
               expect(value.request.prRelationshipId, equals('rel-child'));
@@ -149,7 +152,7 @@ void main() {
 
       test('Success preserves memberPersonId when provided (no-CPF path)', () {
         final result = AddFamilyMemberIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBodyWithPersonId(),
         );
 
@@ -165,7 +168,7 @@ void main() {
       test('returns Failure when relationship is missing', () {
         final body = _validBodyWithCpf()..remove('relationship');
 
-        final result = AddFamilyMemberIntent.parseFromBody('pat-1', body);
+        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<AddFamilyMemberIntent>>());
       });
@@ -173,7 +176,7 @@ void main() {
       test('returns Failure when birthDate is missing', () {
         final body = _validBodyWithCpf()..remove('birthDate');
 
-        final result = AddFamilyMemberIntent.parseFromBody('pat-1', body);
+        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<AddFamilyMemberIntent>>());
       });
@@ -181,13 +184,13 @@ void main() {
       test('returns Failure when prRelationshipId is missing', () {
         final body = _validBodyWithCpf()..remove('prRelationshipId');
 
-        final result = AddFamilyMemberIntent.parseFromBody('pat-1', body);
+        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<AddFamilyMemberIntent>>());
       });
 
       test('returns Failure when body is empty', () {
-        final result = AddFamilyMemberIntent.parseFromBody('pat-1', const {});
+        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, const {});
 
         expect(result, isA<Failure<AddFamilyMemberIntent>>());
       });
@@ -205,7 +208,7 @@ void main() {
         // Missing relationship forces failure while CPF is present in body.
         final body = _validBodyWithCpf()..remove('relationship');
 
-        final result = AddFamilyMemberIntent.parseFromBody('pat-1', body);
+        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success():
@@ -222,7 +225,7 @@ void main() {
       test('Failure message does NOT echo raw fullName (PII)', () {
         final body = _validBodyWithCpf()..remove('relationship');
 
-        final result = AddFamilyMemberIntent.parseFromBody('pat-1', body);
+        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success():
@@ -235,6 +238,32 @@ void main() {
             );
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = AddFamilyMemberIntent.parseFromBody(
+            kNonUuid,
+            _validBodyWithCpf(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                error.toString(),
+                isNot(contains(kNonUuid)),
+                reason: 'PII safety — must not echo raw input',
+              );
+              // Also confirms body PII is not present in the path-validation
+              // error (since path validation runs BEFORE body parsing).
+              expect(error.toString(), isNot(contains('11144477735')));
+              expect(error.toString(), isNot(contains('Ana Silva')));
+          }
+        },
+      );
     });
   });
 }

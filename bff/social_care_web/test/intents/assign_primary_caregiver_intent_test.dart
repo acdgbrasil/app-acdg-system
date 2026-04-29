@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/assign_primary_caregiver_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for the new [AssignPrimaryCaregiverIntent].
 ///
@@ -19,11 +22,11 @@ void main() {
       const request = AssignPrimaryCaregiverRequest(memberPersonId: 'per-42');
 
       const intent = AssignPrimaryCaregiverIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -31,11 +34,11 @@ void main() {
       const request = AssignPrimaryCaregiverRequest(memberPersonId: 'per-42');
 
       const a = AssignPrimaryCaregiverIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = AssignPrimaryCaregiverIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -45,11 +48,11 @@ void main() {
 
     test('instances with different payloads are not equal', () {
       const a = AssignPrimaryCaregiverIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: AssignPrimaryCaregiverRequest(memberPersonId: 'per-42'),
       );
       const b = AssignPrimaryCaregiverIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: AssignPrimaryCaregiverRequest(memberPersonId: 'per-99'),
       );
 
@@ -61,7 +64,7 @@ void main() {
       () {
         test('returns Success when memberPersonId is present', () {
           final result = AssignPrimaryCaregiverIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
@@ -70,13 +73,13 @@ void main() {
 
         test('Success payload preserves memberPersonId', () {
           final result = AssignPrimaryCaregiverIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.memberPersonId, equals('per-42'));
             case Failure():
               fail('Expected Success');
@@ -85,7 +88,7 @@ void main() {
 
         test('returns Failure when memberPersonId is missing', () {
           final result = AssignPrimaryCaregiverIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {},
           );
 
@@ -94,7 +97,7 @@ void main() {
 
         test('returns Failure when memberPersonId is empty', () {
           final result = AssignPrimaryCaregiverIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {'memberPersonId': ''},
           );
 
@@ -112,7 +115,7 @@ void main() {
 
         test('Failure message references structural field name', () {
           final result = AssignPrimaryCaregiverIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {},
           );
 
@@ -123,6 +126,28 @@ void main() {
               expect(error.toString(), contains('memberPersonId'));
           }
         });
+
+        test(
+          'returns Failure with UuidPathParamError when path id is not UUID v4',
+          () {
+            final result = AssignPrimaryCaregiverIntent.parseFromBody(
+              kNonUuid,
+              const {'memberPersonId': 'per-42'},
+            );
+
+            switch (result) {
+              case Success():
+                fail('Expected Failure');
+              case Failure(:final error):
+                expect(error, isA<UuidPathParamError>());
+                expect(
+                  error.toString(),
+                  isNot(contains(kNonUuid)),
+                  reason: 'PII safety — must not echo raw input',
+                );
+            }
+          },
+        );
       },
     );
   });

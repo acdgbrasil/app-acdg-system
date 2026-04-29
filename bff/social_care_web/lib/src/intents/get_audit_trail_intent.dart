@@ -1,15 +1,20 @@
 import 'package:core_contracts/core_contracts.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `GET /api/patients/{id}/audit-trail`.
 ///
 /// All filters are optional. Invalid integers (non-numeric `limit` / `offset`)
 /// silently collapse to `null` — same total-function canon as
 /// [ListPatientsIntent.parseFromQuery].
 ///
-/// The intent still constructs when [patientId] is empty; the handler is
-/// expected to reject that upstream with a 400. Wave 1 UseCase emits
-/// breadcrumb FLAGS (`hasEventTypeFilter`, `hasPagination`) rather than
-/// raw values, to keep audit observability PII-safe.
+/// The query factory [parseFromQuery] is total — it always returns an
+/// intent, even when [patientId] is empty (the handler used to reject
+/// that case). After A23 the handler validates the path UUID separately
+/// via [parseFromPath] BEFORE calling [parseFromQuery], so [parseFromQuery]
+/// is never invoked with an invalid id. Wave 1 UseCase emits breadcrumb
+/// FLAGS (`hasEventTypeFilter`, `hasPagination`) rather than raw values,
+/// to keep audit observability PII-safe.
 final class GetAuditTrailIntent with Equatable {
   const GetAuditTrailIntent({
     required this.patientId,
@@ -38,6 +43,16 @@ final class GetAuditTrailIntent with Equatable {
       limit: _parseInt(query['limit']),
       offset: _parseInt(query['offset']),
     );
+  }
+
+  /// Validates the route-level patient id as a UUID v4.
+  ///
+  /// Returns the normalized id on [Success], or a [UuidPathParamError]
+  /// on [Failure] (PII-safe — never echoes the raw input). The handler
+  /// MUST call this before [parseFromQuery] so that the audit query is
+  /// never dispatched against an invalid id.
+  static Result<String> parseFromPath(String rawPatientId) {
+    return validateUuidPathParam(rawPatientId, fieldName: 'patientId');
   }
 
   static String? _coerce(String? raw) {

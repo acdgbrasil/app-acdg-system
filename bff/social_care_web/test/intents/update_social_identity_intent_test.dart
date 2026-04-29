@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_social_identity_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for the new [UpdateSocialIdentityIntent].
 ///
@@ -23,11 +26,11 @@ void main() {
       );
 
       const intent = UpdateSocialIdentityIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -35,11 +38,11 @@ void main() {
       const request = UpdateSocialIdentityRequest(typeId: 'type-1');
 
       const a = UpdateSocialIdentityIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateSocialIdentityIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -49,11 +52,11 @@ void main() {
 
     test('instances with different payloads are not equal', () {
       const a = UpdateSocialIdentityIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: UpdateSocialIdentityRequest(typeId: 'type-1'),
       );
       const b = UpdateSocialIdentityIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: UpdateSocialIdentityRequest(typeId: 'type-2'),
       );
 
@@ -65,7 +68,7 @@ void main() {
       () {
         test('returns Success when typeId is present', () {
           final result = UpdateSocialIdentityIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
@@ -74,13 +77,13 @@ void main() {
 
         test('Success payload preserves typeId and description', () {
           final result = UpdateSocialIdentityIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.typeId, equals('social-id-type-lgbtqia'));
               expect(
                 value.request.description,
@@ -93,7 +96,7 @@ void main() {
 
         test('Success preserves typeId when description is absent', () {
           final result = UpdateSocialIdentityIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {'typeId': 'type-only'},
           );
 
@@ -108,7 +111,7 @@ void main() {
 
         test('returns Failure when typeId is missing', () {
           final result = UpdateSocialIdentityIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {},
           );
 
@@ -117,7 +120,7 @@ void main() {
 
         test('returns Failure when typeId is empty', () {
           final result = UpdateSocialIdentityIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {'typeId': ''},
           );
 
@@ -135,7 +138,7 @@ void main() {
 
         test('Failure message references structural field name', () {
           final result = UpdateSocialIdentityIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {},
           );
 
@@ -146,6 +149,28 @@ void main() {
               expect(error.toString(), contains('typeId'));
           }
         });
+
+        test(
+          'returns Failure with UuidPathParamError when path id is not UUID v4',
+          () {
+            final result = UpdateSocialIdentityIntent.parseFromBody(
+              kNonUuid,
+              const {'typeId': 'type-1'},
+            );
+
+            switch (result) {
+              case Success():
+                fail('Expected Failure');
+              case Failure(:final error):
+                expect(error, isA<UuidPathParamError>());
+                expect(
+                  error.toString(),
+                  isNot(contains(kNonUuid)),
+                  reason: 'PII safety — must not echo raw input',
+                );
+            }
+          },
+        );
       },
     );
   });

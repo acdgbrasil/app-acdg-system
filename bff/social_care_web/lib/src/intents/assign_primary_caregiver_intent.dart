@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `PUT /api/patients/{id}/primary-caregiver`.
 ///
 /// The body must carry a non-empty `memberPersonId`. Any other payload is
@@ -20,16 +22,15 @@ final class AssignPrimaryCaregiverIntent with Equatable {
 
   /// Parses a decoded JSON body + route [patientId] into an intent.
   static Result<AssignPrimaryCaregiverIntent> parseFromBody(
-    String patientId,
+    String rawPatientId,
     Map<String, dynamic> body,
   ) {
-    if (patientId.isEmpty) {
-      return Failure(
-        _AssignPrimaryCaregiverParseError(
-          'Invalid primary caregiver body: missing patient id',
-        ),
-      );
-    }
+    final pathResult = validateUuidPathParam(
+      rawPatientId,
+      fieldName: 'patientId',
+    );
+    if (pathResult case Failure(:final error)) return Failure(error);
+    final patientId = (pathResult as Success<String>).value;
 
     if (body case {
       'memberPersonId': final String memberPersonId,

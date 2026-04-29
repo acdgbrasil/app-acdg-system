@@ -1,15 +1,11 @@
 # Ticket State: A23-uuid-path-validation
 
 ## Current Phase
-phase: in-progress — W0 done + **W1 complete** (Patient: get + 4 lifecycle)
-agent: implementer (paused for context-window management)
-status: Templates A and C both validated end-to-end; mechanical replication
-pending across W2–W4 (~21 endpoints). W2 ready-to-resume —
-3 deviations from the verbatim templates documented inline (see
-"What's pending → W2"): RemoveFamilyMember signature shape,
-AssignPrimaryCaregiver path-param count correction,
-GetAuditTrail intent shape (parseFromQuery factory, no parseFromPath
-yet).
+phase: in-progress — W0+W1+**W2 complete** (Patient surface +
+A09 Family/Audit retrofit)
+agent: implementer
+status: Templates A, B (named-args variant), and C all validated
+end-to-end. Mechanical replication pending across W3–W4 (~16 endpoints).
 
 ## What's done
 
@@ -215,39 +211,44 @@ For each retrofitted endpoint:
 
 ## What's pending
 
-### W2 — A09 Family + Audit (5 intents)
-- [ ] AddFamilyMemberIntent (Template C, patientId) — straightforward;
-      remove the existing `if (patientId.isEmpty)` guard once UUID
-      validation lands at top of `parseFromBody`.
-- [ ] RemoveFamilyMemberIntent (Template B, 2 path params) —
-      **deviation from Template B verbatim:** the current method
-      signature is `parseFromParams({required String patientId,
-      required String memberId})` (named args, not positional). Two
-      options: (a) keep named-args and adapt Template B inline
-      (preferred — call site `_handleRemove` in
-      `registry_family_handler.dart:89` already uses named args), or
-      (b) change to positional to match the template literally and
-      update the handler call. (a) is lower-risk.
-- [ ] AssignPrimaryCaregiverIntent (Template C, **1 path param only**)
-      — STATE.md Wave-list previously claimed "patientId +
-      familyMemberId, 2 path params". That was wrong: route is
-      `PUT /patients/<id>/primary-caregiver` (1 path param);
-      `familyMemberId` is in the request body. Plain Template C with
-      `patientId` only.
-- [ ] UpdateSocialIdentityIntent (Template C, patientId) —
-      straightforward; same pattern as the lifecycle quartet.
-- [ ] GetAuditTrailIntent (Template A, patientId) — **template not
-      verbatim.** Current intent has only `parseFromQuery` (factory,
-      total — constructs even when `patientId.isEmpty`, by design,
-      delegating rejection to handler). Two options:
-      (a) **add a second static `parseFromPath(String rawPatientId)`**
-      returning `Result<String>` (just the validated id), and have
-      `_handleGetAuditTrail` call `parseFromPath` first, then
-      `parseFromQuery` for the rest — minimal change to the existing
-      total-function semantics. (b) make the handler call
-      `validateUuidPathParam` directly before `parseFromQuery`. (a)
-      keeps the validation inside the intent (Template A spirit) and
-      is the recommended path.
+### W2 — A09 Family + Audit (5 intents) ✅ COMPLETE
+- [x] AddFamilyMemberIntent (Template C verbatim) — `parseFromBody`
+      now validates `rawPatientId` via `validateUuidPathParam` at top.
+      `_AddFamilyMemberParseError` retained for body-level errors.
+      Handler error code unchanged (single `INVALID_ADD_FAMILY_MEMBER_BODY`).
+- [x] RemoveFamilyMemberIntent (Template B, named-args adaptation) —
+      kept named-args signature renamed `rawPatientId` / `rawMemberId`,
+      validates both UUIDs in sequence (patientId first short-circuits).
+      `_RemoveFamilyMemberParseError` deleted (UUID gate covers all
+      paths; body-less endpoint). Handler call site updated; error code
+      `INVALID_REMOVE_FAMILY_MEMBER_PARAMS` unchanged.
+- [x] AssignPrimaryCaregiverIntent (Template C verbatim) — same pattern
+      as Add; 1 path param confirmed (familyMemberId is body, not path).
+      Handler error code unchanged (`INVALID_PRIMARY_CAREGIVER_BODY`).
+- [x] UpdateSocialIdentityIntent (Template C verbatim) — same pattern.
+      Handler error code unchanged (`INVALID_SOCIAL_IDENTITY_BODY`).
+- [x] GetAuditTrailIntent (Template A spirit, two-factory shape) —
+      kept the existing total-function `parseFromQuery` factory
+      unchanged. Added `static Result<String> parseFromPath(String
+      rawPatientId)` that returns the validated id. Handler now calls
+      `parseFromPath` first, returns 400
+      `INVALID_GET_AUDIT_TRAIL_PARAMS` on UUID failure, else passes the
+      normalized id to `parseFromQuery`.
+
+W2 numbers (delta from W1):
+- Intent tests run-time `dart test test/intents/`: 61 NEW for the 5
+  retrofitted intents (helper + W1 already counted prior).
+- Handler test `registry_family_handler_test.dart`: 19 + 6 new
+  UUID-rejection tests = 25 GREEN.
+- Combined `dart test test/intents/ test/handlers/registry_family_handler_test.dart
+  test/handlers/registry_patient_handler_test.dart`: **469 GREEN**.
+- Full BFF Web suite: 1006 GREEN / 2 FAIL (same 2 pre-existing A21
+  failures: `health_handler_test.dart` and
+  `social_care_api_client_test.dart` reference deleted
+  `SocialCareContract` and `FakeSocialCareBff`; cleanup scheduled for
+  A21).
+- 0 new analyzer issues from W2 surface (2 pre-existing infos in
+  `register_worker_intent_test.dart` are A15, outside W2 scope).
 
 ### W3 — A10 Assessment 7 fichas (Template C × 7)
 - [ ] UpdateHousingConditionIntent
@@ -289,23 +290,45 @@ intent valid (test 404 absence), failure cause (fixture not UUID),
 verdict (fixture wrong), option (replace with `kPatientUuidAlt`).
 Done. **Watch for similar fixture-driven failures throughout W1-W4.**
 
-## Numbers at this checkpoint (W1 close)
-- intents/ test directory: 407 GREEN (helper 28 + GetPatient 8 +
-  4 lifecycle intents 22 + 12 other existing intent test files
-  unchanged but counted by the directory run)
-- handlers/registry_patient_handler_test: 26 GREEN (was 22 + 4 new
-  UUID-rejection tests, one per lifecycle verb)
-- Combined `dart test test/intents/ test/handlers/registry_patient_handler_test.dart`: **433 GREEN**
-- 0 new analyzer issues introduced by A23 W0+W1
-- Total BFF Web suite: 946 GREEN at A15 pause. A23 W0+W1 adds Patient
-  surface UUID coverage; full project count update happens at W6 once
-  W2–W4 are done and any cross-feature handler tests are swept.
+## Numbers at this checkpoint (W2 close)
+- intents/ test directory full run: 442 GREEN
+  (helper 28 + GetPatient 8 + 4 Patient lifecycle intents 22 +
+  AddFamilyMember 13 + RemoveFamilyMember 11 +
+  AssignPrimaryCaregiver 8 + UpdateSocialIdentity 8 +
+  GetAuditTrail 13 + 11 other existing intent files unchanged but
+  counted by the directory run).
+- handlers/registry_patient_handler_test: 26 GREEN (W1).
+- handlers/registry_family_handler_test: 25 GREEN (W2 — was 19 + 6
+  new UUID-rejection tests, one per endpoint variant).
+- Combined `dart test test/intents/
+  test/handlers/registry_family_handler_test.dart
+  test/handlers/registry_patient_handler_test.dart`: **469 GREEN**.
+- Full BFF Web suite: **1006 GREEN / 2 FAIL** (same 2 pre-existing
+  A21 failures from deleted `SocialCareContract` /
+  `FakeSocialCareBff`; A23 added +17 net tests since W1 close).
+- 0 new analyzer issues from W2 surface. Pre-existing A15 infos in
+  `register_worker_intent_test.dart` remain (outside W2 scope).
 
-## Why paused here
-Both Template A (path-only) and Template C (path + body) are validated
-end-to-end on the Patient surface. Remaining work is mechanical
-replication across ~21 endpoints (W2–W4) plus the test sweep (W5) and
-quality gate (W6). Better executed in a fresh session with focused
-context window. The templates in this STATE.md are sufficient for any
-subsequent session (or a different agent) to pick up without
-re-deriving the design.
+## Templates B coverage update
+Template B verbatim (positional 2-id args) was never used in W2. The
+adaptation in `RemoveFamilyMemberIntent.parseFromParams({required
+String rawPatientId, required String rawMemberId})` is the canonical
+named-args variant for path-only intents with multiple ids. W3+ may
+need verbatim Template B for `DeactivateRole(memberId, roleId)` and
+`ReactivateRole(memberId, roleId)` (A15 resume — Team).
+
+## What's next (W3 entry checklist)
+1. Apply Template C verbatim to the 7 Assessment fichas. Each follows
+   the same shape as `AdmitPatientIntent.parseFromBody` (already
+   retrofitted in W1) — single `rawPatientId` validated at top,
+   existing body P2 if-case retained.
+2. Reuse `kPatientUuid` / `kPatientUuidAlt` fixtures across the
+   assessment intent tests; replace any synthetic `'pat-X'` string.
+3. Each ficha handler needs the same `'pat-X'` → `$kPatientUuid` URL
+   sweep + 1 new UUID-rejection test per endpoint (asserting
+   `INVALID_<X>_BODY` 400 with PII safety).
+4. `AssessmentHandler` is a single file with 7 routes — sweep all 7 in
+   one PR; expect ~14 new tests (intent + handler).
+5. Watch for REGRA #2 fixture-driven 404 tests in
+   `assessment_handler_test.dart` (similar to the
+   `'unknown'` → `kPatientUuidAlt` correction in W1).

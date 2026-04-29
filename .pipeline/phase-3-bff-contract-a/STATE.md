@@ -3,7 +3,7 @@
 ## Current Phase
 phase: implementation (Onda 3 em andamento)
 agent: —
-status: 14/22 tickets done | A15 paused at Wave 4.5 awaiting A23 | A23 W0+W1 complete (Patient surface canonical) | next is A23 W2 (Family + Audit, 5 intents)
+status: 14/22 tickets done | A15 paused at Wave 4.5 awaiting A23 | A23 W0+W1+W2 complete (Patient + Family/Audit) | next is A23 W3 (Assessment 7 fichas)
 
 ## Completed tickets
 - [x] A01 — Contract A design (35 ações mapeadas, 9 sub-contracts, CONTRACT_A_SPEC.md produzido)
@@ -137,35 +137,43 @@ Princípios da skill `flutter-expert` aplicados ao BFF onde fazem sentido: Resul
 (none)
 
 ## Context for Resume
-Last action: A23 W0 + W1 **complete** (helper + Patient surface
-end-to-end).
+Last action: A23 W0 + W1 + **W2 complete** (helper + Patient surface +
+A09 Family/Audit retrofit).
 - W0: helper canônico `validateUuidPathParam` + `UuidPathParamError`
-  (28 GREEN). Naming PÚBLICO por fundamentação na ENCAPSULATION_POLICY
-  (H7 — função antes de classe quando stateless; reutilizado por 35+
-  arquivos).
-- W1: GetPatient (Template A) + Admit/Discharge/Readmit/Withdraw
-  (Template C) retrofitados. **Ambos templates A e C validados
-  end-to-end** (Intent + Test + Handler + Handler test). 90 GREEN
-  combinados (28 helper + 62 Patient surface).
-- REGRA #2 aplicada: fixture `'unknown'` → `kPatientUuidAlt` em
-  `registry_patient_handler_test.dart` (intenção 404 preservada,
-  fixture não-UUID corrigida).
-- `test/_test_uuids.dart` com fixtures canônicos compartilhados.
+  (28 GREEN).
+- W1: Patient surface end-to-end (GetPatient Template A + 4 lifecycle
+  Template C). 90 GREEN combinados.
+- W2: A09 retrofit completo — 5 intents (Add/Remove/AssignCaregiver/
+  UpdateSocialIdentity/GetAuditTrail) + family handler + 17 testes
+  novos. Decisões aplicadas:
+  - RemoveFamilyMember: named-args mantidos, renomeados pra
+    `rawPatientId`/`rawMemberId` por convenção do canon (option (a)).
+  - AssignPrimaryCaregiver: Template C com 1 path param (correção
+    da Wave-list anterior — `familyMemberId` é body, não path).
+  - GetAuditTrail: novo factory `parseFromPath` retornando
+    `Result<String>`; handler valida path antes de `parseFromQuery`
+    (option (a) — mantém `parseFromQuery` total intacto).
+  - `_RemoveFamilyMemberParseError` deletado (UUID gate cobre todos
+    os caminhos; endpoint sem body).
 
-Estado coerente em 2026-04-28: 0 issues novos no analyze do A23
-surface, 90/90 tests do A23 surface GREEN, 69/69 tests do W2 baseline
-(5 intents-alvo + family handler) GREEN e ainda pré-retrofit.
+Estado em 2026-04-28: 0 issues novos no analyze de W0+W1+W2 surface;
+**1006 GREEN / 2 FAIL** no full BFF Web suite (mesmas 2 falhas
+pré-existentes A21 — `health_handler_test` e
+`social_care_api_client_test` referenciam tipos deletados em A05/A06).
 
-Next action: A23 **W2 — A09 Family + Audit** (5 intents). Templates
-A/B/C documentados em `tickets/A23-uuid-path-validation/STATE.md`,
-com **3 desvios verbatim já catalogados** no próprio STATE do ticket
-(seção "What's pending → W2"):
-1. RemoveFamilyMember usa parseFromParams com named args (não
-   posicionais como Template B literal) — preferir adaptar inline.
-2. AssignPrimaryCaregiver tem 1 path param, não 2 (correção de uma
-   linha incorreta da Wave-list anterior).
-3. GetAuditTrail só tem parseFromQuery factory — adicionar segundo
-   factory parseFromPath para casar com o spírito de Template A.
+Next action: A23 **W3 — A10 Assessment 7 fichas** (Template C × 7).
+Cada ficha é mecânica:
+1. Adicionar `validateUuidPathParam` no topo de `parseFromBody`
+   (renomeando primeiro arg pra `rawPatientId`).
+2. Substituir `'pat-X'` por `$kPatientUuid` em URLs e
+   `kPatientUuid`/`kPatientUuidAlt` em valores standalone.
+3. Adicionar 1 teste de rejeição UUID por intent + 1 por endpoint
+   no `assessment_handler_test.dart` (assertando
+   `INVALID_<X>_BODY` 400 + PII safety).
+4. REGRA #2 watch: fixtures não-UUID em testes 404/500 do handler.
 
-Fixtures de UUID já presentes em `_test_uuids.dart` (kPatientUuid,
-kFamilyMemberUuid, kAuditUuid, kNonUuid). Nada a criar antes de W2.
+Templates A/B/C + variantes documentados verbatim em
+`tickets/A23-uuid-path-validation/STATE.md` seção "Canonical
+templates". Fixtures de UUID em `_test_uuids.dart` cobrem
+`kPatientUuid` (suficiente para W3 — Assessment é sempre 1 path
+param patientId).

@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `PUT /api/patients/{id}/social-identity`.
 ///
 /// Body must carry a non-empty `typeId`. `description` is optional — when
@@ -22,16 +24,15 @@ final class UpdateSocialIdentityIntent with Equatable {
 
   /// Parses a decoded JSON body + route [patientId] into an intent.
   static Result<UpdateSocialIdentityIntent> parseFromBody(
-    String patientId,
+    String rawPatientId,
     Map<String, dynamic> body,
   ) {
-    if (patientId.isEmpty) {
-      return Failure(
-        _UpdateSocialIdentityParseError(
-          'Invalid social identity body: missing patient id',
-        ),
-      );
-    }
+    final pathResult = validateUuidPathParam(
+      rawPatientId,
+      fieldName: 'patientId',
+    );
+    if (pathResult case Failure(:final error)) return Failure(error);
+    final patientId = (pathResult as Success<String>).value;
 
     if (body case {'typeId': final String typeId} when typeId.isNotEmpty) {
       return Success(

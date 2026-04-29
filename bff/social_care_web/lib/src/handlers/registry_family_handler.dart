@@ -94,8 +94,8 @@ final class RegistryFamilyHandler {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
 
     final parsed = RemoveFamilyMemberIntent.parseFromParams(
-      patientId: id,
-      memberId: memberId,
+      rawPatientId: id,
+      rawMemberId: memberId,
     );
     return switch (parsed) {
       Success(:final value) => _wrapVoidResult(
@@ -166,8 +166,16 @@ final class RegistryFamilyHandler {
   Future<Response> _handleGetAuditTrail(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
 
+    final pathResult = GetAuditTrailIntent.parseFromPath(id);
+    if (pathResult case Failure(:final error)) {
+      return _badRequest(
+        code: 'INVALID_GET_AUDIT_TRAIL_PARAMS',
+        message: error.toString(),
+      );
+    }
+
     final intent = GetAuditTrailIntent.parseFromQuery(
-      id,
+      (pathResult as Success<String>).value,
       request.requestedUri.queryParameters,
     );
 

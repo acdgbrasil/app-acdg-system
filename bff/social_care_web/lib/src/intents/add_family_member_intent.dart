@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `POST /api/patients/{id}/family-members`.
 ///
 /// Carries the route-level [patientId], the typed [AddFamilyMemberRequest]
@@ -53,16 +55,15 @@ final class AddFamilyMemberIntent with Equatable {
   /// empty — the UseCase fills it in via People Context before forwarding
   /// to the Registry.
   static Result<AddFamilyMemberIntent> parseFromBody(
-    String patientId,
+    String rawPatientId,
     Map<String, dynamic> body,
   ) {
-    if (patientId.isEmpty) {
-      return Failure(
-        _AddFamilyMemberParseError(
-          'Invalid add family member body: missing patient id',
-        ),
-      );
-    }
+    final pathResult = validateUuidPathParam(
+      rawPatientId,
+      fieldName: 'patientId',
+    );
+    if (pathResult case Failure(:final error)) return Failure(error);
+    final patientId = (pathResult as Success<String>).value;
 
     if (body
         case {
