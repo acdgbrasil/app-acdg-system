@@ -139,13 +139,25 @@ static Result<<X>Intent> parseFromPath(
 ```
 
 ### Template C — P2 intent (1 path param + body)
+**Two body-parsing variants exist in the canon — both compatible with
+this template.** Choose based on the existing intent's pre-A23 shape:
+
+- **C-P2** (if-case body matcher) — Patient lifecycle (W1), A09
+  Add/AssignCaregiver/UpdateSocialIdentity (W2). The existing
+  `if (patientId.isEmpty)` guard is REMOVED; the UUID gate
+  short-circuits empty / malformed inputs.
+- **C-P2b** (try/catch over `fromJson`) — A10 Assessment (W3 target),
+  most Care/Protection intents. **No `if (patientId.isEmpty)` to
+  remove** — pre-A23 P2b intents have no such guard. UUID gate is
+  ADDED above the try/catch, no body-parsing logic changes.
+
 Applies to: `AdmitPatient`, `DischargePatient`, `ReadmitPatient`,
 `WithdrawPatient`, `AddFamilyMember`, `AssignPrimaryCaregiver`,
-`UpdateSocialIdentity`, all 7 Assessment fichas, `RegisterAppointment`,
-`UpdateIntakeInfo`, `CreateReferral`, `ReportRightsViolation`,
-`UpdatePlacementHistory`, `UpdateLookupItem` (path: tableName +
-itemId), `ToggleLookupItem` (path: tableName + itemId), `AssignRole`
-(path: memberId).
+`UpdateSocialIdentity` (all C-P2); all 7 Assessment fichas,
+`RegisterAppointment`, `UpdateIntakeInfo`, `CreateReferral`,
+`ReportRightsViolation`, `UpdatePlacementHistory` (all C-P2b);
+`UpdateLookupItem` (path: tableName + itemId), `ToggleLookupItem`
+(path: tableName + itemId), `AssignRole` (path: memberId).
 
 **Strategy:** keep the existing `parseFromBody(rawId, body)` signature.
 Add a UUID validation at the top of `parseFromBody`. The path-param
@@ -250,14 +262,103 @@ W2 numbers (delta from W1):
 - 0 new analyzer issues from W2 surface (2 pre-existing infos in
   `register_worker_intent_test.dart` are A15, outside W2 scope).
 
-### W3 — A10 Assessment 7 fichas (Template C × 7)
-- [ ] UpdateHousingConditionIntent
+### W3 — A10 Assessment 7 fichas (Template C, **P2b variant**)
+**Important shape difference from W1/W2:** the 7 Assessment intents use
+the **P2b try/catch over `fromJson`** pattern (per A10's "padrão novo
+try/catch sobre fromJson"), not P2 if-case. Concretely:
+- Each `parseFromBody(String patientId, Map<String, dynamic> body,
+  {ObservabilityContext? obs})` wraps `XRequest.fromJson(body)` in a
+  try/catch, logs via `obs?.logError`, and returns `_<X>ParseError`.
+- There is **no `if (patientId.isEmpty)` guard to remove** — the W1
+  Template C advice ("the old guard can be removed") does not apply.
+  W3 only ADDS the UUID gate above the try/catch.
+
+**Per-intent retrofit recipe (all 7 identical):**
+```dart
+import 'uuid_validation.dart';
+
+static Result<X> parseFromBody(
+  String rawPatientId,                       // renamed
+  Map<String, dynamic> body, {
+  ObservabilityContext? obs,
+}) {
+  final pathResult = validateUuidPathParam(
+    rawPatientId,
+    fieldName: 'patientId',
+  );
+  if (pathResult case Failure(:final error)) return Failure(error);
+  final patientId = (pathResult as Success<String>).value;
+
+  try {
+    final request = XRequest.fromJson(body);
+    return Success(X(patientId: patientId, request: request));
+  } catch (e, st) {
+    obs?.logError('assessment.<x>.parse_failed', cause: e, stack: st);
+    return Failure(const _XParseError('Invalid update-<x> body: ...'));
+  }
+}
+```
+(`_<X>ParseError` is RETAINED — body/fromJson failures still need it;
+UUID gate adds a new failure mode without replacing the existing one.)
+
+**Decisions to apply:**
+- Keep `obs?.logError` only inside the catch block (UUID failures are
+  cheap rejections at the boundary; W1/W2 did not log them and we
+  follow precedent for consistency).
+- Single 400 error code per endpoint (`INVALID_<X>_BODY`) — Template D
+  default. The handler is unchanged; the message itself
+  distinguishes path vs body via `Invalid path parameter [...]`
+  prefix from `UuidPathParamError.toString()`.
+
+**Targets (7 intents × 1 retrofit each):**
+- [ ] UpdateHousingConditionIntent (`update_housing_condition_intent.dart`)
 - [ ] UpdateSocioEconomicSituationIntent
 - [ ] UpdateWorkAndIncomeIntent
 - [ ] UpdateEducationalStatusIntent
 - [ ] UpdateHealthStatusIntent
 - [ ] UpdateCommunitySupportNetworkIntent
 - [ ] UpdateSocialHealthSummaryIntent
+
+**Per-intent test sweep (7 files, mechanical):**
+1. Add: `import 'package:social_care_web/src/intents/uuid_validation.dart';`
+2. Add: `import '../_test_uuids.dart';`
+3. Replace `'pat-1'` → `kPatientUuid` (78 occurrences across the 7
+   files; replace_all is safe — `pat-1` appears nowhere outside
+   patientId positions).
+4. Replace `'pat-2'` → `kPatientUuidAlt` (7 occurrences, one per file
+   in the "instances with different payloads are not equal" test).
+5. Add 1 new test per file: `returns Failure with UuidPathParamError
+   when path id is not UUID v4` + PII-safety assertion.
+
+**Handler + handler test sweep:**
+- `assessment_handler.dart`: NO production change required. The
+  intent's `parseFromBody` already short-circuits on UUID failure and
+  the handler's existing `_badRequest(code: 'INVALID_<X>_BODY', ...)`
+  branch carries the UUID error message verbatim.
+- `assessment_handler_test.dart`: sweep `'/patients/pat-1/'` →
+  `'/patients/$kPatientUuid/'` (29 occurrences across all 7 routes).
+- Add 7 new tests (one per route): `returns 400 INVALID_<X>_BODY
+  when path id is not UUID v4` with PII-safety assertion. Reuse the
+  `_put` helper that already exists in the test file.
+
+**REGRA #2 watch — clean for W3:**
+Surveyed `assessment_handler_test.dart` for fixture-driven 404/500
+literals (`'unknown'`, `'missing'`, etc.). **None present.** All
+non-happy-path tests use either body-level validation (already
+covered by `_<X>ParseError`) or `_FailingAssessment` /
+`_ExplodingAssessment` style fakes that don't depend on the path id
+literal. No fixture corrections needed — pure mechanical UUID sweep.
+
+**Numbers expected at W3 close:**
+- Baseline (now): 86 GREEN (8×7 intent + 29 handler + 1 cross =
+  78 baseline retained, 29 handler retained — wait, full count
+  is 8+8+8+8+9+8+8 + 29 = 87; the 86 in the standalone run is
+  this set). Re-run: `dart test test/intents/update_*intent_test.dart
+  test/handlers/assessment_handler_test.dart`.
+- Expected after W3: +7 intent rejection tests + +7 handler
+  rejection tests = **+14 GREEN** (~100 in the W3 surface alone).
+- Full BFF Web suite expected: 1006 + 14 = **1020 GREEN / 2 FAIL**
+  (same 2 pre-existing A21 failures).
 
 ### W4 — A11 + A12 + A13 (9 intents)
 - A11 Care: RegisterAppointment, UpdateIntakeInfo (Template C)

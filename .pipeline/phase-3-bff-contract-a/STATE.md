@@ -161,19 +161,29 @@ Estado em 2026-04-28: 0 issues novos no analyze de W0+W1+W2 surface;
 pré-existentes A21 — `health_handler_test` e
 `social_care_api_client_test` referenciam tipos deletados em A05/A06).
 
-Next action: A23 **W3 — A10 Assessment 7 fichas** (Template C × 7).
-Cada ficha é mecânica:
-1. Adicionar `validateUuidPathParam` no topo de `parseFromBody`
-   (renomeando primeiro arg pra `rawPatientId`).
-2. Substituir `'pat-X'` por `$kPatientUuid` em URLs e
-   `kPatientUuid`/`kPatientUuidAlt` em valores standalone.
-3. Adicionar 1 teste de rejeição UUID por intent + 1 por endpoint
-   no `assessment_handler_test.dart` (assertando
-   `INVALID_<X>_BODY` 400 + PII safety).
-4. REGRA #2 watch: fixtures não-UUID em testes 404/500 do handler.
+Next action: A23 **W3 — A10 Assessment 7 fichas** (Template C-P2b × 7).
+Detalhes precisos no STATE.md do ticket — seção "What's pending → W3".
+Resumo:
+1. **Variante P2b confirmada** — Assessment usa try/catch sobre
+   `fromJson` (não P2 if-case). Não há `if (patientId.isEmpty)` pra
+   remover: UUID gate é ADICIONADO acima do try/catch, sem alterar
+   parsing existente. Recipe inline no STATE do ticket.
+2. **Sweep mecânico** — todos os 7 intents têm shape idêntico
+   (`parseFromBody(String patientId, body, {ObservabilityContext? obs})`).
+3. **Test sweep numbers** — 78× `'pat-1'` + 7× `'pat-2'` em 7 intent
+   tests; 29× `pat-1` em 1 handler test. Replace_all é seguro (`pat-1`
+   só aparece em posição de patientId, nunca em body).
+4. **REGRA #2 livre** — `assessment_handler_test.dart` não tem
+   fixtures não-UUID em casos 404/500. Sweep puro, sem correções de
+   intenção.
+5. **Handler unchanged** — single-id parseFromBody short-circuits;
+   `_handle<X>` continua chamando o mesmo `INVALID_<X>_BODY` em 400.
 
-Templates A/B/C + variantes documentados verbatim em
-`tickets/A23-uuid-path-validation/STATE.md` seção "Canonical
-templates". Fixtures de UUID em `_test_uuids.dart` cobrem
-`kPatientUuid` (suficiente para W3 — Assessment é sempre 1 path
-param patientId).
+Baseline pre-W3: 86 GREEN no escopo (8×7 intent + 29 handler + 1
+cross-cutting). Full suite: 1006 GREEN / 2 FAIL (mesmas 2 A21
+pré-existentes). Esperado pós-W3: +14 GREEN
+(7 intent + 7 handler rejection tests).
+
+Fixtures `_test_uuids.dart` cobrem `kPatientUuid`, `kPatientUuidAlt`,
+`kNonUuid` — suficientes para W3 (Assessment sempre 1 path param
+patientId).
