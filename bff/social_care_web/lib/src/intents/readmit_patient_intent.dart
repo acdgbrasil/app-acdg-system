@@ -22,24 +22,22 @@ final class ReadmitPatientIntent with Equatable {
   ///
   /// Empty body is valid — notes defaults to `null`. A non-UUID-v4
   /// [rawPatientId] yields a [Failure] carrying a [UuidPathParamError].
+  ///
+  /// V2 (§P5): `parseFromBody` is total once the UUID gate passes — body
+  /// parsing has no failure modes — so the chain collapses to
+  /// [Result.map].
   static Result<ReadmitPatientIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) {
-    final pathResult = validateUuidPathParam(
-      rawPatientId,
-      fieldName: 'patientId',
-    );
-    if (pathResult case Failure(:final error)) return Failure(error);
-    final patientId = (pathResult as Success<String>).value;
-
-    return Success(
-      ReadmitPatientIntent(
-        patientId: patientId,
-        request: ReadmitPatientRequest(notes: _asNullableString(body['notes'])),
-      ),
-    );
-  }
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId').map(
+        (patientId) => ReadmitPatientIntent(
+          patientId: patientId,
+          request: ReadmitPatientRequest(
+            notes: _asNullableString(body['notes']),
+          ),
+        ),
+      );
 
   static String? _asNullableString(Object? raw) =>
       raw is String && raw.isNotEmpty ? raw : null;

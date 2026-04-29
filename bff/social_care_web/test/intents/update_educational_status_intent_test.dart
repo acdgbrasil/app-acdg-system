@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_educational_status_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateEducationalStatusIntent].
 ///
@@ -24,11 +27,11 @@ void main() {
       const request = UpdateEducationalStatusRequest();
 
       const intent = UpdateEducationalStatusIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -36,11 +39,11 @@ void main() {
       const request = UpdateEducationalStatusRequest();
 
       const a = UpdateEducationalStatusIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateEducationalStatusIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -52,11 +55,11 @@ void main() {
       const request = UpdateEducationalStatusRequest();
 
       const a = UpdateEducationalStatusIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateEducationalStatusIntent(
-        patientId: 'pat-2',
+        patientId: kPatientUuidAlt,
         request: request,
       );
 
@@ -66,7 +69,7 @@ void main() {
     group('parseFromBody — Result<UpdateEducationalStatusIntent>', () {
       test('returns Success when body is valid', () {
         final result = UpdateEducationalStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -85,13 +88,13 @@ void main() {
           ];
 
         final result = UpdateEducationalStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(value.request.memberProfiles, hasLength(1));
             expect(
               value.request.memberProfiles.first.educationLevelId,
@@ -114,7 +117,7 @@ void main() {
           ];
 
         final result = UpdateEducationalStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -128,7 +131,7 @@ void main() {
         };
 
         final result = UpdateEducationalStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -142,7 +145,7 @@ void main() {
         };
 
         final result = UpdateEducationalStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -161,6 +164,28 @@ void main() {
             expect(text, isNot(contains('NOT_A_LIST_MARKER')));
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = UpdateEducationalStatusIntent.parseFromBody(
+            kNonUuid,
+            _validBody(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                (error as UuidPathParamError).fieldName,
+                equals('patientId'),
+              );
+              expect(error.toString(), isNot(contains(kNonUuid)));
+          }
+        },
+      );
     });
   });
 }

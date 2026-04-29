@@ -1,0 +1,17 @@
+name: acdg_lints
+description: ACDG monorepo custom lints for Result discipline and pattern matching policy.
+version: 0.1.0+1
+publish_to: 'none'
+
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  analyzer: ^8.0.0
+  analyzer_plugin: ^0.13.2
+  custom_lint_builder: ^0.8.1
+
+dev_dependencies:
+  test: ^1.25.0

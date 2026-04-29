@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_health_status_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateHealthStatusIntent].
 ///
@@ -27,19 +30,19 @@ void main() {
       const request = UpdateHealthStatusRequest(foodInsecurity: false);
 
       const intent = UpdateHealthStatusIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
     test('instances with equal payload are equal (Equatable)', () {
       const request = UpdateHealthStatusRequest(foodInsecurity: false);
 
-      const a = UpdateHealthStatusIntent(patientId: 'pat-1', request: request);
-      const b = UpdateHealthStatusIntent(patientId: 'pat-1', request: request);
+      const a = UpdateHealthStatusIntent(patientId: kPatientUuid, request: request);
+      const b = UpdateHealthStatusIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -48,8 +51,8 @@ void main() {
     test('instances with different patientId are not equal', () {
       const request = UpdateHealthStatusRequest(foodInsecurity: false);
 
-      const a = UpdateHealthStatusIntent(patientId: 'pat-1', request: request);
-      const b = UpdateHealthStatusIntent(patientId: 'pat-2', request: request);
+      const a = UpdateHealthStatusIntent(patientId: kPatientUuid, request: request);
+      const b = UpdateHealthStatusIntent(patientId: kPatientUuidAlt, request: request);
 
       expect(a, isNot(equals(b)));
     });
@@ -57,7 +60,7 @@ void main() {
     group('parseFromBody — Result<UpdateHealthStatusIntent>', () {
       test('returns Success when body is valid', () {
         final result = UpdateHealthStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -77,11 +80,11 @@ void main() {
               },
             ];
 
-          final result = UpdateHealthStatusIntent.parseFromBody('pat-1', body);
+          final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.foodInsecurity, isFalse);
               expect(value.request.deficiencies, hasLength(1));
               expect(
@@ -97,14 +100,14 @@ void main() {
       test('returns Failure when foodInsecurity is missing', () {
         final body = _validBody()..remove('foodInsecurity');
 
-        final result = UpdateHealthStatusIntent.parseFromBody('pat-1', body);
+        final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<UpdateHealthStatusIntent>>());
       });
 
       test('returns Failure when body is empty', () {
         final result = UpdateHealthStatusIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -119,7 +122,7 @@ void main() {
           'constantCareNeeds': <String>[],
         };
 
-        final result = UpdateHealthStatusIntent.parseFromBody('pat-1', body);
+        final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success():
@@ -155,7 +158,7 @@ void main() {
           // foodInsecurity missing to force a parse failure
         };
 
-        final result = UpdateHealthStatusIntent.parseFromBody('pat-1', body);
+        final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success():
@@ -174,6 +177,28 @@ void main() {
             );
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = UpdateHealthStatusIntent.parseFromBody(
+            kNonUuid,
+            _validBody(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                (error as UuidPathParamError).fieldName,
+                equals('patientId'),
+              );
+              expect(error.toString(), isNot(contains(kNonUuid)));
+          }
+        },
+      );
     });
   });
 }

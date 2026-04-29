@@ -9,6 +9,8 @@ import 'package:social_care_web/src/handlers/care_handler.dart';
 import 'package:social_care_web/src/use_cases/register_appointment_use_case.dart';
 import 'package:social_care_web/src/use_cases/update_intake_info_use_case.dart';
 
+import '../_test_uuids.dart';
+
 /// A [CareContract] variant that forces every mutation to fail with a
 /// well-known [BackendError]. Used to validate failure-path status codes
 /// in the handler.
@@ -76,7 +78,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/appointments'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
           body: jsonEncode(_validAppointmentBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -94,7 +96,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/appointments'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -114,7 +116,7 @@ void main() {
           final body = _validAppointmentBody()..remove('professionalId');
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/appointments'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -145,7 +147,7 @@ void main() {
 
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/appointments'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
             body: jsonEncode(_validAppointmentBody()),
             headers: {'content-type': 'application/json'},
           );
@@ -160,7 +162,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/appointments'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
           body: jsonEncode(_validAppointmentBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -197,7 +199,7 @@ void main() {
           };
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/appointments'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -217,7 +219,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/intake'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
           body: jsonEncode(_validIntakeBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -236,7 +238,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/intake'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -256,7 +258,7 @@ void main() {
           final body = _validIntakeBody()..remove('ingressTypeId');
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/intake'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -280,7 +282,7 @@ void main() {
           final body = _validIntakeBody()..remove('serviceReason');
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/intake'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -311,7 +313,7 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/intake'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
             body: jsonEncode(_validIntakeBody()),
             headers: {'content-type': 'application/json'},
           );
@@ -326,7 +328,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/intake'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
           body: jsonEncode(_validIntakeBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -352,7 +354,7 @@ void main() {
           };
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/intake'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/intake'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -382,7 +384,7 @@ void main() {
 
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/appointments'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/appointments'),
             body: jsonEncode(_validAppointmentBody()),
             headers: {'content-type': 'application/json'},
           );

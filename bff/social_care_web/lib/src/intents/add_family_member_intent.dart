@@ -54,17 +54,19 @@ final class AddFamilyMemberIntent with Equatable {
   /// When the body carries a CPF the `memberPersonId` on the request starts
   /// empty — the UseCase fills it in via People Context before forwarding
   /// to the Registry.
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast on the sealed `Result<T>`.
   static Result<AddFamilyMemberIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) {
-    final pathResult = validateUuidPathParam(
-      rawPatientId,
-      fieldName: 'patientId',
-    );
-    if (pathResult case Failure(:final error)) return Failure(error);
-    final patientId = (pathResult as Success<String>).value;
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
 
+  static Result<AddFamilyMemberIntent> _parseBody(
+    String patientId,
+    Map<String, dynamic> body,
+  ) {
     if (body
         case {
           'relationship': final String relationship,

@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/report_rights_violation_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [ReportRightsViolationIntent] — A12.
 ///
@@ -44,11 +47,11 @@ void main() {
         );
 
         const intent = ReportRightsViolationIntent(
-          patientId: 'pat-1',
+          patientId: kPatientUuid,
           request: request,
         );
 
-        expect(intent.patientId, equals('pat-1'));
+        expect(intent.patientId, equals(kPatientUuid));
         expect(intent.request, equals(request));
       },
     );
@@ -61,11 +64,11 @@ void main() {
       );
 
       const a = ReportRightsViolationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = ReportRightsViolationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -81,11 +84,11 @@ void main() {
       );
 
       const a = ReportRightsViolationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = ReportRightsViolationIntent(
-        patientId: 'pat-2',
+        patientId: kPatientUuidAlt,
         request: request,
       );
 
@@ -95,7 +98,7 @@ void main() {
     group('parseFromBody — Result<ReportRightsViolationIntent> (P2 if-case)', () {
       test('returns Success when all required fields are present', () {
         final result = ReportRightsViolationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -104,13 +107,13 @@ void main() {
 
       test('Success payload preserves patientId + required + optionals', () {
         final result = ReportRightsViolationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(
               value.request.victimId,
               equals('660e8400-e29b-41d4-a716-446655440001'),
@@ -134,7 +137,7 @@ void main() {
 
       test('Success with required only — optionals null', () {
         final result =
-            ReportRightsViolationIntent.parseFromBody('pat-1', const {
+            ReportRightsViolationIntent.parseFromBody(kPatientUuid, const {
               'victimId': 'vic-1',
               'violationType': 'PHYSICAL',
               'descriptionOfFact': 'fact',
@@ -157,7 +160,7 @@ void main() {
       test('returns Failure when victimId is missing', () {
         final body = _validBody()..remove('victimId');
 
-        final result = ReportRightsViolationIntent.parseFromBody('pat-1', body);
+        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -165,7 +168,7 @@ void main() {
       test('returns Failure when violationType is missing', () {
         final body = _validBody()..remove('violationType');
 
-        final result = ReportRightsViolationIntent.parseFromBody('pat-1', body);
+        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -173,7 +176,7 @@ void main() {
       test('returns Failure when descriptionOfFact is missing', () {
         final body = _validBody()..remove('descriptionOfFact');
 
-        final result = ReportRightsViolationIntent.parseFromBody('pat-1', body);
+        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -181,7 +184,7 @@ void main() {
       test('returns Failure when victimId is empty string', () {
         final body = _validBody()..['victimId'] = '';
 
-        final result = ReportRightsViolationIntent.parseFromBody('pat-1', body);
+        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -189,14 +192,14 @@ void main() {
       test('returns Failure when descriptionOfFact is empty string', () {
         final body = _validBody()..['descriptionOfFact'] = '';
 
-        final result = ReportRightsViolationIntent.parseFromBody('pat-1', body);
+        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
 
       test('returns Failure when body is empty', () {
         final result = ReportRightsViolationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -207,7 +210,7 @@ void main() {
         'Failure message enumerates ALL missing fields when body is empty',
         () {
           final result = ReportRightsViolationIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {},
           );
 
@@ -226,7 +229,7 @@ void main() {
 
       test('Failure message enumerates only missing (not present) fields', () {
         final result = ReportRightsViolationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {'victimId': 'vic-1'},
         );
 
@@ -252,7 +255,7 @@ void main() {
           };
 
           final result = ReportRightsViolationIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 
@@ -283,7 +286,7 @@ void main() {
           };
 
           final result = ReportRightsViolationIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 
@@ -311,7 +314,7 @@ void main() {
           };
 
           final result = ReportRightsViolationIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 

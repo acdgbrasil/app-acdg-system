@@ -10,6 +10,8 @@ import 'package:social_care_web/src/use_cases/create_referral_use_case.dart';
 import 'package:social_care_web/src/use_cases/report_rights_violation_use_case.dart';
 import 'package:social_care_web/src/use_cases/update_placement_history_use_case.dart';
 
+import '../_test_uuids.dart';
+
 /// A [ProtectionContract] variant that forces every mutation to fail with a
 /// well-known [BackendError]. Used to validate failure-path status codes in
 /// the handler (A12 canon — mirrors A11's [_FailingCare]).
@@ -114,7 +116,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/referrals'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
           body: jsonEncode(_validReferralBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -132,7 +134,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/referrals'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -152,7 +154,7 @@ void main() {
           final body = _validReferralBody()..remove('referredPersonId');
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/referrals'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -176,7 +178,7 @@ void main() {
           final body = _validReferralBody()..remove('destinationService');
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/referrals'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -207,7 +209,7 @@ void main() {
 
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/referrals'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
             body: jsonEncode(_validReferralBody()),
             headers: {'content-type': 'application/json'},
           );
@@ -222,7 +224,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/referrals'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
           body: jsonEncode(_validReferralBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -245,7 +247,7 @@ void main() {
         };
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/referrals'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
           body: jsonEncode(body),
           headers: {'content-type': 'application/json'},
         );
@@ -267,7 +269,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/violations'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
           body: jsonEncode(_validViolationBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -285,7 +287,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/violations'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -305,7 +307,7 @@ void main() {
           final body = _validViolationBody()..remove('victimId');
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/violations'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -329,7 +331,7 @@ void main() {
           final body = _validViolationBody()..remove('descriptionOfFact');
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/violations'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -360,7 +362,7 @@ void main() {
 
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/violations'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
             body: jsonEncode(_validViolationBody()),
             headers: {'content-type': 'application/json'},
           );
@@ -375,7 +377,7 @@ void main() {
 
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/patients/pat-1/violations'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
           body: jsonEncode(_validViolationBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -402,7 +404,7 @@ void main() {
           };
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/violations'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/violations'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -426,7 +428,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/placement-history'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
           body: jsonEncode(_validPlacementBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -445,7 +447,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/placement-history'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
           body: jsonEncode(const <String, dynamic>{}),
           headers: {'content-type': 'application/json'},
         );
@@ -459,7 +461,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/placement-history'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -485,7 +487,7 @@ void main() {
           };
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/placement-history'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -515,7 +517,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/placement-history'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
           body: jsonEncode(_validPlacementBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -529,7 +531,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/pat-1/placement-history'),
+          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
           body: jsonEncode(_validPlacementBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -567,7 +569,7 @@ void main() {
           };
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/pat-1/placement-history'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -604,7 +606,7 @@ void main() {
 
           final request = Request(
             'POST',
-            Uri.parse('http://localhost/patients/pat-1/referrals'),
+            Uri.parse('http://localhost/patients/$kPatientUuid/referrals'),
             body: jsonEncode(_validReferralBody()),
             headers: {'content-type': 'application/json'},
           );

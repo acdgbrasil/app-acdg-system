@@ -728,6 +728,13 @@ void main() {
 21. **Result<T> everywhere** — errors are values, not exceptions
 22. **Services are private** in Repository constructors — View cannot bypass Repository
 23. **Repositories are private** in ViewModel constructors — View cannot access data layer
+24. **No sealed-class downcast in production** — `as Success<T>` / `as Failure<T>` (or any other `as Subclass` where Subclass extends a `sealed` parent) is forbidden in `lib/` and `bin/`. Before choosing the alternative, run the **3 calibration questions** from `PATTERN_MATCHING_POLICY.md §P5` (Modelo Mental):
+    - Q1 — How many independent `Result`s do I need to combine? (0 / 1 / 2-3 dependent → flatMap chain / 2-3 independent → combineWith / 4+ → STOP, see "Casos compostos")
+    - Q2 — Does the Failure path need a side-effect or different return type? (Yes → switch imperativo; No → combinator)
+    - Q3 — Does the Success transform return `R` or `Result<R>`? (`R` → `.map`; `Result<R>` → `.flatMap`)
+
+    Memorize at least 4 of the 9 armadilhas catalogadas: (1) destructuring direto após `if-case Failure`, (2) `valueOrNull!`, (3) inventar `guard`/`andThen` ad-hoc, (6) confundir `map` vs `flatMap` (analyzer aponta `Result<Result<X>>`), (8) `// ignore: no_sealed_class_downcast`. Compound cases (async `Future<Result>`, 4+ independent, sealed types beyond Result) all have explicit guidance in §P5 — consult before coding. Reason: cast bypasses sealed-class exhaustiveness, duplicates runtime check, drops `stackTrace`, breaks silently if a new variant is added. Enforced by lint `acdg_lints/no_sealed_class_downcast` AST rule.
+25. **Sealed-class downcast IS allowed in tests** — `as Success<T>` is the canonical fail-fast assertion idiom in `*_test.dart`. Defensive `if-case` matching in tests is the inverse anti-pattern (Armadilha 7): it can mask regressions silently — `case Success` simply doesn't match a regression-introduced `Failure`, and the test passes without asserting anything. The lint and CI script both exempt test paths by design. Exception within the exception: parameterized tests where Success/Failure both can be legitimate outcomes — use switch exhaustive there with expectations per branch.
 
 ---
 
@@ -856,6 +863,7 @@ When using `maestro:orchestrate` or `maestro:execute`, delegate to these special
 - [ ] Result<T> used for all async operations (no throw in domain/app)
 - [ ] Repositories/Services private in consuming classes
 - [ ] Dart 3+ APIs used (`.firstOrNull`, `.nonNulls`, functional chains)
+- [ ] **§P5** No `as Success<T>` / `as Failure<T>` (or any sealed-class downcast) in production. Switch / `.map` / `.flatMap` / `combineWith` only. Cast IS allowed in `*_test.dart` for fail-fast.
 
 ### Agent 10: `flutter-quality-checker`
 **Scope:** Static analysis + formatting

@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_intake_info_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Representative happy-path body the APP sends to
 /// `PUT /api/patients/<id>/intake`.
@@ -29,11 +32,11 @@ void main() {
       );
 
       const intent = UpdateIntakeInfoIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -43,8 +46,8 @@ void main() {
         serviceReason: 'support',
       );
 
-      const a = UpdateIntakeInfoIntent(patientId: 'pat-1', request: request);
-      const b = UpdateIntakeInfoIntent(patientId: 'pat-1', request: request);
+      const a = UpdateIntakeInfoIntent(patientId: kPatientUuid, request: request);
+      const b = UpdateIntakeInfoIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -56,8 +59,8 @@ void main() {
         serviceReason: 'support',
       );
 
-      const a = UpdateIntakeInfoIntent(patientId: 'pat-1', request: request);
-      const b = UpdateIntakeInfoIntent(patientId: 'pat-2', request: request);
+      const a = UpdateIntakeInfoIntent(patientId: kPatientUuid, request: request);
+      const b = UpdateIntakeInfoIntent(patientId: kPatientUuidAlt, request: request);
 
       expect(a, isNot(equals(b)));
     });
@@ -65,7 +68,7 @@ void main() {
     group('parseFromBody — Result<UpdateIntakeInfoIntent> (P2 if-case)', () {
       test('returns Success when required fields are present', () {
         final result = UpdateIntakeInfoIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -76,13 +79,13 @@ void main() {
         'Success payload preserves patientId + required + optionals + programs',
         () {
           final result = UpdateIntakeInfoIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.ingressTypeId, equals('ing-spontaneous'));
               expect(
                 value.request.serviceReason,
@@ -111,7 +114,7 @@ void main() {
       test(
         'Success with required only — optionals null + empty programs list',
         () {
-          final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', const {
+          final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, const {
             'ingressTypeId': 'ing-1',
             'serviceReason': 'support',
           });
@@ -132,7 +135,7 @@ void main() {
       test('tolerates malformed linkedSocialPrograms (defaults to empty)', () {
         final body = _validBody()..['linkedSocialPrograms'] = 'not-a-list';
 
-        final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success(:final value):
@@ -145,7 +148,7 @@ void main() {
       test('returns Failure when ingressTypeId is missing', () {
         final body = _validBody()..remove('ingressTypeId');
 
-        final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<UpdateIntakeInfoIntent>>());
       });
@@ -153,7 +156,7 @@ void main() {
       test('returns Failure when serviceReason is missing', () {
         final body = _validBody()..remove('serviceReason');
 
-        final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<UpdateIntakeInfoIntent>>());
       });
@@ -161,7 +164,7 @@ void main() {
       test('returns Failure when ingressTypeId is empty string', () {
         final body = _validBody()..['ingressTypeId'] = '';
 
-        final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<UpdateIntakeInfoIntent>>());
       });
@@ -169,13 +172,13 @@ void main() {
       test('returns Failure when serviceReason is empty string', () {
         final body = _validBody()..['serviceReason'] = '';
 
-        final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<UpdateIntakeInfoIntent>>());
       });
 
       test('returns Failure when body is empty', () {
-        final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', const {});
+        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, const {});
 
         expect(result, isA<Failure<UpdateIntakeInfoIntent>>());
       });
@@ -184,7 +187,7 @@ void main() {
         'Failure message enumerates missing fields [ingressTypeId, serviceReason]',
         () {
           final result = UpdateIntakeInfoIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             const {},
           );
 
@@ -208,7 +211,7 @@ void main() {
             'originContact': '(11) 98765-4321',
           };
 
-          final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+          final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
           switch (result) {
             case Success():
@@ -237,7 +240,7 @@ void main() {
             'serviceReason': 'Internacao apos violencia domestica relatada',
           };
 
-          final result = UpdateIntakeInfoIntent.parseFromBody('pat-1', body);
+          final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
 
           switch (result) {
             case Success():

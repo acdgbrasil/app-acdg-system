@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_work_and_income_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateWorkAndIncomeIntent].
 ///
@@ -23,19 +26,19 @@ void main() {
       const request = UpdateWorkAndIncomeRequest(hasRetiredMembers: false);
 
       const intent = UpdateWorkAndIncomeIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
     test('instances with equal payload are equal (Equatable)', () {
       const request = UpdateWorkAndIncomeRequest(hasRetiredMembers: false);
 
-      const a = UpdateWorkAndIncomeIntent(patientId: 'pat-1', request: request);
-      const b = UpdateWorkAndIncomeIntent(patientId: 'pat-1', request: request);
+      const a = UpdateWorkAndIncomeIntent(patientId: kPatientUuid, request: request);
+      const b = UpdateWorkAndIncomeIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -44,8 +47,8 @@ void main() {
     test('instances with different patientId are not equal', () {
       const request = UpdateWorkAndIncomeRequest(hasRetiredMembers: false);
 
-      const a = UpdateWorkAndIncomeIntent(patientId: 'pat-1', request: request);
-      const b = UpdateWorkAndIncomeIntent(patientId: 'pat-2', request: request);
+      const a = UpdateWorkAndIncomeIntent(patientId: kPatientUuid, request: request);
+      const b = UpdateWorkAndIncomeIntent(patientId: kPatientUuidAlt, request: request);
 
       expect(a, isNot(equals(b)));
     });
@@ -53,7 +56,7 @@ void main() {
     group('parseFromBody — Result<UpdateWorkAndIncomeIntent>', () {
       test('returns Success when body is valid', () {
         final result = UpdateWorkAndIncomeIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -71,11 +74,11 @@ void main() {
             },
           ];
 
-        final result = UpdateWorkAndIncomeIntent.parseFromBody('pat-1', body);
+        final result = UpdateWorkAndIncomeIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(value.request.hasRetiredMembers, isFalse);
             expect(value.request.individualIncomes, hasLength(1));
             expect(
@@ -90,14 +93,14 @@ void main() {
       test('returns Failure when hasRetiredMembers is missing', () {
         final body = _validBody()..remove('hasRetiredMembers');
 
-        final result = UpdateWorkAndIncomeIntent.parseFromBody('pat-1', body);
+        final result = UpdateWorkAndIncomeIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<UpdateWorkAndIncomeIntent>>());
       });
 
       test('returns Failure when body is empty', () {
         final result = UpdateWorkAndIncomeIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -111,7 +114,7 @@ void main() {
           'hasRetiredMembers': 'NOT_A_BOOL_MARKER',
         };
 
-        final result = UpdateWorkAndIncomeIntent.parseFromBody('pat-1', body);
+        final result = UpdateWorkAndIncomeIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success():
@@ -128,6 +131,28 @@ void main() {
             expect(text, isNot(contains('NOT_A_BOOL_MARKER')));
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = UpdateWorkAndIncomeIntent.parseFromBody(
+            kNonUuid,
+            _validBody(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                (error as UuidPathParamError).fieldName,
+                equals('patientId'),
+              );
+              expect(error.toString(), isNot(contains(kNonUuid)));
+          }
+        },
+      );
     });
   });
 }

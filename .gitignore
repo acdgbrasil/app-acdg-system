@@ -1,6 +1,10 @@
 # Tool artifacts
 .playwright-mcp/
 
+# custom_lint runtime log (per-run plugin debug output)
+custom_lint.log
+**/custom_lint.log
+
 # Flutter/Dart
 .dart_tool/
 .packages

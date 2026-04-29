@@ -211,16 +211,16 @@ final class LookupHandler {
       );
     }
 
-    // P2-tolerant: the parser is a total function — it NEVER returns
-    // Failure for a decoded Map body. There is no dedicated 400 code for
-    // this route (only INVALID_JSON above).
+    // V2 (§P5): body parser is total once UUID gate passes; UUID failure
+    // becomes the dedicated 400 INVALID_UPDATE_LOOKUP_ITEM_BODY response.
     final parsed = UpdateLookupItemIntent.parseFromBody(tableName, id, body);
     return switch (parsed) {
       Success(:final value) => _wrapVoidResult(
         await _updateLookupItem.execute(value, obs),
       ),
-      Failure() => throw StateError(
-        'UpdateLookupItemIntent.parseFromBody is total',
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_UPDATE_LOOKUP_ITEM_BODY',
+        message: error.toString(),
       ),
     };
   }
@@ -304,24 +304,30 @@ final class LookupHandler {
 
   Future<Response> _handleApproveRequest(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _approveLookupRequest.execute(
-        ApproveLookupRequestIntent(requestId: id),
-        obs,
+    final parsed = ApproveLookupRequestIntent.parseFromPath(id);
+    return switch (parsed) {
+      Success(:final value) =>
+        _wrapVoidResult(await _approveLookupRequest.execute(value, obs)),
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_APPROVE_LOOKUP_REQUEST_PARAMS',
+        message: error.toString(),
       ),
-    );
+    };
   }
 
   // ── PUT /lookup-requests/<id>/reject ──────────────────────────────────
 
   Future<Response> _handleRejectRequest(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _rejectLookupRequest.execute(
-        RejectLookupRequestIntent(requestId: id),
-        obs,
+    final parsed = RejectLookupRequestIntent.parseFromPath(id);
+    return switch (parsed) {
+      Success(:final value) =>
+        _wrapVoidResult(await _rejectLookupRequest.execute(value, obs)),
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_REJECT_LOOKUP_REQUEST_PARAMS',
+        message: error.toString(),
       ),
-    );
+    };
   }
 
   // ── Helpers (verbatim copy of RegistryPatientHandler / CareHandler) ──

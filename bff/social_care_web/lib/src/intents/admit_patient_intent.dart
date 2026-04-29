@@ -23,20 +23,24 @@ final class AdmitPatientIntent with Equatable {
   /// Parses a decoded JSON body + the route [rawPatientId] into an intent.
   ///
   /// A non-UUID-v4 [rawPatientId] short-circuits with a
-  /// [UuidPathParamError]. Missing or empty `reason`/`admittedAt` then
-  /// produce a [Failure] whose error message references only structural
-  /// field names — no values surface in the error string.
+  /// [UuidPathParamError] via `flatMap`. Missing or empty
+  /// `reason`/`admittedAt` then produce a [Failure] whose error message
+  /// references only structural field names — no values surface in the
+  /// error string.
+  ///
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast on the sealed `Result<T>`.
   static Result<AdmitPatientIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) {
-    final pathResult = validateUuidPathParam(
-      rawPatientId,
-      fieldName: 'patientId',
-    );
-    if (pathResult case Failure(:final error)) return Failure(error);
-    final patientId = (pathResult as Success<String>).value;
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
 
+  static Result<AdmitPatientIntent> _parseBody(
+    String patientId,
+    Map<String, dynamic> body,
+  ) {
     if (body case {
       'reason': final String reason,
       'admittedAt': final String admittedAt,

@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `POST /api/patients/{id}/referrals`.
 ///
 /// Carries the route-level [patientId] plus the typed
@@ -29,13 +31,22 @@ final class CreateReferralIntent with Equatable {
   @override
   List<Object?> get props => [patientId, request];
 
-  /// Parses a decoded JSON body + the route [patientId] into an intent.
+  /// Parses a decoded JSON body + the route [rawPatientId] into an intent.
   ///
-  /// Enforces the 3 required fields (`referredPersonId`, `destinationService`,
-  /// `reason`) as non-empty strings. Missing required fields produce a
-  /// [Failure] whose message enumerates the field names WITHOUT echoing
-  /// any raw value.
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast. Body parser enforces the 3
+  /// required fields (`referredPersonId`, `destinationService`, `reason`)
+  /// as non-empty strings. Missing required fields produce a [Failure]
+  /// whose message enumerates the field names WITHOUT echoing any raw
+  /// value.
   static Result<CreateReferralIntent> parseFromBody(
+    String rawPatientId,
+    Map<String, dynamic> body,
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
+
+  static Result<CreateReferralIntent> _parseBody(
     String patientId,
     Map<String, dynamic> body,
   ) {

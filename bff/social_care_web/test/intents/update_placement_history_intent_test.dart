@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_placement_history_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdatePlacementHistoryIntent] — A12 (edge case).
 ///
@@ -57,11 +60,11 @@ void main() {
       const request = UpdatePlacementHistoryRequest();
 
       const intent = UpdatePlacementHistoryIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -69,11 +72,11 @@ void main() {
       const request = UpdatePlacementHistoryRequest();
 
       const a = UpdatePlacementHistoryIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdatePlacementHistoryIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -85,11 +88,11 @@ void main() {
       const request = UpdatePlacementHistoryRequest();
 
       const a = UpdatePlacementHistoryIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdatePlacementHistoryIntent(
-        patientId: 'pat-2',
+        patientId: kPatientUuidAlt,
         request: request,
       );
 
@@ -101,7 +104,7 @@ void main() {
       () {
         test('returns Success when body is valid', () {
           final result = UpdatePlacementHistoryIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
@@ -110,13 +113,13 @@ void main() {
 
         test('Success payload preserves patientId + registries + flags', () {
           final result = UpdatePlacementHistoryIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.registries, hasLength(1));
               expect(
                 value.request.registries.first.memberId,
@@ -136,7 +139,7 @@ void main() {
           'tolerates body = {} (0 required at top-level) — Success with defaults',
           () {
             final result = UpdatePlacementHistoryIntent.parseFromBody(
-              'pat-1',
+              kPatientUuid,
               const {},
             );
 
@@ -168,7 +171,7 @@ void main() {
             };
 
             final result = UpdatePlacementHistoryIntent.parseFromBody(
-              'pat-1',
+              kPatientUuid,
               body,
             );
 
@@ -191,7 +194,7 @@ void main() {
             };
 
             final result = UpdatePlacementHistoryIntent.parseFromBody(
-              'pat-1',
+              kPatientUuid,
               body,
             );
 
@@ -214,7 +217,7 @@ void main() {
             };
 
             final result = UpdatePlacementHistoryIntent.parseFromBody(
-              'pat-1',
+              kPatientUuid,
               body,
             );
 
@@ -226,7 +229,7 @@ void main() {
           final body = {'registries': 'not-a-list'};
 
           final result = UpdatePlacementHistoryIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 
@@ -246,7 +249,7 @@ void main() {
           };
 
           final result = UpdatePlacementHistoryIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 
@@ -292,7 +295,7 @@ void main() {
             };
 
             final result = UpdatePlacementHistoryIntent.parseFromBody(
-              'pat-1',
+              kPatientUuid,
               body,
             );
 
@@ -323,7 +326,7 @@ void main() {
           };
 
           final result = UpdatePlacementHistoryIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 
@@ -342,7 +345,7 @@ void main() {
           // No exception at wire-up; the obs-param call-site MUST be a
           // compile-time valid signature for both Success and Failure paths.
           final result = UpdatePlacementHistoryIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 

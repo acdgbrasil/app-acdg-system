@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/register_appointment_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Representative happy-path body the APP sends to
 /// `POST /api/patients/<id>/appointments`.
@@ -24,19 +27,19 @@ void main() {
       const request = RegisterAppointmentRequest(professionalId: 'prof-1');
 
       const intent = RegisterAppointmentIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
     test('instances with equal payload are equal (Equatable)', () {
       const request = RegisterAppointmentRequest(professionalId: 'prof-1');
 
-      const a = RegisterAppointmentIntent(patientId: 'pat-1', request: request);
-      const b = RegisterAppointmentIntent(patientId: 'pat-1', request: request);
+      const a = RegisterAppointmentIntent(patientId: kPatientUuid, request: request);
+      const b = RegisterAppointmentIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -45,19 +48,19 @@ void main() {
     test('instances with different patientId are not equal', () {
       const request = RegisterAppointmentRequest(professionalId: 'prof-1');
 
-      const a = RegisterAppointmentIntent(patientId: 'pat-1', request: request);
-      const b = RegisterAppointmentIntent(patientId: 'pat-2', request: request);
+      const a = RegisterAppointmentIntent(patientId: kPatientUuid, request: request);
+      const b = RegisterAppointmentIntent(patientId: kPatientUuidAlt, request: request);
 
       expect(a, isNot(equals(b)));
     });
 
     test('instances with different request payload are not equal', () {
       const a = RegisterAppointmentIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: RegisterAppointmentRequest(professionalId: 'prof-1'),
       );
       const b = RegisterAppointmentIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: RegisterAppointmentRequest(professionalId: 'prof-2'),
       );
 
@@ -67,7 +70,7 @@ void main() {
     group('parseFromBody — Result<RegisterAppointmentIntent> (P2 if-case)', () {
       test('returns Success when professionalId is present', () {
         final result = RegisterAppointmentIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -78,13 +81,13 @@ void main() {
         'Success payload preserves patientId + professionalId + optionals',
         () {
           final result = RegisterAppointmentIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             _validBody(),
           );
 
           switch (result) {
             case Success(:final value):
-              expect(value.patientId, equals('pat-1'));
+              expect(value.patientId, equals(kPatientUuid));
               expect(value.request.professionalId, equals('prof-42'));
               expect(
                 value.request.summary,
@@ -103,7 +106,7 @@ void main() {
       );
 
       test('returns Success with null optionals when omitted', () {
-        final result = RegisterAppointmentIntent.parseFromBody('pat-1', const {
+        final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, const {
           'professionalId': 'prof-42',
         });
 
@@ -122,7 +125,7 @@ void main() {
       test('returns Failure when professionalId is missing', () {
         final body = _validBody()..remove('professionalId');
 
-        final result = RegisterAppointmentIntent.parseFromBody('pat-1', body);
+        final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<RegisterAppointmentIntent>>());
       });
@@ -130,14 +133,14 @@ void main() {
       test('returns Failure when professionalId is empty string', () {
         final body = _validBody()..['professionalId'] = '';
 
-        final result = RegisterAppointmentIntent.parseFromBody('pat-1', body);
+        final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<RegisterAppointmentIntent>>());
       });
 
       test('returns Failure when body is empty', () {
         final result = RegisterAppointmentIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -146,7 +149,7 @@ void main() {
 
       test('Failure message enumerates missing field [professionalId]', () {
         final result = RegisterAppointmentIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -168,7 +171,7 @@ void main() {
             'actionPlan': 'Acionar conselho tutelar',
           };
 
-          final result = RegisterAppointmentIntent.parseFromBody('pat-1', body);
+          final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, body);
 
           switch (result) {
             case Success():
@@ -184,6 +187,28 @@ void main() {
                 dumped,
                 isNot(contains('conselho tutelar')),
                 reason: 'Parse error must never echo raw actionPlan content',
+              );
+          }
+        },
+      );
+
+      test(
+        'A23 — returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = RegisterAppointmentIntent.parseFromBody(
+            kNonUuid,
+            const {'professionalId': 'prof-1'},
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                error.toString(),
+                isNot(contains(kNonUuid)),
+                reason: 'PII safety: error must not echo raw input',
               );
           }
         },

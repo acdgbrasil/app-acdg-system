@@ -166,16 +166,20 @@ final class RegistryFamilyHandler {
   Future<Response> _handleGetAuditTrail(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
 
-    final pathResult = GetAuditTrailIntent.parseFromPath(id);
-    if (pathResult case Failure(:final error)) {
-      return _badRequest(
-        code: 'INVALID_GET_AUDIT_TRAIL_PARAMS',
-        message: error.toString(),
-      );
+    // V2 (§P5): switch exhaustive on the sealed Result — no `as Success` cast.
+    final String validatedId;
+    switch (GetAuditTrailIntent.parseFromPath(id)) {
+      case Success(:final value):
+        validatedId = value;
+      case Failure(:final error):
+        return _badRequest(
+          code: 'INVALID_GET_AUDIT_TRAIL_PARAMS',
+          message: error.toString(),
+        );
     }
 
     final intent = GetAuditTrailIntent.parseFromQuery(
-      (pathResult as Success<String>).value,
+      validatedId,
       request.requestedUri.queryParameters,
     );
 

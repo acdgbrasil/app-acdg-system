@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `PUT /api/patients/{id}/intake`.
 ///
 /// Carries the route-level [patientId] plus the typed
@@ -30,14 +32,23 @@ final class UpdateIntakeInfoIntent with Equatable {
   @override
   List<Object?> get props => [patientId, request];
 
-  /// Parses a decoded JSON body + the route [patientId] into an intent.
+  /// Parses a decoded JSON body + the route [rawPatientId] into an intent.
   ///
-  /// Enforces both required fields (`ingressTypeId`, `serviceReason`) as
-  /// non-empty strings. `linkedSocialPrograms` degrades to an empty list
-  /// when absent or malformed — it is treated as an optional collection.
-  /// Missing required fields produce a [Failure] whose message enumerates
-  /// the field names WITHOUT echoing any raw value.
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast. Body parser enforces both required
+  /// fields (`ingressTypeId`, `serviceReason`) as non-empty strings.
+  /// `linkedSocialPrograms` degrades to an empty list when absent or
+  /// malformed — it is treated as an optional collection. Missing required
+  /// fields produce a [Failure] whose message enumerates the field names
+  /// WITHOUT echoing any raw value.
   static Result<UpdateIntakeInfoIntent> parseFromBody(
+    String rawPatientId,
+    Map<String, dynamic> body,
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
+
+  static Result<UpdateIntakeInfoIntent> _parseBody(
     String patientId,
     Map<String, dynamic> body,
   ) {

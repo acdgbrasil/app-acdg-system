@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `PATCH /lookups/{tableName}/{id}/toggle`.
 ///
 /// Carries the route-level [tableName] + [itemId] plus the typed
@@ -9,6 +11,11 @@ import 'package:shared/shared.dart';
 /// Per `PATTERN_MATCHING_POLICY.md §P2`, the DTO has a single required
 /// boolean (`active`). Because the failure message is fixed (single
 /// field), `_ToggleLookupItemParseError` IS `const`.
+///
+/// Path discipline (A23 / §P5): the route is `{tableName}/{itemId}`.
+/// `tableName` is a literal and passes through; `itemId` IS validated
+/// as UUID v4 via `validateUuidPathParam`, chained via [Result.flatMap]
+/// (no manual cast on the sealed `Result<T>`).
 final class ToggleLookupItemIntent with Equatable {
   const ToggleLookupItemIntent({
     required this.tableName,
@@ -23,10 +30,22 @@ final class ToggleLookupItemIntent with Equatable {
   @override
   List<Object?> get props => [tableName, itemId, request];
 
-  /// Parses a decoded JSON body + the route [tableName] + [itemId] into
-  /// an intent. `active` MUST be a `bool` — missing or type-mismatched
-  /// values produce a [Failure] with the const literal message.
+  /// Parses a decoded JSON body + the route [tableName] + [rawItemId]
+  /// into an intent. `active` MUST be a `bool` — missing or
+  /// type-mismatched values produce a [Failure] with the const literal
+  /// message.
+  ///
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast.
   static Result<ToggleLookupItemIntent> parseFromBody(
+    String tableName,
+    String rawItemId,
+    Map<String, dynamic> body,
+  ) =>
+      validateUuidPathParam(rawItemId, fieldName: 'itemId')
+          .flatMap((itemId) => _parseBody(tableName, itemId, body));
+
+  static Result<ToggleLookupItemIntent> _parseBody(
     String tableName,
     String itemId,
     Map<String, dynamic> body,

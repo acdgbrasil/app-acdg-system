@@ -22,18 +22,21 @@ final class UpdateSocialIdentityIntent with Equatable {
   @override
   List<Object?> get props => [patientId, request];
 
-  /// Parses a decoded JSON body + route [patientId] into an intent.
+  /// Parses a decoded JSON body + route [rawPatientId] into an intent.
+  ///
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast on the sealed `Result<T>`.
   static Result<UpdateSocialIdentityIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) {
-    final pathResult = validateUuidPathParam(
-      rawPatientId,
-      fieldName: 'patientId',
-    );
-    if (pathResult case Failure(:final error)) return Failure(error);
-    final patientId = (pathResult as Success<String>).value;
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
 
+  static Result<UpdateSocialIdentityIntent> _parseBody(
+    String patientId,
+    Map<String, dynamic> body,
+  ) {
     if (body case {'typeId': final String typeId} when typeId.isNotEmpty) {
       return Success(
         UpdateSocialIdentityIntent(

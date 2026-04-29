@@ -23,30 +23,24 @@ final class RemoveFamilyMemberIntent with Equatable {
 
   /// Parses the route params into an intent. Both ids must be UUID v4.
   ///
-  /// Validates [rawPatientId] first; on failure returns immediately
-  /// without inspecting [rawMemberId]. The named-args signature is kept
-  /// (deviation from the verbatim 2-id Template B) — the call site in
-  /// `RegistryFamilyHandler._handleRemove` already uses named args.
+  /// V2 (§P5): uses the `Result2Combinator.combineWith` extension from
+  /// `core_contracts/result_combinators.dart`. Short-circuits on the first
+  /// failure (left → right) preserving its `error` + `stackTrace`. No
+  /// manual cast on the sealed `Result<T>`.
+  ///
+  /// The named-args signature is kept (deviation from the verbatim 2-id
+  /// Template B) — the call site in `RegistryFamilyHandler._handleRemove`
+  /// already uses named args.
   static Result<RemoveFamilyMemberIntent> parseFromParams({
     required String rawPatientId,
     required String rawMemberId,
   }) {
-    final patientResult = validateUuidPathParam(
-      rawPatientId,
-      fieldName: 'patientId',
-    );
-    if (patientResult case Failure(:final error)) return Failure(error);
-
-    final memberResult = validateUuidPathParam(
-      rawMemberId,
-      fieldName: 'memberId',
-    );
-    if (memberResult case Failure(:final error)) return Failure(error);
-
-    return Success(
-      RemoveFamilyMemberIntent(
-        patientId: (patientResult as Success<String>).value,
-        memberId: (memberResult as Success<String>).value,
+    final p = validateUuidPathParam(rawPatientId, fieldName: 'patientId');
+    final m = validateUuidPathParam(rawMemberId, fieldName: 'memberId');
+    return (p, m).combineWith(
+      (patientId, memberId) => RemoveFamilyMemberIntent(
+        patientId: patientId,
+        memberId: memberId,
       ),
     );
   }

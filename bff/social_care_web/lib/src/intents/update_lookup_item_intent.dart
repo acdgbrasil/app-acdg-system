@@ -1,17 +1,20 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `PUT /lookups/{tableName}/{id}` — partial update.
 ///
-/// P2-tolerant variant (first use in the monorepo): both DTO fields
-/// (`codigo`, `descricao`) are OPTIONAL. [parseFromBody] is a **total
-/// function** — it never returns [Failure]. Missing or type-mismatched
-/// values silently collapse to `null` via the `_asString` helper; an
-/// empty `{}` body yields a Success with both fields null (upstream no-op).
+/// P2-tolerant variant: both body fields (`codigo`, `descricao`) are
+/// OPTIONAL. The body parsing portion is **total** (never fails) —
+/// missing or type-mismatched values collapse to `null`, an empty `{}`
+/// body yields a Success with both fields null (upstream no-op).
 ///
-/// Because parse never fails, there is NO `_UpdateLookupItemParseError`
-/// class; the handler routes JSON-level malformed input through the
-/// `INVALID_JSON` code from `_readJsonBody` before this parser runs.
+/// Path discipline (A23 / §P5): the route is `{tableName}/{itemId}`.
+/// `tableName` is a literal (e.g. `dominio_parentesco`) and is NOT a
+/// UUID — it passes through as-is. `itemId` IS validated as UUID v4 via
+/// `validateUuidPathParam`, chaining via [Result.map] (no manual cast on
+/// the sealed `Result<T>`).
 final class UpdateLookupItemIntent with Equatable {
   const UpdateLookupItemIntent({
     required this.tableName,
@@ -26,25 +29,26 @@ final class UpdateLookupItemIntent with Equatable {
   @override
   List<Object?> get props => [tableName, itemId, request];
 
-  /// Parses a partial update body. Both fields are optional per contract.
-  /// Parse is total: body `{}` yields an all-null request (upstream no-op).
+  /// Parses a partial update body + route params. Body parse is total
+  /// once UUID validation succeeds.
+  ///
+  /// V2 (§P5): only `rawItemId` is UUID-validated. `tableName` is
+  /// pass-through. Chain via [Result.map] — no manual cast.
   static Result<UpdateLookupItemIntent> parseFromBody(
     String tableName,
-    String itemId,
+    String rawItemId,
     Map<String, dynamic> body,
-  ) {
-    final request = UpdateLookupItemRequest(
-      codigo: _asString(body['codigo']),
-      descricao: _asString(body['descricao']),
-    );
-    return Success(
-      UpdateLookupItemIntent(
-        tableName: tableName,
-        itemId: itemId,
-        request: request,
-      ),
-    );
-  }
+  ) =>
+      validateUuidPathParam(rawItemId, fieldName: 'itemId').map(
+        (itemId) => UpdateLookupItemIntent(
+          tableName: tableName,
+          itemId: itemId,
+          request: UpdateLookupItemRequest(
+            codigo: _asString(body['codigo']),
+            descricao: _asString(body['descricao']),
+          ),
+        ),
+      );
 
   static String? _asString(Object? raw) => raw is String ? raw : null;
 }

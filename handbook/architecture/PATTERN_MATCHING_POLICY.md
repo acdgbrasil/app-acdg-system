@@ -20,7 +20,7 @@ Este documento consolida os 4 padrões como **diretriz oficial** do monorepo.
 
 ---
 
-## Princípios (P1–P4)
+## Princípios (P1–P5)
 
 | # | Princípio | Resumo |
 |---|-----------|--------|
@@ -29,6 +29,7 @@ Este documento consolida os 4 padrões como **diretriz oficial** do monorepo.
 | **P2b** | **Edge case:** `try/catch` sobre `fromJson` gerado | **Apenas** em adapter + DTO gerado com ≥10 campos. Checklist obrigatório. ADR-019 |
 | **P3** | Tear-offs em map/chain | Passar `PatientId.new`, `PatientDto.fromJson` direto, sem lambda |
 | **P4** | `Never` para funções de falha | Compilador promove tipos após error() chamada |
+| **P5** | **Sem downcast em sealed class.** Use `switch` / `map` / `flatMap` / `combineWith`. | Cast `as Success<T>` bypassa exaustividade — proibido em produção, **permitido em testes**. Defendido pela rule `acdg_lints/no_sealed_class_downcast`. |
 
 ---
 
@@ -615,6 +616,550 @@ T unreachable<T>(Object s) => throw StateError('Unreachable: $s');
 
 ---
 
+## P5 — Sem downcast em sealed class (Result discipline)
+
+> **Status:** regra de produção, defendida automaticamente pelo lint `acdg_lints/no_sealed_class_downcast`.
+> **Origem:** A23 W4 (2026-04-29) — Otimização arquitetural focada em *Static Typing* rigoroso e *legibilidade Swift-like*, abolindo a necessidade do operador `as`.
+
+### O Desafio: A Limitação da Promoção Subtrativa no Dart 3
+
+O Dart 3 importou o *Pattern Matching* seguro, porém **ainda não suporta promoção subtrativa** como no Swift ou Kotlin. Em Swift, um `guard case let` permite fazer o "early return" e vazar a variável limpa para o resto da função. No Dart, isso é impossível sem um cast:
+
+```dart
+final pathResult = validateUuidPathParam(raw, fieldName: 'patientId');
+
+// 1. Fazemos early-return em caso de falha (estilo guard)
+if (pathResult case Failure(:final error)) return Failure(error);
+
+// 2. ❌ ERRO DE COMPILAÇÃO AQUI!
+// O Dart ainda vê pathResult como "Result<String>". Ele não entende
+// que só sobrou o "Success". O Destructuring falha.
+final Success(value: patientId) = pathResult; 
+```
+
+**A falsa solução:** A equipe contornava isso escrevendo `final patientId = (pathResult as Success<String>).value;`. Isso **bypassa a segurança do compilador**, duplicando o teste de tipo e criando *runtime exceptions* caso a `sealed class` ganhe novos estados.
+
+---
+
+### 🚨 Regra de Ouro (Layer de Produção)
+
+> ❌ **DON'T — Usar downcast em Sealed Classes para forçar tipagem**
+> NUNCA tente corrigir a limitação do compilador apelando para o operador `as`. O Lint vai bloquear.
+> ```dart
+> // ANTIPATTERN LETAL (Bypassa a verificação exaustiva da sealed class)
+> final patientId = (pathResult as Success<String>).value;
+> ```
+
+> ❌ **DON'T — Usar Destructuring de Tuplas para "calar o erro" de tipo vazado**
+> Não crie artifícios como `final Success(...) = pathResult as Success;`. Continua sendo um cast escondido.
+
+---
+
+### 🧠 Modelo Mental — como PENSAR antes de codificar
+
+Não escolha entre as 4 opções por estética. **Faça as 3 perguntas de
+calibração** abaixo na ordem — elas resolvem 95% dos casos e tornam a
+escolha auditável em code review.
+
+> **Mantra:** *"Sealed só vale se o compilador é o oráculo. Cast manual
+> transfere o oráculo de volta para você — em runtime."* Sempre que
+> tiver dúvida sobre qual abordagem usar, volte para esse mantra: a
+> resposta certa é a que mantém o compilador como oráculo.
+
+#### Pergunta 1 — *"Quantas validações `Result` independentes preciso combinar?"*
+
+| Resposta | Caminho |
+|---|---|
+| **0** (não tenho `Result`, só tipos puros) | §P5 não se aplica. Use validação direta + early-return. |
+| **1** | Vai para Pergunta 2. |
+| **2 ou 3 com DEPENDÊNCIA sequencial** (B precisa do valor de A) | Cadeia de `flatMap`s (Opção 2). |
+| **2 ou 3 INDEPENDENTES** (todas validáveis em paralelo) | `combineWith` (Opção 1) — 2-ary ou 3-ary. |
+| **4+** | **PARE.** Veja "Casos compostos" abaixo antes de codificar. |
+
+#### Pergunta 2 — *"O caminho de `Failure` precisa fazer side-effect ou retornar tipo diferente?"*
+
+| Resposta | Caminho |
+|---|---|
+| **Sim** (logar, abrir/fechar transação, retornar `Response`/`Widget`/etc) | `switch` exhaustive imperativo (Opção 3). |
+| **Não** (apenas propagar/transformar o `Failure`) | Vai para Pergunta 3. |
+
+**Por quê:** combinators (`map`/`flatMap`/`combineWith`) expressam o
+caminho de Failure como propagação implícita. Tentar comprimir um
+side-effect ali obriga `mapFailure` + `flatMap` em sequência — fica
+menos legível e cria 2 lambdas para o mesmo `Failure`. Switch
+imperativo é o canon para esse caso.
+
+#### Pergunta 3 — *"O Success-path retorna `Result<R>` ou `R` puro?"*
+
+| Resposta | Caminho |
+|---|---|
+| **`R` puro** (Intent, DTO, escalar — sem chance de novo erro) | `.map(...)` (Opção 4). |
+| **`Result<R>`** (a transformação pode falhar) | `.flatMap(...)` (Opção 2). |
+
+**Heurística memorizada:** *"Closure retorna `R` → `map`. Closure
+retorna `Result<R>` → `flatMap`."* Se você confundir, o tipo final
+fica `Result<Result<R>>` aninhado e o analyzer aponta — sempre
+escute o analyzer aqui (ver Armadilha 6 abaixo).
+
+#### Sinais de "PARE e pense" (não codifique direto)
+
+- 🚨 **Você precisou de mais que 30 segundos** para escolher entre
+  `map` e `flatMap`. → desenhe os tipos no papel/comentário antes.
+- 🚨 **Sua função tem 4+ `Result` independentes**. → revisite o
+  desenho do Intent, talvez algumas dessas validações cabem num
+  Value Object próprio.
+- 🚨 **Você está prestes a escrever `// ignore: no_sealed_class_downcast`**.
+  → você está bypassando a regra. Ou §P5 cobre seu caso e você não
+  viu, ou §P5 precisa ser editada (PR ao handbook ANTES do PR ao
+  código).
+- 🚨 **Você está prestes a inventar `guard()`/`andThen()`/`unwrap()`**.
+  → eles JÁ existem como `flatMap` em `core_contracts`. Inventar
+  duplica e fragmenta semântica (Armadilha 3).
+- 🚨 **Sua cadeia tem 4+ `flatMap` aninhados**. → provavelmente
+  cabe `combineWith` ou um helper de domínio. Veja "Casos compostos".
+- 🚨 **Você quer logar dentro do closure de `combineWith`**. → o
+  closure só roda no Success path; o log fica condicional silencioso
+  (Armadilha 5).
+
+---
+
+### ✅ DO — Escolha uma das 4 abordagens elegantes aprovadas
+
+O monorepo ACDG aprova estritamente as 4 opções a seguir. Todas são 100% estáticas, isentas de *Exceptions*, e cobrem exaustivamente as sealed classes.
+
+#### Opção 1: `(Result, Result).combineWith` — Validações Paralelas Independentes (Estilo Swift 🏆)
+
+Esta é a abordagem preferida pelo Tech Lead para validar múltiplos parâmetros (ex: path params e body keys). Usamos a "Tupla" combinada para simular um comportamento limpo e linear sem *Pyramid of Doom*.
+
+> ✅ **DO: Agrupar todas as validações sem dependência através da Tupla `combineWith`**
+> O método isola os `Failure` e só invoca a closure se todos os campos forem sucesso. Ele faz *short-circuit* do primeiro erro garantindo type safety.
+> ```dart
+> static Result<RegisterAppointmentIntent> parseFromBody(String rawPatientId, Map body) {
+>   // 1. Resolvemos os inputs independentes 
+>   final pathResult = validateUuidPathParam(rawPatientId, fieldName: 'patientId');
+>   final profResult = validateProfId(body);
+>   
+>   // 2. Extraímos tudo de forma 100% segura e tipada, sem casts.
+>   return (pathResult, profResult).combineWith((patientId, profId) {
+>     return Success(RegisterAppointmentIntent(patientId: patientId, professionalId: profId));
+>   });
+> }
+> ```
+
+> ❌ **DON'T: Separar validações independentes em dezenas de `if-case` ou `flatMap`**
+> Não suje a lógica de negócios aninhando fluxos para propriedades que não dependem uma da outra. A Tupla foi desenhada para limpar essa sujeira visual.
+
+#### Opção 2: `Result.flatMap` — Validações Dependentes em Cadeia
+
+Use exclusivamente quando o Passo 2 exige obrigatoriamente um valor derivado do Passo 1 para ser processado. 
+
+> ✅ **DO: Usar `flatMap` para simular Monadic Binding de dependência estrita.**
+> ```dart
+> static Result<GetPatientIntent> parse(String rawPatientId) {
+>   return validateUuidPathParam(rawPatientId, fieldName: 'id').flatMap((validId) {
+>     // A validação de permissão DEPENDE do ID processado acima
+>     return validateClearance(validId).flatMap((clearance) {
+>        return Success(GetPatientIntent(patientId: validId, clearance: clearance));
+>     });
+>   });
+> }
+> ```
+
+> ❌ **DON'T: Fazer `flatMap` retornando coisas que não sejam do tipo `Result`**
+> O closure interno do `flatMap` DEVE retornar `Failure(...)` ou `Success(...)`. Nunca retorne null ou dispare exceptions ali dentro. Se for transformação simples, use `map`.
+
+#### Opção 3: `switch` Exhaustive Imperativo (Para fluxos de controle não triviais)
+
+Se você precisa rodar *side-effects*, usar *loops* ou processamentos difíceis antes de encadear o retorno, o *Definite Assignment* nativo do Dart resolve o problema do "vazamento de escopo", mas custa caro em linhas de código.
+
+> ✅ **DO: Usar *Definite Assignment* garantindo que a variável seja preenchida.**
+> ```dart
+> final String patientId;
+> switch (validateUuidPathParam(rawId, fieldName: 'patientId')) {
+>   case Success(:final value):
+>     patientId = value;
+>   case Failure(:final error):
+>     return Failure(error); // Compilador entende que a falha termina aqui
+> }
+> // Daqui pra baixo o patientId está disponível livremente sem cast.
+> ```
+
+> ❌ **DON'T: Usar o `switch` imperativo se houver mais de uma validação**
+> Repetir a estrutura acima 3 vezes na mesma função consome 20 linhas apenas para instanciar 3 *Strings*. Aborte essa ideia e volte para a **Opção 1 (`combineWith`)**.
+
+#### Opção 4: `Result.map` — Transformação síncrona simples (1:1)
+
+> ✅ **DO: Usar `map` quando a saída não puder gerar erro.**
+> ```dart
+> static Result<GetPatientIntent> parseFromPath(String rawPatientId) =>
+>     validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+>         .map((id) => GetPatientIntent(patientId: id)); // Sem risco de Failure interno
+> ```
+
+---
+
+### 🟢 EXCEÇÃO DA REGRA (Camada de Testes)
+
+O único ambiente no qual realizar o downcast explícito em uma classe selada é a melhor arquitetura existente é no diretório de testes (`test/`, `integration_test/`).
+
+> ✅ **DO: Invocar o comportamento de *Fail-Fast* usando Casts em `expect`**
+> Forçar o `as Success<T>` em um arquivo de teste garante que, caso a implementação mude para retornar `Failure`, o teste vai explodir um *TypeError* absurdamente descritivo em vez de passar silenciosamente.
+> ```dart
+> test('parses valid body', () {
+>   final result = parseFromBody(id, body);
+>   
+>   // TOTALMENTE LEGÍTIMO E OBRIGATÓRIO (Em arquivos de teste)
+>   final value = (result as Success<RegisterAppointmentIntent>).value; 
+>   expect(value.patientId, kPatientUuid);
+> });
+> ```
+
+> ❌ **DON'T: Usar Padrões Defensivos para esconder Exceptions nos testes**
+> Não crie `if case Success(:final value)` dentro de blocos de teste apenas para satisfazer a estética funcional. Se o erro falhar por `if`, a assertion do teste será ignorada e o *pipeline* continuará falsamente verde.
+
+---
+
+### 🚨 Guia Prático de Decisão Rápida
+
+```text
+Você está escrevendo em `lib/` ou `test/`?
+├─ TEST/ → 🟢 USE O OPERADOR `as` SEM MEDO. É o padrão oficial de fail-fast.
+└─ LIB/  → CONTINUE:
+
+A validação vai exigir Side-Effects complexos ou early-returns no meio do fluxo?
+├─ SIM → Use a Opção 3: `switch` exhaustive imperativo (Definite Assignment).
+└─ NÃO → CONTINUE:
+
+A transformação é uma conversão 1:1 sem chance de gerar um novo erro?
+├─ SIM → Use a Opção 4: `.map(...)`.
+└─ NÃO → CONTINUE:
+
+A validação do Passo B PRECISA dos dados decodificados do Passo A?
+├─ SIM → Use a Opção 2: `.flatMap(...)`.
+└─ NÃO → (Parâmetros soltos do Body / Path) → 🏆 Use a Opção 1: `.combineWith(...)`.
+```
+
+---
+
+### 🧩 Casos compostos / esquisitos — heurísticas
+
+A árvore acima cobre 95% dos casos. Os 5% restantes precisam destas
+heurísticas. **Em todos eles, o instinto errado é "criar helper
+inline"** — sempre pause, leia o caso aqui, e só então decida.
+
+#### Caso A — 4+ validações independentes
+
+`combineWith` está implementado para 2 e 3 elementos por **escolha
+deliberada**: 4-ary é sinal forte de Intent inflado. Antes de criar
+4-ary:
+
+1. **Pergunte:** essas 4 validações realmente nascem juntas? Ou
+   alguma é uma sub-validação que cabe num Value Object próprio (ex:
+   `(patientId, memberId)` é um VO `FamilyTie`, não 2 args soltos)?
+2. **Pergunte:** é realmente independência, ou alguma deveria ser
+   `flatMap` (cascata)? Validar `cpf` E `dataNascimento` é
+   independente; validar `endereco` E `cep_pertence_ao_endereco`
+   não é.
+3. **Se ainda assim sobrar 4 verdadeiramente independentes:** prefira
+   encadear dois `combineWith` 2-ary:
+   ```dart
+   return (r1, r2).combineWith((a, b) =>
+     (r3, r4).combineWith((c, d) => Intent(a, b, c, d)),
+   );
+   ```
+   Não criar 4-ary ad-hoc.
+4. **Só** crie `combineWith` 4-ary se o pattern aparecer em ≥3 call
+   sites do monorepo. Code review valida.
+
+#### Caso B — Validação assíncrona (`Future<Result<T>>`)
+
+`map` / `flatMap` em `core_contracts` operam sobre `Result<T>`
+síncrono. Para `Future<Result<T>>` não existe (ainda) combinator:
+
+```dart
+// ❌ Não compila — Future<Result<T>> não tem .flatMap herdado
+final result = await fetchUser(id).flatMap((u) => fetchProfile(u.id));
+
+// ✅ Padrão atual: await + switch exhaustive imperativo
+final userResult = await fetchUser(id);
+switch (userResult) {
+  case Success(:final value):
+    final profileResult = await fetchProfile(value.id);
+    // ... continue com profileResult
+  case Failure(:final error):
+    return Failure(error);
+}
+```
+
+**Regra:** se esse pattern aparecer em **3+ lugares** no codebase,
+abra ticket para estender combinators com `AsyncResult<T>` (alias
+para `Future<Result<T>>`) com `flatMap` async. Até lá, switch é a
+forma correta. Não invente helper inline em nenhum package.
+
+#### Caso C — Mistura de `Result` com inputs não-`Result`
+
+Comum: validação UUID precisa do `body: Map<String, dynamic>` que
+NÃO é `Result`. Use `flatMap` capturando o input não-`Result` no
+closure:
+
+```dart
+static Result<XIntent> parseFromBody(String rawId, Map<String, dynamic> body) =>
+    validateUuidPathParam(rawId, fieldName: 'id')
+        .flatMap((id) => _parseBody(id, body)); // body capturado no closure
+```
+
+**Não tente** forçar `body` a virar `Result<Map>` se o framework
+já garante que a chave decodificada é `Map`. `Result<T>` é para
+validação que pode falhar — não para tudo.
+
+#### Caso D — Sealed types ALÉM de `Result`
+
+`Option<T>`, `Either<L,R>`, `NetworkState`, `LoadingState`, `AsyncState`,
+qualquer `sealed class` cai sob §P5. Cast em variants delas é
+igualmente proibido. O lint `no_sealed_class_downcast` é **GENÉRICO**
+— vale para qualquer sealed parent, não só `Result`.
+
+**Antes de criar um novo sealed type:** escreva os combinators
+apropriados em `core_contracts/` (ou um package equivalente)
+**ANTES de qualquer call site começar a copiar cast manual**. O canon
+do A23 W4 nasceu da falha oposta: `Result<T>` existia há tempos com
+`map`/`flatMap`, mas ninguém usava — e a equipe foi para `as Success`.
+Tipos prontos sem combinators socializados provocam pragmatismo sujo.
+
+#### Caso E — Encadeamento muito longo (5+ `flatMap`)
+
+Se sua função vira:
+```dart
+return validateA(...).flatMap((a) =>
+  validateB(...).flatMap((b) =>
+    validateC(...).flatMap((c) =>
+      validateD(...).flatMap((d) =>
+        validateE(...).flatMap((e) => Success(Intent(a, b, c, d, e)))))));
+```
+
+Você tem um sintoma — não uma feature. **Pare e questione:**
+
+1. Algumas dessas validações são realmente **independentes**? Mova
+   para `combineWith`.
+2. Sua função está fazendo mais que parsing. Quebre em sub-funções
+   com nomes do domínio (`_validateRegistration`, `_validateContact`,
+   etc.).
+3. O Intent está fazendo o trabalho de uso de caso. Mova para
+   UseCase.
+
+Se nenhuma das três se aplica, code review precisa **explicitamente
+aprovar** a cadeia longa antes do merge.
+
+---
+
+### ⚠️ Armadilhas catalogadas — anti-patterns que retornaram em PRs
+
+Cada armadilha abaixo aconteceu pelo menos 1× no monorepo. Memorize
+o **sintoma** — quando você ver na sua tela, pare imediatamente.
+
+#### Armadilha 1 — Tentar destructuring direto após `if-case Failure`
+
+```dart
+if (r case Failure(:final error)) return Failure(error);
+final Success(value: id) = r;  // ❌ não compila
+```
+
+**Sintoma:** o compilador reclama `The matched value type 'Result<T>'
+isn't exhaustively matched by 'Success<T>'`. **Tentação imediata é
+cast.** **Solução real:** switch (Opção 3), `map`/`flatMap` (Opções 2/4)
+— ver Modelo Mental. **Causa raiz:** falta de promoção subtrativa
+no Dart 3.
+
+#### Armadilha 2 — `valueOrNull!` para fugir do cast
+
+```dart
+final id = result.valueOrNull!; // ❌ "técnico-cast", igual de ruim
+```
+
+**Por quê:** `!` lança `TypeError` em runtime sem stack trace útil,
+não preserva `error`/`stackTrace`, e bypassa exhaustividade do mesmo
+jeito que `as`. **O lint NÃO pega isso** (não é `AsExpression`).
+**Code review reprova manualmente.**
+
+**Exceção:** em teste, `valueOrNull` é OK quando combinado com
+`expect(...)` que falha em null. Mas `as Success<T>` é mais explícito
+ainda — prefira.
+
+#### Armadilha 3 — Inventar `guard` / `andThen` / `unwrap` ad-hoc
+
+```dart
+// ❌ duplica flatMap que JÁ existe e perde stackTrace
+extension ResultGuardExt<T> on Result<T> {
+  Result<R> guard<R>(Result<R> Function(T) f) => switch (this) {
+    Success(:final value) => f(value),
+    Failure(:final error) => Failure(error), // ⚠️ stackTrace perdido!
+  };
+}
+```
+
+**Por quê:** `Result.flatMap` em `core_contracts` já faz isso E
+preserva `stackTrace`. Duplicar gera fragmentação semântica
+(`x.guard(...)` vs `y.flatMap(...)` em arquivos vizinhos) e perda
+silenciosa de metadados de debug.
+
+**Regra:** combinators novos só entram em `core_contracts/`, com
+nome inspirado no canon monádico (`map`, `flatMap`, `mapFailure`,
+`combineWith`), com **testes que provam preservação de `stackTrace`**,
+e com PR específico ao handbook explicando o gap. **Não invente
+inline em nenhum outro package.**
+
+#### Armadilha 4 — Não preservar `stackTrace` em combinator novo
+
+`Failure<T>` carrega `final StackTrace? stackTrace`. Qualquer
+combinator que materializa um novo `Failure` precisa propagar:
+
+```dart
+// ❌ perde stackTrace — debug em Sentry vira inútil
+return Failure(error);
+
+// ✅ preserva
+return Failure(error, stackTrace: stackTrace);
+```
+
+`combineWith` e `flatMap` já fazem isso — herde-os, não recrie.
+
+#### Armadilha 5 — Side-effect dentro do `transform` de `combineWith`
+
+```dart
+// ❌ side-effect torna a propagação não-determinística
+return (p, m).combineWith((patientId, memberId) {
+  log.info('parsed both ids'); // ← se p falhar, isso não roda. surpresa.
+  return Intent(patientId: patientId, memberId: memberId);
+});
+```
+
+**Por quê:** `transform` SÓ roda se TODOS forem `Success` — logar
+dentro dele faz "log" depender silenciosamente do path de sucesso.
+Logging deve viver no caller (após o `return`) ou no caminho de
+Failure via `mapFailure`.
+
+#### Armadilha 6 — Confundir `map` vs `flatMap`
+
+```dart
+// ❌ aninha — tipo final é Result<Result<X>>, não Result<X>
+final r = uuidResult.map((id) => parsePayload(id));
+//                  ^^^         ^^^^^^^^^^^^^
+//                  use flatMap, parsePayload retorna Result<X>
+
+// ✅ achata — tipo final é Result<X>
+final r = uuidResult.flatMap((id) => parsePayload(id));
+```
+
+**Heurística memorizada:** se a closure retorna `R`, é `map`. Se
+retorna `Result<R>`, é `flatMap`. Se você está em dúvida, **rode
+`dart analyze`** — ele aponta o tipo final aninhado e geralmente
+sugere a forma certa. Sempre escute o analyzer aqui.
+
+#### Armadilha 7 — Switch defensivo em testes
+
+```dart
+// ❌ EM TESTE — esconde regressão
+test('parses valid body', () {
+  final result = parseFromBody(id, body);
+  if (result case Success(:final value)) {
+    expect(value.patientId, kPatientUuid);
+  }
+  // Se mudar para Failure, este teste passa SEM rodar nenhum expect.
+});
+```
+
+Em testes, queremos **fail-fast com TypeError claro**. O cast
+`as Success<T>` faz isso. O switch defensivo NÃO. Veja a Exceção
+de Testes acima.
+
+#### Armadilha 8 — Suprimir o lint com `// ignore:`
+
+```dart
+// ignore: no_sealed_class_downcast  ← ❌ NUNCA em produção
+final id = (r as Success<String>).value;
+```
+
+**Política:** suprimir o lint local é suprimir a §P5 inteira. Se você
+tem caso legítimo, **abra PR ao handbook estendendo §P5** — não
+suprima. Code review automático reprova `// ignore:
+no_sealed_class_downcast` em qualquer arquivo de produção.
+
+#### Armadilha 9 — Misturar `mapFailure` para "logar" e seguir
+
+```dart
+// ❌ tenta usar combinator para side-effect — fica menos legível
+return validateUuid(raw, fieldName: 'id')
+    .mapFailure((e) {
+      log.error('uuid invalid', error: e);
+      return e; // tem que retornar — extra confusion
+    })
+    .flatMap((id) => parseBody(id, body));
+```
+
+**Por quê:** `mapFailure` é para **transformar** o erro (ex: domain
+error → app error), não para logar. Logar é side-effect — se você
+precisa, use switch imperativo (Opção 3). Mistura aqui dá leitura
+contraintuitiva.
+
+---
+
+### 🚫 Quando §P5 NÃO se aplica
+
+- Você não tem `Result<T>` no escopo (validação é com tipos puros
+  ou exceções gerenciadas em adapter layer com `try/catch` § P2b).
+- Você está em arquivo `*_test.dart`, `test/**`, `tests/**`,
+  `test_driver/**`, `integration_test/**` — cast é fail-fast
+  legítimo (ver Exceção de Testes).
+- Você está em código gerado (`.g.dart`, `.freezed.dart`) —
+  analyzer já exclui via `analysis_options.yaml`.
+- O `as` é um **upcast** óbvio (de `Object?` para um tipo exato),
+  não um downcast em sealed. Lint não dispara — só foca em
+  `AsExpression` cujo target é subclass de sealed parent.
+- Você está validando estrutura **dinâmica não-tipada** (Map,
+  JSON cru, dynamic) — use `if-case` (P2). §P5 só vale onde já
+  existe `Result<T>` materializado.
+
+---
+
+### 🌐 Comparação cross-language (paridade mental)
+
+Útil para mental model: como esse problema é resolvido em outras
+linguagens. Note que Dart 3 é um outlier — em Rust o anti-pattern
+**não compila**, em Swift é trivialmente auditável visualmente
+(`as!`), em Dart 3 precisamos de lint AST porque `as` é
+sintaticamente neutro.
+
+| Linguagem | Forma equivalente à Opção 3 (switch) | Forma equivalente à Opção 2 (flatMap) | Equivalente "as Success" anti-pattern |
+|---|---|---|---|
+| **Swift** | `guard case .success(let v) = r else { return .failure(e) }` | `r.flatMap { v in ... }` | force-cast `r as! Success` |
+| **Rust** | `let v = match r { Ok(v) => v, Err(e) => return Err(e) };` | `r.and_then(\|v\| ...)` | NÃO compila (sum types) |
+| **Kotlin** | `val v = when(r) { is Ok -> r.value; is Err -> return r }` | `r.flatMap { v -> ... }` | cast `(r as Ok).value` |
+| **Haskell** | `case r of Right v -> ...; Left e -> ...` | `r >>= \v -> ...` | impossível sintaticamente |
+| **Scala** | `r match { case Right(v) => ...; case Left(e) => ... }` | `r.flatMap(v => ...)` | `r.asInstanceOf[Right].value` |
+| **TypeScript** | `if (r.tag === 'Failure') return r; const v = r.value;` (com narrowing) | `chain(r, v => ...)` (fp-ts) | `(r as Success).value` |
+| **Dart 3 (este projeto)** | `switch (r) { case Success(:final v): ... case Failure(:final e): ... }` | `r.flatMap((v) => ...)` | `(r as Success<T>).value` ❌ |
+
+**Insight:** em Rust, `let Ok(v) = r else { return Err(e) }` está
+sendo discutido para incorporar promoção subtrativa total. Dart 3
+ainda não — daí o lint AST do `acdg_lints` é nossa defesa equivalente
+ao "compilador faz isso por você" que outras linguagens já têm.
+
+---
+
+### Defesa em depth contra regressões
+
+1. **Lint `acdg_lints/no_sealed_class_downcast`** — AST-based, dispara em
+   QUALQUER `as Subclass` onde Subclass herda de uma `sealed class`.
+   Generaliza além de `Result<T>` — cobre `Option`, `Either`, etc. quando
+   forem adicionados.
+2. **Script `scripts/check_no_sealed_cast.sh`** — fallback grep cirúrgico
+   (com excludes de comentário) wireado no CI. Existe enquanto o lint não
+   estabiliza com pub workspace caching. Documentado em
+   `packages/acdg_lints/README.md` "Known issues".
+3. **Code review** — checklist desta policy.
+
+---
+
 ## Checklist de code review
 
 Ao revisar código novo, verificar:
@@ -630,6 +1175,17 @@ Ao revisar código novo, verificar:
 - [ ] **P2b** — `try/catch` sobre `fromJson`? Validar gatilho (adapter + DTO gerado + ≥10 campos ou PII) + checklist: `catch (e, st)` + `obs?.logError('<ns>.parse_failed', cause, stack)` + `_XxxParseError.toString()` fixa. **Reprovar automaticamente `catch (_)`**
 - [ ] **P3** — Closure simples em `.map`/`.where`? Converter para tear-off
 - [ ] **P4** — `throw` espalhado por regras de domínio? Centralizar em função `Never` com observabilidade
+- [ ] **P5** — `as Success<T>` / `as Failure<T>` em arquivo de produção? Reprovar automaticamente. Recomendar switch / `.map` / `.flatMap` / `combineWith` (Modelo Mental 3-perguntas + árvore de decisão na seção §P5).
+- [ ] **P5** — `as Subclass` em qualquer outro sealed type (Option, Either, NetworkState…) em produção? Mesmo veredicto. Lint é genérico.
+- [ ] **P5** — Switch defensivo em `*_test.dart` mascarando expectation? (Armadilha 7) Substituir por `as Success<T>` / `as Failure<T>` para fail-fast.
+- [ ] **P5** — `valueOrNull!` / `result.value` direto após `if-case Failure`? (Armadilha 2) "Técnico-cast", reprovar.
+- [ ] **P5** — Extension custom (`guard`, `andThen`, `unwrap`) em qualquer package que não seja `core_contracts`? (Armadilha 3) Substituir por `flatMap`/`map`/`combineWith` ou levar PR ao `core_contracts` se há gap real.
+- [ ] **P5** — `Failure(error)` sem propagar `stackTrace` em combinator novo? (Armadilha 4) Reprovar.
+- [ ] **P5** — Side-effect (log, dispatch, IO) dentro do closure de `combineWith`/`map`/`flatMap`? (Armadilha 5) Mover para fora ou usar switch imperativo.
+- [ ] **P5** — Confusão `map` (deveria ser `flatMap`) ou vice-versa? (Armadilha 6) `dart analyze` aponta tipo aninhado.
+- [ ] **P5** — `// ignore: no_sealed_class_downcast` em produção? (Armadilha 8) Sempre reprovar — exigir PR ao handbook §P5 antes.
+- [ ] **P5** — Cadeia de 4+ `flatMap` aninhados, ou 4+ `Result` independentes? (Casos compostos A, E) Pause: provavelmente Intent inflado ou validações que cabem em VO.
+- [ ] **P5** — `await` de `Future<Result<T>>` seguido de combinator? (Caso composto B) `flatMap` não funciona em Future — use switch imperativo.
 
 ---
 
@@ -716,3 +1272,4 @@ final patients = responses.map(PatientMapper.fromResponse).toList();
 - **P2b:** **Edge case aprovado:** use **`try/catch` sobre `fromJson` gerado** em adapter quando DTO tem ≥10 campos ou PII-sensível — sempre com `catch (e, st)` + `obs?.logError` + `_XxxParseError` privada. **Carrier da decisão é a signature do Intent** — handler só escolhe se passa `obs:`. Code review reprova `catch (_)`. (ADR-019, ADR-020)
 - **P3:** Use **tear-offs** em `.map`/`.where` — sem closure ruído.
 - **P4:** Use **`Never`** em funções de falha — type promotion + observabilidade central.
+- **P5:** **Sem `as Success<T>` / `as Failure<T>` em produção.** Faça as 3 perguntas de calibração (quantos Results? side-effect no Failure? Success retorna `R` ou `Result<R>`?) e escolha entre `switch` exhaustive, `.map`, `.flatMap`, ou `combineWith`. **9 armadilhas catalogadas** — memorize ao menos 1 (Armadilha 6: `map` retorna `R`, `flatMap` retorna `Result<R>`). Em testes (`*_test.dart`), o cast é a forma canônica de fail-fast. Defendido pelo lint `acdg_lints/no_sealed_class_downcast`.

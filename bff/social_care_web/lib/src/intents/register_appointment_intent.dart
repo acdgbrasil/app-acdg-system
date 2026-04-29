@@ -1,6 +1,8 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `POST /api/patients/{id}/appointments`.
 ///
 /// Carries the route-level [patientId] plus the typed
@@ -12,6 +14,11 @@ import 'package:shared/shared.dart';
 /// Per ADR-019 + `PATTERN_MATCHING_POLICY.md §P2`, the DTO has only 1
 /// required field (`professionalId`) and no PII-sensitive identifiers, so the
 /// canonical **P2 if-case manual** path is used (NOT `P2b` try/fromJson).
+///
+/// Path discipline (A23): [parseFromBody] validates [rawPatientId] as a
+/// canonical UUID v4 via `validateUuidPathParam` before any body work.
+/// Following §P5, the chain uses [Result.flatMap] — no manual cast on the
+/// sealed `Result<T>`.
 ///
 /// PII-safety: [parseFromBody] failures NEVER echo raw `summary` / `actionPlan`
 /// content back to the caller — the error only names missing structural
@@ -29,12 +36,21 @@ final class RegisterAppointmentIntent with Equatable {
   @override
   List<Object?> get props => [patientId, request];
 
-  /// Parses a decoded JSON body + the route [patientId] into an intent.
+  /// Parses a decoded JSON body + the route [rawPatientId] into an intent.
   ///
-  /// Uses P2 if-case to enforce the presence of `professionalId`. Optionals
-  /// (`summary`, `actionPlan`, `date`, `type`) are carried through verbatim
-  /// when present; missing values degrade to `null`.
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast. Body parser uses P2 if-case to
+  /// enforce the presence of `professionalId`. Optionals (`summary`,
+  /// `actionPlan`, `date`, `type`) are carried through verbatim when
+  /// present; missing values degrade to `null`.
   static Result<RegisterAppointmentIntent> parseFromBody(
+    String rawPatientId,
+    Map<String, dynamic> body,
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
+
+  static Result<RegisterAppointmentIntent> _parseBody(
     String patientId,
     Map<String, dynamic> body,
   ) {

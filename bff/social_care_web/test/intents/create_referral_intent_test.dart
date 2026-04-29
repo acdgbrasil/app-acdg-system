@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/create_referral_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [CreateReferralIntent] — A12.
 ///
@@ -37,9 +40,9 @@ void main() {
         reason: 'support',
       );
 
-      const intent = CreateReferralIntent(patientId: 'pat-1', request: request);
+      const intent = CreateReferralIntent(patientId: kPatientUuid, request: request);
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -50,8 +53,8 @@ void main() {
         reason: 'support',
       );
 
-      const a = CreateReferralIntent(patientId: 'pat-1', request: request);
-      const b = CreateReferralIntent(patientId: 'pat-1', request: request);
+      const a = CreateReferralIntent(patientId: kPatientUuid, request: request);
+      const b = CreateReferralIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -64,8 +67,8 @@ void main() {
         reason: 'support',
       );
 
-      const a = CreateReferralIntent(patientId: 'pat-1', request: request);
-      const b = CreateReferralIntent(patientId: 'pat-2', request: request);
+      const a = CreateReferralIntent(patientId: kPatientUuid, request: request);
+      const b = CreateReferralIntent(patientId: kPatientUuidAlt, request: request);
 
       expect(a, isNot(equals(b)));
     });
@@ -73,7 +76,7 @@ void main() {
     group('parseFromBody — Result<CreateReferralIntent> (P2 if-case)', () {
       test('returns Success when all required fields are present', () {
         final result = CreateReferralIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -82,13 +85,13 @@ void main() {
 
       test('Success payload preserves patientId + required + optionals', () {
         final result = CreateReferralIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(
               value.request.referredPersonId,
               equals('660e8400-e29b-41d4-a716-446655440001'),
@@ -106,7 +109,7 @@ void main() {
       });
 
       test('Success with required only — optionals null', () {
-        final result = CreateReferralIntent.parseFromBody('pat-1', const {
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, const {
           'referredPersonId': 'pers-1',
           'destinationService': 'CRAS',
           'reason': 'support',
@@ -127,7 +130,7 @@ void main() {
       test('returns Failure when referredPersonId is missing', () {
         final body = _validBody()..remove('referredPersonId');
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -135,7 +138,7 @@ void main() {
       test('returns Failure when destinationService is missing', () {
         final body = _validBody()..remove('destinationService');
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -143,7 +146,7 @@ void main() {
       test('returns Failure when reason is missing', () {
         final body = _validBody()..remove('reason');
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -151,7 +154,7 @@ void main() {
       test('returns Failure when referredPersonId is empty string', () {
         final body = _validBody()..['referredPersonId'] = '';
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -159,7 +162,7 @@ void main() {
       test('returns Failure when destinationService is empty string', () {
         final body = _validBody()..['destinationService'] = '';
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -167,13 +170,13 @@ void main() {
       test('returns Failure when reason is empty string', () {
         final body = _validBody()..['reason'] = '';
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
 
       test('returns Failure when body is empty', () {
-        final result = CreateReferralIntent.parseFromBody('pat-1', const {});
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, const {});
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -181,7 +184,7 @@ void main() {
       test(
         'Failure message enumerates ALL missing fields when body is empty',
         () {
-          final result = CreateReferralIntent.parseFromBody('pat-1', const {});
+          final result = CreateReferralIntent.parseFromBody(kPatientUuid, const {});
 
           switch (result) {
             case Success():
@@ -197,7 +200,7 @@ void main() {
       );
 
       test('Failure message enumerates only missing (not present) fields', () {
-        final result = CreateReferralIntent.parseFromBody('pat-1', const {
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, const {
           'referredPersonId': 'pers-1',
         });
 
@@ -221,7 +224,7 @@ void main() {
             'reason': 'Mae relatou violencia fisica contra o filho de 8 anos',
           };
 
-          final result = CreateReferralIntent.parseFromBody('pat-1', body);
+          final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
           switch (result) {
             case Success():
@@ -253,7 +256,7 @@ void main() {
           'destinationService': 'UPA Jardim Catarina 24h',
         };
 
-        final result = CreateReferralIntent.parseFromBody('pat-1', body);
+        final result = CreateReferralIntent.parseFromBody(kPatientUuid, body);
 
         switch (result) {
           case Success():

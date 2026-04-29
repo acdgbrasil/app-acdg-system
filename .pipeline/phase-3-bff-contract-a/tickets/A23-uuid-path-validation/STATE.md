@@ -1,11 +1,19 @@
 # Ticket State: A23-uuid-path-validation
 
 ## Current Phase
-phase: in-progress — W0+W1+**W2 complete** (Patient surface +
-A09 Family/Audit retrofit)
+phase: **DONE** — W0+W1+W2+W3+W4 complete + V2 templates retrofit
++ defesas em depth (Camadas 1-6).
 agent: implementer
-status: Templates A, B (named-args variant), and C all validated
-end-to-end. Mechanical replication pending across W3–W4 (~16 endpoints).
+status: All 26 BFF Web files retrofitted to V2 templates
+(map / flatMap / combineWith — no sealed-class downcast). Defesas
+contra regressão consolidadas: handbook §P5, skill rules 24-25,
+custom lint `acdg_lints/no_sealed_class_downcast`, CI grep script,
+`combineWith` 2-ary + 3-ary in `core_contracts`. Final BFF Web suite:
+**1026 GREEN / 2 FAIL** (the 2 are pre-existing A21 cleanup —
+`health_handler_test` + `social_care_api_client_test`). Zero new
+failures from W4. Flutter packages débito tracked in **A24**
+(13 files: 1 ViewModel + 1 mapper + 11 UseCases — out of A23 scope
+by design).
 
 ## What's done
 
@@ -85,13 +93,27 @@ GREEN counts at W1 close (intents/ + patient handler subset):
 are unrelated to A23 (they predate this ticket — confirmed via
 `git status`: those files show no W0/W1 modifications).
 
-## Canonical templates (replicate verbatim for the remaining ~25 endpoints)
+## Canonical templates V2 (W4 onwards — replaces V1 verbatim canon)
+
+> **History:** V1 templates (A/B/C) replicated `(pathResult as Success<T>).value`
+> across W1+W2+W3 — 17 BFF Web files. External code review on 2026-04-29
+> flagged this as a sealed-class downcast anti-pattern (see
+> `W4-bypass-investigation/BYPASS-REPORT.md` and `EXTERNAL-REVIEW-PROMPT.md`
+> for the full investigation, including a third-party adversarial review).
+>
+> **V2 forms** below use `core_contracts` combinators (`map`, `flatMap`,
+> `combineWith`) instead of cast. Defendido pelo lint
+> `acdg_lints/no_sealed_class_downcast` e pelo §P5 da
+> `PATTERN_MATCHING_POLICY.md`. All four templates yield code that is
+> shorter, exhaustiveness-checked, and preserves `stackTrace` on failure.
 
 ### Template A — Path-only intent (1 path param)
-Mirrors `GetPatientIntent`. Applies to: `GetPatient`, `GetAuditTrail`,
-`ApproveLookupRequest`, `RejectLookupRequest`,
-`RemoveFamilyMember` (2 path params — see Template C),
+Mirrors corrected `GetPatientIntent`. Applies to: `GetPatient`,
+`GetAuditTrail`, `ApproveLookupRequest`, `RejectLookupRequest`,
 `GetTeamMember` (A15 resume), all worker/role lifecycle (A15 resume).
+
+Use `Result<T>.map` from `core_contracts` — the entire parser collapses
+to a one-liner:
 
 ```dart
 // lib/src/intents/<x>_intent.dart
@@ -106,13 +128,9 @@ final class <X>Intent with Equatable {
   @override
   List<Object?> get props => [<id>];
 
-  static Result<<X>Intent> parseFromPath(String raw<Id>) {
-    final validated = validateUuidPathParam(raw<Id>, fieldName: '<id>');
-    return switch (validated) {
-      Success(:final value) => Success(<X>Intent(<id>: value)),
-      Failure(:final error) => Failure(error),
-    };
-  }
+  static Result<<X>Intent> parseFromPath(String raw<Id>) =>
+      validateUuidPathParam(raw<Id>, fieldName: '<id>')
+          .map((id) => <X>Intent(<id>: id));
 }
 ```
 
@@ -120,70 +138,75 @@ final class <X>Intent with Equatable {
 Applies to: `RemoveFamilyMember(patientId, familyMemberId)`,
 `DeactivateRole(memberId, roleId)`, `ReactivateRole(memberId, roleId)`.
 
+Use `(Result, Result).combineWith` from
+`core_contracts/result_combinators.dart`. Short-circuits on the first
+failure (left → right) and preserves its `error` + `stackTrace`:
+
 ```dart
-static Result<<X>Intent> parseFromPath(
-  String raw<Id1>,
-  String raw<Id2>,
-) {
+static Result<<X>Intent> parseFromParams({
+  required String raw<Id1>,
+  required String raw<Id2>,
+}) {
   final v1 = validateUuidPathParam(raw<Id1>, fieldName: '<id1>');
-  if (v1 case Failure(:final error)) return Failure(error);
   final v2 = validateUuidPathParam(raw<Id2>, fieldName: '<id2>');
-  if (v2 case Failure(:final error)) return Failure(error);
-  return Success(
-    <X>Intent(
-      <id1>: (v1 as Success<String>).value,
-      <id2>: (v2 as Success<String>).value,
-    ),
+  return (v1, v2).combineWith(
+    (id1, id2) => <X>Intent(<id1>: id1, <id2>: id2),
   );
 }
 ```
 
-### Template C — P2 intent (1 path param + body)
-**Two body-parsing variants exist in the canon — both compatible with
-this template.** Choose based on the existing intent's pre-A23 shape:
+For 3 path params, swap to the 3-ary extension —
+`(v1, v2, v3).combineWith((a, b, c) => <X>Intent(...))`.
+
+### Template C — P2/P2b intent (1 path param + body)
+**Two body-parsing variants** exist (C-P2 manual if-case vs C-P2b
+try/catch over `fromJson`). Both share the same V2 outer shape via
+`Result<T>.flatMap`: the body parsing moves to a private helper, and
+`flatMap` chains it after UUID validation succeeds.
 
 - **C-P2** (if-case body matcher) — Patient lifecycle (W1), A09
-  Add/AssignCaregiver/UpdateSocialIdentity (W2). The existing
-  `if (patientId.isEmpty)` guard is REMOVED; the UUID gate
+  Add/AssignCaregiver/UpdateSocialIdentity (W2), A11 Care intents,
+  A12 Referral/Violation, A13 Lookup `Toggle*`. The pre-A23
+  `if (patientId.isEmpty)` guard, if present, is REMOVED — UUID gate
   short-circuits empty / malformed inputs.
-- **C-P2b** (try/catch over `fromJson`) — A10 Assessment (W3 target),
-  most Care/Protection intents. **No `if (patientId.isEmpty)` to
-  remove** — pre-A23 P2b intents have no such guard. UUID gate is
-  ADDED above the try/catch, no body-parsing logic changes.
+- **C-P2b** (try/catch over `fromJson`) — A10 Assessment (W3),
+  `UpdatePlacementHistory`. **No `if (patientId.isEmpty)` to remove**;
+  V2 still uses `flatMap` plus the existing try/catch helper.
 
 Applies to: `AdmitPatient`, `DischargePatient`, `ReadmitPatient`,
 `WithdrawPatient`, `AddFamilyMember`, `AssignPrimaryCaregiver`,
-`UpdateSocialIdentity` (all C-P2); all 7 Assessment fichas,
-`RegisterAppointment`, `UpdateIntakeInfo`, `CreateReferral`,
-`ReportRightsViolation`, `UpdatePlacementHistory` (all C-P2b);
-`UpdateLookupItem` (path: tableName + itemId), `ToggleLookupItem`
-(path: tableName + itemId), `AssignRole` (path: memberId).
-
-**Strategy:** keep the existing `parseFromBody(rawId, body)` signature.
-Add a UUID validation at the top of `parseFromBody`. The path-param
-fieldName for the error must match the route name exactly (e.g.
-`patientId`, `memberId`).
+`UpdateSocialIdentity` (all C-P2); 7 Assessment fichas,
+`UpdatePlacementHistory` (C-P2b); `RegisterAppointment`,
+`UpdateIntakeInfo`, `CreateReferral`, `ReportRightsViolation`,
+`UpdateLookupItem`, `ToggleLookupItem`, `AssignRole` (all C-P2).
 
 ```dart
 static Result<<X>Intent> parseFromBody(
   String raw<Id>,
-  Map<String, dynamic> body,
-) {
-  final pathResult = validateUuidPathParam(raw<Id>, fieldName: '<id>');
-  if (pathResult case Failure(:final error)) return Failure(error);
-  final <id> = (pathResult as Success<String>).value;
+  Map<String, dynamic> body, {
+  ObservabilityContext? obs, // P2b only — omit for pure P2
+}) =>
+    validateUuidPathParam(raw<Id>, fieldName: '<id>')
+        .flatMap((<id>) => _parseBody(<id>, body, obs));
 
-  // ... existing body parsing logic, using `<id>` as the validated value.
-  // The old `if (rawId.isEmpty)` guard can be removed — UUID validation
-  // already covers it.
+// Private helper — body parsing isolated from path validation.
+// For C-P2: keep the existing if-case logic verbatim.
+// For C-P2b: keep the existing try/catch over fromJson verbatim.
+static Result<<X>Intent> _parseBody(
+  String <id>,
+  Map<String, dynamic> body,
+  ObservabilityContext? obs, // C-P2b only
+) {
+  // ... P2 if-case body matching, OR P2b try/catch over fromJson ...
 }
 ```
 
 **Edge case — `UpdateLookupItem` and `ToggleLookupItem` have a path of
 `{tableName}/{itemId}`.** `tableName` is NOT a UUID (it is a literal
-like `dominio_parentesco`). Only `itemId` is validated as UUID. The
-existing tableName validation (membership in a known set, if any)
-stays as-is.
+like `dominio_parentesco`). Only `itemId` is validated as UUID. Use
+Template B-style `combineWith` if a future `tableName` is also
+validated to a `Result`; otherwise pass `tableName` through as a plain
+`String` argument and apply `flatMap` only on the UUID validation.
 
 ### Template D — Handler routing
 For path-only endpoints:
@@ -262,7 +285,7 @@ W2 numbers (delta from W1):
 - 0 new analyzer issues from W2 surface (2 pre-existing infos in
   `register_worker_intent_test.dart` are A15, outside W2 scope).
 
-### W3 — A10 Assessment 7 fichas (Template C, **P2b variant**)
+### W3 — A10 Assessment 7 fichas (Template C, **P2b variant**) ✅ COMPLETE
 **Important shape difference from W1/W2:** the 7 Assessment intents use
 the **P2b try/catch over `fromJson`** pattern (per A10's "padrão novo
 try/catch sobre fromJson"), not P2 if-case. Concretely:
@@ -311,13 +334,13 @@ UUID gate adds a new failure mode without replacing the existing one.)
   prefix from `UuidPathParamError.toString()`.
 
 **Targets (7 intents × 1 retrofit each):**
-- [ ] UpdateHousingConditionIntent (`update_housing_condition_intent.dart`)
-- [ ] UpdateSocioEconomicSituationIntent
-- [ ] UpdateWorkAndIncomeIntent
-- [ ] UpdateEducationalStatusIntent
-- [ ] UpdateHealthStatusIntent
-- [ ] UpdateCommunitySupportNetworkIntent
-- [ ] UpdateSocialHealthSummaryIntent
+- [x] UpdateHousingConditionIntent (`update_housing_condition_intent.dart`)
+- [x] UpdateSocioEconomicSituationIntent
+- [x] UpdateWorkAndIncomeIntent
+- [x] UpdateEducationalStatusIntent
+- [x] UpdateHealthStatusIntent
+- [x] UpdateCommunitySupportNetworkIntent
+- [x] UpdateSocialHealthSummaryIntent
 
 **Per-intent test sweep (7 files, mechanical):**
 1. Add: `import 'package:social_care_web/src/intents/uuid_validation.dart';`
@@ -349,16 +372,22 @@ covered by `_<X>ParseError`) or `_FailingAssessment` /
 `_ExplodingAssessment` style fakes that don't depend on the path id
 literal. No fixture corrections needed — pure mechanical UUID sweep.
 
-**Numbers expected at W3 close:**
-- Baseline (now): 86 GREEN (8×7 intent + 29 handler + 1 cross =
-  78 baseline retained, 29 handler retained — wait, full count
-  is 8+8+8+8+9+8+8 + 29 = 87; the 86 in the standalone run is
-  this set). Re-run: `dart test test/intents/update_*intent_test.dart
-  test/handlers/assessment_handler_test.dart`.
-- Expected after W3: +7 intent rejection tests + +7 handler
-  rejection tests = **+14 GREEN** (~100 in the W3 surface alone).
-- Full BFF Web suite expected: 1006 + 14 = **1020 GREEN / 2 FAIL**
-  (same 2 pre-existing A21 failures).
+**Numbers at W3 close (measured):**
+- 7 intent tests (combined run `dart test
+  test/intents/update_{housing,socio,work,educational,health,
+  community_support,social_health_summary}_intent_test.dart`):
+  **64 GREEN** (57 baseline + 7 new UUID-rejection tests, one per
+  ficha).
+- handler test (`dart test test/handlers/assessment_handler_test.dart`):
+  **36 GREEN** (29 baseline + 7 new in the new
+  `AssessmentHandler — UUID v4 path validation` group).
+- Full BFF Web suite: **1020 GREEN / 2 FAIL** — exactly the predicted
+  number (1006 W2 close + 14 W3 = 1020). The 2 failing test files
+  are still the pre-existing A21 ones (`health_handler_test.dart` and
+  `social_care_api_client_test.dart` — `[E] Failed to load`); A23
+  adds zero new failures.
+- 0 new analyzer issues across the 15 W3-touched files (7 intents +
+  7 intent tests + 1 handler test).
 
 ### W4 — A11 + A12 + A13 (9 intents)
 - A11 Care: RegisterAppointment, UpdateIntakeInfo (Template C)
@@ -391,24 +420,27 @@ intent valid (test 404 absence), failure cause (fixture not UUID),
 verdict (fixture wrong), option (replace with `kPatientUuidAlt`).
 Done. **Watch for similar fixture-driven failures throughout W1-W4.**
 
-## Numbers at this checkpoint (W2 close)
-- intents/ test directory full run: 442 GREEN
-  (helper 28 + GetPatient 8 + 4 Patient lifecycle intents 22 +
-  AddFamilyMember 13 + RemoveFamilyMember 11 +
-  AssignPrimaryCaregiver 8 + UpdateSocialIdentity 8 +
-  GetAuditTrail 13 + 11 other existing intent files unchanged but
-  counted by the directory run).
+## Numbers at this checkpoint (W3 close)
+- 7 intent tests retrofitted (Assessment surface): standalone
+  combined run = **64 GREEN** (57 baseline + 7 new
+  UUID-rejection tests, one per ficha).
+- handlers/assessment_handler_test: **36 GREEN** (29 baseline + 7
+  new in `AssessmentHandler — UUID v4 path validation`).
+- Full BFF Web suite: **1020 GREEN / 2 FAIL** — exactly the
+  predicted 1006 (W2 close) + 14 (W3 net) total. The 2 failing
+  test files are still the pre-existing A21 ones
+  (`health_handler_test.dart` + `social_care_api_client_test.dart`,
+  both `[E] Failed to load`); A23 W3 added zero new failures.
+- 0 new analyzer issues across the 15 W3-touched files.
+
+## Numbers at previous checkpoint (W2 close — preserved for reference)
+- intents/ test directory full run: 442 GREEN.
 - handlers/registry_patient_handler_test: 26 GREEN (W1).
-- handlers/registry_family_handler_test: 25 GREEN (W2 — was 19 + 6
-  new UUID-rejection tests, one per endpoint variant).
+- handlers/registry_family_handler_test: 25 GREEN (W2).
 - Combined `dart test test/intents/
   test/handlers/registry_family_handler_test.dart
-  test/handlers/registry_patient_handler_test.dart`: **469 GREEN**.
-- Full BFF Web suite: **1006 GREEN / 2 FAIL** (same 2 pre-existing
-  A21 failures from deleted `SocialCareContract` /
-  `FakeSocialCareBff`; A23 added +17 net tests since W1 close).
-- 0 new analyzer issues from W2 surface. Pre-existing A15 infos in
-  `register_worker_intent_test.dart` remain (outside W2 scope).
+  test/handlers/registry_patient_handler_test.dart`: 469 GREEN.
+- Full BFF Web suite: 1006 GREEN / 2 FAIL.
 
 ## Templates B coverage update
 Template B verbatim (positional 2-id args) was never used in W2. The
@@ -418,18 +450,180 @@ named-args variant for path-only intents with multiple ids. W3+ may
 need verbatim Template B for `DeactivateRole(memberId, roleId)` and
 `ReactivateRole(memberId, roleId)` (A15 resume — Team).
 
-## What's next (W3 entry checklist)
-1. Apply Template C verbatim to the 7 Assessment fichas. Each follows
-   the same shape as `AdmitPatientIntent.parseFromBody` (already
-   retrofitted in W1) — single `rawPatientId` validated at top,
-   existing body P2 if-case retained.
-2. Reuse `kPatientUuid` / `kPatientUuidAlt` fixtures across the
-   assessment intent tests; replace any synthetic `'pat-X'` string.
-3. Each ficha handler needs the same `'pat-X'` → `$kPatientUuid` URL
-   sweep + 1 new UUID-rejection test per endpoint (asserting
-   `INVALID_<X>_BODY` 400 with PII safety).
-4. `AssessmentHandler` is a single file with 7 routes — sweep all 7 in
-   one PR; expect ~14 new tests (intent + handler).
-5. Watch for REGRA #2 fixture-driven 404 tests in
-   `assessment_handler_test.dart` (similar to the
-   `'unknown'` → `kPatientUuidAlt` correction in W1).
+## Files modified in W3
+
+**7 intents (lib/src/intents/):**
+- `update_housing_condition_intent.dart`
+- `update_socio_economic_situation_intent.dart`
+- `update_work_and_income_intent.dart`
+- `update_educational_status_intent.dart`
+- `update_health_status_intent.dart`
+- `update_community_support_network_intent.dart`
+- `update_social_health_summary_intent.dart`
+
+Each one: `import 'uuid_validation.dart';` added, parameter renamed
+`String patientId` → `String rawPatientId`, UUID gate
+(`validateUuidPathParam(rawPatientId, fieldName: 'patientId')`)
+inserted at the top of `parseFromBody`, dartdoc updated to mention
+the A23 invariant. The `_<X>ParseError` private class and the
+existing try/catch over `fromJson` are RETAINED — UUID gate adds a
+new failure mode without replacing the existing one.
+
+**Handler (lib/src/handlers/):**
+- `assessment_handler.dart` — **NO CHANGES**. The intent's
+  `parseFromBody` already short-circuits on UUID failure and the
+  handler's existing `_badRequest(code: 'INVALID_<X>_BODY', ...)`
+  branch carries the `UuidPathParamError.toString()` verbatim
+  (Template D single-code-per-endpoint decision).
+
+**7 intent tests (test/intents/) + 1 handler test (test/handlers/):**
+Mechanical sweep `'pat-1'` → `kPatientUuid` (78 occurrences
+across the 7 intent tests), `'pat-2'` → `kPatientUuidAlt` (7
+occurrences), `/patients/pat-1/` → `/patients/$kPatientUuid/`
+(29 occurrences in the handler test). Imports added:
+`uuid_validation.dart` + `_test_uuids.dart`. New tests appended:
+1 UUID-rejection test per intent + 1 UUID-rejection test per route
+in a dedicated `AssessmentHandler — UUID v4 path validation` group.
+
+**Decisions applied (verbatim from STATE.md W3 plan):**
+- `obs?.logError` kept inside the existing catch only — UUID
+  failures are cheap rejections at the boundary; precedent from
+  W1/W2 is "don't log them".
+- Single 400 code per endpoint (`INVALID_<X>_BODY`) — Template D
+  default; the message itself distinguishes path vs body via the
+  `Invalid path parameter [...]` prefix from
+  `UuidPathParamError.toString()`.
+- REGRA #2 watch: clean for W3 — no fixture-driven 404/500 literals
+  in `assessment_handler_test.dart` (confirmed during recon, no
+  fixture corrections needed).
+
+## What's next (W4 entry checklist — V2 templates)
+
+> **Pre-flight:** Camadas 1-6 das defesas (handbook §P5, skill regras
+> 24-25, lint `acdg_lints/no_sealed_class_downcast`, script
+> `scripts/check_no_sealed_cast.sh`, combinators em `core_contracts`,
+> STATE.md V2 templates) já estão consolidadas — ver
+> `W4-bypass-investigation/BYPASS-REPORT.md`. **Toda nova implementação
+> e todo retrofit DEVE usar V2.** Nenhum cast `as Success<T>` em
+> produção.
+
+1. **Retrofit W1+W2+W3** (priority 1 — encerra o débito antes de
+   adicionar W4). 17 arquivos no BFF Web:
+   - W1: 4 Patient lifecycle intents + GetPatient (Template A V2)
+   - W2: AddFamilyMember + AssignPrimaryCaregiver + UpdateSocialIdentity
+     + RemoveFamilyMember + GetAuditTrail + 1 handler
+     (`registry_family_handler.dart` linha 178)
+   - W3: 7 Assessment intents (Template C-P2b V2)
+   - Behavior preservado — testes existentes seguem GREEN.
+2. **A11 Care** (Template C-P2 V2): `RegisterAppointmentIntent`,
+   `UpdateIntakeInfoIntent`. Path: `patientId`.
+3. **A12 Protection** (mixed Template C V2): `CreateReferralIntent`
+   (C-P2), `ReportRightsViolationIntent` (C-P2),
+   `UpdatePlacementHistoryIntent` (C-P2b com `obs`).
+4. **A13 Lookup** (mixed):
+   - `UpdateLookupItemIntent`, `ToggleLookupItemIntent` — Template
+     C-P2 V2, path `{tableName}/{itemId}`. Apenas `itemId` validado
+     como UUID; `tableName` segue como literal.
+   - `ApproveLookupRequestIntent`, `RejectLookupRequestIntent` —
+     Template A V2 (path-only, single param `requestId`).
+5. Per-route handler test sweep + 1 new UUID-rejection test each.
+   Reuse `kReferralUuid`, `kViolationReportUuid`, `kAppointmentUuid`,
+   `kLookupItemUuid`, `kLookupRequestUuid` from `_test_uuids.dart`.
+   **Testes podem usar `as Success<T>` para fail-fast (§P5
+   exception)** — switch defensivo em test é o anti-pattern.
+6. Watch for REGRA #2 fixture-driven 404 tests across the W4
+   surface — same protocol applied in W1.
+7. Final validation: `dart analyze`, full BFF Web suite, plus
+   `bash scripts/check_no_sealed_cast.sh` (must report OK).
+
+## W4 close — final numbers (2026-04-29)
+
+- Full BFF Web suite: **1026 GREEN / 2 FAIL**
+  - The 2 failures are `[E] Failed to load` on `health_handler_test.dart`
+    and `social_care_api_client_test.dart` — pre-existing A21 cleanup
+    debt (reference deleted `SocialCareContract` and `FakeSocialCareBff`).
+    A23 W4 added **zero new failures**.
+- `dart analyze` on the W4-touched surface: **0 new errors / warnings**.
+  82 pre-existing `info` level `use_null_aware_elements` hits in
+  `social_care_api_client.dart` and `register_worker_intent_test.dart`
+  predate this ticket and are out of W4 scope.
+- `bash scripts/check_no_sealed_cast.sh`: **0 violations in BFF Web**.
+  Script exits 1 only because of remaining matches in
+  `packages/social_care/` and `packages/people_admin/` — explicitly
+  scoped to ticket **A24** by design.
+
+## Files changed in W4
+
+### Production (BFF Web — `bff/social_care_web/lib/src/`)
+**16 intents retrofitted from V1 cast → V2 map/flatMap/combineWith:**
+- W1: `admit_patient_intent.dart`, `discharge_patient_intent.dart`,
+  `readmit_patient_intent.dart`, `withdraw_patient_intent.dart`
+- W2: `add_family_member_intent.dart`,
+  `assign_primary_caregiver_intent.dart`,
+  `update_social_identity_intent.dart`,
+  `remove_family_member_intent.dart` (now uses 2-ary combineWith)
+- W3: `update_health_status_intent.dart`,
+  `update_housing_condition_intent.dart`,
+  `update_socio_economic_situation_intent.dart`,
+  `update_educational_status_intent.dart`,
+  `update_work_and_income_intent.dart`,
+  `update_community_support_network_intent.dart`,
+  `update_social_health_summary_intent.dart`
+**1 handler:** `registry_family_handler.dart` (`_handleGetAuditTrail`
+now uses switch exhaustive, no cast)
+
+**9 W4 endpoints implemented natively in V2 form:**
+- A11 Care: `register_appointment_intent.dart`,
+  `update_intake_info_intent.dart`
+- A12 Protection: `create_referral_intent.dart`,
+  `report_rights_violation_intent.dart`,
+  `update_placement_history_intent.dart`
+- A13 Lookup: `update_lookup_item_intent.dart`,
+  `toggle_lookup_item_intent.dart`,
+  `approve_lookup_request_intent.dart`,
+  `reject_lookup_request_intent.dart`
+**1 handler:** `lookup_handler.dart` — `_handleApproveRequest` and
+`_handleRejectRequest` now route through `parseFromPath` with
+INVALID_*_PARAMS error code; `_handleUpdateItem` now emits
+`INVALID_UPDATE_LOOKUP_ITEM_BODY` on UUID failure (replacing the
+previous `throw StateError('parse is total')` branch).
+
+### Defenses scaffolded (Camadas 1-6)
+- `handbook/architecture/PATTERN_MATCHING_POLICY.md` — added §P5
+- `.claude/skills/flutter-expert/SKILL.md` — added rules 24, 25 +
+  reviewer checklist
+- `packages/core_contracts/lib/src/base/result_combinators.dart` —
+  new file with `combineWith` 2-ary + 3-ary, `flatCombineWith`
+  monadic flatten variant; preserves `stackTrace` on short-circuit
+- `packages/core/test/base/result_combinators_test.dart` — 16 tests
+  GREEN
+- `packages/acdg_lints/` — new package: `no_sealed_class_downcast`
+  rule (AST-based, exempts `test/**`)
+- `bff/social_care_web/analysis_options.yaml` — wired
+  `analyzer.plugins: - custom_lint` + `custom_lint.rules` allow-list
+- `scripts/check_no_sealed_cast.sh` — defense-in-depth grep fallback
+  (excludes test/, comment lines)
+
+### Test sweeps (BFF Web — `bff/social_care_web/test/`)
+- 5 W4 intent tests: `'pat-1'`/`'pat-2'` → `kPatientUuid`/`kPatientUuidAlt`
+  + 1 new UUID-rejection test added to RegisterAppointment
+- 2 lookup intent tests (UpdateLookupItem, ToggleLookupItem):
+  `'item-1'`/`'item-2'` → `kLookupItemUuid` (+ 1 fixture distinguished
+  with `kLookupRequestUuid` for inequality assertion)
+- 2 lookup request tests (Approve/Reject) — full rewrite with
+  `parseFromPath` group + `kNonUuid` rejection assertion
+- 3 handler tests (Care, Protection, Lookup): all `/patients/pat-1/...`
+  URLs swept to `/patients/$kPatientUuid/...`; lookup item URLs swept
+  to `/lookups/dominio_parentesco/$kLookupItemUuid/...`
+
+## Out of scope — débito explícito
+
+- **A24** (new ticket): retrofit 13 Flutter package files to V2:
+  - 1 ViewModel: `patient_registration_view_model.dart`
+  - 1 mapper: `patient_register_mapper.dart`
+  - 11 UseCases: `register_appointment_use_case.dart`,
+    `add_family_member_use_case.dart`,
+    `register_patient_use_case.dart`, 7 assessment use cases,
+    `create_referral_use_case.dart`, `report_violation_use_case.dart`
+  - Plus A21 cleanup of the 2 long-failing test files
+    (`health_handler_test.dart`, `social_care_api_client_test.dart`).

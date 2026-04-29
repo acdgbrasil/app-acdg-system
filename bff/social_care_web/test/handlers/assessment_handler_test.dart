@@ -14,6 +14,8 @@ import 'package:social_care_web/src/use_cases/update_social_health_summary_use_c
 import 'package:social_care_web/src/use_cases/update_socio_economic_situation_use_case.dart';
 import 'package:social_care_web/src/use_cases/update_work_and_income_use_case.dart';
 
+import '../_test_uuids.dart';
+
 /// Wave 0 RED for the new unified [AssessmentHandler] (A10).
 ///
 /// Routes (mounted on `/` — real server prefixes `/api`):
@@ -188,7 +190,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/housing', _validHousingBody()),
+        _put('/patients/$kPatientUuid/assessment/housing', _validHousingBody()),
       );
 
       expect(response.statusCode, lessThan(300));
@@ -202,7 +204,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/housing', 'not json'),
+        _put('/patients/$kPatientUuid/assessment/housing', 'not json'),
       );
 
       expect(response.statusCode, equals(400));
@@ -218,7 +220,7 @@ void main() {
         final body = _validHousingBody()..remove('type');
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/housing', body),
+          _put('/patients/$kPatientUuid/assessment/housing', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -243,7 +245,7 @@ void main() {
       final handler = _buildHandler(assessment: failing);
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/housing', _validHousingBody()),
+        _put('/patients/$kPatientUuid/assessment/housing', _validHousingBody()),
       );
 
       expect(response.statusCode, equals(409));
@@ -256,7 +258,7 @@ void main() {
 
       final response = await handler.router.call(
         _put(
-          '/patients/pat-1/assessment/socioeconomic',
+          '/patients/$kPatientUuid/assessment/socioeconomic',
           _validSocioEconomicBody(),
         ),
       );
@@ -268,7 +270,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/socioeconomic', 'not json'),
+        _put('/patients/$kPatientUuid/assessment/socioeconomic', 'not json'),
       );
 
       expect(response.statusCode, equals(400));
@@ -284,7 +286,7 @@ void main() {
         final body = _validSocioEconomicBody()..remove('mainSourceOfIncome');
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/socioeconomic', body),
+          _put('/patients/$kPatientUuid/assessment/socioeconomic', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -310,7 +312,7 @@ void main() {
 
       final response = await handler.router.call(
         _put(
-          '/patients/pat-1/assessment/socioeconomic',
+          '/patients/$kPatientUuid/assessment/socioeconomic',
           _validSocioEconomicBody(),
         ),
       );
@@ -325,7 +327,7 @@ void main() {
 
       final response = await handler.router.call(
         _put(
-          '/patients/pat-1/assessment/work-income',
+          '/patients/$kPatientUuid/assessment/work-income',
           _validWorkAndIncomeBody(),
         ),
       );
@@ -337,7 +339,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/work-income', 'not json'),
+        _put('/patients/$kPatientUuid/assessment/work-income', 'not json'),
       );
 
       expect(response.statusCode, equals(400));
@@ -353,7 +355,7 @@ void main() {
         final body = _validWorkAndIncomeBody()..remove('hasRetiredMembers');
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/work-income', body),
+          _put('/patients/$kPatientUuid/assessment/work-income', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -379,7 +381,7 @@ void main() {
 
       final response = await handler.router.call(
         _put(
-          '/patients/pat-1/assessment/work-income',
+          '/patients/$kPatientUuid/assessment/work-income',
           _validWorkAndIncomeBody(),
         ),
       );
@@ -394,7 +396,7 @@ void main() {
 
       final response = await handler.router.call(
         _put(
-          '/patients/pat-1/assessment/education',
+          '/patients/$kPatientUuid/assessment/education',
           _validEducationalStatusBody(),
         ),
       );
@@ -406,7 +408,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/education', 'not json'),
+        _put('/patients/$kPatientUuid/assessment/education', 'not json'),
       );
 
       expect(response.statusCode, equals(400));
@@ -430,7 +432,7 @@ void main() {
           ];
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/education', body),
+          _put('/patients/$kPatientUuid/assessment/education', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -456,7 +458,7 @@ void main() {
 
       final response = await handler.router.call(
         _put(
-          '/patients/pat-1/assessment/education',
+          '/patients/$kPatientUuid/assessment/education',
           _validEducationalStatusBody(),
         ),
       );
@@ -470,7 +472,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/health', _validHealthStatusBody()),
+        _put('/patients/$kPatientUuid/assessment/health', _validHealthStatusBody()),
       );
 
       expect(response.statusCode, lessThan(300));
@@ -480,7 +482,7 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/health', 'not json'),
+        _put('/patients/$kPatientUuid/assessment/health', 'not json'),
       );
 
       expect(response.statusCode, equals(400));
@@ -496,7 +498,7 @@ void main() {
         final body = _validHealthStatusBody()..remove('foodInsecurity');
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/health', body),
+          _put('/patients/$kPatientUuid/assessment/health', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -521,7 +523,7 @@ void main() {
       final handler = _buildHandler(assessment: failing);
 
       final response = await handler.router.call(
-        _put('/patients/pat-1/assessment/health', _validHealthStatusBody()),
+        _put('/patients/$kPatientUuid/assessment/health', _validHealthStatusBody()),
       );
 
       expect(response.statusCode, equals(409));
@@ -536,7 +538,7 @@ void main() {
 
         final response = await handler.router.call(
           _put(
-            '/patients/pat-1/assessment/community-support',
+            '/patients/$kPatientUuid/assessment/community-support',
             _validCommunitySupportBody(),
           ),
         );
@@ -548,7 +550,7 @@ void main() {
         final handler = _buildHandler();
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/community-support', 'not json'),
+          _put('/patients/$kPatientUuid/assessment/community-support', 'not json'),
         );
 
         expect(response.statusCode, equals(400));
@@ -563,7 +565,7 @@ void main() {
         final body = _validCommunitySupportBody()..remove('familyConflicts');
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/community-support', body),
+          _put('/patients/$kPatientUuid/assessment/community-support', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -588,7 +590,7 @@ void main() {
 
         final response = await handler.router.call(
           _put(
-            '/patients/pat-1/assessment/community-support',
+            '/patients/$kPatientUuid/assessment/community-support',
             _validCommunitySupportBody(),
           ),
         );
@@ -606,7 +608,7 @@ void main() {
 
         final response = await handler.router.call(
           _put(
-            '/patients/pat-1/assessment/social-health-summary',
+            '/patients/$kPatientUuid/assessment/social-health-summary',
             _validSocialHealthSummaryBody(),
           ),
         );
@@ -618,7 +620,7 @@ void main() {
         final handler = _buildHandler();
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/social-health-summary', 'not json'),
+          _put('/patients/$kPatientUuid/assessment/social-health-summary', 'not json'),
         );
 
         expect(response.statusCode, equals(400));
@@ -634,7 +636,7 @@ void main() {
           ..remove('requiresConstantCare');
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/social-health-summary', body),
+          _put('/patients/$kPatientUuid/assessment/social-health-summary', body),
         );
 
         expect(response.statusCode, equals(400));
@@ -659,7 +661,7 @@ void main() {
 
         final response = await handler.router.call(
           _put(
-            '/patients/pat-1/assessment/social-health-summary',
+            '/patients/$kPatientUuid/assessment/social-health-summary',
             _validSocialHealthSummaryBody(),
           ),
         );
@@ -676,7 +678,7 @@ void main() {
         final handler = _buildHandler(assessment: _ExplodingAssessment());
 
         final response = await handler.router.call(
-          _put('/patients/pat-1/assessment/housing', _validHousingBody()),
+          _put('/patients/$kPatientUuid/assessment/housing', _validHousingBody()),
         );
 
         expect(response.statusCode, equals(500));
@@ -687,6 +689,163 @@ void main() {
 
         final payload = jsonDecode(body) as Map<String, dynamic>;
         expect((payload['error'] as Map)['code'], equals('INTERNAL'));
+      },
+    );
+  });
+
+  // ── A23 W3 — UUID v4 path validation per route ────────────────────────
+  //
+  // Each Assessment endpoint relies on the intent-level UUID gate
+  // (`validateUuidPathParam` inside `parseFromBody`). When the path id
+  // is not a canonical UUID v4 the intent's `parseFromBody` short-circuits
+  // with a `UuidPathParamError`; the handler then emits the matching
+  // `INVALID_<X>_BODY` 400 (single code per ficha — A23 Template D).
+  //
+  // PII safety: the error message must NEVER echo the raw path input.
+  group('AssessmentHandler — UUID v4 path validation', () {
+    Future<Map<String, dynamic>> expect400AndDecode(Response response) async {
+      expect(response.statusCode, equals(400));
+      final payload =
+          jsonDecode(await response.readAsString()) as Map<String, dynamic>;
+      final message = (payload['error'] as Map)['message'] as String;
+      expect(message, isNot(contains(kNonUuid)));
+      return payload;
+    }
+
+    test(
+      'returns 400 INVALID_HOUSING_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put('/patients/$kNonUuid/assessment/housing', _validHousingBody()),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_HOUSING_BODY'),
+        );
+      },
+    );
+
+    test(
+      'returns 400 INVALID_SOCIO_ECONOMIC_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put(
+            '/patients/$kNonUuid/assessment/socioeconomic',
+            _validSocioEconomicBody(),
+          ),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_SOCIO_ECONOMIC_BODY'),
+        );
+      },
+    );
+
+    test(
+      'returns 400 INVALID_WORK_AND_INCOME_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put(
+            '/patients/$kNonUuid/assessment/work-income',
+            _validWorkAndIncomeBody(),
+          ),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_WORK_AND_INCOME_BODY'),
+        );
+      },
+    );
+
+    test(
+      'returns 400 INVALID_EDUCATIONAL_STATUS_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put(
+            '/patients/$kNonUuid/assessment/education',
+            _validEducationalStatusBody(),
+          ),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_EDUCATIONAL_STATUS_BODY'),
+        );
+      },
+    );
+
+    test(
+      'returns 400 INVALID_HEALTH_STATUS_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put(
+            '/patients/$kNonUuid/assessment/health',
+            _validHealthStatusBody(),
+          ),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_HEALTH_STATUS_BODY'),
+        );
+      },
+    );
+
+    test(
+      'returns 400 INVALID_COMMUNITY_SUPPORT_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put(
+            '/patients/$kNonUuid/assessment/community-support',
+            _validCommunitySupportBody(),
+          ),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_COMMUNITY_SUPPORT_BODY'),
+        );
+      },
+    );
+
+    test(
+      'returns 400 INVALID_SOCIAL_HEALTH_SUMMARY_BODY when path id is not UUID v4',
+      () async {
+        final handler = _buildHandler();
+
+        final response = await handler.router.call(
+          _put(
+            '/patients/$kNonUuid/assessment/social-health-summary',
+            _validSocialHealthSummaryBody(),
+          ),
+        );
+
+        final payload = await expect400AndDecode(response);
+        expect(
+          (payload['error'] as Map)['code'],
+          equals('INVALID_SOCIAL_HEALTH_SUMMARY_BODY'),
+        );
       },
     );
   });

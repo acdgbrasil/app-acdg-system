@@ -2,13 +2,16 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
 import '../observability/observability_context.dart';
+import 'uuid_validation.dart';
 
 /// Intent for `PUT /api/patients/{id}/assessment/socioeconomic`.
 ///
 /// Wraps the route-level [patientId] with the typed
-/// [UpdateSocioEconomicSituationRequest] body. Parsing is a try/catch over
-/// the `json_serializable`-generated `fromJson` so the handler receives a
-/// [Result] and the error message stays structural / PII-safe.
+/// [UpdateSocioEconomicSituationRequest] body. [parseFromBody] validates
+/// the raw path parameter as a canonical UUID v4 (per A23 —
+/// `validateUuidPathParam`) before delegating body parsing to the
+/// `json_serializable`-generated `fromJson` (try/catch so the handler
+/// receives a [Result] and the error message stays structural / PII-safe).
 final class UpdateSocioEconomicSituationIntent with Equatable {
   const UpdateSocioEconomicSituationIntent({
     required this.patientId,
@@ -21,11 +24,21 @@ final class UpdateSocioEconomicSituationIntent with Equatable {
   @override
   List<Object?> get props => [patientId, request];
 
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast on the sealed `Result<T>`.
   static Result<UpdateSocioEconomicSituationIntent> parseFromBody(
-    String patientId,
+    String rawPatientId,
     Map<String, dynamic> body, {
     ObservabilityContext? obs,
-  }) {
+  }) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body, obs));
+
+  static Result<UpdateSocioEconomicSituationIntent> _parseBody(
+    String patientId,
+    Map<String, dynamic> body,
+    ObservabilityContext? obs,
+  ) {
     try {
       final request = UpdateSocioEconomicSituationRequest.fromJson(body);
       return Success(

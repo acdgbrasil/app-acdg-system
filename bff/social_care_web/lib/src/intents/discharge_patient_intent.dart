@@ -23,19 +23,22 @@ final class DischargePatientIntent with Equatable {
   /// Parses a decoded JSON body + the route [rawPatientId] into an intent.
   ///
   /// A non-UUID-v4 [rawPatientId] short-circuits with a
-  /// [UuidPathParamError]; an empty/missing `reason` then yields the
-  /// PII-safe body-level error.
+  /// [UuidPathParamError] via `flatMap`; an empty/missing `reason` then
+  /// yields the PII-safe body-level error.
+  ///
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast on the sealed `Result<T>`.
   static Result<DischargePatientIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) {
-    final pathResult = validateUuidPathParam(
-      rawPatientId,
-      fieldName: 'patientId',
-    );
-    if (pathResult case Failure(:final error)) return Failure(error);
-    final patientId = (pathResult as Success<String>).value;
+  ) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body));
 
+  static Result<DischargePatientIntent> _parseBody(
+    String patientId,
+    Map<String, dynamic> body,
+  ) {
     if (body case {'reason': final String reason} when reason.isNotEmpty) {
       return Success(
         DischargePatientIntent(

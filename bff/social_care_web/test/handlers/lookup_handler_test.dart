@@ -16,6 +16,8 @@ import 'package:social_care_web/src/use_cases/reject_lookup_request_use_case.dar
 import 'package:social_care_web/src/use_cases/toggle_lookup_item_use_case.dart';
 import 'package:social_care_web/src/use_cases/update_lookup_item_use_case.dart';
 
+import '../_test_uuids.dart';
+
 /// A [LookupContract] variant that forces every mutation / query to fail with
 /// a well-known [BackendError]. Used to validate failure-path status codes.
 class _FailingLookup extends FakeLookupBff {
@@ -369,7 +371,7 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/item-1'),
+            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
             body: jsonEncode(const {
               'codigo': 'NEW_CODE',
               'descricao': 'New description',
@@ -394,7 +396,7 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/item-1'),
+            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
             body: jsonEncode(const <String, dynamic>{}),
             headers: {'content-type': 'application/json'},
           );
@@ -411,7 +413,7 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/item-1'),
+            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
             body: jsonEncode(const {'codigo': 'NEW_CODE'}),
             headers: {'content-type': 'application/json'},
           );
@@ -426,7 +428,7 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/lookups/dominio_parentesco/item-1'),
+          Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -450,7 +452,7 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/item-1'),
+            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
             body: jsonEncode(const <String, dynamic>{
               'codigo': 42,
               'descricao': true,
@@ -479,7 +481,7 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/item-1'),
+            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
             body: jsonEncode(const {'codigo': 'X'}),
             headers: {'content-type': 'application/json'},
           );
@@ -499,7 +501,7 @@ void main() {
         final request = Request(
           'PATCH',
           Uri.parse(
-            'http://localhost/lookups/dominio_parentesco/item-1/toggle',
+            'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid/toggle',
           ),
           body: jsonEncode(_validToggleBody()),
           headers: {'content-type': 'application/json'},
@@ -520,7 +522,7 @@ void main() {
         final request = Request(
           'PATCH',
           Uri.parse(
-            'http://localhost/lookups/dominio_parentesco/item-1/toggle',
+            'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid/toggle',
           ),
           body: 'not json',
           headers: {'content-type': 'application/json'},
@@ -541,7 +543,7 @@ void main() {
           final request = Request(
             'PATCH',
             Uri.parse(
-              'http://localhost/lookups/dominio_parentesco/item-1/toggle',
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid/toggle',
             ),
             body: jsonEncode(const <String, dynamic>{}),
             headers: {'content-type': 'application/json'},
@@ -566,7 +568,7 @@ void main() {
           final request = Request(
             'PATCH',
             Uri.parse(
-              'http://localhost/lookups/dominio_parentesco/item-1/toggle',
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid/toggle',
             ),
             body: jsonEncode(const {'active': 'true'}),
             headers: {'content-type': 'application/json'},
@@ -599,7 +601,7 @@ void main() {
           final request = Request(
             'PATCH',
             Uri.parse(
-              'http://localhost/lookups/dominio_parentesco/item-1/toggle',
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid/toggle',
             ),
             body: jsonEncode(_validToggleBody()),
             headers: {'content-type': 'application/json'},

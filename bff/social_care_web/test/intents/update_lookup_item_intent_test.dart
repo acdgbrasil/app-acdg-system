@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_lookup_item_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateLookupItemIntent] — A13.
 ///
@@ -24,12 +27,12 @@ void main() {
 
       const intent = UpdateLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
 
       expect(intent.tableName, equals('dominio_parentesco'));
-      expect(intent.itemId, equals('item-1'));
+      expect(intent.itemId, equals(kLookupItemUuid));
       expect(intent.request, equals(request));
     });
 
@@ -38,12 +41,12 @@ void main() {
 
       const a = UpdateLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
       const b = UpdateLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
 
@@ -56,12 +59,12 @@ void main() {
 
       const a = UpdateLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
       const b = UpdateLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-2',
+        itemId: kLookupRequestUuid, // distinct UUID for inequality assertion
         request: request,
       );
 
@@ -74,7 +77,7 @@ void main() {
         test('returns Success when both fields are provided', () {
           final result = UpdateLookupItemIntent.parseFromBody(
             'dominio_parentesco',
-            'item-1',
+            kLookupItemUuid,
             const {'codigo': 'NEW_CODE', 'descricao': 'New description'},
           );
 
@@ -82,7 +85,7 @@ void main() {
           switch (result) {
             case Success(:final value):
               expect(value.tableName, equals('dominio_parentesco'));
-              expect(value.itemId, equals('item-1'));
+              expect(value.itemId, equals(kLookupItemUuid));
               expect(value.request.codigo, equals('NEW_CODE'));
               expect(value.request.descricao, equals('New description'));
             case Failure():
@@ -95,7 +98,7 @@ void main() {
           () {
             final result = UpdateLookupItemIntent.parseFromBody(
               'dominio_parentesco',
-              'item-1',
+              kLookupItemUuid,
               const {'codigo': 'NEW_CODE'},
             );
 
@@ -114,7 +117,7 @@ void main() {
           () {
             final result = UpdateLookupItemIntent.parseFromBody(
               'dominio_parentesco',
-              'item-1',
+              kLookupItemUuid,
               const {'descricao': 'New description'},
             );
 
@@ -131,14 +134,14 @@ void main() {
         test('returns Success with both fields null when body is empty {}', () {
           final result = UpdateLookupItemIntent.parseFromBody(
             'dominio_parentesco',
-            'item-1',
+            kLookupItemUuid,
             const {},
           );
 
           switch (result) {
             case Success(:final value):
               expect(value.tableName, equals('dominio_parentesco'));
-              expect(value.itemId, equals('item-1'));
+              expect(value.itemId, equals(kLookupItemUuid));
               expect(value.request.codigo, isNull);
               expect(value.request.descricao, isNull);
             case Failure():
@@ -151,7 +154,7 @@ void main() {
           () {
             final result = UpdateLookupItemIntent.parseFromBody(
               'dominio_parentesco',
-              'item-1',
+              kLookupItemUuid,
               const <String, dynamic>{'codigo': 42, 'descricao': true},
             );
 
@@ -173,7 +176,7 @@ void main() {
             // semantics are the UseCase's concern, not the Intent parser's.
             final result = UpdateLookupItemIntent.parseFromBody(
               'dominio_parentesco',
-              'item-1',
+              kLookupItemUuid,
               const {'codigo': '', 'descricao': ''},
             );
 

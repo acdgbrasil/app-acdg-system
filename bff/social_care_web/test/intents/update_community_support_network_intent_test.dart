@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_community_support_network_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateCommunitySupportNetworkIntent].
 ///
@@ -38,11 +41,11 @@ void main() {
       );
 
       const intent = UpdateCommunitySupportNetworkIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -58,11 +61,11 @@ void main() {
       );
 
       const a = UpdateCommunitySupportNetworkIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateCommunitySupportNetworkIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -82,11 +85,11 @@ void main() {
       );
 
       const a = UpdateCommunitySupportNetworkIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateCommunitySupportNetworkIntent(
-        patientId: 'pat-2',
+        patientId: kPatientUuidAlt,
         request: request,
       );
 
@@ -96,7 +99,7 @@ void main() {
     group('parseFromBody — Result<UpdateCommunitySupportNetworkIntent>', () {
       test('returns Success when body is valid', () {
         final result = UpdateCommunitySupportNetworkIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -105,13 +108,13 @@ void main() {
 
       test('Success payload preserves patientId and request fields', () {
         final result = UpdateCommunitySupportNetworkIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(value.request.hasRelativeSupport, isTrue);
             expect(value.request.familyConflicts, equals('NONE'));
           case Failure():
@@ -123,7 +126,7 @@ void main() {
         final body = _validBody()..remove('familyConflicts');
 
         final result = UpdateCommunitySupportNetworkIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -132,7 +135,7 @@ void main() {
 
       test('returns Failure when body is empty', () {
         final result = UpdateCommunitySupportNetworkIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -144,7 +147,7 @@ void main() {
         body.remove('hasRelativeSupport');
 
         final result = UpdateCommunitySupportNetworkIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -164,6 +167,28 @@ void main() {
             expect(text, isNot(contains('hasRelativeSupport')));
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = UpdateCommunitySupportNetworkIntent.parseFromBody(
+            kNonUuid,
+            _validBody(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                (error as UuidPathParamError).fieldName,
+                equals('patientId'),
+              );
+              expect(error.toString(), isNot(contains(kNonUuid)));
+          }
+        },
+      );
     });
   });
 }

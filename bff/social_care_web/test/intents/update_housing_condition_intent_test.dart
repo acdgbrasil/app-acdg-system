@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_housing_condition_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateHousingConditionIntent].
 ///
@@ -55,11 +58,11 @@ void main() {
       );
 
       const intent = UpdateHousingConditionIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -83,11 +86,11 @@ void main() {
       );
 
       const a = UpdateHousingConditionIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateHousingConditionIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -115,11 +118,11 @@ void main() {
       );
 
       const a = UpdateHousingConditionIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateHousingConditionIntent(
-        patientId: 'pat-2',
+        patientId: kPatientUuidAlt,
         request: request,
       );
 
@@ -129,7 +132,7 @@ void main() {
     group('parseFromBody — Result<UpdateHousingConditionIntent>', () {
       test('returns Success when body is valid', () {
         final result = UpdateHousingConditionIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -138,13 +141,13 @@ void main() {
 
       test('Success payload preserves patientId and request fields', () {
         final result = UpdateHousingConditionIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(value.request.type, equals('OWNED'));
             expect(value.request.numberOfRooms, equals(3));
             expect(value.request.hasPipedWater, isTrue);
@@ -157,7 +160,7 @@ void main() {
         final body = _validBody()..remove('type');
 
         final result = UpdateHousingConditionIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -166,7 +169,7 @@ void main() {
 
       test('returns Failure when body is empty', () {
         final result = UpdateHousingConditionIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -179,7 +182,7 @@ void main() {
         body.remove('numberOfRooms'); // force failure via missing int
 
         final result = UpdateHousingConditionIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -199,6 +202,29 @@ void main() {
             expect(text, isNot(contains('numberOfRooms')));
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = UpdateHousingConditionIntent.parseFromBody(
+            kNonUuid,
+            _validBody(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                (error as UuidPathParamError).fieldName,
+                equals('patientId'),
+              );
+              // PII safety: error must not echo the raw path input.
+              expect(error.toString(), isNot(contains(kNonUuid)));
+          }
+        },
+      );
     });
   });
 }

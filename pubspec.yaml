@@ -14,6 +14,7 @@ workspace:
   - packages/people_admin
   - packages/design_system
   - packages/persistence
+  - packages/acdg_lints
   - bff/shared
   - bff/social_care_desktop
   - bff/social_care_web

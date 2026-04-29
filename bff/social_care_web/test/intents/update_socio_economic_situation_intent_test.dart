@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_socio_economic_situation_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [UpdateSocioEconomicSituationIntent].
 ///
@@ -31,11 +34,11 @@ void main() {
       );
 
       const intent = UpdateSocioEconomicSituationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
-      expect(intent.patientId, equals('pat-1'));
+      expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
     });
 
@@ -49,11 +52,11 @@ void main() {
       );
 
       const a = UpdateSocioEconomicSituationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateSocioEconomicSituationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
 
@@ -71,11 +74,11 @@ void main() {
       );
 
       const a = UpdateSocioEconomicSituationIntent(
-        patientId: 'pat-1',
+        patientId: kPatientUuid,
         request: request,
       );
       const b = UpdateSocioEconomicSituationIntent(
-        patientId: 'pat-2',
+        patientId: kPatientUuidAlt,
         request: request,
       );
 
@@ -85,7 +88,7 @@ void main() {
     group('parseFromBody — Result<UpdateSocioEconomicSituationIntent>', () {
       test('returns Success when body is valid', () {
         final result = UpdateSocioEconomicSituationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
@@ -94,13 +97,13 @@ void main() {
 
       test('Success payload preserves patientId and request fields', () {
         final result = UpdateSocioEconomicSituationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           _validBody(),
         );
 
         switch (result) {
           case Success(:final value):
-            expect(value.patientId, equals('pat-1'));
+            expect(value.patientId, equals(kPatientUuid));
             expect(value.request.totalFamilyIncome, equals(1500.0));
             expect(
               value.request.mainSourceOfIncome,
@@ -117,7 +120,7 @@ void main() {
           final body = _validBody()..remove('mainSourceOfIncome');
 
           final result = UpdateSocioEconomicSituationIntent.parseFromBody(
-            'pat-1',
+            kPatientUuid,
             body,
           );
 
@@ -127,7 +130,7 @@ void main() {
 
       test('returns Failure when body is empty', () {
         final result = UpdateSocioEconomicSituationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           const {},
         );
 
@@ -139,7 +142,7 @@ void main() {
         body.remove('totalFamilyIncome');
 
         final result = UpdateSocioEconomicSituationIntent.parseFromBody(
-          'pat-1',
+          kPatientUuid,
           body,
         );
 
@@ -159,6 +162,28 @@ void main() {
             expect(text, isNot(contains('totalFamilyIncome')));
         }
       });
+
+      test(
+        'returns Failure with UuidPathParamError when path id is not UUID v4',
+        () {
+          final result = UpdateSocioEconomicSituationIntent.parseFromBody(
+            kNonUuid,
+            _validBody(),
+          );
+
+          switch (result) {
+            case Success():
+              fail('Expected Failure for non-UUID path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(
+                (error as UuidPathParamError).fieldName,
+                equals('patientId'),
+              );
+              expect(error.toString(), isNot(contains(kNonUuid)));
+          }
+        },
+      );
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
 import '../observability/observability_context.dart';
+import 'uuid_validation.dart';
 
 /// Intent for `PUT /api/patients/{id}/placement-history`.
 ///
@@ -32,18 +33,28 @@ final class UpdatePlacementHistoryIntent with Equatable {
   @override
   List<Object?> get props => [patientId, request];
 
-  /// Parses a decoded JSON body + the route [patientId] into an intent.
+  /// Parses a decoded JSON body + the route [rawPatientId] into an intent.
   ///
-  /// Any failure in the underlying `fromJson` (missing/wrong-typed fields,
-  /// malformed nested DTOs) collapses to a single [Failure] whose message
-  /// is the structural literal pinned by Wave 0. The optional [obs] routes
-  /// the original cause + stack trace via `logError` — the public
-  /// [Failure] remains PII-safe.
+  /// V2 (§P5): UUID validation chains into body parsing via
+  /// [Result.flatMap] — no manual cast. Any failure in the underlying
+  /// `fromJson` (missing/wrong-typed fields, malformed nested DTOs)
+  /// collapses to a single [Failure] whose message is the structural
+  /// literal pinned by Wave 0. The optional [obs] routes the original
+  /// cause + stack trace via `logError` — the public [Failure] remains
+  /// PII-safe.
   static Result<UpdatePlacementHistoryIntent> parseFromBody(
-    String patientId,
+    String rawPatientId,
     Map<String, dynamic> body, {
     ObservabilityContext? obs,
-  }) {
+  }) =>
+      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
+          .flatMap((patientId) => _parseBody(patientId, body, obs));
+
+  static Result<UpdatePlacementHistoryIntent> _parseBody(
+    String patientId,
+    Map<String, dynamic> body,
+    ObservabilityContext? obs,
+  ) {
     try {
       final request = UpdatePlacementHistoryRequest.fromJson(body);
       return Success(

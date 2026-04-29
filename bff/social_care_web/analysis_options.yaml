@@ -15,8 +15,15 @@ include: package:lints/recommended.yaml
 
 # ============================================================================
 # Camada 2 — lints built-in alinhados com PATTERN_MATCHING_POLICY (ADR-019).
-# Rules custom mais rigorosas (catch_without_stack_in_adapter, etc.) ficam
-# para o package `acdg_lints` — ver A22 ticket (.pipeline/phase-3-bff-...).
+# Custom lints adicionais via package `acdg_lints` (A22 — wired below):
+#   - no_sealed_class_downcast: §P5 — bans `as Success<T>` / `as Failure<T>`
+#     and any other sealed-class downcast. Test files are exempt by design.
+#
+# Future rules (per A22/000-request.md):
+#   - catch_without_stack_in_adapter
+#   - intent_parse_must_accept_obs
+#   - parse_error_must_be_private
+#   - prefer_logical_pattern_grouping
 # ============================================================================
 
 linter:
@@ -38,9 +45,15 @@ linter:
     # handlers que A11–A15 vão reescrever. Ligar pós-A21 cleanup.
 
 analyzer:
+  plugins:
+    - custom_lint
   errors:
     missing_required_param: error
     missing_return: error
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+
+custom_lint:
+  rules:
+    - no_sealed_class_downcast

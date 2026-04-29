@@ -7,9 +7,11 @@ library;
 
 // Base
 export 'src/base/result.dart';
+export 'src/base/result_combinators.dart';
 export 'src/base/base_use_case.dart';
 
 // Utils
 export 'src/utils/uuid_util.dart';
+export 'src/utils/unreachable.dart';
 export 'src/utils/equatable/equatable.dart';
 export 'src/utils/equatable/equatable_config.dart';

@@ -3,6 +3,9 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/toggle_lookup_item_intent.dart';
+import 'package:social_care_web/src/intents/uuid_validation.dart';
+
+import '../_test_uuids.dart';
 
 /// Wave 0 RED contract for [ToggleLookupItemIntent] — A13.
 ///
@@ -20,12 +23,12 @@ void main() {
 
       const intent = ToggleLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
 
       expect(intent.tableName, equals('dominio_parentesco'));
-      expect(intent.itemId, equals('item-1'));
+      expect(intent.itemId, equals(kLookupItemUuid));
       expect(intent.request, equals(request));
     });
 
@@ -34,12 +37,12 @@ void main() {
 
       const a = ToggleLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
       const b = ToggleLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: request,
       );
 
@@ -50,12 +53,12 @@ void main() {
     test('instances with different active flag are not equal', () {
       const a = ToggleLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: ToggleLookupItemRequest(active: true),
       );
       const b = ToggleLookupItemIntent(
         tableName: 'dominio_parentesco',
-        itemId: 'item-1',
+        itemId: kLookupItemUuid,
         request: ToggleLookupItemRequest(active: false),
       );
 
@@ -66,7 +69,7 @@ void main() {
       test('returns Success when active is true', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const {'active': true},
         );
 
@@ -74,7 +77,7 @@ void main() {
         switch (result) {
           case Success(:final value):
             expect(value.tableName, equals('dominio_parentesco'));
-            expect(value.itemId, equals('item-1'));
+            expect(value.itemId, equals(kLookupItemUuid));
             expect(value.request.active, isTrue);
           case Failure():
             fail('Expected Success, got Failure');
@@ -84,7 +87,7 @@ void main() {
       test('returns Success when active is false', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const {'active': false},
         );
 
@@ -100,7 +103,7 @@ void main() {
       test('returns Failure when active is missing', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const {},
         );
 
@@ -110,7 +113,7 @@ void main() {
       test('returns Failure when active is not a bool (string)', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const {'active': 'true'},
         );
 
@@ -120,7 +123,7 @@ void main() {
       test('returns Failure when active is not a bool (int)', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const {'active': 1},
         );
 
@@ -130,7 +133,7 @@ void main() {
       test('returns Failure when active is null', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const <String, dynamic>{'active': null},
         );
 
@@ -140,7 +143,7 @@ void main() {
       test('Failure message is the fixed const literal naming [active]', () {
         final result = ToggleLookupItemIntent.parseFromBody(
           'dominio_parentesco',
-          'item-1',
+          kLookupItemUuid,
           const {},
         );
 
