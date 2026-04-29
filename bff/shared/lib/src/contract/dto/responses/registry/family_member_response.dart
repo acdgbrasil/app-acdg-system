@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'family_member_response.g.dart';
 
 @JsonSerializable()
-class FamilyMemberResponse {
+class FamilyMemberResponse with Equatable {
   const FamilyMemberResponse({
     required this.personId,
     required this.relationshipId,
@@ -26,4 +27,15 @@ class FamilyMemberResponse {
   final String birthDate;
 
   Map<String, dynamic> toJson() => _$FamilyMemberResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    personId,
+    relationshipId,
+    isPrimaryCaregiver,
+    residesWithPatient,
+    hasDisability,
+    requiredDocuments,
+    birthDate,
+  ];
 }

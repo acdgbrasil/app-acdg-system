@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'register_person_with_login_request.g.dart';
 
 @JsonSerializable()
-class RegisterPersonWithLoginRequest {
+class RegisterPersonWithLoginRequest with Equatable {
   const RegisterPersonWithLoginRequest({
     required this.fullName,
     required this.birthDate,
@@ -22,4 +23,7 @@ class RegisterPersonWithLoginRequest {
   final String? initialPassword;
 
   Map<String, dynamic> toJson() => _$RegisterPersonWithLoginRequestToJson(this);
+
+  @override
+  List<Object?> get props => [fullName, birthDate, email, cpf, initialPassword];
 }

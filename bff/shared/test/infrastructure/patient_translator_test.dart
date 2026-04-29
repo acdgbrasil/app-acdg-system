@@ -21,13 +21,13 @@ void main() {
 
   group('civilDocumentsToJson / civilDocumentsFromJson — CNS round-trip', () {
     test('Deve serializar CNS com number, cpf e qrCode', () {
-      final cns = Cns.create(
-        number: '700000000000005',
-        cpf: Cpf.create('12345678909').valueOrNull,
-        qrCode: 'QR-DATA-EXAMPLE',
-      ).valueOrNull!;
+      final cns = Cns.create(number: '700000000000005').valueOrNull!;
 
-      final docs = CivilDocuments.create(cns: cns).valueOrNull!;
+      final docs = CivilDocuments.create(
+        cns: cns,
+        cpf: Cpf.create('12345678909').valueOrNull,
+        cnsQrCode: 'QR-DATA-EXAMPLE',
+      ).valueOrNull!;
       final json = PatientTranslator.civilDocumentsToJson(docs);
 
       expect(
@@ -59,16 +59,14 @@ void main() {
       final docs = result.valueOrNull!;
 
       expect(docs.cns, isNotNull, reason: 'CNS deve ser reconstituído');
-      expect(docs.cns!.number, '700000000000005');
-      expect(docs.cns!.cpf?.value, '12345678909');
-      expect(docs.cns!.qrCode, 'QR-DATA-EXAMPLE');
+      expect(docs.cns!.value, '700000000000005');
+      // CPF foi hidratado a partir do `cns.cpf` do JSON quando o topo era null.
+      expect(docs.cpf?.value, '12345678909');
+      expect(docs.cnsQrCode, 'QR-DATA-EXAMPLE');
     });
 
     test('Deve fazer round-trip completo com CNS', () {
-      final cns = Cns.create(
-        number: '700000000000005',
-        cpf: Cpf.create('12345678909').valueOrNull,
-      ).valueOrNull!;
+      final cns = Cns.create(number: '700000000000005').valueOrNull!;
 
       final original = CivilDocuments.create(
         cns: cns,
@@ -80,8 +78,7 @@ void main() {
       expect(result.isSuccess, isTrue);
       final restored = result.valueOrNull!;
 
-      expect(restored.cns?.number, original.cns?.number);
-      expect(restored.cns?.cpf?.value, original.cns?.cpf?.value);
+      expect(restored.cns?.value, original.cns?.value);
       expect(restored.cpf?.value, original.cpf?.value);
     });
 

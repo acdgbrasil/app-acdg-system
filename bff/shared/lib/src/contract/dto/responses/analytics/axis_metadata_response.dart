@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'axis_metadata_response.g.dart';
 
 @JsonSerializable()
-class AxisMetadataResponse {
+class AxisMetadataResponse with Equatable {
   const AxisMetadataResponse({
     required this.name,
     this.description,
@@ -20,4 +21,12 @@ class AxisMetadataResponse {
   final List<String> availablePeriods;
 
   Map<String, dynamic> toJson() => _$AxisMetadataResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    name,
+    description,
+    availableDimensions,
+    availablePeriods,
+  ];
 }

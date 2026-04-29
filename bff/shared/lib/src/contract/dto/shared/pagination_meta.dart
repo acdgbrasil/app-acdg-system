@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'pagination_meta.g.dart';
 
 @JsonSerializable()
-class PaginationMeta {
+class PaginationMeta with Equatable {
   const PaginationMeta({
     required this.pageSize,
     required this.totalCount,
@@ -20,4 +21,7 @@ class PaginationMeta {
   final String? nextCursor;
 
   Map<String, dynamic> toJson() => _$PaginationMetaToJson(this);
+
+  @override
+  List<Object?> get props => [pageSize, totalCount, hasMore, nextCursor];
 }

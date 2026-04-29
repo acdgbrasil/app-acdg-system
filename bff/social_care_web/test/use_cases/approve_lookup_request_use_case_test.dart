@@ -1,0 +1,107 @@
+import 'package:core_contracts/core_contracts.dart';
+import 'package:shared/shared.dart';
+import 'package:test/test.dart';
+
+import 'package:social_care_web/src/intents/approve_lookup_request_intent.dart';
+import 'package:social_care_web/src/observability/observability_context.dart';
+import 'package:social_care_web/src/use_cases/approve_lookup_request_use_case.dart';
+
+import 'test_observability.dart';
+
+/// Forces every call to [LookupContract.approveLookupRequest] to fail with the
+/// configured [BackendError]. Used to validate the failure-path breadcrumb.
+class _FailingLookup extends FakeLookupBff {
+  _FailingLookup(this.error);
+  final BackendError error;
+
+  @override
+  Future<Result<StandardResponse<void>>> approveLookupRequest(
+    String requestId,
+  ) async => Failure(error);
+}
+
+const _intent = ApproveLookupRequestIntent(
+  requestId: '660e8400-e29b-41d4-a716-446655440001',
+);
+
+void main() {
+  group('ApproveLookupRequestUseCase', () {
+    late FakeLookupBff fakeLookup;
+    late ObservabilityContext obs;
+    late ApproveLookupRequestUseCase useCase;
+
+    setUp(() {
+      fakeLookup = FakeLookupBff();
+      obs = ObservabilityContext.noop();
+      useCase = ApproveLookupRequestUseCase(lookup: fakeLookup);
+    });
+
+    test('returns Success with StandardResponse<void> on happy path', () async {
+      final result = await useCase.execute(_intent, obs);
+
+      expect(result, isA<Success<StandardResponse<void>>>());
+    });
+
+    test('emits lookup.request.approve.received with requestId', () async {
+      await useCase.execute(_intent, obs);
+
+      expect(
+        obs.breadcrumbs,
+        contains(
+          hasEventWithData('lookup.request.approve.received', {
+            'requestId': '660e8400-e29b-41d4-a716-446655440001',
+          }),
+        ),
+      );
+    });
+
+    test('emits lookup.request.approve.completed on success', () async {
+      await useCase.execute(_intent, obs);
+
+      expect(
+        obs.breadcrumbs,
+        contains(hasEvent('lookup.request.approve.completed')),
+      );
+    });
+
+    test('propagates Failure when lookup.approveLookupRequest fails', () async {
+      const error = BackendError(
+        id: 'err-1',
+        code: 'REQUEST_NOT_FOUND',
+        message: 'request does not exist',
+        http: 404,
+      );
+      final failing = _FailingLookup(error);
+      final useCaseFail = ApproveLookupRequestUseCase(lookup: failing);
+
+      final result = await useCaseFail.execute(_intent, obs);
+
+      expect(result, isA<Failure<StandardResponse<void>>>());
+    });
+
+    test(
+      'emits lookup.request.approve.failed with errorCode on backend failure',
+      () async {
+        const error = BackendError(
+          id: 'err-1',
+          code: 'REQUEST_NOT_FOUND',
+          message: 'request does not exist',
+          http: 404,
+        );
+        final failing = _FailingLookup(error);
+        final useCaseFail = ApproveLookupRequestUseCase(lookup: failing);
+
+        await useCaseFail.execute(_intent, obs);
+
+        expect(
+          obs.breadcrumbs,
+          contains(
+            hasEventWithData('lookup.request.approve.failed', {
+              'errorCode': 'REQUEST_NOT_FOUND',
+            }),
+          ),
+        );
+      },
+    );
+  });
+}

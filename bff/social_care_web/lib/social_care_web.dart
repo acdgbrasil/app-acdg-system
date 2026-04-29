@@ -16,20 +16,12 @@ export 'src/auth/session_store.dart';
 export 'src/middleware/session_middleware.dart';
 export 'src/middleware/auth_guard_middleware.dart';
 
-// Handlers
-export 'src/handlers/handler_utils.dart';
-export 'src/handlers/health_handler.dart';
+// Handlers (canonical A07+)
 export 'src/handlers/auth_handler.dart';
-export 'src/handlers/registry_handler.dart';
-export 'src/handlers/assessment_handler.dart';
-export 'src/handlers/care_handler.dart';
-export 'src/handlers/protection_handler.dart';
-export 'src/handlers/lookup_handler.dart';
-export 'src/handlers/team_handler.dart';
+export 'src/handlers/registry_patient_handler.dart';
 
-// Remote
-export 'src/remote/social_care_api_client.dart';
-export 'package:shared/src/infrastructure/people_context_client.dart';
+// Legacy handlers remain in-tree but are NOT exported — they depend on
+// the removed `SocialCareContract` and will be migrated by A09–A15.
 
 // Server
 export 'src/server/app_router.dart';

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_social_health_summary_request.g.dart';
 
 @JsonSerializable()
-class UpdateSocialHealthSummaryRequest {
+class UpdateSocialHealthSummaryRequest with Equatable {
   const UpdateSocialHealthSummaryRequest({
     required this.requiresConstantCare,
     required this.hasMobilityImpairment,
@@ -22,4 +23,12 @@ class UpdateSocialHealthSummaryRequest {
 
   Map<String, dynamic> toJson() =>
       _$UpdateSocialHealthSummaryRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    requiresConstantCare,
+    hasMobilityImpairment,
+    hasRelevantDrugTherapy,
+    functionalDependencies,
+  ];
 }

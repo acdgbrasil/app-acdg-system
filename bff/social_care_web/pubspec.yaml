@@ -18,6 +18,9 @@ dependencies:
   shelf: ^1.4.2
   shelf_router: ^1.1.4
 
+  # Logging (structured breadcrumbs + error forwarding)
+  logging: ^1.2.0
+
   # HTTP client (API backend calls)
   dio: ^5.9.2
 

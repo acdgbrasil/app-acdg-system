@@ -13,18 +13,33 @@
 
 include: package:lints/recommended.yaml
 
-# Uncomment the following section to specify additional rules.
+# ============================================================================
+# Camada 2 — lints built-in alinhados com PATTERN_MATCHING_POLICY (ADR-019).
+# Rules custom mais rigorosas ficam para o package `acdg_lints` — ver A22.
+# ============================================================================
 
-# linter:
-#   rules:
-#     - camel_case_types
+linter:
+  rules:
+    # Error handling — alinha com P2b (ADR-019 §Hard-reject em catch(_))
+    empty_catches: true
+    avoid_catching_errors: true
+    use_rethrow_when_possible: true
 
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+    # Pattern matching — alinha com P1 exhaustiveness
+    exhaustive_cases: true
+    no_default_cases: true
 
-# For more information about the core and recommended set of lints, see
-# https://dart.dev/go/core-lints
+    # Tear-offs — alinha com P3
+    unnecessary_lambdas: true
 
-# For additional information about configuring this file, see
-# https://dart.dev/guides/language/analysis-options
+    # Nota: `avoid_print`, `prefer_single_quotes`, `require_trailing_commas`
+    # não estão ligados aqui para evitar ruído em VOs e legacy que A21 vai
+    # limpar. Ligar pós-A21 cleanup.
+
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"

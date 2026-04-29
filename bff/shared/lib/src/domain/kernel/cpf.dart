@@ -35,11 +35,13 @@ enum FiscalRegion {
 }
 
 /// Value Object para o Cadastro de Pessoas Físicas (CPF).
-final class Cpf with Equatable {
-  const Cpf._(this.value);
-
-  /// 11 dígitos numéricos.
-  final String value;
+///
+/// Extension type zero-cost sobre `String` (11 dígitos numéricos).
+/// Use [Cpf.create] para validar origem externa; use [Cpf.trusted] apenas
+/// para origens já validadas (fixtures, hidratação de agregados).
+extension type const Cpf._(String value) {
+  /// Origem garantida — zero-cost. Use com parcimônia.
+  const Cpf.trusted(String value) : this._(value);
 
   String get baseNumber => value.substring(0, 8);
   int get fiscalRegionDigit => int.parse(value[8]);
@@ -50,9 +52,6 @@ final class Cpf with Equatable {
   String get formatted {
     return '${value.substring(0, 3)}.${value.substring(3, 6)}.${value.substring(6, 9)}-${value.substring(9, 11)}';
   }
-
-  @override
-  List<Object?> get props => [value];
 
   static Result<Cpf> create(String? rawValue) {
     if (rawValue == null || rawValue.normalizedTrim().isEmpty) {
@@ -102,44 +101,44 @@ final class Cpf with Equatable {
 
     return Success(Cpf._(digits));
   }
+}
 
-  static bool _isValidMod11(String digits) {
-    final numbers = digits.split('').map(int.parse).toList();
+bool _isValidMod11(String digits) {
+  final numbers = digits.split('').map(int.parse).toList();
 
-    int sum1 = 0;
-    for (int i = 0; i < 9; i++) {
-      sum1 += numbers[i] * (10 - i);
-    }
-    int rem1 = sum1 % 11;
-    int digit1 = (rem1 < 2) ? 0 : 11 - rem1;
-    if (numbers[9] != digit1) return false;
-
-    int sum2 = 0;
-    for (int i = 0; i < 10; i++) {
-      sum2 += numbers[i] * (11 - i);
-    }
-    int rem2 = sum2 % 11;
-    int digit2 = (rem2 < 2) ? 0 : 11 - rem2;
-    if (numbers[10] != digit2) return false;
-
-    return true;
+  int sum1 = 0;
+  for (int i = 0; i < 9; i++) {
+    sum1 += numbers[i] * (10 - i);
   }
+  int rem1 = sum1 % 11;
+  int digit1 = (rem1 < 2) ? 0 : 11 - rem1;
+  if (numbers[9] != digit1) return false;
 
-  static AppError _buildError(
-    String code,
-    String message, {
-    ErrorSeverity severity = ErrorSeverity.warning,
-  }) {
-    return AppError(
-      code: code,
-      message: message,
-      module: 'social-care/cpf',
-      kind: 'domainValidation',
-      http: 422,
-      observability: Observability(
-        category: ErrorCategory.domainRuleViolation,
-        severity: severity,
-      ),
-    );
+  int sum2 = 0;
+  for (int i = 0; i < 10; i++) {
+    sum2 += numbers[i] * (11 - i);
   }
+  int rem2 = sum2 % 11;
+  int digit2 = (rem2 < 2) ? 0 : 11 - rem2;
+  if (numbers[10] != digit2) return false;
+
+  return true;
+}
+
+AppError _buildError(
+  String code,
+  String message, {
+  ErrorSeverity severity = ErrorSeverity.warning,
+}) {
+  return AppError(
+    code: code,
+    message: message,
+    module: 'social-care/cpf',
+    kind: 'domainValidation',
+    http: 422,
+    observability: Observability(
+      category: ErrorCategory.domainRuleViolation,
+      severity: severity,
+    ),
+  );
 }

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_socio_economic_situation_request.g.dart';
 
 @JsonSerializable()
-class UpdateSocioEconomicSituationRequest {
+class UpdateSocioEconomicSituationRequest with Equatable {
   const UpdateSocioEconomicSituationRequest({
     required this.totalFamilyIncome,
     required this.incomePerCapita,
@@ -26,10 +27,20 @@ class UpdateSocioEconomicSituationRequest {
 
   Map<String, dynamic> toJson() =>
       _$UpdateSocioEconomicSituationRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    totalFamilyIncome,
+    incomePerCapita,
+    receivesSocialBenefit,
+    socialBenefits,
+    mainSourceOfIncome,
+    hasUnemployed,
+  ];
 }
 
 @JsonSerializable()
-class SocialBenefitDraftDto {
+class SocialBenefitDraftDto with Equatable {
   const SocialBenefitDraftDto({
     required this.benefitName,
     required this.amount,
@@ -50,4 +61,14 @@ class SocialBenefitDraftDto {
   final String? deceasedCpf;
 
   Map<String, dynamic> toJson() => _$SocialBenefitDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    benefitName,
+    amount,
+    beneficiaryId,
+    benefitTypeId,
+    birthCertificateNumber,
+    deceasedCpf,
+  ];
 }

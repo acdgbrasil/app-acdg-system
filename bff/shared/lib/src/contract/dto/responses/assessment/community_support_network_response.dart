@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'community_support_network_response.g.dart';
 
 @JsonSerializable()
-class CommunitySupportNetworkResponse {
+class CommunitySupportNetworkResponse with Equatable {
   const CommunitySupportNetworkResponse({
     required this.hasRelativeSupport,
     required this.hasNeighborSupport,
@@ -27,4 +28,15 @@ class CommunitySupportNetworkResponse {
 
   Map<String, dynamic> toJson() =>
       _$CommunitySupportNetworkResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    hasRelativeSupport,
+    hasNeighborSupport,
+    familyConflicts,
+    patientParticipatesInGroups,
+    familyParticipatesInGroups,
+    patientHasAccessToLeisure,
+    facesDiscrimination,
+  ];
 }

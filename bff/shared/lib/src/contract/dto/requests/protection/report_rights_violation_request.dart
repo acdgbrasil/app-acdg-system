@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'report_rights_violation_request.g.dart';
 
 @JsonSerializable()
-class ReportRightsViolationRequest {
+class ReportRightsViolationRequest with Equatable {
   const ReportRightsViolationRequest({
     required this.victimId,
     required this.violationType,
@@ -26,4 +27,15 @@ class ReportRightsViolationRequest {
   final String? actionsTaken;
 
   Map<String, dynamic> toJson() => _$ReportRightsViolationRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    victimId,
+    violationType,
+    violationTypeId,
+    reportDate,
+    incidentDate,
+    descriptionOfFact,
+    actionsTaken,
+  ];
 }

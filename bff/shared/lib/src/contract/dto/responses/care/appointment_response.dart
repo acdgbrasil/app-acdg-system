@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'appointment_response.g.dart';
 
 @JsonSerializable()
-class AppointmentResponse {
+class AppointmentResponse with Equatable {
   const AppointmentResponse({
     required this.id,
     required this.date,
@@ -24,4 +25,7 @@ class AppointmentResponse {
   final String actionPlan;
 
   Map<String, dynamic> toJson() => _$AppointmentResponseToJson(this);
+
+  @override
+  List<Object?> get props => [id, date, professionalId, type, summary, actionPlan];
 }

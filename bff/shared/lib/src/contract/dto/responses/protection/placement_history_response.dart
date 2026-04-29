@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'placement_history_response.g.dart';
 
 @JsonSerializable()
-class PlacementHistoryResponse {
+class PlacementHistoryResponse with Equatable {
   const PlacementHistoryResponse({
     this.individualPlacements = const [],
     this.homeLossReport,
@@ -22,10 +23,19 @@ class PlacementHistoryResponse {
   final bool adolescentInInternment;
 
   Map<String, dynamic> toJson() => _$PlacementHistoryResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    individualPlacements,
+    homeLossReport,
+    thirdPartyGuardReport,
+    adultInPrison,
+    adolescentInInternment,
+  ];
 }
 
 @JsonSerializable()
-class PlacementRegistryResponse {
+class PlacementRegistryResponse with Equatable {
   const PlacementRegistryResponse({
     required this.id,
     required this.memberId,
@@ -44,4 +54,7 @@ class PlacementRegistryResponse {
   final String reason;
 
   Map<String, dynamic> toJson() => _$PlacementRegistryResponseToJson(this);
+
+  @override
+  List<Object?> get props => [id, memberId, startDate, endDate, reason];
 }

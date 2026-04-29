@@ -60,9 +60,6 @@ export 'src/domain/analytics/financial_analytics_service.dart';
 export 'src/domain/analytics/family_analytics.dart';
 export 'src/domain/analytics/education_analytics_service.dart';
 
-// Contract (new — sub-contracts + DTOs)
-export 'src/contract/social_care_contract.dart';
-
 // Contract DTOs — Shared
 export 'src/contract/dto/shared/backend_error.dart';
 export 'src/contract/dto/shared/paginated_list.dart';
@@ -74,6 +71,7 @@ export 'src/contract/dto/requests/registry/register_patient_request.dart';
 export 'src/contract/dto/requests/registry/add_family_member_request.dart';
 export 'src/contract/dto/requests/registry/assign_primary_caregiver_request.dart';
 export 'src/contract/dto/requests/registry/update_social_identity_request.dart';
+export 'src/contract/dto/requests/registry/admit_patient_request.dart';
 export 'src/contract/dto/requests/registry/discharge_patient_request.dart';
 export 'src/contract/dto/requests/registry/readmit_patient_request.dart';
 export 'src/contract/dto/requests/registry/withdraw_patient_request.dart';
@@ -92,6 +90,10 @@ export 'src/contract/dto/requests/protection/create_referral_request.dart';
 export 'src/contract/dto/requests/people/register_person_request.dart';
 export 'src/contract/dto/requests/people/register_person_with_login_request.dart';
 export 'src/contract/dto/requests/people/assign_role_request.dart';
+export 'src/contract/dto/requests/governance/create_lookup_item_request.dart';
+export 'src/contract/dto/requests/governance/update_lookup_item_request.dart';
+export 'src/contract/dto/requests/governance/toggle_lookup_item_request.dart';
+export 'src/contract/dto/requests/governance/create_lookup_request_request.dart';
 
 // Contract DTOs — Responses
 export 'src/contract/dto/responses/registry/patient_response.dart';
@@ -123,6 +125,43 @@ export 'src/contract/dto/responses/analytics/axis_metadata_response.dart';
 export 'src/contract/dto/responses/protection/placement_history_response.dart';
 export 'src/contract/dto/responses/protection/violation_report_response.dart';
 export 'src/contract/dto/responses/protection/referral_response.dart';
+export 'src/contract/dto/responses/governance/lookup_item_response.dart';
+export 'src/contract/dto/responses/governance/lookups_batch_response.dart';
+export 'src/contract/dto/responses/governance/lookup_request_response.dart';
+export 'src/contract/dto/responses/auth/me_response.dart';
+export 'src/contract/dto/responses/team/team_member_response.dart';
+export 'src/contract/dto/responses/team/team_member_detail_response.dart';
 
-// Testing
-export 'src/testing/fake_social_care_bff.dart';
+// Sub-contracts (Contract B — BFF ↔ backends)
+export 'src/contract/sub_contracts/analytics_contract.dart';
+export 'src/contract/sub_contracts/assessment_contract.dart';
+export 'src/contract/sub_contracts/audit_contract.dart';
+export 'src/contract/sub_contracts/auth_contract.dart';
+export 'src/contract/sub_contracts/care_contract.dart';
+export 'src/contract/sub_contracts/health_contract.dart';
+export 'src/contract/sub_contracts/lookup_contract.dart';
+export 'src/contract/sub_contracts/people_contract.dart';
+export 'src/contract/sub_contracts/protection_contract.dart';
+export 'src/contract/sub_contracts/registry_contract.dart';
+export 'src/contract/sub_contracts/team_contract.dart';
+
+// Testing — Fakes per sub-contract
+export 'src/testing/fake_analytics_bff.dart';
+export 'src/testing/fake_assessment_bff.dart';
+export 'src/testing/fake_audit_bff.dart';
+export 'src/testing/fake_auth_bff.dart';
+export 'src/testing/fake_care_bff.dart';
+export 'src/testing/fake_health_bff.dart';
+export 'src/testing/fake_lookup_bff.dart';
+export 'src/testing/fake_people_bff.dart';
+export 'src/testing/fake_protection_bff.dart';
+export 'src/testing/fake_registry_bff.dart';
+export 'src/testing/fake_team_bff.dart';
+
+// Testing — Stores (A06b)
+export 'src/testing/stores/in_memory_care_store.dart';
+export 'src/testing/stores/in_memory_lookup_store.dart';
+export 'src/testing/stores/in_memory_patient_store.dart';
+export 'src/testing/stores/in_memory_people_store.dart';
+export 'src/testing/stores/in_memory_protection_store.dart';
+export 'src/testing/stores/in_memory_team_store.dart';

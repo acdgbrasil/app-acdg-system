@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'indicator_response.g.dart';
 
 @JsonSerializable()
-class IndicatorResponse {
+class IndicatorResponse with Equatable {
   const IndicatorResponse({required this.axis, required this.rows, this.meta});
 
   factory IndicatorResponse.fromJson(Map<String, dynamic> json) =>
@@ -14,10 +15,13 @@ class IndicatorResponse {
   final IndicatorMetaResponse? meta;
 
   Map<String, dynamic> toJson() => _$IndicatorResponseToJson(this);
+
+  @override
+  List<Object?> get props => [axis, rows, meta];
 }
 
 @JsonSerializable()
-class IndicatorRowResponse {
+class IndicatorRowResponse with Equatable {
   const IndicatorRowResponse({
     required this.dimensions,
     required this.count,
@@ -32,10 +36,13 @@ class IndicatorRowResponse {
   final String? period;
 
   Map<String, dynamic> toJson() => _$IndicatorRowResponseToJson(this);
+
+  @override
+  List<Object?> get props => [dimensions, count, period];
 }
 
 @JsonSerializable()
-class IndicatorMetaResponse {
+class IndicatorMetaResponse with Equatable {
   const IndicatorMetaResponse({
     this.total = 0,
     this.suppressedGroups = 0,
@@ -50,4 +57,7 @@ class IndicatorMetaResponse {
   final String? generalizationLevel;
 
   Map<String, dynamic> toJson() => _$IndicatorMetaResponseToJson(this);
+
+  @override
+  List<Object?> get props => [total, suppressedGroups, generalizationLevel];
 }

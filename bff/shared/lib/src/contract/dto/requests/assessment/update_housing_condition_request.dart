@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_housing_condition_request.g.dart';
 
 @JsonSerializable()
-class UpdateHousingConditionRequest {
+class UpdateHousingConditionRequest with Equatable {
   const UpdateHousingConditionRequest({
     required this.type,
     required this.wallMaterial,
@@ -42,4 +43,23 @@ class UpdateHousingConditionRequest {
   final bool hasDiagnosticObservations;
 
   Map<String, dynamic> toJson() => _$UpdateHousingConditionRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    type,
+    wallMaterial,
+    numberOfRooms,
+    numberOfBedrooms,
+    numberOfBathrooms,
+    waterSupply,
+    hasPipedWater,
+    electricityAccess,
+    sewageDisposal,
+    wasteCollection,
+    accessibilityLevel,
+    isInGeographicRiskArea,
+    hasDifficultAccess,
+    isInSocialConflictArea,
+    hasDiagnosticObservations,
+  ];
 }

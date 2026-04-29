@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'civil_documents_response.g.dart';
 
 @JsonSerializable()
-class CivilDocumentsResponse {
+class CivilDocumentsResponse with Equatable {
   const CivilDocumentsResponse({this.cpf, this.nis, this.rgDocument, this.cns});
 
   factory CivilDocumentsResponse.fromJson(Map<String, dynamic> json) =>
@@ -15,10 +16,13 @@ class CivilDocumentsResponse {
   final CnsResponse? cns;
 
   Map<String, dynamic> toJson() => _$CivilDocumentsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [cpf, nis, rgDocument, cns];
 }
 
 @JsonSerializable()
-class RgDocumentResponse {
+class RgDocumentResponse with Equatable {
   const RgDocumentResponse({
     required this.number,
     required this.issuingState,
@@ -35,10 +39,13 @@ class RgDocumentResponse {
   final String issueDate;
 
   Map<String, dynamic> toJson() => _$RgDocumentResponseToJson(this);
+
+  @override
+  List<Object?> get props => [number, issuingState, issuingAgency, issueDate];
 }
 
 @JsonSerializable()
-class CnsResponse {
+class CnsResponse with Equatable {
   const CnsResponse({required this.number, required this.cpf, this.qrCode});
 
   factory CnsResponse.fromJson(Map<String, dynamic> json) =>
@@ -49,4 +56,7 @@ class CnsResponse {
   final String? qrCode;
 
   Map<String, dynamic> toJson() => _$CnsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [number, cpf, qrCode];
 }

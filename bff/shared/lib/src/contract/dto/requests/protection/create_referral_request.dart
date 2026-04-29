@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'create_referral_request.g.dart';
 
 @JsonSerializable()
-class CreateReferralRequest {
+class CreateReferralRequest with Equatable {
   const CreateReferralRequest({
     required this.referredPersonId,
     required this.destinationService,
@@ -22,4 +23,13 @@ class CreateReferralRequest {
   final String? date;
 
   Map<String, dynamic> toJson() => _$CreateReferralRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    referredPersonId,
+    professionalId,
+    destinationService,
+    reason,
+    date,
+  ];
 }

@@ -32,9 +32,11 @@ abstract final class RegistryMapper {
     'cns': d.cns == null
         ? null
         : {
-            'number': d.cns!.number,
-            'cpf': d.cns!.cpf?.value,
-            'qrCode': d.cns!.qrCode,
+            'number': d.cns!.value,
+            // CPF do CNS é o mesmo CPF do titular, armazenado em
+            // CivilDocuments.cpf após o colapso de Cns em A06d.
+            'cpf': d.cpf?.value,
+            'qrCode': d.cnsQrCode,
           },
   };
 
@@ -153,13 +155,26 @@ abstract final class RegistryMapper {
     }
 
     Cns? cns;
+    String? cnsQrCode;
     if (j['cns'] != null) {
-      switch (_cnsFromJson(j['cns'] as Map<String, dynamic>)) {
+      final cnsJson = j['cns'] as Map<String, dynamic>;
+      // O CPF aninhado em `cns.cpf` é o mesmo CPF do titular (redundante
+      // no wire) — se ausente no topo, hidratamos a partir daqui.
+      if (cpf == null && cnsJson['cpf'] != null) {
+        switch (Cpf.create(cnsJson['cpf'])) {
+          case Success(:final value):
+            cpf = value;
+          case Failure(:final error):
+            return Failure('civilDocuments.cns.cpf: $error');
+        }
+      }
+      switch (Cns.create(number: cnsJson['number'])) {
         case Success(:final value):
           cns = value;
         case Failure(:final error):
-          return Failure(error);
+          return Failure('civilDocuments.cns: $error');
       }
+      cnsQrCode = cnsJson['qrCode'] as String?;
     }
 
     return CivilDocuments.create(
@@ -167,6 +182,7 @@ abstract final class RegistryMapper {
       nis: nis,
       rgDocument: rgDocument,
       cns: cns,
+      cnsQrCode: cnsQrCode,
     );
   }
 
@@ -185,20 +201,6 @@ abstract final class RegistryMapper {
       issuingAgency: j['issuingAgency'],
       issueDate: issueDate,
     );
-  }
-
-  static Result<Cns> _cnsFromJson(Map<String, dynamic> j) {
-    Cpf? cpf;
-    if (j['cpf'] != null) {
-      switch (Cpf.create(j['cpf'])) {
-        case Success(:final value):
-          cpf = value;
-        case Failure(:final error):
-          return Failure('civilDocuments.cns.cpf: $error');
-      }
-    }
-
-    return Cns.create(number: j['number'], cpf: cpf, qrCode: j['qrCode']);
   }
 
   static Result<Address> addressFromJson(Map<String, dynamic> j) {

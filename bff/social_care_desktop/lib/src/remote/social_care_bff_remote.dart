@@ -690,6 +690,137 @@ class SocialCareBffRemote implements SocialCareContract {
     }
   }
 
+  @override
+  Future<Result<StandardIdResponse>> createLookupItem(
+    String tableName,
+    Map<String, dynamic> request,
+  ) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/dominios/$tableName',
+        data: request,
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return Success(_extractIdResponse(response.data!));
+      }
+      return _backendFailure(response, 'Failed to create lookup item');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> updateLookupItem(
+    String tableName,
+    String id,
+    Map<String, dynamic> request,
+  ) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/dominios/$tableName/$id',
+        data: request,
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to update lookup item');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> toggleLookupItem(
+    String tableName,
+    String id,
+    bool activate,
+  ) async {
+    try {
+      final response = await _dio.patch(
+        '/api/v1/dominios/$tableName/$id/toggle',
+        data: {'active': activate},
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to toggle lookup item');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>>
+      getLookupRequests() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/dominios/requests',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 200) {
+        final data = response.data!['data'] as List<dynamic>;
+        return Success(_wrapResponse(data.cast<Map<String, dynamic>>()));
+      }
+      return _backendFailure(response, 'Failed to get lookup requests');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<StandardIdResponse>> createLookupRequest(
+    Map<String, dynamic> request,
+  ) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/dominios/requests',
+        data: request,
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return Success(_extractIdResponse(response.data!));
+      }
+      return _backendFailure(response, 'Failed to create lookup request');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> approveLookupRequest(String requestId) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/dominios/requests/$requestId/approve',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to approve lookup request');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> rejectLookupRequest(String requestId) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/dominios/requests/$requestId/reject',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to reject lookup request');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
   // ── People (delegated to PeopleContextClient) ──────────────────────
 
   @override

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_health_status_request.g.dart';
 
 @JsonSerializable()
-class UpdateHealthStatusRequest {
+class UpdateHealthStatusRequest with Equatable {
   const UpdateHealthStatusRequest({
     required this.foodInsecurity,
     this.deficiencies = const [],
@@ -20,10 +21,18 @@ class UpdateHealthStatusRequest {
   final bool foodInsecurity;
 
   Map<String, dynamic> toJson() => _$UpdateHealthStatusRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    deficiencies,
+    gestatingMembers,
+    constantCareNeeds,
+    foodInsecurity,
+  ];
 }
 
 @JsonSerializable()
-class DeficiencyDraftDto {
+class DeficiencyDraftDto with Equatable {
   const DeficiencyDraftDto({
     required this.memberId,
     required this.deficiencyTypeId,
@@ -40,10 +49,18 @@ class DeficiencyDraftDto {
   final String? responsibleCaregiverName;
 
   Map<String, dynamic> toJson() => _$DeficiencyDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    memberId,
+    deficiencyTypeId,
+    needsConstantCare,
+    responsibleCaregiverName,
+  ];
 }
 
 @JsonSerializable()
-class PregnantDraftDto {
+class PregnantDraftDto with Equatable {
   const PregnantDraftDto({
     required this.memberId,
     required this.monthsGestation,
@@ -58,4 +75,11 @@ class PregnantDraftDto {
   final bool startedPrenatalCare;
 
   Map<String, dynamic> toJson() => _$PregnantDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    memberId,
+    monthsGestation,
+    startedPrenatalCare,
+  ];
 }

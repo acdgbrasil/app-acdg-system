@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'address_response.g.dart';
 
 @JsonSerializable()
-class AddressResponse {
+class AddressResponse with Equatable {
   const AddressResponse({
     required this.isShelter,
     required this.residenceLocation,
@@ -32,4 +33,18 @@ class AddressResponse {
   final String city;
 
   Map<String, dynamic> toJson() => _$AddressResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    cep,
+    isShelter,
+    isHomeless,
+    residenceLocation,
+    street,
+    neighborhood,
+    number,
+    complement,
+    state,
+    city,
+  ];
 }

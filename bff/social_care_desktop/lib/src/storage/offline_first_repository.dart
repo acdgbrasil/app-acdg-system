@@ -4,15 +4,6 @@ import 'package:shared/shared.dart';
 import 'package:network/network.dart';
 import 'local_cache_contract.dart';
 
-/// Orchestrator that implements [SocialCareContract] with an offline-first strategy.
-///
-/// Rules:
-/// - Writes: Always local first, then trigger sync if online.
-/// - Reads: Remote first if online (with cache update), fallback to local.
-/// Minimal interface for scheduling sync queue processing.
-///
-/// Implemented by [SyncEngine] in production. Allows test doubles
-/// without pulling in the full sync infrastructure.
 abstract class SyncScheduler {
   void scheduleProcessQueue();
 }
@@ -36,26 +27,14 @@ class OfflineFirstRepository implements SocialCareContract {
 
   bool get _isOnline => _connectivity.isOnline.value;
 
-  // ==========================================
-  // HELPERS
-  // ==========================================
-
-  Future<Result<T>> _handleWrite<T>(
-    Future<Result<T>> Function() localCall,
-  ) async {
+  Future<Result<T>> _handleWrite<T>(Future<Result<T>> Function() localCall) async {
     final result = await localCall();
-
     if (result.isSuccess) {
       if (_isOnline) {
         _log.fine('Write succeeded locally, scheduling sync');
         _syncEngine.scheduleProcessQueue();
-      } else {
-        _log.fine('Write succeeded locally, offline — queued for sync');
       }
-    } else {
-      _log.severe('Local write failed', (result as Failure).error);
     }
-
     return result;
   }
 
@@ -66,49 +45,31 @@ class OfflineFirstRepository implements SocialCareContract {
   }) async {
     if (_isOnline) {
       final remoteResult = await remoteCall();
-
       if (remoteResult case Success(:final value)) {
-        if (onRemoteSuccess != null) {
-          unawaited(onRemoteSuccess(value));
-        }
-        return Success(value);
-      } else {
-        _log.warning(
-          'Remote read failed, falling back to local: ${(remoteResult as Failure).error}',
-        );
+        if (onRemoteSuccess != null) unawaited(onRemoteSuccess(value));
+        return remoteResult;
       }
+      _log.warning('Remote read failed, falling back to local');
     }
-
     return localCall();
   }
 
-  // ==========================================
-  // HEALTH
-  // ==========================================
+  @override Future<Result<void>> checkHealth() => _remote.checkHealth();
+  @override Future<Result<void>> checkReady() => _remote.checkReady();
 
+  // Registry
   @override
-  Future<Result<void>> checkHealth() => _remote.checkHealth();
-
-  @override
-  Future<Result<void>> checkReady() => _remote.checkReady();
-
-  // ==========================================
-  // REGISTRY
-  // ==========================================
-
-  @override
-  Future<Result<List<PatientOverview>>> fetchPatients() async {
-    // Local-first for listing — the SyncEngine pull keeps cache fresh in background.
-    // This avoids blocking the UI with a remote call every time the Home loads.
-    final localResult = await _local.fetchPatients();
-    if (localResult case Success(value: final items) when items.isNotEmpty) {
+  Future<Result<PaginatedList<PatientSummaryResponse>>> fetchPatients({
+    String? cursor, int? limit, String? search, String? status,
+  }) async {
+    final localResult = await _local.fetchPatients(cursor: cursor, limit: limit, search: search, status: status);
+    if (localResult case Success(value: final items) when items.data.isNotEmpty) {
       return localResult;
     }
-    // If local is empty and online, try remote
     if (_isOnline) {
-      final remoteResult = await _remote.fetchPatients();
+      final remoteResult = await _remote.fetchPatients(cursor: cursor, limit: limit, search: search, status: status);
       if (remoteResult case Success(:final value)) {
-        unawaited(_local.updateCacheFromSummaries(value));
+        unawaited(_local.updateCacheFromSummaries(value.data));
         return remoteResult;
       }
     }
@@ -116,198 +77,117 @@ class OfflineFirstRepository implements SocialCareContract {
   }
 
   @override
-  Future<Result<PatientId>> registerPatient(Patient patient) =>
-      _handleWrite(() => _local.registerPatient(patient));
+  Future<Result<StandardIdResponse>> registerPatient(RegisterPatientRequest request) =>
+      _handleWrite(() => _local.registerPatient(request));
 
   @override
-  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatient(String id) async {
     final pending = await _local.hasPendingActions(id);
-
-    if (pending) {
-      _log.info(
-        'Pending actions for patient ${id.value} — returning local as source of truth',
-      );
-      return _local.fetchPatient(id);
-    }
+    if (pending) return _local.fetchPatient(id);
 
     return _handleRead(
       remoteCall: () => _remote.fetchPatient(id),
       localCall: () => _local.fetchPatient(id),
-      onRemoteSuccess: (dto) async {
-        final localResult = await _local.fetchPatient(id);
-        if (localResult case Success(:final value)) {
-          final localMembers = value.familyMembers.length;
-          final remoteMembers = dto.familyMembers.length;
-          if (remoteMembers < localMembers) {
-            _log.warning(
-              'DESYNC: Remote has $remoteMembers members but local has $localMembers '
-              'for patient ${id.value}. Possible sync lag or data loss.',
-            );
-          }
-        }
-        await _local.updateCacheFromRemote(dto);
-      },
+      onRemoteSuccess: (response) => _local.updateCacheFromRemote(response.data),
     );
   }
 
   @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(PersonId personId) =>
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientByPersonId(String personId) =>
       _handleRead(
         remoteCall: () => _remote.fetchPatientByPersonId(personId),
         localCall: () => _local.fetchPatientByPersonId(personId),
-        onRemoteSuccess: (dto) => _local.updateCacheFromRemote(dto),
+        onRemoteSuccess: (response) => _local.updateCacheFromRemote(response.data),
       );
 
   @override
-  Future<Result<void>> addFamilyMember(
-    PatientId patientId,
-    FamilyMember member,
-    LookupId prRelationshipId, {
-    String? cpf,
-  }) => _handleWrite(
-    () => _local.addFamilyMember(patientId, member, prRelationshipId, cpf: cpf),
-  );
+  Future<Result<void>> addFamilyMember(String patientId, AddFamilyMemberRequest request, {String? cpf}) =>
+      _handleWrite(() => _local.addFamilyMember(patientId, request, cpf: cpf));
 
   @override
-  Future<Result<void>> removeFamilyMember(
-    PatientId patientId,
-    PersonId memberId,
-  ) => _handleWrite(() => _local.removeFamilyMember(patientId, memberId));
+  Future<Result<void>> removeFamilyMember(String patientId, String memberId) =>
+      _handleWrite(() => _local.removeFamilyMember(patientId, memberId));
 
   @override
-  Future<Result<void>> assignPrimaryCaregiver(
-    PatientId patientId,
-    PersonId memberId,
-  ) => _handleWrite(() => _local.assignPrimaryCaregiver(patientId, memberId));
+  Future<Result<void>> assignPrimaryCaregiver(String patientId, AssignPrimaryCaregiverRequest request) =>
+      _handleWrite(() => _local.assignPrimaryCaregiver(patientId, request));
 
   @override
-  Future<Result<void>> updateSocialIdentity(
-    PatientId patientId,
-    SocialIdentity identity,
-  ) => _handleWrite(() => _local.updateSocialIdentity(patientId, identity));
+  Future<Result<void>> updateSocialIdentity(String patientId, UpdateSocialIdentityRequest request) =>
+      _handleWrite(() => _local.updateSocialIdentity(patientId, request));
 
   @override
-  Future<Result<List<AuditEvent>>> getAuditTrail(
-    PatientId patientId, {
-    String? eventType,
-  }) => _remote.getAuditTrail(patientId, eventType: eventType);
+  Future<Result<StandardResponse<List<AuditTrailEntryResponse>>>> getAuditTrail(String patientId, {String? eventType, int? limit, int? offset}) =>
+      _remote.getAuditTrail(patientId, eventType: eventType, limit: limit, offset: offset);
 
-  // ==========================================
-  // ASSESSMENT
-  // ==========================================
+  // Assessment
+  @override
+  Future<Result<void>> updateHousingCondition(String patientId, UpdateHousingConditionRequest request) =>
+      _handleWrite(() => _local.updateHousingCondition(patientId, request));
 
   @override
-  Future<Result<void>> updateHousingCondition(
-    PatientId patientId,
-    HousingCondition condition,
-  ) => _handleWrite(() => _local.updateHousingCondition(patientId, condition));
+  Future<Result<void>> updateSocioEconomicSituation(String patientId, UpdateSocioEconomicSituationRequest request) =>
+      _handleWrite(() => _local.updateSocioEconomicSituation(patientId, request));
 
   @override
-  Future<Result<void>> updateSocioEconomicSituation(
-    PatientId patientId,
-    SocioEconomicSituation situation,
-  ) => _handleWrite(
-    () => _local.updateSocioEconomicSituation(patientId, situation),
-  );
+  Future<Result<void>> updateWorkAndIncome(String patientId, UpdateWorkAndIncomeRequest request) =>
+      _handleWrite(() => _local.updateWorkAndIncome(patientId, request));
 
   @override
-  Future<Result<void>> updateWorkAndIncome(
-    PatientId patientId,
-    WorkAndIncome data,
-  ) => _handleWrite(() => _local.updateWorkAndIncome(patientId, data));
+  Future<Result<void>> updateEducationalStatus(String patientId, UpdateEducationalStatusRequest request) =>
+      _handleWrite(() => _local.updateEducationalStatus(patientId, request));
 
   @override
-  Future<Result<void>> updateEducationalStatus(
-    PatientId patientId,
-    EducationalStatus status,
-  ) => _handleWrite(() => _local.updateEducationalStatus(patientId, status));
+  Future<Result<void>> updateHealthStatus(String patientId, UpdateHealthStatusRequest request) =>
+      _handleWrite(() => _local.updateHealthStatus(patientId, request));
 
   @override
-  Future<Result<void>> updateHealthStatus(
-    PatientId patientId,
-    HealthStatus status,
-  ) => _handleWrite(() => _local.updateHealthStatus(patientId, status));
+  Future<Result<void>> updateCommunitySupportNetwork(String patientId, UpdateCommunitySupportNetworkRequest request) =>
+      _handleWrite(() => _local.updateCommunitySupportNetwork(patientId, request));
 
   @override
-  Future<Result<void>> updateCommunitySupportNetwork(
-    PatientId patientId,
-    CommunitySupportNetwork network,
-  ) => _handleWrite(
-    () => _local.updateCommunitySupportNetwork(patientId, network),
-  );
+  Future<Result<void>> updateSocialHealthSummary(String patientId, UpdateSocialHealthSummaryRequest request) =>
+      _handleWrite(() => _local.updateSocialHealthSummary(patientId, request));
+
+  // Care
+  @override
+  Future<Result<StandardResponse<IdData>>> registerAppointment(String patientId, RegisterAppointmentRequest request) =>
+      _handleWrite(() => _local.registerAppointment(patientId, request));
 
   @override
-  Future<Result<void>> updateSocialHealthSummary(
-    PatientId patientId,
-    SocialHealthSummary summary,
-  ) => _handleWrite(() => _local.updateSocialHealthSummary(patientId, summary));
+  Future<Result<void>> updateIntakeInfo(String patientId, RegisterIntakeInfoRequest request) =>
+      _handleWrite(() => _local.updateIntakeInfo(patientId, request));
 
-  // ==========================================
-  // CARE
-  // ==========================================
+  // Protection
+  @override
+  Future<Result<void>> updatePlacementHistory(String patientId, UpdatePlacementHistoryRequest request) =>
+      _handleWrite(() => _local.updatePlacementHistory(patientId, request));
 
   @override
-  Future<Result<AppointmentId>> registerAppointment(
-    PatientId patientId,
-    SocialCareAppointment appointment,
-  ) => _handleWrite(() => _local.registerAppointment(patientId, appointment));
+  Future<Result<StandardResponse<IdData>>> reportViolation(String patientId, ReportRightsViolationRequest request) =>
+      _handleWrite(() => _local.reportViolation(patientId, request));
 
   @override
-  Future<Result<void>> updateIntakeInfo(
-    PatientId patientId,
-    IngressInfo info,
-  ) => _handleWrite(() => _local.updateIntakeInfo(patientId, info));
+  Future<Result<StandardResponse<IdData>>> createReferral(String patientId, CreateReferralRequest request) =>
+      _handleWrite(() => _local.createReferral(patientId, request));
 
-  // ==========================================
-  // PROTECTION
-  // ==========================================
-
+  // Lookups
   @override
-  Future<Result<void>> updatePlacementHistory(
-    PatientId patientId,
-    PlacementHistory history,
-  ) => _handleWrite(() => _local.updatePlacementHistory(patientId, history));
-
-  @override
-  Future<Result<ViolationReportId>> reportViolation(
-    PatientId patientId,
-    RightsViolationReport report,
-  ) => _handleWrite(() => _local.reportViolation(patientId, report));
-
-  @override
-  Future<Result<ReferralId>> createReferral(
-    PatientId patientId,
-    Referral referral,
-  ) => _handleWrite(() => _local.createReferral(patientId, referral));
-
-  // ==========================================
-  // LOOKUP
-  // ==========================================
-
-  @override
-  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupTable(String tableName) async {
     final localResult = await _local.getLookupTable(tableName);
-
-    if (localResult case Success(value: final items) when items.isNotEmpty) {
-      return Success(items);
+    if (localResult case Success(value: final items) when items.data.isNotEmpty) {
+      return localResult;
     }
-
     if (_isOnline) {
       final remoteResult = await _remote.getLookupTable(tableName);
       if (remoteResult case Success(:final value)) {
-        unawaited(_local.updateLookupCache(tableName, value));
-        return Success(value);
-      } else {
-        _log.warning(
-          'Remote lookup fetch failed for $tableName: ${(remoteResult as Failure).error}',
-        );
+        unawaited(_local.updateLookupCache(tableName, value.data));
+        return remoteResult;
       }
     }
-
     return localResult;
   }
 
-  /// Manually pre-fetches all common lookup tables.
   Future<void> prefetchLookupTables() async {
     if (!_isOnline) return;
 
@@ -330,8 +210,92 @@ class OfflineFirstRepository implements SocialCareContract {
     for (final table in tables) {
       final result = await _remote.getLookupTable(table);
       if (result case Success(:final value)) {
-        await _local.updateLookupCache(table, value);
+        await _local.updateLookupCache(table, value.data);
       }
     }
   }
+
+  // Analytics
+  @override
+  Future<Result<StandardResponse<IndicatorResponse>>> getIndicators(String axisId, {String? period}) => _remote.getIndicators(axisId, period: period);
+  
+  @override
+  Future<Result<StandardResponse<List<AxisMetadataResponse>>>> getAxesMetadata() => _remote.getAxesMetadata();
+
+  // System
+  @override
+  
+  @override
+
+  // People
+  @override
+  Future<Result<StandardIdResponse>> registerPerson(RegisterPersonRequest request) => _remote.registerPerson(request);
+  
+  @override
+  Future<Result<StandardIdResponse>> registerPersonWithLogin(RegisterPersonWithLoginRequest request) => _remote.registerPersonWithLogin(request);
+  
+  @override
+  Future<Result<PersonResponse>> getPerson(String personId) => _remote.getPerson(personId);
+  
+  @override
+  Future<Result<PersonResponse>> findPersonByCpf(String cpf) => _remote.findPersonByCpf(cpf);
+  
+  @override
+  Future<Result<StandardResponse<List<PersonResponse>>>> fetchPeople({String? cpf, String? cursor, int? limit, String? name}) => _remote.fetchPeople(cpf: cpf, cursor: cursor, limit: limit, name: name);
+  
+  @override
+  Future<Result<void>> deactivatePerson(String personId) => _remote.deactivatePerson(personId);
+  
+  @override
+  Future<Result<void>> reactivatePerson(String personId) => _remote.reactivatePerson(personId);
+  
+  @override
+  Future<Result<void>> requestPasswordReset(String personId) => _remote.requestPasswordReset(personId);
+  
+  @override
+  Future<Result<void>> assignRole(String personId, AssignRoleRequest request) => _remote.assignRole(personId, request);
+  
+  @override
+  Future<Result<List<PersonRoleResponse>>> listPersonRoles(String personId, {bool? active}) => _remote.listPersonRoles(personId, active: active);
+  
+  @override
+  Future<Result<List<PersonRoleResponse>>> queryRoles({bool active = true, String? role, required String system}) => _remote.queryRoles(active: active, role: role, system: system);
+  
+  @override
+  Future<Result<void>> deactivateRole({required String personId, required String roleId}) => _remote.deactivateRole(personId: personId, roleId: roleId);
+  
+  @override
+  Future<Result<void>> reactivateRole({required String personId, required String roleId}) => _remote.reactivateRole(personId: personId, roleId: roleId);
+
+  // Registry additions
+  @override
+  Future<Result<void>> dischargePatient(String patientId, DischargePatientRequest request) => _remote.dischargePatient(patientId, request);
+  
+  @override
+  Future<Result<void>> readmitPatient(String patientId, ReadmitPatientRequest request) => _remote.readmitPatient(patientId, request);
+  
+  @override
+  Future<Result<void>> admitPatient(String patientId) => _remote.admitPatient(patientId);
+  
+  @override
+  Future<Result<void>> withdrawPatient(String patientId, WithdrawPatientRequest request) => _remote.withdrawPatient(patientId, request);
+
+
+  @override
+  Future<Result<StandardIdResponse>> createLookupItem(String tableName, Map<String, dynamic> request) => _remote.createLookupItem(tableName, request);
+  @override
+  Future<Result<void>> updateLookupItem(String tableName, String id, Map<String, dynamic> request) => _remote.updateLookupItem(tableName, id, request);
+  @override
+  Future<Result<void>> toggleLookupItem(String tableName, String id, bool activate) => _remote.toggleLookupItem(tableName, id, activate);
+  @override
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupRequests() => _remote.getLookupRequests();
+  @override
+  Future<Result<StandardIdResponse>> createLookupRequest(Map<String, dynamic> request) => _remote.createLookupRequest(request);
+  @override
+  Future<Result<void>> approveLookupRequest(String requestId) => _remote.approveLookupRequest(requestId);
+  @override
+  Future<Result<void>> rejectLookupRequest(String requestId) => _remote.rejectLookupRequest(requestId);
+  @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientEnriched(String patientId) => _remote.fetchPatientEnriched(patientId);
+
 }

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'register_patient_request.g.dart';
 
 @JsonSerializable()
-class RegisterPatientRequest {
+class RegisterPatientRequest with Equatable {
   const RegisterPatientRequest({
     required this.personId,
     required this.initialDiagnoses,
@@ -26,10 +27,21 @@ class RegisterPatientRequest {
   final SocialIdentityDraftDto? socialIdentity;
 
   Map<String, dynamic> toJson() => _$RegisterPatientRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    personId,
+    initialDiagnoses,
+    prRelationshipId,
+    personalData,
+    civilDocuments,
+    address,
+    socialIdentity,
+  ];
 }
 
 @JsonSerializable()
-class DiagnosisDraftDto {
+class DiagnosisDraftDto with Equatable {
   const DiagnosisDraftDto({
     required this.icdCode,
     required this.date,
@@ -44,10 +56,13 @@ class DiagnosisDraftDto {
   final String description;
 
   Map<String, dynamic> toJson() => _$DiagnosisDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [icdCode, date, description];
 }
 
 @JsonSerializable()
-class PersonalDataDraftDto {
+class PersonalDataDraftDto with Equatable {
   const PersonalDataDraftDto({
     required this.firstName,
     required this.lastName,
@@ -72,10 +87,22 @@ class PersonalDataDraftDto {
   final String? phone;
 
   Map<String, dynamic> toJson() => _$PersonalDataDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    firstName,
+    lastName,
+    motherName,
+    nationality,
+    sex,
+    birthDate,
+    socialName,
+    phone,
+  ];
 }
 
 @JsonSerializable()
-class CivilDocumentsDraftDto {
+class CivilDocumentsDraftDto with Equatable {
   const CivilDocumentsDraftDto({this.cpf, this.nis, this.rgDocument, this.cns});
 
   factory CivilDocumentsDraftDto.fromJson(Map<String, dynamic> json) =>
@@ -87,10 +114,13 @@ class CivilDocumentsDraftDto {
   final CnsDraftDto? cns;
 
   Map<String, dynamic> toJson() => _$CivilDocumentsDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [cpf, nis, rgDocument, cns];
 }
 
 @JsonSerializable()
-class RgDocumentDraftDto {
+class RgDocumentDraftDto with Equatable {
   const RgDocumentDraftDto({
     required this.number,
     required this.issuingState,
@@ -107,10 +137,13 @@ class RgDocumentDraftDto {
   final String issueDate;
 
   Map<String, dynamic> toJson() => _$RgDocumentDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [number, issuingState, issuingAgency, issueDate];
 }
 
 @JsonSerializable()
-class CnsDraftDto {
+class CnsDraftDto with Equatable {
   const CnsDraftDto({required this.number, required this.cpf, this.qrCode});
 
   factory CnsDraftDto.fromJson(Map<String, dynamic> json) =>
@@ -121,10 +154,13 @@ class CnsDraftDto {
   final String? qrCode;
 
   Map<String, dynamic> toJson() => _$CnsDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [number, cpf, qrCode];
 }
 
 @JsonSerializable()
-class AddressDraftDto {
+class AddressDraftDto with Equatable {
   const AddressDraftDto({
     required this.isShelter,
     required this.residenceLocation,
@@ -153,10 +189,24 @@ class AddressDraftDto {
   final String city;
 
   Map<String, dynamic> toJson() => _$AddressDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    cep,
+    isShelter,
+    isHomeless,
+    residenceLocation,
+    street,
+    neighborhood,
+    number,
+    complement,
+    state,
+    city,
+  ];
 }
 
 @JsonSerializable()
-class SocialIdentityDraftDto {
+class SocialIdentityDraftDto with Equatable {
   const SocialIdentityDraftDto({required this.typeId, this.description});
 
   factory SocialIdentityDraftDto.fromJson(Map<String, dynamic> json) =>
@@ -166,4 +216,7 @@ class SocialIdentityDraftDto {
   final String? description;
 
   Map<String, dynamic> toJson() => _$SocialIdentityDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [typeId, description];
 }

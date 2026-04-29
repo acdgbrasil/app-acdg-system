@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'social_benefit_response.g.dart';
 
 @JsonSerializable()
-class SocialBenefitResponse {
+class SocialBenefitResponse with Equatable {
   const SocialBenefitResponse({
     required this.benefitName,
     required this.amount,
@@ -24,4 +25,14 @@ class SocialBenefitResponse {
   final String? deceasedCpf;
 
   Map<String, dynamic> toJson() => _$SocialBenefitResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    benefitName,
+    amount,
+    beneficiaryId,
+    benefitTypeId,
+    birthCertificateNumber,
+    deceasedCpf,
+  ];
 }

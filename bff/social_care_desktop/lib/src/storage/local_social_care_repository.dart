@@ -27,42 +27,33 @@ class LocalSocialCareRepository implements LocalCacheContract {
   // HELPERS
   // ==========================================
 
-  Future<Result<Patient>> _mutatePatient(
-    PatientId patientId,
+  Future<Result<void>> _mutatePatientRaw(
+    String patientId,
     String actionType,
     Map<String, dynamic> actionPayload,
-    Patient Function(Patient) mutator,
+    Map<String, dynamic> Function(Map<String, dynamic>) mutator,
   ) async {
-    _log.fine('_mutatePatient: $actionType for ${patientId.value}');
+    _log.fine('_mutatePatientRaw: $actionType for $patientId');
     try {
       final cached = await (_db.select(
         _db.cachedPatients,
-      )..where((t) => t.patientId.equals(patientId.value))).getSingleOrNull();
+      )..where((t) => t.patientId.equals(patientId))).getSingleOrNull();
 
       if (cached == null) {
-        _log.warning('Patient not found in cache: ${patientId.value}');
+        _log.warning('Patient not found in cache: $patientId');
         return Failure(_notFoundError('Patient not found in local cache'));
       }
 
       final currentJson =
           jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
-      final Patient patient;
-      switch (PatientTranslator.fromJson(currentJson)) {
-        case Success(:final value):
-          patient = value;
-        case Failure(:final error):
-          _log.severe('Failed to decode patient from cache', error);
-          return Failure(error);
-      }
-      final updatedPatient = mutator(patient);
+          
+      final updatedJson = mutator(currentJson);
 
       await (_db.update(
         _db.cachedPatients,
-      )..where((t) => t.patientId.equals(patientId.value))).write(
+      )..where((t) => t.patientId.equals(patientId))).write(
         CachedPatientsCompanion(
-          fullRecordJson: Value(
-            jsonEncode(PatientTranslator.toJson(updatedPatient)),
-          ),
+          fullRecordJson: Value(jsonEncode(updatedJson)),
           version: Value(cached.version + 1),
           isDirty: const Value(true),
           lastSyncAt: Value(DateTime.now().toUtc()),
@@ -71,26 +62,15 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
       _log.fine('Enqueueing sync action: $actionType');
       await _queueService.enqueue(
-        patientId: patientId.value,
+        patientId: patientId,
         actionType: actionType,
         payload: actionPayload,
       );
 
-      return Success(updatedPatient);
+      return const Success(null);
     } catch (e, st) {
-      _log.severe('CRITICAL: _mutatePatient failed ($actionType)', e, st);
-      return Failure(
-        AppError(
-          code: 'LOC-500',
-          message: 'Failed to mutate patient locally: $e',
-          module: 'social-care/local-repo',
-          kind: 'infrastructure',
-          observability: const Observability(
-            category: ErrorCategory.infrastructureDependencyFailure,
-            severity: ErrorSeverity.error,
-          ),
-        ),
-      );
+      _log.severe('CRITICAL: _mutatePatientRaw failed ($actionType)', e, st);
+      return Failure(BackendError(id: '', code: 'LOC-500', message: 'Mutation failed: $e'));
     }
   }
 
@@ -148,15 +128,9 @@ class LocalSocialCareRepository implements LocalCacheContract {
   @override
   Future<void> updateLookupCache(
     String tableName,
-    List<LookupItem> items,
+    List<Map<String, dynamic>> items,
   ) async {
-    final itemsJson = jsonEncode(
-      items
-          .map(
-            (i) => {'id': i.id, 'codigo': i.codigo, 'descricao': i.descricao},
-          )
-          .toList(),
-    );
+    final itemsJson = jsonEncode(items);
 
     await _db
         .into(_db.cachedLookups)
@@ -202,7 +176,8 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   /// Bulk-updates local cache from server summaries without enqueuing sync actions.
   @override
-  Future<void> updateCacheFromSummaries(List<PatientOverview> summaries) async {
+  @override
+  Future<void> updateCacheFromSummaries(List<PatientSummaryResponse> summaries) async {
     final existingPatients = await _db.select(_db.cachedPatients).get();
     final existingMap = {for (final c in existingPatients) c.patientId: c};
 
@@ -220,8 +195,8 @@ class LocalSocialCareRepository implements LocalCacheContract {
             personId: item.personId.isNotEmpty
                 ? item.personId
                 : existing?.personId ?? '',
-            firstName: Value(item.firstName ?? ''),
-            lastName: Value(item.lastName ?? ''),
+            firstName: Value(item.fullName?.split(' ').first ?? ''),
+            lastName: Value(item.fullName?.split(' ').skip(1).join(' ') ?? ''),
             cpf: Value(existing?.cpf ?? ''),
             fullRecordJson: shouldPreserveRecord
                 ? existing.fullRecordJson
@@ -237,8 +212,8 @@ class LocalSocialCareRepository implements LocalCacheContract {
                     ? item.personId
                     : existing?.personId ?? '',
               ),
-              firstName: Value(item.firstName ?? ''),
-              lastName: Value(item.lastName ?? ''),
+              firstName: Value(item.fullName?.split(' ').first ?? ''),
+              lastName: Value(item.fullName?.split(' ').skip(1).join(' ') ?? ''),
               fullRecordJson: shouldPreserveRecord
                   ? Value(existing.fullRecordJson)
                   : Value(jsonEncode(item.toJson())),
@@ -252,14 +227,14 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   /// Checks whether there are pending sync actions for a given patient.
   @override
-  Future<bool> hasPendingActions(PatientId patientId) async {
+  Future<bool> hasPendingActions(String patientId) async {
     final actions = await _queueService.getPendingActions();
-    return actions.any((a) => a.patientId == patientId.value);
+    return actions.any((a) => a.patientId == patientId);
   }
 
   /// Updates the local cache from a [PatientRemote] without enqueuing a sync action.
   @override
-  Future<void> updateCacheFromRemote(PatientRemote dto) async {
+  Future<void> updateCacheFromRemote(PatientResponse dto) async {
     final fullJson = dto.toJson();
     final pd = dto.personalData;
 
@@ -269,8 +244,8 @@ class LocalSocialCareRepository implements LocalCacheContract {
           CachedPatientsCompanion.insert(
             patientId: dto.patientId,
             personId: dto.personId,
-            firstName: Value(pd?['firstName'] as String? ?? ''),
-            lastName: Value(pd?['lastName'] as String? ?? ''),
+            firstName: Value(pd?.firstName ?? ''),
+            lastName: Value(pd?.lastName ?? ''),
             cpf: Value(''),
             fullRecordJson: jsonEncode(fullJson),
             version: Value(dto.version),
@@ -280,8 +255,8 @@ class LocalSocialCareRepository implements LocalCacheContract {
           onConflict: DoUpdate(
             (old) => CachedPatientsCompanion(
               personId: Value(dto.personId),
-              firstName: Value(pd?['firstName'] as String? ?? ''),
-              lastName: Value(pd?['lastName'] as String? ?? ''),
+              firstName: Value(pd?.firstName ?? ''),
+              lastName: Value(pd?.lastName ?? ''),
               fullRecordJson: Value(jsonEncode(fullJson)),
               version: Value(dto.version),
               isDirty: const Value(false),
@@ -306,17 +281,29 @@ class LocalSocialCareRepository implements LocalCacheContract {
   // ==========================================
 
   @override
-  Future<Result<List<PatientOverview>>> fetchPatients() async {
+  Future<Result<PaginatedList<PatientSummaryResponse>>> fetchPatients({
+    String? cursor,
+    int? limit,
+    String? search,
+    String? status,
+  }) async {
     try {
       final allCached = await _db.select(_db.cachedPatients).get();
       final summaries = allCached.map(_toSummaryDTO).toList();
-      return Success(summaries);
+      return Success(PaginatedList(
+        data: summaries,
+        meta: PaginationMeta(
+          totalCount: summaries.length,
+          pageSize: limit ?? 50,
+          hasMore: false,
+        ),
+      ));
     } catch (e) {
-      return Failure(e);
+      return Failure(BackendError(id: '', code: 'LOCAL_READ_ERR', message: e.toString()));
     }
   }
 
-  PatientOverview _toSummaryDTO(CachedPatient c) {
+  PatientSummaryResponse _toSummaryDTO(CachedPatient c) {
     try {
       final json = jsonDecode(c.fullRecordJson) as Map<String, dynamic>;
 
@@ -326,11 +313,10 @@ class LocalSocialCareRepository implements LocalCacheContract {
             (json['diagnoses'] as List?) ??
             (json['initialDiagnoses'] as List?) ??
             [];
-        final members = (json['familyMembers'] as List?) ?? [];
         final firstName = pd?['firstName'] as String? ?? c.firstName;
         final lastName = pd?['lastName'] as String? ?? c.lastName;
 
-        return PatientOverview(
+        return PatientSummaryResponse(
           patientId: json['patientId'] as String? ?? c.patientId,
           personId: json['personId'] as String? ?? c.personId,
           firstName: firstName,
@@ -340,117 +326,87 @@ class LocalSocialCareRepository implements LocalCacheContract {
               ? (diagnoses.first as Map<String, dynamic>)['description']
                     as String?
               : null,
-          memberCount: members.length,
         );
       }
 
-      return PatientOverview.fromJson(json);
+      return PatientSummaryResponse.fromJson(json);
     } catch (_) {
-      return PatientOverview(
+      return PatientSummaryResponse(
         patientId: c.patientId,
         personId: c.personId,
-        firstName: c.firstName.isEmpty ? null : c.firstName,
-        lastName: c.lastName.isEmpty ? null : c.lastName,
+        firstName: c.firstName,
+        lastName: c.lastName,
         fullName: '${c.firstName} ${c.lastName}'.trim(),
-        memberCount: 0,
       );
     }
   }
 
   @override
-  Future<Result<PatientId>> registerPatient(Patient patient) async {
+  Future<Result<StandardIdResponse>> registerPatient(RegisterPatientRequest request) async {
     try {
-      // Validate CPF uniqueness locally before inserting
-      final cpf = patient.civilDocuments?.cpf?.value ?? '';
-      if (cpf.isNotEmpty) {
-        final existing = await (_db.select(
-          _db.cachedPatients,
-        )..where((t) => t.cpf.equals(cpf))).getSingleOrNull();
-        if (existing != null && existing.patientId != patient.id.value) {
-          return Failure(
-            AppError(
-              code: 'REGP-001',
-              message: 'O paciente com este CPF já está registrado no sistema.',
-              module: 'social-care/local-repo',
-              kind: 'domain',
-              observability: const Observability(
-                category: ErrorCategory.domainRuleViolation,
-                severity: ErrorSeverity.warning,
-              ),
-            ),
-          );
-        }
-      }
+      final tempId = 'LOCAL-${DateTime.now().millisecondsSinceEpoch}';
 
-      final fullJson = PatientTranslator.toJson(patient);
+      final fullJson = request.toJson();
 
       await _db
           .into(_db.cachedPatients)
           .insert(
             CachedPatientsCompanion.insert(
-              patientId: patient.id.value,
-              personId: patient.personId.value,
-              firstName: Value(patient.personalData?.firstName ?? ''),
-              lastName: Value(patient.personalData?.lastName ?? ''),
-              cpf: Value(patient.civilDocuments?.cpf?.value ?? ''),
+              patientId: tempId,
+              personId: request.personId,
+              firstName: Value(request.personalData?.firstName ?? ''),
+              lastName: Value(request.personalData?.lastName ?? ''),
+              cpf: Value(request.civilDocuments?.cpf ?? ''),
               fullRecordJson: jsonEncode(fullJson),
-              version: Value(patient.version),
+              version: const Value(1),
               isDirty: const Value(true),
               lastSyncAt: DateTime.now().toUtc(),
-            ),
-            onConflict: DoUpdate(
-              (old) => CachedPatientsCompanion(
-                personId: Value(patient.personId.value),
-                firstName: Value(patient.personalData?.firstName ?? ''),
-                lastName: Value(patient.personalData?.lastName ?? ''),
-                cpf: Value(patient.civilDocuments?.cpf?.value ?? ''),
-                fullRecordJson: Value(jsonEncode(fullJson)),
-                version: Value(patient.version),
-                isDirty: const Value(true),
-                lastSyncAt: Value(DateTime.now().toUtc()),
-              ),
-              target: [_db.cachedPatients.patientId],
             ),
           );
 
       await _queueService.enqueue(
-        patientId: patient.id.value,
+        patientId: tempId,
         actionType: 'REGISTER_PATIENT',
         payload: fullJson,
       );
 
-      return Success(patient.id);
+      return Success(
+        StandardResponse(
+          data: IdData(id: tempId),
+          meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()),
+        )
+      );
     } catch (e) {
-      return Failure(e);
+      return Failure(BackendError(id: '', code: 'LOCAL_WRITE_ERR', message: e.toString()));
     }
   }
 
   @override
-  Future<Result<PatientRemote>> fetchPatient(PatientId id) async {
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatient(String id) async {
     try {
       final cached = await (_db.select(
         _db.cachedPatients,
-      )..where((t) => t.patientId.equals(id.value))).getSingleOrNull();
+      )..where((t) => t.patientId.equals(id))).getSingleOrNull();
 
       if (cached == null) {
         return Failure(_notFoundError('Patient not found in local cache'));
       }
 
       final json = jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
-      return Success(PatientRemote.fromJson(json));
+      return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: PatientResponse.fromJson(json)));
     } catch (e) {
-      return Failure(e);
+      return Failure(BackendError(id: '', code: 'LOCAL_READ_ERR', message: e.toString()));
     }
   }
 
   @override
-  Future<Result<PatientRemote>> fetchPatientByPersonId(
-    PersonId personId,
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientByPersonId(
+    String personId,
   ) async {
     try {
       final cached = await (_db.select(
         _db.cachedPatients,
-      )..where((t) => t.personId.equals(personId.value))).getSingleOrNull();
+      )..where((t) => t.personId.equals(personId))).getSingleOrNull();
 
       if (cached == null) {
         return Failure(
@@ -459,28 +415,32 @@ class LocalSocialCareRepository implements LocalCacheContract {
       }
 
       final json = jsonDecode(cached.fullRecordJson) as Map<String, dynamic>;
-      return Success(PatientRemote.fromJson(json));
+      return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: PatientResponse.fromJson(json)));
     } catch (e) {
-      return Failure(e);
+      return Failure(BackendError(id: '', code: 'LOCAL_READ_ERR', message: e.toString()));
     }
   }
 
   @override
   Future<Result<void>> addFamilyMember(
-    PatientId patientId,
-    FamilyMember member,
-    LookupId prRelationshipId, {
+    String patientId,
+    AddFamilyMemberRequest request, {
     String? cpf,
   }) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'ADD_FAMILY_MEMBER',
       {
-        'patientId': patientId.value,
-        'member': PatientTranslator.familyMemberToJson(member),
-        'prRelationshipId': prRelationshipId.value,
+        'patientId': patientId,
+        'request': request.toJson(),
+        if (cpf != null) 'cpf': cpf,
       },
-      (p) => p.copyWith(familyMembers: [...p.familyMembers, member]),
+      (jsonMap) {
+        final members = (jsonMap['familyMembers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        members.add(request.toJson()); // Sync mock saves raw request
+        jsonMap['familyMembers'] = members;
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -489,18 +449,18 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> removeFamilyMember(
-    PatientId patientId,
-    PersonId memberId,
+    String patientId,
+    String memberId,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'REMOVE_FAMILY_MEMBER',
-      {'patientId': patientId.value, 'memberId': memberId.value},
-      (p) => p.copyWith(
-        familyMembers: p.familyMembers
-            .where((m) => m.personId != memberId)
-            .toList(),
-      ),
+      {'patientId': patientId, 'memberId': memberId},
+      (jsonMap) {
+        final members = (jsonMap['familyMembers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        jsonMap['familyMembers'] = members.where((m) => m['personId'] != memberId).toList();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -509,21 +469,19 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> assignPrimaryCaregiver(
-    PatientId patientId,
-    PersonId memberId,
+    String patientId,
+    AssignPrimaryCaregiverRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'ASSIGN_CAREGIVER',
-      {'patientId': patientId.value, 'memberId': memberId.value},
-      (p) => p.copyWith(
-        familyMembers: p.familyMembers.map((m) {
-          if (m.personId == memberId) {
-            return m.copyWith(isPrimaryCaregiver: true);
-          }
-          return m.copyWith(isPrimaryCaregiver: false);
-        }).toList(),
-      ),
+      {'patientId': patientId, 'request': request.toJson()},
+      (jsonMap) {
+        final members = (jsonMap['familyMembers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        for (var m in members) m['isPrimaryCaregiver'] = m['personId'] == request.memberPersonId;
+        jsonMap['familyMembers'] = members;
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -532,17 +490,20 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateSocialIdentity(
-    PatientId patientId,
-    SocialIdentity identity,
+    String patientId,
+    UpdateSocialIdentityRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_SOCIAL_IDENTITY',
       {
-        'patientId': patientId.value,
-        'identity': PatientTranslator.socialIdentityToJson(identity),
+        'patientId': patientId,
+        'identity': request.toJson(),
       },
-      (p) => p.copyWith(socialIdentity: () => identity),
+      (jsonMap) {
+        jsonMap['socialIdentity'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -550,11 +511,13 @@ class LocalSocialCareRepository implements LocalCacheContract {
   }
 
   @override
-  Future<Result<List<AuditEvent>>> getAuditTrail(
-    PatientId patientId, {
+  Future<Result<StandardResponse<List<AuditTrailEntryResponse>>>> getAuditTrail(
+    String patientId, {
     String? eventType,
+    int? limit,
+    int? offset,
   }) async {
-    return const Success([]);
+    return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: []));
   }
 
   // ==========================================
@@ -563,14 +526,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateHousingCondition(
-    PatientId patientId,
-    HousingCondition condition,
+    String patientId,
+    UpdateHousingConditionRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_HOUSING',
-      PatientTranslator.housingConditionToJson(condition),
-      (p) => p.copyWith(housingCondition: () => condition),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['housingCondition'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -579,14 +545,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateSocioEconomicSituation(
-    PatientId patientId,
-    SocioEconomicSituation situation,
+    String patientId,
+    UpdateSocioEconomicSituationRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_SOCIOECONOMIC',
-      PatientTranslator.socioEconomicToJson(situation),
-      (p) => p.copyWith(socioeconomicSituation: () => situation),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['socioeconomicSituation'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -595,14 +564,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateWorkAndIncome(
-    PatientId patientId,
-    WorkAndIncome data,
+    String patientId,
+    UpdateWorkAndIncomeRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_WORK_INCOME',
-      PatientTranslator.workAndIncomeToJson(data),
-      (p) => p.copyWith(workAndIncome: () => data),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['workAndIncome'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -611,14 +583,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateEducationalStatus(
-    PatientId patientId,
-    EducationalStatus status,
+    String patientId,
+    UpdateEducationalStatusRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_EDUCATION',
-      PatientTranslator.educationalStatusToJson(status),
-      (p) => p.copyWith(educationalStatus: () => status),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['educationalStatus'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -627,14 +602,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateHealthStatus(
-    PatientId patientId,
-    HealthStatus status,
+    String patientId,
+    UpdateHealthStatusRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_HEALTH',
-      PatientTranslator.healthStatusToJson(status),
-      (p) => p.copyWith(healthStatus: () => status),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['healthStatus'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -643,14 +621,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateCommunitySupportNetwork(
-    PatientId patientId,
-    CommunitySupportNetwork network,
+    String patientId,
+    UpdateCommunitySupportNetworkRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_COMMUNITY_SUPPORT',
-      PatientTranslator.communitySupportToJson(network),
-      (p) => p.copyWith(communitySupportNetwork: () => network),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['communitySupportNetwork'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -659,14 +640,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updateSocialHealthSummary(
-    PatientId patientId,
-    SocialHealthSummary summary,
+    String patientId,
+    UpdateSocialHealthSummaryRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_SOCIAL_HEALTH',
-      PatientTranslator.socialHealthSummaryToJson(summary),
-      (p) => p.copyWith(socialHealthSummary: () => summary),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['socialHealthSummary'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -678,33 +662,47 @@ class LocalSocialCareRepository implements LocalCacheContract {
   // ==========================================
 
   @override
-  Future<Result<AppointmentId>> registerAppointment(
-    PatientId patientId,
-    SocialCareAppointment appointment,
+  Future<Result<StandardResponse<IdData>>> registerAppointment(
+    String patientId,
+    RegisterAppointmentRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final tempId = 'LOCAL-APPT-${DateTime.now().millisecondsSinceEpoch}';
+    final result = await _mutatePatientRaw(
       patientId,
       'REGISTER_APPOINTMENT',
       {
-        'patientId': patientId.value,
-        'appointment': PatientTranslator.appointmentToJson(appointment),
+        'patientId': patientId,
+        'request': request.toJson(),
       },
-      (p) => p.copyWith(appointments: [...p.appointments, appointment]),
+      (jsonMap) {
+        final list = (jsonMap['appointments'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        list.add({'id': tempId, ...request.toJson()});
+        jsonMap['appointments'] = list;
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
-    return Success(appointment.id);
+    return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: IdData(id: tempId)));
   }
 
   @override
   Future<Result<void>> updateIntakeInfo(
-    PatientId patientId,
-    IngressInfo info,
+    String patientId,
+    RegisterIntakeInfoRequest request,
   ) async {
-    final result = await _mutatePatient(patientId, 'UPDATE_INTAKE', {
-      'patientId': patientId.value,
-      'info': PatientTranslator.intakeInfoToJson(info),
-    }, (p) => p.copyWith(intakeInfo: () => info));
+    final result = await _mutatePatientRaw(
+      patientId, 
+      'UPDATE_INTAKE', 
+      {
+        'patientId': patientId,
+        'request': request.toJson(),
+      },
+      (jsonMap) {
+        jsonMap['intakeInfo'] = request.toJson();
+        return jsonMap;
+      }
+    );
 
     if (result case Failure(:final error)) return Failure(error);
     return const Success(null);
@@ -716,14 +714,17 @@ class LocalSocialCareRepository implements LocalCacheContract {
 
   @override
   Future<Result<void>> updatePlacementHistory(
-    PatientId patientId,
-    PlacementHistory history,
+    String patientId,
+    UpdatePlacementHistoryRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final result = await _mutatePatientRaw(
       patientId,
       'UPDATE_PLACEMENT',
-      PatientTranslator.placementHistoryToJson(history),
-      (p) => p.copyWith(placementHistory: () => history),
+      request.toJson(),
+      (jsonMap) {
+        jsonMap['placementHistory'] = request.toJson();
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
@@ -731,41 +732,53 @@ class LocalSocialCareRepository implements LocalCacheContract {
   }
 
   @override
-  Future<Result<ViolationReportId>> reportViolation(
-    PatientId patientId,
-    RightsViolationReport report,
+  Future<Result<StandardResponse<IdData>>> reportViolation(
+    String patientId,
+    ReportRightsViolationRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final tempId = 'LOCAL-VIOL-${DateTime.now().millisecondsSinceEpoch}';
+    final result = await _mutatePatientRaw(
       patientId,
       'REPORT_VIOLATION',
       {
-        'patientId': patientId.value,
-        'report': PatientTranslator.violationReportToJson(report),
+        'patientId': patientId,
+        'request': request.toJson(),
       },
-      (p) => p.copyWith(violationReports: [...p.violationReports, report]),
+      (jsonMap) {
+        final list = (jsonMap['violationReports'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        list.add({'id': tempId, ...request.toJson()});
+        jsonMap['violationReports'] = list;
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
-    return Success(report.id);
+    return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: IdData(id: tempId)));
   }
 
   @override
-  Future<Result<ReferralId>> createReferral(
-    PatientId patientId,
-    Referral referral,
+  Future<Result<StandardResponse<IdData>>> createReferral(
+    String patientId,
+    CreateReferralRequest request,
   ) async {
-    final result = await _mutatePatient(
+    final tempId = 'LOCAL-REF-${DateTime.now().millisecondsSinceEpoch}';
+    final result = await _mutatePatientRaw(
       patientId,
       'CREATE_REFERRAL',
       {
-        'patientId': patientId.value,
-        'referral': PatientTranslator.referralToJson(referral),
+        'patientId': patientId,
+        'request': request.toJson(),
       },
-      (p) => p.copyWith(referrals: [...p.referrals, referral]),
+      (jsonMap) {
+        final list = (jsonMap['referrals'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        list.add({'id': tempId, ...request.toJson()});
+        jsonMap['referrals'] = list;
+        return jsonMap;
+      },
     );
 
     if (result case Failure(:final error)) return Failure(error);
-    return Success(referral.id);
+    return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: IdData(id: tempId)));
   }
 
   // ==========================================
@@ -773,27 +786,106 @@ class LocalSocialCareRepository implements LocalCacheContract {
   // ==========================================
 
   @override
-  Future<Result<List<LookupItem>>> getLookupTable(String tableName) async {
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupTable(String tableName) async {
     try {
       final cached = await (_db.select(
         _db.cachedLookups,
       )..where((t) => t.lookupName.equals(tableName))).getSingleOrNull();
 
-      if (cached == null) return const Success([]);
+      if (cached == null) {
+        return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: []));
+      }
 
       final List<dynamic> list = jsonDecode(cached.itemsJson);
-      return Success(
-        list.map((item) {
-          final map = item as Map<String, dynamic>;
-          return LookupItem(
-            id: map['id'],
-            codigo: map['codigo'],
-            descricao: map['descricao'],
-          );
-        }).toList(),
-      );
+      final maps = list.cast<Map<String, dynamic>>();
+
+      return Success(StandardResponse(meta: ResponseMeta(timestamp: DateTime.now().toIso8601String()), data: maps));
     } catch (e) {
-      return Failure(e);
+      return Failure(BackendError(id: '', code: 'LOCAL_LOOKUP_ERR', message: e.toString()));
     }
   }
+
+  // Analytics
+  @override
+  Future<Result<StandardResponse<IndicatorResponse>>> getIndicators(String axisId, {String? period}) async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<StandardResponse<List<AxisMetadataResponse>>>> getAxesMetadata()  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+
+  // System
+  @override
+  
+  @override
+
+  // People
+  @override
+  Future<Result<StandardIdResponse>> registerPerson(RegisterPersonRequest request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<StandardIdResponse>> registerPersonWithLogin(RegisterPersonWithLoginRequest request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<PersonResponse>> getPerson(String personId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<PersonResponse>> findPersonByCpf(String cpf)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<StandardResponse<List<PersonResponse>>>> fetchPeople({String? cpf, String? cursor, int? limit, String? name}) async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> deactivatePerson(String personId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> reactivatePerson(String personId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> requestPasswordReset(String personId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> assignRole(String personId, AssignRoleRequest request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<List<PersonRoleResponse>>> listPersonRoles(String personId, {bool? active}) async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<List<PersonRoleResponse>>> queryRoles({bool active = true, String? role, required String system}) async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> deactivateRole({required String personId, required String roleId}) async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> reactivateRole({required String personId, required String roleId}) async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+
+  // Registry additions
+  @override
+  Future<Result<void>> dischargePatient(String patientId, DischargePatientRequest request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> readmitPatient(String patientId, ReadmitPatientRequest request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> admitPatient(String patientId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  
+  @override
+  Future<Result<void>> withdrawPatient(String patientId, WithdrawPatientRequest request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented locally', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+
+
+  @override
+  Future<Result<StandardIdResponse>> createLookupItem(String tableName, Map<String, dynamic> request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<void>> updateLookupItem(String tableName, String id, Map<String, dynamic> request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<void>> toggleLookupItem(String tableName, String id, bool activate)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>> getLookupRequests()  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<StandardIdResponse>> createLookupRequest(Map<String, dynamic> request)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<void>> approveLookupRequest(String requestId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<void>> rejectLookupRequest(String requestId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+  @override
+  Future<Result<StandardResponse<PatientResponse>>> fetchPatientEnriched(String patientId)  async => Failure(AppError(code: 'LOCAL-400', message: 'Not implemented', kind: 'unexpected', module: 'storage', observability: const Observability(category: ErrorCategory.domainRuleViolation, severity: ErrorSeverity.error)));
+
 }

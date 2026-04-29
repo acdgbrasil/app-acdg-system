@@ -1,9 +1,17 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'backend_error.g.dart';
 
+/// [cause] is self-recursive; Equatable handles transitive equality because
+/// each nested [BackendError] is itself Equatable.
+///
+/// Note on [context] and [safeContext]: both are `Map<String, dynamic>?`.
+/// Equatable compares maps structurally but cannot descend through `dynamic`
+/// values, so deeply-nested payloads fall back to reference equality inside
+/// the map values. Accepted limitation.
 @JsonSerializable()
-class BackendError {
+class BackendError with Equatable {
   const BackendError({
     required this.id,
     required this.code,
@@ -36,10 +44,26 @@ class BackendError {
   final BackendError? cause;
 
   Map<String, dynamic> toJson() => _$BackendErrorToJson(this);
+
+  @override
+  List<Object?> get props => [
+    id,
+    code,
+    message,
+    bc,
+    module,
+    kind,
+    context,
+    safeContext,
+    observability,
+    http,
+    stackTrace,
+    cause,
+  ];
 }
 
 @JsonSerializable()
-class ErrorObservability {
+class ErrorObservability with Equatable {
   const ErrorObservability({
     this.category,
     this.severity,
@@ -56,10 +80,13 @@ class ErrorObservability {
   final Map<String, String> tags;
 
   Map<String, dynamic> toJson() => _$ErrorObservabilityToJson(this);
+
+  @override
+  List<Object?> get props => [category, severity, fingerprint, tags];
 }
 
 @JsonSerializable()
-class BackendErrorResponse {
+class BackendErrorResponse with Equatable {
   const BackendErrorResponse({required this.error, this.details});
 
   factory BackendErrorResponse.fromJson(Map<String, dynamic> json) =>
@@ -69,4 +96,7 @@ class BackendErrorResponse {
   final Map<String, dynamic>? details;
 
   Map<String, dynamic> toJson() => _$BackendErrorResponseToJson(this);
+
+  @override
+  List<Object?> get props => [error, details];
 }

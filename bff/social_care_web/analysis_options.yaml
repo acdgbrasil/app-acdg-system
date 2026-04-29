@@ -13,18 +13,34 @@
 
 include: package:lints/recommended.yaml
 
-# Uncomment the following section to specify additional rules.
+# ============================================================================
+# Camada 2 — lints built-in alinhados com PATTERN_MATCHING_POLICY (ADR-019).
+# Rules custom mais rigorosas (catch_without_stack_in_adapter, etc.) ficam
+# para o package `acdg_lints` — ver A22 ticket (.pipeline/phase-3-bff-...).
+# ============================================================================
 
-# linter:
-#   rules:
-#     - camel_case_types
+linter:
+  rules:
+    # Error handling — alinha com P2b (ADR-019 §Hard-reject em catch(_))
+    empty_catches: true              # proíbe `catch (_) {}` vazio — reprovação automática P2b
+    avoid_catching_errors: true      # `catch (Error e)` geralmente é bug, não adapter
+    use_rethrow_when_possible: true  # rethrow em vez de `throw e;` perdendo stack
 
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+    # Pattern matching — alinha com P1 exhaustiveness
+    exhaustive_cases: true           # switch deve cobrir todos os cases (enums, sealed)
+    no_default_cases: true           # complementa exhaustive_cases — proíbe `default:`
 
-# For more information about the core and recommended set of lints, see
-# https://dart.dev/go/core-lints
+    # Tear-offs — alinha com P3
+    unnecessary_lambdas: true        # `(x) => foo(x)` → `foo` tear-off
 
-# For additional information about configuring this file, see
-# https://dart.dev/guides/language/analysis-options
+    # Nota: `avoid_print`, `prefer_single_quotes`, `require_trailing_commas`
+    # não estão ligados aqui para evitar ruído em VOs (Address, CNS) e legacy
+    # handlers que A11–A15 vão reescrever. Ligar pós-A21 cleanup.
+
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"

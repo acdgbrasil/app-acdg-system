@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'ingress_info_response.g.dart';
 
 @JsonSerializable()
-class IngressInfoResponse {
+class IngressInfoResponse with Equatable {
   const IngressInfoResponse({
     required this.ingressTypeId,
     required this.serviceReason,
@@ -22,10 +23,19 @@ class IngressInfoResponse {
   final List<ProgramLinkResponse> linkedSocialPrograms;
 
   Map<String, dynamic> toJson() => _$IngressInfoResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    ingressTypeId,
+    originName,
+    originContact,
+    serviceReason,
+    linkedSocialPrograms,
+  ];
 }
 
 @JsonSerializable()
-class ProgramLinkResponse {
+class ProgramLinkResponse with Equatable {
   const ProgramLinkResponse({required this.programId, this.observation});
 
   factory ProgramLinkResponse.fromJson(Map<String, dynamic> json) =>
@@ -35,4 +45,7 @@ class ProgramLinkResponse {
   final String? observation;
 
   Map<String, dynamic> toJson() => _$ProgramLinkResponseToJson(this);
+
+  @override
+  List<Object?> get props => [programId, observation];
 }

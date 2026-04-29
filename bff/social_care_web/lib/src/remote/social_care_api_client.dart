@@ -17,7 +17,8 @@ class SocialCareApiClient implements SocialCareContract {
     required String actorId,
     required String accessToken,
     Dio? dio,
-  }) : _dio = dio ??
+  }) : _dio =
+           dio ??
            Dio(
              BaseOptions(
                baseUrl: baseUrl,
@@ -37,7 +38,10 @@ class SocialCareApiClient implements SocialCareContract {
   ///
   /// Preserves the full error structure (id, code, message, bc, module,
   /// severity, etc.) without concatenating fields.
-  Failure<T> _backendFailure<T>(Response<dynamic> response, String fallbackMessage) {
+  Failure<T> _backendFailure<T>(
+    Response<dynamic> response,
+    String fallbackMessage,
+  ) {
     final data = response.data;
     if (data is Map<String, dynamic> && data.containsKey('error')) {
       try {
@@ -76,8 +80,8 @@ class SocialCareApiClient implements SocialCareContract {
       meta: ResponseMeta(
         timestamp:
             (responseData['meta'] as Map<String, dynamic>?)?['timestamp']
-                    as String? ??
-                DateTime.now().toIso8601String(),
+                as String? ??
+            DateTime.now().toIso8601String(),
       ),
     );
   }
@@ -686,19 +690,148 @@ class SocialCareApiClient implements SocialCareContract {
     }
   }
 
+  @override
+  Future<Result<StandardIdResponse>> createLookupItem(
+    String tableName,
+    Map<String, dynamic> request,
+  ) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/dominios/$tableName',
+        data: request,
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return Success(_extractIdResponse(response.data!));
+      }
+      return _backendFailure(response, 'Failed to create lookup item');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> updateLookupItem(
+    String tableName,
+    String id,
+    Map<String, dynamic> request,
+  ) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/dominios/$tableName/$id',
+        data: request,
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to update lookup item');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> toggleLookupItem(
+    String tableName,
+    String id,
+    bool activate,
+  ) async {
+    try {
+      final response = await _dio.patch(
+        '/api/v1/dominios/$tableName/$id/toggle',
+        data: {'active': activate},
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to toggle lookup item');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<StandardResponse<List<Map<String, dynamic>>>>>
+  getLookupRequests() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/dominios/requests',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 200) {
+        final data = response.data!['data'] as List<dynamic>;
+        return Success(_wrapResponse(data.cast<Map<String, dynamic>>()));
+      }
+      return _backendFailure(response, 'Failed to get lookup requests');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<StandardIdResponse>> createLookupRequest(
+    Map<String, dynamic> request,
+  ) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/v1/dominios/requests',
+        data: request,
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return Success(_extractIdResponse(response.data!));
+      }
+      return _backendFailure(response, 'Failed to create lookup request');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> approveLookupRequest(String requestId) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/dominios/requests/$requestId/approve',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to approve lookup request');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> rejectLookupRequest(String requestId) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/dominios/requests/$requestId/reject',
+        options: Options(validateStatus: (status) => true),
+      );
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        return const Success(null);
+      }
+      return _backendFailure(response, 'Failed to reject lookup request');
+    } catch (e) {
+      return Failure(e);
+    }
+  }
+
   // ── People (delegated to PeopleContextClient) ──────────────────────
 
   @override
   Future<Result<StandardIdResponse>> registerPerson(
     RegisterPersonRequest request,
-  ) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  ) => throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<StandardIdResponse>> registerPersonWithLogin(
     RegisterPersonWithLoginRequest request,
-  ) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  ) => throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<PersonResponse>> getPerson(String personId) =>
@@ -714,8 +847,7 @@ class SocialCareApiClient implements SocialCareContract {
     String? name,
     String? cpf,
     String? cursor,
-  }) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  }) => throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<void>> deactivatePerson(String personId) =>
@@ -730,40 +862,33 @@ class SocialCareApiClient implements SocialCareContract {
       throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
-  Future<Result<void>> assignRole(
-    String personId,
-    AssignRoleRequest request,
-  ) =>
+  Future<Result<void>> assignRole(String personId, AssignRoleRequest request) =>
       throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<List<PersonRoleResponse>>> listPersonRoles(
     String personId, {
     bool? active,
-  }) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  }) => throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<List<PersonRoleResponse>>> queryRoles({
     required String system,
     String? role,
     bool active = true,
-  }) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  }) => throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<void>> deactivateRole({
     required String personId,
     required String roleId,
-  }) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  }) => throw UnimplementedError('Use PeopleContextClient directly');
 
   @override
   Future<Result<void>> reactivateRole({
     required String personId,
     required String roleId,
-  }) =>
-      throw UnimplementedError('Use PeopleContextClient directly');
+  }) => throw UnimplementedError('Use PeopleContextClient directly');
 
   // ── Analytics (delegated to AnalyticsBiClient) ─────────────────────
 
@@ -771,11 +896,10 @@ class SocialCareApiClient implements SocialCareContract {
   Future<Result<StandardResponse<IndicatorResponse>>> getIndicators(
     String axis, {
     String? period,
-  }) =>
-      throw UnimplementedError('Use AnalyticsBiClient directly');
+  }) => throw UnimplementedError('Use AnalyticsBiClient directly');
 
   @override
   Future<Result<StandardResponse<List<AxisMetadataResponse>>>>
-      getAxesMetadata() =>
-          throw UnimplementedError('Use AnalyticsBiClient directly');
+  getAxesMetadata() =>
+      throw UnimplementedError('Use AnalyticsBiClient directly');
 }

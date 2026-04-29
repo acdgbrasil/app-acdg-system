@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'discharge_info_response.g.dart';
 
 @JsonSerializable()
-class DischargeInfoResponse {
+class DischargeInfoResponse with Equatable {
   const DischargeInfoResponse({
     required this.reason,
     required this.dischargedAt,
@@ -20,4 +21,7 @@ class DischargeInfoResponse {
   final String dischargedBy;
 
   Map<String, dynamic> toJson() => _$DischargeInfoResponseToJson(this);
+
+  @override
+  List<Object?> get props => [reason, notes, dischargedAt, dischargedBy];
 }

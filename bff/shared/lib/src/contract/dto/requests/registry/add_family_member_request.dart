@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'add_family_member_request.g.dart';
 
 @JsonSerializable()
-class AddFamilyMemberRequest {
+class AddFamilyMemberRequest with Equatable {
   const AddFamilyMemberRequest({
     required this.memberPersonId,
     required this.relationship,
@@ -28,4 +29,16 @@ class AddFamilyMemberRequest {
   final String prRelationshipId;
 
   Map<String, dynamic> toJson() => _$AddFamilyMemberRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    memberPersonId,
+    relationship,
+    isResiding,
+    isCaregiver,
+    hasDisability,
+    requiredDocuments,
+    birthDate,
+    prRelationshipId,
+  ];
 }

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'referral_response.g.dart';
 
 @JsonSerializable()
-class ReferralResponse {
+class ReferralResponse with Equatable {
   const ReferralResponse({
     required this.id,
     required this.date,
@@ -26,4 +27,15 @@ class ReferralResponse {
   final String status;
 
   Map<String, dynamic> toJson() => _$ReferralResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    id,
+    date,
+    professionalId,
+    referredPersonId,
+    destinationService,
+    reason,
+    status,
+  ];
 }

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'personal_data_response.g.dart';
 
 @JsonSerializable()
-class PersonalDataResponse {
+class PersonalDataResponse with Equatable {
   const PersonalDataResponse({
     required this.firstName,
     required this.lastName,
@@ -28,4 +29,16 @@ class PersonalDataResponse {
   final String? phone;
 
   Map<String, dynamic> toJson() => _$PersonalDataResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    firstName,
+    lastName,
+    motherName,
+    nationality,
+    sex,
+    birthDate,
+    socialName,
+    phone,
+  ];
 }

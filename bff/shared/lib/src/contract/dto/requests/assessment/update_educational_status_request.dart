@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_educational_status_request.g.dart';
 
 @JsonSerializable()
-class UpdateEducationalStatusRequest {
+class UpdateEducationalStatusRequest with Equatable {
   const UpdateEducationalStatusRequest({
     this.memberProfiles = const [],
     this.programOccurrences = const [],
@@ -16,10 +17,13 @@ class UpdateEducationalStatusRequest {
   final List<OccurrenceDraftDto> programOccurrences;
 
   Map<String, dynamic> toJson() => _$UpdateEducationalStatusRequestToJson(this);
+
+  @override
+  List<Object?> get props => [memberProfiles, programOccurrences];
 }
 
 @JsonSerializable()
-class ProfileDraftDto {
+class ProfileDraftDto with Equatable {
   const ProfileDraftDto({
     required this.memberId,
     required this.canReadWrite,
@@ -36,10 +40,18 @@ class ProfileDraftDto {
   final String educationLevelId;
 
   Map<String, dynamic> toJson() => _$ProfileDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    memberId,
+    canReadWrite,
+    attendsSchool,
+    educationLevelId,
+  ];
 }
 
 @JsonSerializable()
-class OccurrenceDraftDto {
+class OccurrenceDraftDto with Equatable {
   const OccurrenceDraftDto({
     required this.memberId,
     required this.date,
@@ -56,4 +68,12 @@ class OccurrenceDraftDto {
   final bool isSuspensionRequested;
 
   Map<String, dynamic> toJson() => _$OccurrenceDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    memberId,
+    date,
+    effectId,
+    isSuspensionRequested,
+  ];
 }

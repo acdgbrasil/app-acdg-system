@@ -139,21 +139,32 @@ final class PersonalData with Equatable {
 }
 
 final class CivilDocuments with Equatable {
-  const CivilDocuments._({this.cns, this.cpf, this.nis, this.rgDocument});
+  const CivilDocuments._({
+    this.cns,
+    this.cpf,
+    this.nis,
+    this.rgDocument,
+    this.cnsQrCode,
+  });
 
   final Cns? cns;
   final Cpf? cpf;
   final Nis? nis;
   final RgDocument? rgDocument;
 
+  /// QR Code opcional associado ao CNS. Armazenado aqui porque o
+  /// [Cns] foi colapsado em um wrapper puro de `String` em A06d.
+  final String? cnsQrCode;
+
   @override
-  List<Object?> get props => [cns, cpf, nis, rgDocument];
+  List<Object?> get props => [cns, cpf, nis, rgDocument, cnsQrCode];
 
   static Result<CivilDocuments> create({
     Cns? cns,
     Cpf? cpf,
     Nis? nis,
     RgDocument? rgDocument,
+    String? cnsQrCode,
   }) {
     if (cns == null && cpf == null && nis == null && rgDocument == null) {
       return Failure(
@@ -172,25 +183,14 @@ final class CivilDocuments with Equatable {
       );
     }
 
-    if (cpf != null && cns?.cpf != null && cpf.value != cns!.cpf!.value) {
-      return Failure(
-        AppError(
-          code: 'CNS-006',
-          message:
-              'O CPF informado não corresponde ao CPF do Cartão do SUS (CNS).',
-          module: 'social-care/civil-documents',
-          kind: 'domainValidation',
-          http: 422,
-          observability: const Observability(
-            category: ErrorCategory.domainRuleViolation,
-            severity: ErrorSeverity.warning,
-          ),
-        ),
-      );
-    }
-
     return Success(
-      CivilDocuments._(cns: cns, cpf: cpf, nis: nis, rgDocument: rgDocument),
+      CivilDocuments._(
+        cns: cns,
+        cpf: cpf,
+        nis: nis,
+        rgDocument: rgDocument,
+        cnsQrCode: cnsQrCode?.nullIfEmptyTrimmed(),
+      ),
     );
   }
 }

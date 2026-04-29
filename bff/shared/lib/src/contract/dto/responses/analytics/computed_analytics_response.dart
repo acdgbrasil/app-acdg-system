@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'computed_analytics_response.g.dart';
 
 @JsonSerializable()
-class ComputedAnalyticsResponse {
+class ComputedAnalyticsResponse with Equatable {
   const ComputedAnalyticsResponse({
     this.housing,
     this.financial,
@@ -20,10 +21,18 @@ class ComputedAnalyticsResponse {
   final EducationalVulnerabilityResponse? educationalVulnerabilities;
 
   Map<String, dynamic> toJson() => _$ComputedAnalyticsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    housing,
+    financial,
+    ageProfile,
+    educationalVulnerabilities,
+  ];
 }
 
 @JsonSerializable()
-class HousingAnalyticsResponse {
+class HousingAnalyticsResponse with Equatable {
   const HousingAnalyticsResponse({
     this.density = 0,
     this.isOvercrowded = false,
@@ -36,10 +45,13 @@ class HousingAnalyticsResponse {
   final bool isOvercrowded;
 
   Map<String, dynamic> toJson() => _$HousingAnalyticsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [density, isOvercrowded];
 }
 
 @JsonSerializable()
-class FinancialIndicatorsResponse {
+class FinancialIndicatorsResponse with Equatable {
   const FinancialIndicatorsResponse({
     this.totalWorkIncome = 0,
     this.perCapitaWorkIncome = 0,
@@ -56,10 +68,18 @@ class FinancialIndicatorsResponse {
   final double perCapitaGlobalIncome;
 
   Map<String, dynamic> toJson() => _$FinancialIndicatorsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    totalWorkIncome,
+    perCapitaWorkIncome,
+    totalGlobalIncome,
+    perCapitaGlobalIncome,
+  ];
 }
 
 @JsonSerializable()
-class AgeProfileResponse {
+class AgeProfileResponse with Equatable {
   const AgeProfileResponse({
     this.range0to6 = 0,
     this.range7to14 = 0,
@@ -86,10 +106,23 @@ class AgeProfileResponse {
   final int totalMembers;
 
   Map<String, dynamic> toJson() => _$AgeProfileResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    range0to6,
+    range7to14,
+    range15to17,
+    range18to29,
+    range30to59,
+    range60to64,
+    range65to69,
+    range70Plus,
+    totalMembers,
+  ];
 }
 
 @JsonSerializable()
-class EducationalVulnerabilityResponse {
+class EducationalVulnerabilityResponse with Equatable {
   const EducationalVulnerabilityResponse({
     this.notInSchool0to5 = 0,
     this.notInSchool6to14 = 0,
@@ -112,4 +145,14 @@ class EducationalVulnerabilityResponse {
 
   Map<String, dynamic> toJson() =>
       _$EducationalVulnerabilityResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    notInSchool0to5,
+    notInSchool6to14,
+    notInSchool15to17,
+    illiteracy10to17,
+    illiteracy18to59,
+    illiteracy60Plus,
+  ];
 }

@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'register_appointment_request.g.dart';
 
 @JsonSerializable()
-class RegisterAppointmentRequest {
+class RegisterAppointmentRequest with Equatable {
   const RegisterAppointmentRequest({
     required this.professionalId,
     this.summary,
@@ -22,4 +23,13 @@ class RegisterAppointmentRequest {
   final String? type;
 
   Map<String, dynamic> toJson() => _$RegisterAppointmentRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    professionalId,
+    summary,
+    actionPlan,
+    date,
+    type,
+  ];
 }

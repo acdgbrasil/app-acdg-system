@@ -15,6 +15,26 @@
 > - `handbook/research/` — pesquisas que embasam as decisoes
 >
 > Em caso de conflito entre este CLAUDE.md e o handbook, **o handbook prevalece**.
+>
+> **REGRA #2: NO TEST CHEATING. Diante de teste vermelho, investigue causa raiz ANTES de tocar no teste ou na impl.**
+>
+> Quando um teste falha, **PARE e verbalize ao usuario os 4 pontos abaixo** antes de propor qualquer mudanca:
+>
+> 1. **Intencao:** o que o teste estava tentando provar?
+> 2. **Falha:** por que ele esta falhando agora? (qual o output exato do analyzer/runner?)
+> 3. **Veredicto:** a falha e da implementacao, da expectation do teste, ou de ambiguidade no design?
+> 4. **Opcoes:** liste no minimo 2 caminhos para resolver (incluindo "aceitar comportamento e atualizar expectation com justificativa", "corrigir impl", "skip + abrir debito"). Nao escolha sozinho — apresente trade-offs e espere decisao.
+>
+> **Anti-patterns proibidos** (test cheating):
+> - Mover o teste para um caso onde ele passe sem documentar por que o caso original foi abandonado.
+> - Trocar `expect(404)` por `expect(anyOf(404, 500))` sem entender por que 500 acontece.
+> - Comentar/skipar teste sem comentario explicito de "REGRA #2: aceito como debito porque <motivo>".
+> - Adicionar `try/catch` na impl so para fazer teste passar.
+> - Reescrever teste para "afirmar o que a impl faz" em vez de "afirmar a intencao do contrato".
+>
+> **Por que essa regra existe:** test cheating esconde dividas silenciosas. Em 2026-04-28 (ticket A15) eu (Claude) movi um teste de `/team/people` (que casava com `/team/<id>` e retornava 500) para rotas de 4 segmentos que retornavam 404 — fiz o teste passar sem resolver o vazamento de topologia que o teste original estava exibindo. O usuario interrompeu e me corrigiu. Esta regra existe para impedir esse padrao.
+>
+> **Excecao:** quando o teste foi escrito de forma comprovadamente errada (typo no nome de campo, fixture invalida, etc) — corrigir e seguir, mencionando a correcao no commit.
 
 ## Repositorio
 

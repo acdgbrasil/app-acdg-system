@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_community_support_network_request.g.dart';
 
 @JsonSerializable()
-class UpdateCommunitySupportNetworkRequest {
+class UpdateCommunitySupportNetworkRequest with Equatable {
   const UpdateCommunitySupportNetworkRequest({
     required this.hasRelativeSupport,
     required this.hasNeighborSupport,
@@ -28,4 +29,15 @@ class UpdateCommunitySupportNetworkRequest {
 
   Map<String, dynamic> toJson() =>
       _$UpdateCommunitySupportNetworkRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    hasRelativeSupport,
+    hasNeighborSupport,
+    familyConflicts,
+    patientParticipatesInGroups,
+    familyParticipatesInGroups,
+    patientHasAccessToLeisure,
+    facesDiscrimination,
+  ];
 }

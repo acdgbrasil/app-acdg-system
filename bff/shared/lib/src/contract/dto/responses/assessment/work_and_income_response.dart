@@ -1,3 +1,4 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'social_benefit_response.dart';
@@ -5,7 +6,7 @@ import 'social_benefit_response.dart';
 part 'work_and_income_response.g.dart';
 
 @JsonSerializable()
-class WorkAndIncomeResponse {
+class WorkAndIncomeResponse with Equatable {
   const WorkAndIncomeResponse({
     required this.hasRetiredMembers,
     this.individualIncomes = const [],
@@ -20,10 +21,17 @@ class WorkAndIncomeResponse {
   final List<SocialBenefitResponse> socialBenefits;
 
   Map<String, dynamic> toJson() => _$WorkAndIncomeResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    hasRetiredMembers,
+    individualIncomes,
+    socialBenefits,
+  ];
 }
 
 @JsonSerializable()
-class WorkIncomeResponse {
+class WorkIncomeResponse with Equatable {
   const WorkIncomeResponse({
     required this.memberId,
     required this.occupationId,
@@ -40,4 +48,12 @@ class WorkIncomeResponse {
   final double monthlyAmount;
 
   Map<String, dynamic> toJson() => _$WorkIncomeResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    memberId,
+    occupationId,
+    hasWorkCard,
+    monthlyAmount,
+  ];
 }

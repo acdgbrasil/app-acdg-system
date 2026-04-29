@@ -1,9 +1,10 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'update_placement_history_request.g.dart';
 
 @JsonSerializable()
-class UpdatePlacementHistoryRequest {
+class UpdatePlacementHistoryRequest with Equatable {
   const UpdatePlacementHistoryRequest({
     this.registries = const [],
     this.collectiveSituations,
@@ -18,10 +19,17 @@ class UpdatePlacementHistoryRequest {
   final SeparationDraftDto? separationChecklist;
 
   Map<String, dynamic> toJson() => _$UpdatePlacementHistoryRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    registries,
+    collectiveSituations,
+    separationChecklist,
+  ];
 }
 
 @JsonSerializable()
-class RegistryDraftDto {
+class RegistryDraftDto with Equatable {
   const RegistryDraftDto({
     required this.memberId,
     required this.startDate,
@@ -38,10 +46,13 @@ class RegistryDraftDto {
   final String reason;
 
   Map<String, dynamic> toJson() => _$RegistryDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [memberId, startDate, endDate, reason];
 }
 
 @JsonSerializable()
-class CollectiveDraftDto {
+class CollectiveDraftDto with Equatable {
   const CollectiveDraftDto({this.homeLossReport, this.thirdPartyGuardReport});
 
   factory CollectiveDraftDto.fromJson(Map<String, dynamic> json) =>
@@ -51,10 +62,13 @@ class CollectiveDraftDto {
   final String? thirdPartyGuardReport;
 
   Map<String, dynamic> toJson() => _$CollectiveDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [homeLossReport, thirdPartyGuardReport];
 }
 
 @JsonSerializable()
-class SeparationDraftDto {
+class SeparationDraftDto with Equatable {
   const SeparationDraftDto({
     this.adultInPrison = false,
     this.adolescentInInternment = false,
@@ -67,4 +81,7 @@ class SeparationDraftDto {
   final bool adolescentInInternment;
 
   Map<String, dynamic> toJson() => _$SeparationDraftDtoToJson(this);
+
+  @override
+  List<Object?> get props => [adultInPrison, adolescentInInternment];
 }

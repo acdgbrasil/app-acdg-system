@@ -1,13 +1,14 @@
+import 'package:core_contracts/core_contracts.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import '../analytics/computed_analytics_response.dart';
 import '../assessment/community_support_network_response.dart';
 import '../assessment/educational_status_response.dart';
 import '../assessment/health_status_response.dart';
 import '../assessment/housing_condition_response.dart';
-import '../assessment/socio_economic_response.dart';
 import '../assessment/social_health_summary_response.dart';
+import '../assessment/socio_economic_response.dart';
 import '../assessment/work_and_income_response.dart';
-import '../analytics/computed_analytics_response.dart';
 import '../care/appointment_response.dart';
 import '../care/ingress_info_response.dart';
 import '../protection/placement_history_response.dart';
@@ -25,7 +26,7 @@ import 'withdraw_info_response.dart';
 part 'patient_response.g.dart';
 
 @JsonSerializable()
-class PatientResponse {
+class PatientResponse with Equatable {
   const PatientResponse({
     required this.patientId,
     required this.personId,
@@ -97,4 +98,34 @@ class PatientResponse {
       json['initialDiagnoses'] ?? json['diagnoses'] ?? const [];
 
   Map<String, dynamic> toJson() => _$PatientResponseToJson(this);
+
+  @override
+  List<Object?> get props => [
+    patientId,
+    personId,
+    version,
+    status,
+    prRelationshipId,
+    dischargeInfo,
+    withdrawInfo,
+    personalData,
+    civilDocuments,
+    address,
+    socialIdentity,
+    familyMembers,
+    diagnoses,
+    housingCondition,
+    socioeconomicSituation,
+    workAndIncome,
+    educationalStatus,
+    healthStatus,
+    communitySupportNetwork,
+    socialHealthSummary,
+    appointments,
+    intakeInfo,
+    placementHistory,
+    violationReports,
+    referrals,
+    computedAnalytics,
+  ];
 }

@@ -47,6 +47,11 @@ Before considering ANY task complete, you MUST use the Dart MCP Server:
 9. **Testing** — `references/tests.md`
 10. **Best Practices** — `references/best_pratices.md`
 11. **Selectors & Connectors** — `references/selectors_connectors.md`
+12. **Contract A — Public API** — `references/contract_a_public_api.md` (Flutter ↔ BFF boundary; API Composition + Information Hiding; regra de import de `bff/shared/`)
+13. **Encapsulation Policy** — `handbook/architecture/ENCAPSULATION_POLICY.md` (regra sobre `_`: apenas em deps injetadas, helpers de arquivo e invariantes reais; preferir composition + SRP; sealed class para variações; H1–H9 incluindo extension type para brand types e H9 estado local em UI)
+14. **Pattern Matching Policy** — `handbook/architecture/PATTERN_MATCHING_POLICY.md` (4 padrões Dart 3 avançados + edge case P2b: State Matrix com Record+switch, if-case para validação cirúrgica, **P2b** `try/catch` sobre `fromJson` gerado quando DTO tem ≥10 campos ou PII-sensível em fronteira adapter — **sempre** `catch (e, st)` + `obs?.logError` + `_XxxParseError` privada, code review reprova `catch (_)` (ADR-019); Tear-offs em map/chain; tipo Never para funções inatingíveis)
+15. **Concurrency & Performance Policy** — `handbook/architecture/CONCURRENCY_AND_PERFORMANCE_POLICY.md` (C1 `Isolate.run` para desbloquear main thread; C2 class modifiers `base`/`final`/`interface`/`sealed` como firewall arquitetural; C3 FFI+Native Assets como horizon; paridade mental com Swift Actors)
+16. **Agent Testing Policy** — `handbook/architecture/AGENT_TESTING_POLICY.md` (Semantics como API pública da UI para agentes MCP; Design System expõe `semanticId` obrigatório em `EnvButton`/`EnvTextField`/etc.; specs `.md` per-feature em `packages/<feature>/specs/` como matriz de estados; Perfil A dev JIT vs Perfil B WASM horizon; orquestrador MCP fica para ticket futuro)
 
 When in doubt, the **ACDG handbook** prevails over generic Flutter guidance (as stated in CLAUDE.md).
 

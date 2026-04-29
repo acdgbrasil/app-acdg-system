@@ -4,8 +4,10 @@ import 'package:shared/src/domain/kernel/time_stamp.dart';
 import 'package:shared/src/utils/app_error.dart';
 import 'package:test/test.dart';
 
+/// Alinhado com `fix(domain)!: relax RGDocument validation` do backend Swift.
+/// RG não tem padrão nacional — aceitar alfanumérico 4–15 caracteres.
 void main() {
-  group('RGDocument - Validações', () {
+  group('RgDocument - Validações relaxadas (alinhamento Swift)', () {
     late TimeStamp validDate;
     late TimeStamp now;
 
@@ -14,11 +16,9 @@ void main() {
       now = TimeStamp.fromIso('2026-03-12T00:00:00.000Z').valueOrNull!;
     });
 
-    test('Deve criar RG válido (check digit numérico)', () {
-      // 1*2 + 2*3 + 3*4 + 4*5 + 5*6 + 6*7 + 7*8 + 8*9
-      // 2 + 6 + 12 + 20 + 30 + 42 + 56 + 72 = 240
-      // 240 % 11 = 9
-      // 11 - 9 = 2. Logo o check digit esperado é 2.
+    // ─── Felizes ───────────────────────────────────────────────────────────
+
+    test('aceita RG numérico clássico (9 dígitos) — formato SP antigo', () {
       final result = RgDocument.create(
         number: '12345678-2',
         issuingState: 'sp',
@@ -29,13 +29,69 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       final rg = result.valueOrNull!;
-      expect(rg.number, '123456782');
+      expect(rg.number, '123456782'); // compacto, sem separadores
       expect(rg.issuingState, 'SP');
       expect(rg.issuingAgency, 'SSP SP');
-      expect(rg.formattedNumber, '12345678-2');
     });
 
-    test('Deve rejeitar número vazio', () {
+    test('aceita RG alfanumérico (formato RJ, MG, etc.)', () {
+      final result = RgDocument.create(
+        number: 'MG12.345.678',
+        issuingState: 'MG',
+        issuingAgency: 'SSP MG',
+        issueDate: validDate,
+        now: now,
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull!.number, 'MG12345678');
+    });
+
+    test('aceita RG curto (4 caracteres, limite inferior)', () {
+      final result = RgDocument.create(
+        number: '1234',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+        now: now,
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull!.number, '1234');
+    });
+
+    test('aceita RG longo (15 caracteres, limite superior)', () {
+      final result = RgDocument.create(
+        number: '123456789012345',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+        now: now,
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull!.number, '123456789012345');
+    });
+
+    test(
+      'aceita RG com separadores variados — normaliza para compacto uppercase',
+      () {
+        final result = RgDocument.create(
+          number: 'mg-12.345 678',
+          issuingState: 'MG',
+          issuingAgency: 'SSP',
+          issueDate: validDate,
+          now: now,
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(result.valueOrNull!.number, 'MG12345678');
+      },
+    );
+
+    // ─── Tristes ───────────────────────────────────────────────────────────
+
+    test('rejeita número vazio com RGD-001', () {
       final result = RgDocument.create(
         number: ' ',
         issuingState: 'SP',
@@ -44,10 +100,11 @@ void main() {
         now: now,
       );
       expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-001');
+      final error = (result as Failure).error as AppError;
+      expect(error.code, 'RGD-001');
     });
 
-    test('Deve rejeitar formato inválido', () {
+    test('rejeita RG curto demais (3 caracteres) com RGD-005 + mask em PII', () {
       final result = RgDocument.create(
         number: '123',
         issuingState: 'SP',
@@ -56,22 +113,35 @@ void main() {
         now: now,
       );
       expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-005');
+      final error = (result as Failure).error as AppError;
+      expect(error.code, 'RGD-005');
+
+      // PII masking: context expõe apenas metadados seguros.
+      expect(error.context['providedLength'], 3);
+      expect(error.context.containsKey('number'), isFalse);
+      // safeContext carrega a versão mascarada para correlação em logs.
+      expect(error.safeContext?['maskedNumber'], '***');
     });
 
-    test('Deve rejeitar check digit inválido', () {
-      final result = RgDocument.create(
-        number: '12345678-3',
-        issuingState: 'SP',
-        issuingAgency: 'SSP',
-        issueDate: validDate,
-        now: now,
-      );
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-006');
-    });
+    test(
+      'rejeita caracteres inválidos (símbolos) com RGD-005 + mask coerente',
+      () {
+        final result = RgDocument.create(
+          number: 'ABC!@#123',
+          issuingState: 'SP',
+          issuingAgency: 'SSP',
+          issueDate: validDate,
+          now: now,
+        );
+        expect(result.isFailure, isTrue);
+        final error = (result as Failure).error as AppError;
+        expect(error.code, 'RGD-005');
+        // `!@#` não são separadores, ficam e invalidam.
+        expect(error.context['providedLength'], 9);
+      },
+    );
 
-    test('Deve rejeitar estado inválido', () {
+    test('rejeita UF inválida com RGD-002', () {
       final result = RgDocument.create(
         number: '12345678-2',
         issuingState: 'XX',
@@ -83,10 +153,9 @@ void main() {
       expect(((result as Failure).error as AppError).code, 'RGD-002');
     });
 
-    test('Deve rejeitar data no futuro', () {
-      final futureDate = TimeStamp.fromIso(
-        '2030-01-01T00:00:00.000Z',
-      ).valueOrNull!;
+    test('rejeita data no futuro com RGD-004', () {
+      final futureDate =
+          TimeStamp.fromIso('2030-01-01T00:00:00.000Z').valueOrNull!;
       final result = RgDocument.create(
         number: '12345678-2',
         issuingState: 'SP',
