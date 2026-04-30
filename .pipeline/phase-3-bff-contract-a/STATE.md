@@ -3,7 +3,7 @@
 ## Current Phase
 phase: implementation (Onda 4 — **EM ANDAMENTO**)
 agent: —
-status: **17/22 tickets done** | Onda 3 (A07-A15) completa | A23 closed 2026-04-29 (V2 canon estabelecido) | A15 closed 2026-04-29 via 3-agent BFF pipeline | A24 spillover criado (13 arquivos Flutter, fora do escopo BFF) | A16-v2 closed 2026-04-29 via 3-agent BFF pipeline (BREAK CHANGE — desktop rebuild iniciado) | **A17-v2 closed 2026-04-30** via 3-agent BFF pipeline (cache Drift + FTS5 + 5 Aggregate-Root contracts) | próximos: A18-v2 (sync + use_cases + facade — restaura apps/acdg_system/) → Onda 5 (A19-A21 gate)
+status: **17.33/22 tickets done** | Onda 3 (A07-A15) completa | A23 closed 2026-04-29 | A15 closed 2026-04-29 via 3-agent BFF pipeline | A24 spillover (13 arquivos Flutter, fora do escopo BFF) | A16-v2 closed 2026-04-29 (desktop rebuild iniciado) | A17-v2 closed 2026-04-30 (cache Drift + FTS5) | ADR-021 closed 2026-04-30 (Drift supersede Isar) | **A18-v2 split em 3 sub-tickets — A18a-v2 (sync infra) closed 2026-04-30** via 3-agent BFF pipeline (Outbox + 27 sealed mutations + SyncEngine + RetryPolicy + ConflictResolver) | próximos: A18b-v2 (use cases) → A18c-v2 (facade + shell rewire) → Onda 5 (A19-A21 gate)
 
 ## Completed tickets
 - [x] A01 — Contract A design (35 ações mapeadas, 9 sub-contracts, CONTRACT_A_SPEC.md produzido)
@@ -123,7 +123,10 @@ Princípios da skill `flutter-expert` aplicados ao BFF onde fazem sentido: Resul
 **Re-baselineado 2026-04-29:** desktop sendo reconstruído do zero espelhando o pattern web menos a camada HTTP. Drift permanece (não Isar — ADR-005 será atualizado).
 - [x] **A16-v2** — `remote/` (7 thin remotes + RemoteBase implementando sub-contracts via Dio) — CLOSED 2026-04-29
 - [x] **A17-v2** — `cache/` (Drift schema + 5 Aggregate-Root cache contracts + DAOs + FTS5 + impls) — CLOSED 2026-04-30
-- [ ] A18-v2 — `sync/` + `use_cases/` + `facade/` (SyncDatabase em arquivo SEPARADO `app_sync_queue.sqlite` para Outbox protection, SyncQueue tipado sealed-class, SyncEngine com optimistic locking via `WHERE id=X AND version=Y`, ~40 use cases orquestrando cache+remote+queue, facade público pra APP — restaura `apps/acdg_system/`)
+- [~] **A18-v2 — split em 3 sub-tickets sequenciais (2026-04-30):**
+  - [x] **A18a-v2** — sync/ infra (SyncDatabase em arquivo SEPARADO `app_sync_queue.sqlite`, Outbox table com composite index, 27 SyncMutation sealed-class final classes, OutboxRepository + DriftOutboxRepository, SyncEngine com state machine + single-flight drain + FIFO + sealed-switch dispatch, RetryPolicy exp backoff capped 30min, ConflictResolver — 286/286 GREEN, dart analyze zero) — **CLOSED 2026-04-30**
+  - [ ] A18b-v2 — use_cases/ (~42 orchestrators cache-first reads + optimistic write-through writes)
+  - [ ] A18c-v2 — facade/ + apps/acdg_system/ rewire (restaura compilação do shell)
 
 ### Wave 5 — Gate final (3 tickets)
 - [ ] A19 — dart analyze bff/ zero errors em src/

@@ -20,3 +20,20 @@ export 'src/cache/contracts/care_cache.dart';
 export 'src/cache/contracts/lookup_cache.dart';
 export 'src/cache/contracts/patients_cache.dart';
 export 'src/cache/contracts/protection_cache.dart';
+
+// Sync infra (A18a-v2). Public types for A18b/c to consume.
+// `DriftOutboxRepository` and `SyncDatabase` stay library-private — the
+// facade instantiates them internally.
+export 'src/sync/_shared/failures.dart' show SyncFailure;
+export 'src/sync/engine/conflict_resolver.dart'
+    show
+        CompletedDecision,
+        ConflictResolver,
+        DeadDecision,
+        RetriableDecision,
+        SyncDecision;
+export 'src/sync/engine/retry_policy.dart' show RetryPolicy;
+export 'src/sync/engine/sync_engine.dart' show DrainSummary, SyncEngine;
+export 'src/sync/outbox/outbox_repository.dart'
+    show OutboxEntry, OutboxRepository, OutboxStatus;
+export 'src/sync/outbox/sync_mutation.dart';
