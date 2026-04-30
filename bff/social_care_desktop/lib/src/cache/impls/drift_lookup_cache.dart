@@ -4,6 +4,7 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
 import '../_shared/cache_database.dart';
+import '../_shared/cached.dart';
 import '../_shared/failures.dart';
 import '../contracts/lookup_cache.dart';
 import '../daos/lookup_dao.dart';
@@ -13,16 +14,18 @@ import '../daos/lookup_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftLookupCache implements LookupCache {
-  DriftLookupCache(CacheDatabase db)
+  DriftLookupCache(CacheDatabase db, {DateTime Function()? now})
     : _dao = LookupDao(db),
+      _now = now ?? DateTime.now,
       _ready = db.customSelect('SELECT 1').get();
 
   final LookupDao _dao;
+  final DateTime Function() _now;
   final Future<Object?> _ready;
 
   // ── Items ────────────────────────────────────────────────────────────
   @override
-  Future<Result<LookupItemResponse?>> findItemById(
+  Future<Result<Cached<LookupItemResponse>?>> findItemById(
     String tableName,
     String itemId,
   ) async {
@@ -31,12 +34,19 @@ class DriftLookupCache implements LookupCache {
       final row = await _dao.findItemById(tableName, itemId);
       if (row == null) return const Success(null);
       return Success(
-        LookupItemResponse.fromJson(
-          jsonDecode(row.payload) as Map<String, dynamic>,
+        Cached(
+          dto: LookupItemResponse.fromJson(
+            jsonDecode(row.payload) as Map<String, dynamic>,
+          ),
+          cachedAt: row.cachedAt,
+          version: row.version,
         ),
       );
     } catch (e, st) {
-      return Failure<LookupItemResponse?>(CacheFailure(e), stackTrace: st);
+      return Failure<Cached<LookupItemResponse>?>(
+        CacheFailure(e),
+        stackTrace: st,
+      );
     }
   }
 
@@ -93,7 +103,7 @@ class DriftLookupCache implements LookupCache {
         tableName: tableName,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);
@@ -126,7 +136,7 @@ class DriftLookupCache implements LookupCache {
 
   // ── Requests ─────────────────────────────────────────────────────────
   @override
-  Future<Result<LookupRequestResponse?>> findRequestById(
+  Future<Result<Cached<LookupRequestResponse>?>> findRequestById(
     String requestId,
   ) async {
     try {
@@ -134,12 +144,19 @@ class DriftLookupCache implements LookupCache {
       final row = await _dao.findRequestById(requestId);
       if (row == null) return const Success(null);
       return Success(
-        LookupRequestResponse.fromJson(
-          jsonDecode(row.payload) as Map<String, dynamic>,
+        Cached(
+          dto: LookupRequestResponse.fromJson(
+            jsonDecode(row.payload) as Map<String, dynamic>,
+          ),
+          cachedAt: row.cachedAt,
+          version: row.version,
         ),
       );
     } catch (e, st) {
-      return Failure<LookupRequestResponse?>(CacheFailure(e), stackTrace: st);
+      return Failure<Cached<LookupRequestResponse>?>(
+        CacheFailure(e),
+        stackTrace: st,
+      );
     }
   }
 
@@ -185,7 +202,7 @@ class DriftLookupCache implements LookupCache {
         tableName: dto.tableName,
         status: dto.status,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);

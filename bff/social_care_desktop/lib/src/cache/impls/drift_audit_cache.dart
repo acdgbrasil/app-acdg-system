@@ -13,11 +13,13 @@ import '../daos/audit_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftAuditCache implements AuditCache {
-  DriftAuditCache(CacheDatabase db)
+  DriftAuditCache(CacheDatabase db, {DateTime Function()? now})
     : _dao = AuditDao(db),
+      _now = now ?? DateTime.now,
       _ready = db.customSelect('SELECT 1').get();
 
   final AuditDao _dao;
+  final DateTime Function() _now;
   final Future<Object?> _ready;
 
   @override
@@ -81,7 +83,7 @@ class DriftAuditCache implements AuditCache {
         patientId: patientId,
         eventType: dto.eventType,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);

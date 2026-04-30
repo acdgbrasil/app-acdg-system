@@ -13,11 +13,13 @@ import '../daos/care_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftCareCache implements CareCache {
-  DriftCareCache(CacheDatabase db)
+  DriftCareCache(CacheDatabase db, {DateTime Function()? now})
     : _dao = CareDao(db),
+      _now = now ?? DateTime.now,
       _ready = db.customSelect('SELECT 1').get();
 
   final CareDao _dao;
+  final DateTime Function() _now;
   final Future<Object?> _ready;
 
   @override
@@ -76,7 +78,7 @@ class DriftCareCache implements CareCache {
         patientId: patientId,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);

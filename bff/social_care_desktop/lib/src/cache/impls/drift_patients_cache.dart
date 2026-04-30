@@ -4,6 +4,7 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
 import '../_shared/cache_database.dart';
+import '../_shared/cached.dart';
 import '../_shared/failures.dart';
 import '../contracts/patients_cache.dart';
 import '../daos/patient_dao.dart';
@@ -24,42 +25,54 @@ import '../daos/patient_dao.dart';
 /// instead of `Failure`. The warm-up is awaited at the start of every
 /// public method.
 class DriftPatientsCache implements PatientsCache {
-  DriftPatientsCache(CacheDatabase db)
+  DriftPatientsCache(CacheDatabase db, {DateTime Function()? now})
     : _dao = PatientDao(db),
+      _now = now ?? DateTime.now,
       _ready = db.customSelect('SELECT 1').get();
 
   final PatientDao _dao;
+  final DateTime Function() _now;
   final Future<Object?> _ready;
 
   @override
-  Future<Result<PatientResponse?>> findById(String patientId) async {
+  Future<Result<Cached<PatientResponse>?>> findById(String patientId) async {
     try {
       await _ready;
       final row = await _dao.findPatientById(patientId);
       if (row == null) return const Success(null);
       return Success(
-        PatientResponse.fromJson(
-          jsonDecode(row.payload) as Map<String, dynamic>,
+        Cached(
+          dto: PatientResponse.fromJson(
+            jsonDecode(row.payload) as Map<String, dynamic>,
+          ),
+          cachedAt: row.cachedAt,
+          version: row.version,
         ),
       );
     } catch (e, st) {
-      return Failure<PatientResponse?>(CacheFailure(e), stackTrace: st);
+      return Failure<Cached<PatientResponse>?>(CacheFailure(e), stackTrace: st);
     }
   }
 
   @override
-  Future<Result<PatientResponse?>> findByPersonId(String personId) async {
+  Future<Result<Cached<PatientResponse>?>> findByPersonId(
+    String personId,
+  ) async {
     try {
       await _ready;
       final row = await _dao.findPatientByPersonId(personId);
       if (row == null) return const Success(null);
       return Success(
-        PatientResponse.fromJson(
-          jsonDecode(row.payload) as Map<String, dynamic>,
+        Cached(
+          dto: PatientResponse.fromJson(
+            jsonDecode(row.payload) as Map<String, dynamic>,
+          ),
+          cachedAt: row.cachedAt,
+          version: row.version,
         ),
       );
     } catch (e, st) {
-      return Failure<PatientResponse?>(CacheFailure(e), stackTrace: st);
+      return Failure<Cached<PatientResponse>?>(CacheFailure(e), stackTrace: st);
     }
   }
 
@@ -125,7 +138,7 @@ class DriftPatientsCache implements PatientsCache {
         personId: dto.personId,
         status: dto.status,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);
@@ -149,7 +162,7 @@ class DriftPatientsCache implements PatientsCache {
         primaryDiagnosis: dto.primaryDiagnosis,
         status: dto.status,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);

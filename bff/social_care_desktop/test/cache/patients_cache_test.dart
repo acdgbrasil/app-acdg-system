@@ -6,9 +6,9 @@
 ///
 /// ── Surface under test ────────────────────────────────────────────────
 ///   * `findById(String patientId)`
-///       → `Future<Result<PatientResponse?>>`
+///       → `Future<Result<Cached<PatientResponse>?>>`
 ///   * `findByPersonId(String personId)`
-///       → `Future<Result<PatientResponse?>>`
+///       → `Future<Result<Cached<PatientResponse>?>>`
 ///   * `listSummaries({String? status, String? cursor, int? limit})`
 ///       → `Future<Result<List<PatientSummaryResponse>>>`
 ///   * `searchSummaries(String term)`
@@ -49,9 +49,9 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
-// ignore: uri_does_not_exist
+// ignore_for_file: implementation_imports
+import 'package:social_care_desktop/src/cache/_shared/cached.dart';
 import 'package:social_care_desktop/src/cache/contracts/patients_cache.dart';
-// ignore: uri_does_not_exist
 import 'package:social_care_desktop/src/cache/impls/drift_patients_cache.dart';
 
 import '../_test_uuids.dart';
@@ -133,16 +133,16 @@ void main() {
         switch (found) {
           case Success(:final value):
             expect(value, isNotNull);
-            expect(value!.patientId, equals(kPatientUuid));
-            expect(value.personId, equals(kPersonUuid));
-            expect(value.status, equals('admitted'));
-            expect(value.prRelationshipId, equals(kLookupItemUuid));
-            expect(value.personalData?.firstName, equals('Maria'));
-            expect(value.personalData?.lastName, equals('Silva'));
-            expect(value.personalData?.motherName, equals('Joana Silva'));
-            expect(value.personalData?.sex, equals('F'));
-            expect(value.personalData?.birthDate, equals('1990-05-15'));
-            expect(value.personalData?.socialName, equals('Mari'));
+            expect(value!.dto.patientId, equals(kPatientUuid));
+            expect(value.dto.personId, equals(kPersonUuid));
+            expect(value.dto.status, equals('admitted'));
+            expect(value.dto.prRelationshipId, equals(kLookupItemUuid));
+            expect(value.dto.personalData?.firstName, equals('Maria'));
+            expect(value.dto.personalData?.lastName, equals('Silva'));
+            expect(value.dto.personalData?.motherName, equals('Joana Silva'));
+            expect(value.dto.personalData?.sex, equals('F'));
+            expect(value.dto.personalData?.birthDate, equals('1990-05-15'));
+            expect(value.dto.personalData?.socialName, equals('Mari'));
           case Failure(:final error):
             fail('Expected Success on findById after upsert, got $error');
         }
@@ -170,7 +170,8 @@ void main() {
 
         switch (found) {
           case Success(:final value):
-            expect(value!.status, equals('discharged'));
+            expect(value!.dto.status, equals('discharged'));
+            expect(value.version, equals(2));
           case Failure():
             fail('expected Success after re-upsert');
         }
@@ -181,17 +182,16 @@ void main() {
         () async {
           await cache.upsertPatient(fullPatient(), version: 7);
 
-          // The cache must expose the version it stored. The contract
-          // promises round-trip — implementer chooses how to surface it
-          // (e.g. through a `findByIdWithMeta` or via the DTO's own
-          // `version` field). This test asserts the simpler path: the
-          // DTO's `version` survives.
+          // The cache exposes the version via the [Cached] envelope.
+          // Both the DTO's own `version` (round-trip from JSON) and the
+          // envelope's `version` (the row's metadata column) must agree.
           await cache.upsertPatient(fullPatient(version: 7), version: 7);
 
           final found = await cache.findById(kPatientUuid);
           switch (found) {
             case Success(:final value):
-              expect(value!.version, equals(7));
+              expect(value!.dto.version, equals(7));
+              expect(value.version, equals(7));
             case Failure():
               fail('expected Success');
           }
@@ -209,7 +209,7 @@ void main() {
         switch (found) {
           case Success(:final value):
             expect(value, isNotNull);
-            expect(value!.patientId, equals(kPatientUuid));
+            expect(value!.dto.patientId, equals(kPatientUuid));
           case Failure():
             fail('expected Success');
         }
@@ -474,7 +474,7 @@ void main() {
 
         final result = await cache.findById(kPatientUuid);
 
-        expect(result, isA<Failure<PatientResponse?>>());
+        expect(result, isA<Failure<Cached<PatientResponse>?>>());
       });
     });
   });

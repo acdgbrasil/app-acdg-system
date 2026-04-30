@@ -13,11 +13,13 @@ import '../daos/protection_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftProtectionCache implements ProtectionCache {
-  DriftProtectionCache(CacheDatabase db)
+  DriftProtectionCache(CacheDatabase db, {DateTime Function()? now})
     : _dao = ProtectionDao(db),
+      _now = now ?? DateTime.now,
       _ready = db.customSelect('SELECT 1').get();
 
   final ProtectionDao _dao;
+  final DateTime Function() _now;
   final Future<Object?> _ready;
 
   // ── Referrals ────────────────────────────────────────────────────────
@@ -71,7 +73,7 @@ class DriftProtectionCache implements ProtectionCache {
         patientId: patientId,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);
@@ -150,7 +152,7 @@ class DriftProtectionCache implements ProtectionCache {
         patientId: patientId,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);
@@ -206,7 +208,7 @@ class DriftProtectionCache implements ProtectionCache {
       await _dao.upsertPlacementHistory(
         patientId: patientId,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: DateTime.now(),
+        cachedAt: _now(),
         version: version,
       );
       return const Success(null);

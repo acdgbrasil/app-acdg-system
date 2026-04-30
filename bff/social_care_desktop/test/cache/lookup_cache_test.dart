@@ -9,7 +9,7 @@
 /// ── Surface under test ────────────────────────────────────────────────
 /// Lookup items (per tableName, multiple rows):
 ///   * `findItemById(String tableName, String itemId)`
-///       → `Future<Result<LookupItemResponse?>>`
+///       → `Future<Result<Cached<LookupItemResponse>?>>`
 ///   * `listItems(String tableName)`
 ///       → `Future<Result<List<LookupItemResponse>>>` (B-Tree on tableName)
 ///   * `listAllTables()`
@@ -23,7 +23,7 @@
 ///
 /// Lookup requests (governance approval workflow):
 ///   * `findRequestById(String requestId)`
-///       → `Future<Result<LookupRequestResponse?>>`
+///       → `Future<Result<Cached<LookupRequestResponse>?>>`
 ///   * `listRequests({String? status, String? tableName, int? limit})`
 ///       → `Future<Result<List<LookupRequestResponse>>>`
 ///   * `upsertRequest(LookupRequestResponse dto, {required int version})`
@@ -41,9 +41,9 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
-// ignore: uri_does_not_exist
+// ignore_for_file: implementation_imports
+import 'package:social_care_desktop/src/cache/_shared/cached.dart';
 import 'package:social_care_desktop/src/cache/contracts/lookup_cache.dart';
-// ignore: uri_does_not_exist
 import 'package:social_care_desktop/src/cache/impls/drift_lookup_cache.dart';
 
 import '../_test_uuids.dart';
@@ -109,9 +109,10 @@ void main() {
         switch (found) {
           case Success(:final value):
             expect(value, isNotNull);
-            expect(value!.id, equals(kLookupItemUuid));
-            expect(value.codigo, equals('BR'));
-            expect(value.descricao, equals('Brasileiro'));
+            expect(value!.dto.id, equals(kLookupItemUuid));
+            expect(value.dto.codigo, equals('BR'));
+            expect(value.dto.descricao, equals('Brasileiro'));
+            expect(value.version, equals(1));
           case Failure():
             fail('expected Success');
         }
@@ -290,12 +291,13 @@ void main() {
         switch (found) {
           case Success(:final value):
             expect(value, isNotNull);
-            expect(value!.id, equals(kLookupRequestUuid));
-            expect(value.tableName, equals('nationalities'));
-            expect(value.codigo, equals('NEW'));
-            expect(value.justificativa, equals('Patient is dual-citizen'));
-            expect(value.status, equals('pending'));
-            expect(value.requestedBy, equals(kMemberUuid));
+            expect(value!.dto.id, equals(kLookupRequestUuid));
+            expect(value.dto.tableName, equals('nationalities'));
+            expect(value.dto.codigo, equals('NEW'));
+            expect(value.dto.justificativa, equals('Patient is dual-citizen'));
+            expect(value.dto.status, equals('pending'));
+            expect(value.dto.requestedBy, equals(kMemberUuid));
+            expect(value.version, equals(1));
           case Failure():
             fail('expected Success');
         }
@@ -409,7 +411,7 @@ void main() {
           kLookupItemUuid,
         );
 
-        expect(result, isA<Failure<LookupItemResponse?>>());
+        expect(result, isA<Failure<Cached<LookupItemResponse>?>>());
       });
     });
   });

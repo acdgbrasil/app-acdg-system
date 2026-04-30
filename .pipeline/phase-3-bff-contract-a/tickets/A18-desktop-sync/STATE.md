@@ -14,7 +14,7 @@ A18 original ("sync/ SyncEngine com DTOs novos") foi expandido durante o re-base
 | Sub-ticket | Layer | LoC est. | Files | Tests | Status |
 |---|---|---:|---:|---:|---|
 | **A18a-v2** | Sync infra (Database + Queue + Engine) | ~1500 (real: 1824) | ~15 (real: 8 + 2 codegen) | ~50 (real: 52) | **CLOSED 2026-04-30 — APPROVED Round 1** |
-| A18b-v2 | Use cases (~42 orquestradores cache+remote+queue) | ~2000 | ~42 | ~120 | queued (após A18a) |
+| **A18b-v2** | Use cases (~42 orquestradores cache+remote+queue) | ~2000 (real: ~1500 + Cached<T> refactor) | ~42 (real: 42 use cases + 5 shared) | ~120 (real: 90) | **CLOSED 2026-04-30 — APPROVED Round 1** |
 | A18c-v2 | Facade pública + apps/acdg_system/ rewire | ~600 | ~8 + 7 shell rewires | ~30 | queued (após A18b) |
 
 Cada sub-ticket roda 3-agent pipeline self-contained (test-writer → flutter-bff-implementer → flutter-code-reviewer), com revisão intercalada.
@@ -97,5 +97,5 @@ Sem integration tests novos. Phase 6+ adiciona.
 
 ## Status
 - **A18a-v2 (sync infra) CLOSED 2026-04-30** — APPROVED Round 1, 286/286 GREEN, dart analyze zero
-- A18b-v2 (use cases) — pending
+- **A18b-v2 (use cases) CLOSED 2026-04-30** — APPROVED Round 1, 376/376 GREEN, dart analyze zero (4 NICE_TO_HAVE deferred to A18c sweep)
 - A18c-v2 (facade + shell rewire) — pending
