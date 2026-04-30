@@ -144,7 +144,7 @@ flowchart LR
     subgraph Offline["Modo Offline"]
         Action2["User Action"] --> VM2["ViewModel"]
         VM2 --> UC2["UseCase"]
-        UC2 --> Queue["SyncQueue\n(Isar)\ntimestamp + payload"]
+        UC2 --> Queue["SyncQueue\n(Drift, ver ADR-021)\ntimestamp + payload"]
     end
 
     subgraph Sync["Reconexao"]

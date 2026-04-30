@@ -1,7 +1,9 @@
 # Arquitetura Completa — Frontend ACDG (Conecta Raros)
 
-> **Stack:** Flutter/Dart (Web WASM + Desktop Nativo) | BFF Dart AOT (EDD + DDD) | Isar (Offline)
+> **Stack:** Flutter/Dart (Web WASM + Desktop Nativo) | BFF Dart AOT (EDD + DDD) | **Drift** (Offline — ver ADR-021, supersede ADR-005)
 > **Idioma:** Code EN / UI PT-BR
+>
+> **Nota de manutenção (2026-04-30):** as menções inline a "Isar" no prose deste documento (linhas 45, 247, 266-267, 385) refletem a arquitetura original do ADR-005 e estão desatualizadas. A engine canônica é **Drift** desde A17-v2 (commit `891814a`). Ver `DECISIONS.md` ADR-021 para o registro formal do pivot. Updates inline vão ocorrer incrementalmente conforme cada seção for tocada em fases futuras.
 
 ---
 

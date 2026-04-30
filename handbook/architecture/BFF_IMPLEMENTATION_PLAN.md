@@ -42,10 +42,10 @@ bff/
 │   │       └── validation/              # Regras de negócio (ADR-014)
 │
 ├── social_care_desktop/                 # BFF Nativo (Offline First)
-│   ├── lib/
-│   │   └── src/
-│   │       ├── sync/                    # Gerenciado por UseCases no App
-│   │       └── storage/                 # Isar Repositories
+│   ├── lib/                             # NOTA 2026-04-30: estrutura abaixo está desatualizada.
+│   │   └── src/                         # Onda 4 (A16-v2/A17-v2/A18-v2) reorganizou em remote/, cache/, sync/, use_cases/, facade/.
+│   │       ├── sync/                    # Drift (ADR-021, supersede ADR-005). Ver SESSION_2026_04_30_A17_V2_DESKTOP_CACHE.md.
+│   │       └── storage/                 # Drift DAOs por bounded context (5 caches: Patients, Care, Protection, Audit, Lookup)
 │
 └── social_care_web/                     # BFF Web (Darto HTTP)
     ├── lib/
