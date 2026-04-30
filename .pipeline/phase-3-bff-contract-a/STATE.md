@@ -1,9 +1,9 @@
 # Pipeline State: phase-3-bff-contract-a
 
 ## Current Phase
-phase: implementation (Onda 3 em andamento)
+phase: implementation (Onda 4 — **EM ANDAMENTO**)
 agent: —
-status: 14/22 tickets done | A15 paused at Wave 4.5 awaiting A23 | A23 W0+W1+W2 complete (Patient + Family/Audit) | next is A23 W3 (Assessment 7 fichas)
+status: **16/22 tickets done** | Onda 3 (A07-A15) completa | A23 closed 2026-04-29 (V2 canon estabelecido) | A15 closed 2026-04-29 via 3-agent BFF pipeline | A24 spillover criado (13 arquivos Flutter, fora do escopo BFF) | **A16-v2 closed 2026-04-29** via 3-agent BFF pipeline (BREAK CHANGE — desktop rebuild iniciado) | próximos: A17-v2 (cache Drift) → A18-v2 (sync + use_cases + facade) → Onda 5 (A19-A21 gate)
 
 ## Completed tickets
 - [x] A01 — Contract A design (35 ações mapeadas, 9 sub-contracts, CONTRACT_A_SPEC.md produzido)
@@ -23,7 +23,8 @@ status: 14/22 tickets done | A15 paused at Wave 4.5 awaiting A23 | A23 W0+W1+W2 
 - [x] A12 — Protection (3 endpoints: referrals + violations + placement-history) + ProtectionHandler rewrite; 100 tests GREEN (590 canônico total); **1ª coexistência P2+P2b no mesmo handler** (carrier: signature do Intent); novo invariante pinado `keys.toSet() == {'patientId'}` no breadcrumb `.received` para DTOs com sub-DTOs PII-densos; UseCase rewrap `Result<void>` → `Result<StandardResponse<void>>`
 - [x] A13 — Lookup (8 endpoints governance) + LookupHandler rewrite (maior do monorepo com 8 rotas); 147 tests GREEN (638 canônico total); **estreia do P2-tolerant** (parse total sem ParseError, sem 400 code) para UpdateLookupItem (0 required); padrão `throw StateError('parseFromBody is total')` no branch Failure defensivo; wiring factory+field+Cascade consolidado como zero-cost reusável para A14/A15
 - [x] A14 — Lookup batch composto (1 endpoint: `GET /lookups?tables=a,b,c`) + 9th rota no LookupHandler; 26 tests GREEN (844 total no BFF Web, 2 falhas pré-existentes A21); **estreia do query-only parse strategy** (`parseFromQuery(Map<String, String>)` espelha `parseFromBody`, primeiro intent não-body do canon); cap 20 tabelas (~54% headroom sobre `AllowedLookupTables.swift` com 13); CSV tolerante (split→trim→filter, alinhado com `people-context/env.ts:31-34`); error-code convention pinada no dartdoc do handler — `INVALID_*` (BFF-local parse 400) vs `<PREFIX>-<NNN>` (BackendError passthrough) como namespaces separados por design; elimina o `Future.wait([...])` em `PatientRegistrationViewModel` (consumido no app na Fase 4)
-- [/] A15 — Team (9 endpoints, sem `/people/by-cpf/*` e `/team/people/*`); estreia do **query-tolerant** (variante de query-only com TODOS os params opcionais — `ListTeamIntent`); 9 intents + 9 use cases + 1 handler + 1 handler test; +102 tests GREEN (946 total) ao pausar; **PAUSADO em Wave 4.5** após descoberta de route bleed em `/team/<id>` (qualquer 2-seg como `id`, gerando 500 ao backend para URLs legadas tipo `/team/people`); decisão (usuário, 2026-04-28): "validação de UUID em path params é regra global, não escolha por feature" → **bloqueia em A23** (canon UUID path validation + retrofit A07-A14); A15 retoma APÓS A23 fechar para aplicar o helper canônico aos 9 Team intents; documentado test cheat (REGRA #2 do CLAUDE.md) em `team_handler_test.dart` grupo `topology hiding` que A15-resume corrige
+- [x] A15 — Team (9 endpoints, sem `/people/by-cpf/*` e `/team/people/*`); estreia do **query-tolerant** (`ListTeamIntent`); 9 intents + 9 use cases + 1 handler; pausado em W4.5 (2026-04-28) por route bleed em `/team/<id>`; **RETOMADO E CLOSED em 2026-04-29** via 3-agent BFF pipeline (test-writer → flutter-bff-implementer → flutter-code-reviewer); 7 intents path-UUID retrofitted ao canon V2 do A23 (4×A + 2×B + 1×C-P2); test cheat REGRA #2 corrigido textbook-style (`GET /team/people → 400 INVALID_GET_TEAM_MEMBER_PARAMS`); reviewer APPROVED zero MUST_FIX zero SHOULD_FIX; 1071 GREEN / 2 FAIL pré-existentes A21 (+45 net vs baseline A23 W4 1026)
+- [x] **A16-v2 — Desktop Remote (BREAK CHANGE) — closed 2026-04-29** via 3-agent BFF pipeline. Original A16 escopado como refactor; **re-baselineado como rebuild break-change** após decisão arquitetural do usuário ("vamos considerar que tudo do desktop estava ERRADO"). Desktop agora espelha o pattern web (A07-A15) menos a camada HTTP. Deletada god-class `SocialCareBffRemote` (917 LoC, 50+ métodos) + `storage/` + `sync/` + tests legados (11 arquivos deletados). Construídas 8 impl novas (972 LoC: 1 `RemoteBase` + 7 thin remotes implementando sub-contracts: Registry, Assessment, Care, Protection, Audit, Lookup, Health). 153 tests RED → 153/153 GREEN. dart analyze zero issues. Reviewer APPROVED Round 1, zero MUST_FIX zero SHOULD_FIX. **Decisão Drift-stays:** ADR-005 prescreve Isar mas usuário decidiu manter Drift (Isar abandonado + SPM-incompatível); ADR-005 será atualizado para v2 em follow-up. **Out-of-scope autorizado:** `apps/acdg_system/` quebra contra novos exports — A18-v2 (facade) restaura.
 
 ## Onda 2 — FECHADA (9/21 tickets)
 bff/shared 100% modernizado e arquiteturalmente limpo:
@@ -115,12 +116,13 @@ Princípios da skill `flutter-expert` aplicados ao BFF onde fazem sentido: Resul
 - [x] A12 — Protection (Violation, Referral, PlacementHistory)
 - [x] A13 — Lookup (get, create, update, toggle, requests)
 - [x] A14 — Lookup batch composto (GET /api/lookups?tables=...)
-- [/] A15 — Team (sem /people/by-cpf/* e /team/people/*) — **PAUSED at W4.5, blocked by A23**
+- [x] A15 — Team (sem /people/by-cpf/* e /team/people/*) — **CLOSED 2026-04-29 via 3-agent BFF pipeline**
 
-### Wave 4 — bff/social_care_desktop/ (3 tickets)
-- [ ] A16 — remote/ consome sub-contracts
-- [ ] A17 — storage/ alinhado com payloads novos
-- [ ] A18 — sync/ SyncEngine com DTOs novos
+### Wave 4 — bff/social_care_desktop/ (3 tickets — BREAK CHANGE rebuild)
+**Re-baselineado 2026-04-29:** desktop sendo reconstruído do zero espelhando o pattern web menos a camada HTTP. Drift permanece (não Isar — ADR-005 será atualizado).
+- [x] **A16-v2** — `remote/` (7 thin remotes + RemoteBase implementando sub-contracts via Dio) — CLOSED 2026-04-29
+- [ ] A17-v2 — `cache/` (Drift schema rebuild + 7 DAO-backed cache impls por bounded context)
+- [ ] A18-v2 — `sync/` + `use_cases/` + `facade/` (SyncQueue tipado, SyncEngine, ~40 use cases orquestrando cache+remote+queue, facade público pra APP)
 
 ### Wave 5 — Gate final (3 tickets)
 - [ ] A19 — dart analyze bff/ zero errors em src/

@@ -11,6 +11,8 @@ environment:
 dependencies:
   shared:
     path: ../shared
+  core_contracts:
+    path: ../../packages/core_contracts
   network:
     path: ../../packages/network
   persistence:
