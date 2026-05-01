@@ -690,11 +690,23 @@ class SocialCareDesktop {
   /// `':memory:'` (canonical SQLite in-memory marker) yields
   /// [NativeDatabase.memory()] for tests; any other string is treated
   /// as a real disk path.
+  ///
+  /// **T1.1 (2026-05-01):** disk-backed databases are opened via
+  /// [NativeDatabase.createInBackground], which spawns a dedicated
+  /// background isolate that owns the SQLite handle. The main isolate
+  /// then communicates with it via `SendPort` — every Drift query runs
+  /// off the UI/event-loop thread.
+  ///
+  /// Honors ADR-021's cited rationale (Drift's first-class multi-isolate
+  /// support) which previously was paid-for-but-unused in production.
+  /// In-memory databases stay on the calling isolate by design — Drift
+  /// has no `createInBackground` for `NativeDatabase.memory()` and tests
+  /// rely on synchronous in-isolate state.
   static QueryExecutor _openDriftExecutor(String filePath) {
     if (filePath == _inMemoryMarker) {
       return NativeDatabase.memory();
     }
-    return NativeDatabase(File(filePath));
+    return NativeDatabase.createInBackground(File(filePath));
   }
 
   /// True if any [ConnectivityResult] in the list is non-`none`. The
