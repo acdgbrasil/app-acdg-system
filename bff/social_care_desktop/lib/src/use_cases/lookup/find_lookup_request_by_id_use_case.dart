@@ -11,7 +11,13 @@ class FindLookupRequestByIdUseCase {
   FindLookupRequestByIdUseCase({
     required LookupCache cache,
     required LookupContract remote,
+
+    /// Param accepted for Pattern 1 uniformity (H3 — handbook
+    /// `DECISION_HEURISTICS.md`); used when backend exposes list endpoint
+    /// in Phase 6+.
     required Clock clock,
+
+    /// See above re: Phase 6+ usage.
     Duration staleAfter = const Duration(minutes: 5),
   }) : _cache = cache;
 

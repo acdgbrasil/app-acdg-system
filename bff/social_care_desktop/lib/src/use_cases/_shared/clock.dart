@@ -1,13 +1,23 @@
-/// Minimal injectable clock so use cases can compute staleness +
+/// Minimal injectable clock interface so use cases can compute staleness +
 /// mutation `createdAt` without colliding with wall-clock drift in CI.
 ///
-/// Production code wires `const Clock()`; tests substitute `FakeClock`
-/// in `test/use_cases/_test_helpers.dart` to advance time
-/// deterministically.
+/// Per H6 in `handbook/principles/DECISION_HEURISTICS.md`, [Clock] is an
+/// `abstract interface class` — substituted ONLY via `implements`. This
+/// prevents accidental fallback to real `DateTime.now()` via `super.now()`
+/// in test fakes.
+///
+/// Production code wires `const SystemClock()`; tests substitute
+/// `FakeClock implements Clock` to advance time deterministically.
 library;
 
-class Clock {
-  const Clock();
+abstract interface class Clock {
+  DateTime now();
+}
 
+/// Wall-clock implementation. The default for production wiring.
+class SystemClock implements Clock {
+  const SystemClock();
+
+  @override
   DateTime now() => DateTime.now();
 }

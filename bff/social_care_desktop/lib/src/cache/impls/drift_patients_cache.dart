@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/cached.dart';
 import '../_shared/failures.dart';
@@ -25,13 +26,13 @@ import '../daos/patient_dao.dart';
 /// instead of `Failure`. The warm-up is awaited at the start of every
 /// public method.
 class DriftPatientsCache implements PatientsCache {
-  DriftPatientsCache(CacheDatabase db, {DateTime Function()? now})
+  DriftPatientsCache(CacheDatabase db, {Clock? clock})
     : _dao = PatientDao(db),
-      _now = now ?? DateTime.now,
+      _clock = clock ?? const SystemClock(),
       _ready = db.customSelect('SELECT 1').get();
 
   final PatientDao _dao;
-  final DateTime Function() _now;
+  final Clock _clock;
   final Future<Object?> _ready;
 
   @override
@@ -138,7 +139,7 @@ class DriftPatientsCache implements PatientsCache {
         personId: dto.personId,
         status: dto.status,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);
@@ -162,7 +163,7 @@ class DriftPatientsCache implements PatientsCache {
         primaryDiagnosis: dto.primaryDiagnosis,
         status: dto.status,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);

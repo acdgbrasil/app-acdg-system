@@ -4,7 +4,14 @@
 /// A17-v2 (Onda 4) — adds 5 cache contracts (Aggregate-Root aligned)
 /// implemented over Drift in `_shared/cache_database.dart`. Impls and
 /// the orchestrating facade are wired by A18-v2.
+/// A18c-v2 — adds `SocialCareDesktop` facade entry point + 7 sub-facades.
 library;
+
+// Re-export the `Result<T>` ADT so consumers of this library don't need
+// a separate `core_contracts` import to pattern-match on the public
+// surface. The facade's public API IS `Result<T>`; the ADT goes with it.
+export 'package:core_contracts/core_contracts.dart'
+    show Failure, Result, Success;
 
 export 'src/remote/assessment_remote.dart';
 export 'src/remote/audit_remote.dart';
@@ -45,7 +52,6 @@ export 'src/cache/_shared/cached.dart';
 export 'src/use_cases/_shared/clock.dart';
 export 'src/use_cases/_shared/stale_policy.dart';
 export 'src/use_cases/_shared/use_case_failures.dart';
-export 'src/use_cases/_shared/version_extractor.dart';
 
 // Use cases — Registry (13).
 export 'src/use_cases/registry/admit_patient_use_case.dart';
@@ -102,3 +108,15 @@ export 'src/use_cases/lookup/update_lookup_item_use_case.dart';
 // Use cases — Health (2).
 export 'src/use_cases/health/check_health_use_case.dart';
 export 'src/use_cases/health/check_ready_use_case.dart';
+
+// Facade entry point + 7 sub-facades (A18c-v2). The public surface that
+// the shell consumes — `SocialCareDesktop.create()` builds the full
+// composition; sub-facades are accessed via `desktop.registry`, etc.
+export 'src/facade/social_care_desktop.dart' show SocialCareDesktop;
+export 'src/facade/sub_facades/assessment_facade.dart' show AssessmentFacade;
+export 'src/facade/sub_facades/audit_facade.dart' show AuditFacade;
+export 'src/facade/sub_facades/care_facade.dart' show CareFacade;
+export 'src/facade/sub_facades/health_facade.dart' show HealthFacade;
+export 'src/facade/sub_facades/lookup_facade.dart' show LookupFacade;
+export 'src/facade/sub_facades/protection_facade.dart' show ProtectionFacade;
+export 'src/facade/sub_facades/registry_facade.dart' show RegistryFacade;

@@ -3,7 +3,7 @@
 ## Current Phase
 phase: implementation (Onda 4 — **EM ANDAMENTO**)
 agent: —
-status: **17.66/22 tickets done** | Onda 3 (A07-A15) completa | A23 closed 2026-04-29 | A15 closed 2026-04-29 via 3-agent BFF pipeline | A24 spillover (13 arquivos Flutter, fora do escopo BFF) | A16-v2 closed 2026-04-29 (desktop rebuild iniciado) | A17-v2 closed 2026-04-30 (cache Drift + FTS5) | ADR-021 closed 2026-04-30 (Drift supersede Isar) | A18-v2 split em 3 sub-tickets — **A18a-v2 (sync infra) + A18b-v2 (42 use cases) closed 2026-04-30** via 3-agent BFF pipeline | próximo: A18c-v2 (facade + shell rewire) → Onda 5 (A19-A21 gate)
+status: **18/22 tickets done — Onda 4 COMPLETA** | Onda 3 (A07-A15) completa | A23 closed 2026-04-29 | A15 closed 2026-04-29 | A24 spillover (13 Flutter files) | A16-v2 (desktop remote rebuild) closed 2026-04-29 | A17-v2 (cache Drift+FTS5) closed 2026-04-30 | ADR-021 (Drift supersede Isar) closed 2026-04-30 | A18-v2 splitado: **A18a-v2 (sync infra) + A18b-v2 (42 use cases) closed 2026-04-30; A18c-v2 (facade + 4 NICE_TO_HAVE sweep) closed 2026-05-01** | DECISION_HEURISTICS handbook validado 2026-04-30 | **Próximos: Phase 4 (Flutter migration — user-driven, ataca packages/social_care/ + shell rewire) OU Onda 5 (gate final A19-A21 — dart analyze bff/ + CONTRACT_A_PUBLIC_API doc + delete legacy)**
 
 ## Completed tickets
 - [x] A01 — Contract A design (35 ações mapeadas, 9 sub-contracts, CONTRACT_A_SPEC.md produzido)
@@ -126,7 +126,9 @@ Princípios da skill `flutter-expert` aplicados ao BFF onde fazem sentido: Resul
 - [~] **A18-v2 — split em 3 sub-tickets sequenciais (2026-04-30):**
   - [x] **A18a-v2** — sync/ infra (SyncDatabase em arquivo SEPARADO `app_sync_queue.sqlite`, Outbox table com composite index, 27 SyncMutation sealed-class final classes, OutboxRepository + DriftOutboxRepository, SyncEngine com state machine + single-flight drain + FIFO + sealed-switch dispatch, RetryPolicy exp backoff capped 30min, ConflictResolver — 286/286 GREEN, dart analyze zero) — **CLOSED 2026-04-30**
   - [x] **A18b-v2** — use_cases/ (42 orchestrators × 3 canonical patterns: Read cache-first com staleAfter / Write optimistic-through `read→build→enqueue→optimistic upsert→trigger drain` / Health passthrough; Cached<T> envelope refactor cirúrgico em PatientsCache + LookupCache findById; Clock injection cross-cutting; uuid dep; 376/376 GREEN, dart analyze zero) — **CLOSED 2026-04-30**
-  - [ ] A18c-v2 — facade/ + apps/acdg_system/ rewire (restaura compilação do shell)
+  - [x] **A18c-v2** — facade/ pública (`SocialCareDesktop` + 7 sub-facades + 42 métodos delegating + lifecycle D4 α + connectivity_plus listener D5 γ + `_PumpingSyncEngine` private subclass para drainStream) + sweep dos 4 NICE_TO_HAVE de A18b (delete `extractPatientVersion`, doc cache-only Pattern 1 uniformity, promote `Clock` para `abstract interface class` H6, unify cache impl Clock typed); shell rewire DEFERRED a Phase 4 (user-owned packages/ — 51 residual issues mapeadas como trigger payload); 420/420 GREEN, dart analyze zero — **CLOSED 2026-05-01**
+
+**ONDA 4 COMPLETA.** 4 sub-tickets BFF/desktop rebuild fechados em 3 dias com pipeline 3-agent Round 1 sem rejeição. Phase 4 (Flutter migration user-driven) é next; Onda 5 (gate final A19-A21) também queued.
 
 ### Wave 5 — Gate final (3 tickets)
 - [ ] A19 — dart analyze bff/ zero errors em src/

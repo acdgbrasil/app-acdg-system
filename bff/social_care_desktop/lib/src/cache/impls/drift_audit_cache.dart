@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/failures.dart';
 import '../contracts/audit_cache.dart';
@@ -13,13 +14,13 @@ import '../daos/audit_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftAuditCache implements AuditCache {
-  DriftAuditCache(CacheDatabase db, {DateTime Function()? now})
+  DriftAuditCache(CacheDatabase db, {Clock? clock})
     : _dao = AuditDao(db),
-      _now = now ?? DateTime.now,
+      _clock = clock ?? const SystemClock(),
       _ready = db.customSelect('SELECT 1').get();
 
   final AuditDao _dao;
-  final DateTime Function() _now;
+  final Clock _clock;
   final Future<Object?> _ready;
 
   @override
@@ -83,7 +84,7 @@ class DriftAuditCache implements AuditCache {
         patientId: patientId,
         eventType: dto.eventType,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);

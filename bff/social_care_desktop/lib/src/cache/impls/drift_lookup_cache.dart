@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/cached.dart';
 import '../_shared/failures.dart';
@@ -14,13 +15,13 @@ import '../daos/lookup_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftLookupCache implements LookupCache {
-  DriftLookupCache(CacheDatabase db, {DateTime Function()? now})
+  DriftLookupCache(CacheDatabase db, {Clock? clock})
     : _dao = LookupDao(db),
-      _now = now ?? DateTime.now,
+      _clock = clock ?? const SystemClock(),
       _ready = db.customSelect('SELECT 1').get();
 
   final LookupDao _dao;
-  final DateTime Function() _now;
+  final Clock _clock;
   final Future<Object?> _ready;
 
   // ── Items ────────────────────────────────────────────────────────────
@@ -103,7 +104,7 @@ class DriftLookupCache implements LookupCache {
         tableName: tableName,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);
@@ -202,7 +203,7 @@ class DriftLookupCache implements LookupCache {
         tableName: dto.tableName,
         status: dto.status,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);

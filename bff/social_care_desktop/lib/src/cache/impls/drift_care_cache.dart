@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/failures.dart';
 import '../contracts/care_cache.dart';
@@ -13,13 +14,13 @@ import '../daos/care_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftCareCache implements CareCache {
-  DriftCareCache(CacheDatabase db, {DateTime Function()? now})
+  DriftCareCache(CacheDatabase db, {Clock? clock})
     : _dao = CareDao(db),
-      _now = now ?? DateTime.now,
+      _clock = clock ?? const SystemClock(),
       _ready = db.customSelect('SELECT 1').get();
 
   final CareDao _dao;
-  final DateTime Function() _now;
+  final Clock _clock;
   final Future<Object?> _ready;
 
   @override
@@ -78,7 +79,7 @@ class DriftCareCache implements CareCache {
         patientId: patientId,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);

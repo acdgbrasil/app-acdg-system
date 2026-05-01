@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/failures.dart';
 import '../contracts/protection_cache.dart';
@@ -13,13 +14,13 @@ import '../daos/protection_dao.dart';
 /// See [DriftPatientsCache] for the rationale behind the `_ready`
 /// warm-up future awaited at the start of every method.
 class DriftProtectionCache implements ProtectionCache {
-  DriftProtectionCache(CacheDatabase db, {DateTime Function()? now})
+  DriftProtectionCache(CacheDatabase db, {Clock? clock})
     : _dao = ProtectionDao(db),
-      _now = now ?? DateTime.now,
+      _clock = clock ?? const SystemClock(),
       _ready = db.customSelect('SELECT 1').get();
 
   final ProtectionDao _dao;
-  final DateTime Function() _now;
+  final Clock _clock;
   final Future<Object?> _ready;
 
   // ── Referrals ────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ class DriftProtectionCache implements ProtectionCache {
         patientId: patientId,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);
@@ -152,7 +153,7 @@ class DriftProtectionCache implements ProtectionCache {
         patientId: patientId,
         id: dto.id,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);
@@ -208,7 +209,7 @@ class DriftProtectionCache implements ProtectionCache {
       await _dao.upsertPlacementHistory(
         patientId: patientId,
         payload: jsonEncode(dto.toJson()),
-        cachedAt: _now(),
+        cachedAt: _clock.now(),
         version: version,
       );
       return const Success(null);

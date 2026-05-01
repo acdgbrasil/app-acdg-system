@@ -15,7 +15,7 @@ A18 original ("sync/ SyncEngine com DTOs novos") foi expandido durante o re-base
 |---|---|---:|---:|---:|---|
 | **A18a-v2** | Sync infra (Database + Queue + Engine) | ~1500 (real: 1824) | ~15 (real: 8 + 2 codegen) | ~50 (real: 52) | **CLOSED 2026-04-30 — APPROVED Round 1** |
 | **A18b-v2** | Use cases (~42 orquestradores cache+remote+queue) | ~2000 (real: ~1500 + Cached<T> refactor) | ~42 (real: 42 use cases + 5 shared) | ~120 (real: 90) | **CLOSED 2026-04-30 — APPROVED Round 1** |
-| A18c-v2 | Facade pública + apps/acdg_system/ rewire | ~600 | ~8 + 7 shell rewires | ~30 | queued (após A18b) |
+| **A18c-v2** | Facade pública + 4 NICE_TO_HAVE sweep (shell rewire DEFERRED a Phase 4 per packages/ constraint) | ~600 (real: ~700) | ~8 (real: 9 + 5 cache impl mod + 1 shared mod + 1 deletion) | ~30 (real: 44) | **CLOSED 2026-05-01 — APPROVED Round 1** |
 
 Cada sub-ticket roda 3-agent pipeline self-contained (test-writer → flutter-bff-implementer → flutter-code-reviewer), com revisão intercalada.
 
@@ -95,7 +95,12 @@ Sem integration tests novos. Phase 6+ adiciona.
 
 3 rodadas separadas de 3-agent pipeline. Dispatch em sequência com revisão humana entre A18a→A18b→A18c.
 
-## Status
+## Status — A18-v2 FULLY CLOSED 2026-05-01
+
 - **A18a-v2 (sync infra) CLOSED 2026-04-30** — APPROVED Round 1, 286/286 GREEN, dart analyze zero
 - **A18b-v2 (use cases) CLOSED 2026-04-30** — APPROVED Round 1, 376/376 GREEN, dart analyze zero (4 NICE_TO_HAVE deferred to A18c sweep)
-- A18c-v2 (facade + shell rewire) — pending
+- **A18c-v2 (facade + sweep, shell rewire deferred to Phase 4) CLOSED 2026-05-01** — APPROVED Round 1, 420/420 GREEN, dart analyze zero. Shell rewire dos 10 arquivos do `apps/acdg_system/` ficou para Phase 4 (user-driven, packages/ constraint)
+
+**Onda 4 (desktop rebuild) COMPLETE.** 4 sub-tickets fechados em 3 dias (A16-v2 → A17-v2 → A18a-v2 → A18b-v2 → A18c-v2). Todo o pipeline 3-agent rodou Round 1 sem rejeição.
+
+**Phase 4 trigger payload pronto:** 51 issues em `apps/acdg_system/` mapeadas com file:line refs em 8 groups (W1 REPORT §Residual). Migration outline de 5 steps documentado.
