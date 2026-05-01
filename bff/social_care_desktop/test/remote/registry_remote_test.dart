@@ -171,6 +171,105 @@ void main() {
 
         expect(result, isA<Failure<PaginatedList<PatientSummaryResponse>>>());
       });
+
+      // T1.2 regression: large lists (>50 items) take the Isolate.run
+      // threshold path. Behavior contract MUST be identical to the
+      // inline path — same data, same meta, same ordering.
+      test(
+        'parses large list (100 items) — exercises Isolate threshold path '
+        '(T1.2 regression)',
+        () async {
+          // Build 100 distinct patient summaries with deterministic ids.
+          final entries = List<Map<String, dynamic>>.generate(100, (i) {
+            // Build valid UUID v4-shape strings derived from i so each
+            // entry has a unique, parseable id. Format: a1b2c3d4-eXXX-...
+            final hex = i.toRadixString(16).padLeft(4, '0');
+            return <String, dynamic>{
+              'patientId': 'a1b2c3d4-e5f6-4789-a012-345678$hex',
+              'personId': 'b2c3d4e5-f6a7-4890-b123-456789ab${hex.substring(0, 4)}',
+              'firstName': 'Patient$i',
+              'lastName': 'Surname$i',
+              'fullName': 'Patient$i Surname$i',
+              'memberCount': i % 7,
+              'status': i.isEven ? 'admitted' : 'discharged',
+            };
+          });
+          dio.nextStatusCode = 200;
+          dio.nextResponseData = <String, dynamic>{
+            'data': entries,
+            'meta': <String, dynamic>{
+              'pageSize': 100,
+              'totalCount': 100,
+              'hasMore': false,
+              'nextCursor': null,
+            },
+          };
+
+          final result = await remote.fetchPatients(limit: 100);
+
+          switch (result) {
+            case Success(:final value):
+              // Behavior preservation contract:
+              // 1. Same number of entries
+              expect(value.data, hasLength(100));
+              // 2. Same ordering (ASC by index in source)
+              expect(value.data.first.firstName, equals('Patient0'));
+              expect(value.data.last.firstName, equals('Patient99'));
+              // 3. Field round-trip is intact (no data loss across isolate boundary)
+              expect(value.data[42].lastName, equals('Surname42'));
+              expect(value.data[42].memberCount, equals(42 % 7));
+              // 4. Meta unchanged
+              expect(value.meta.totalCount, equals(100));
+              expect(value.meta.pageSize, equals(100));
+            case Failure():
+              fail('Expected Success on 200 with 100-item body');
+          }
+        },
+      );
+
+      // T1.2 regression: small lists (≤50) stay on inline path.
+      // Same behavior contract as the larger original "parses... on 200"
+      // test, but with exactly the boundary count to lock the threshold
+      // semantic.
+      test(
+        'parses 50 items (boundary) — stays on inline path '
+        '(T1.2 regression)',
+        () async {
+          final entries = List<Map<String, dynamic>>.generate(50, (i) {
+            final hex = i.toRadixString(16).padLeft(4, '0');
+            return <String, dynamic>{
+              'patientId': 'a1b2c3d4-e5f6-4789-a012-345678$hex',
+              'personId': 'b2c3d4e5-f6a7-4890-b123-456789ab${hex.substring(0, 4)}',
+              'firstName': 'P$i',
+              'lastName': 'L$i',
+              'fullName': 'P$i L$i',
+              'memberCount': 0,
+              'status': 'admitted',
+            };
+          });
+          dio.nextStatusCode = 200;
+          dio.nextResponseData = <String, dynamic>{
+            'data': entries,
+            'meta': <String, dynamic>{
+              'pageSize': 50,
+              'totalCount': 50,
+              'hasMore': false,
+              'nextCursor': null,
+            },
+          };
+
+          final result = await remote.fetchPatients(limit: 50);
+
+          switch (result) {
+            case Success(:final value):
+              expect(value.data, hasLength(50));
+              expect(value.data.first.firstName, equals('P0'));
+              expect(value.data.last.firstName, equals('P49'));
+            case Failure():
+              fail('Expected Success on 200 with 50-item body');
+          }
+        },
+      );
     });
 
     // ── registerPatient ────────────────────────────────────────────────

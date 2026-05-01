@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
 import 'package:shared/shared.dart';
@@ -132,6 +134,45 @@ abstract class RemoteBase {
         timestamp:
             meta?['timestamp'] as String? ?? DateTime.now().toIso8601String(),
       ),
+    );
+  }
+
+  /// Threshold above which list-mapping is delegated to a background
+  /// isolate to keep the main isolate (UI / event loop) free.
+  ///
+  /// Per `handbook/architecture/CONCURRENCY_AND_PERFORMANCE_POLICY.md`
+  /// §C1: Isolate spin-up costs ~0.5–2ms; below this threshold, inline
+  /// mapping is faster overall. Above it, the main-thread freeze that
+  /// inline mapping would cause exceeds the spawn cost — Isolate wins.
+  static const int isolateMappingThreshold = 50;
+
+  /// Maps a `List<dynamic>` of JSON-decoded maps into a typed
+  /// `List<T>` via [fromJson]. When [rawList] has more than
+  /// [isolateMappingThreshold] entries, delegates to [Isolate.run] so
+  /// the per-item `fromJson` work runs off the main isolate.
+  ///
+  /// **Sendable contract:** [fromJson] MUST be a top-level function or
+  /// static-method tear-off (e.g.
+  /// `PatientSummaryResponse.fromJson`) — closures with captured state
+  /// are NOT sendable across isolate boundaries.
+  ///
+  /// **Behavior contract:** the returned `List<T>` is observationally
+  /// identical to `rawList.cast<Map<String, dynamic>>().map(fromJson).toList()`
+  /// — same length, same order, same field values. Only the executing
+  /// isolate differs (regression-tested at the call site).
+  ///
+  /// Introduced by T1.2 (2026-05-01) — see
+  /// `handbook/audit/2026-05-01-bff-comprehensive/05-isolates-opportunities.md`.
+  static Future<List<T>> mapListPossiblyInIsolate<T>(
+    List<dynamic> rawList,
+    T Function(Map<String, dynamic>) fromJson, {
+    int threshold = isolateMappingThreshold,
+  }) async {
+    if (rawList.length <= threshold) {
+      return rawList.cast<Map<String, dynamic>>().map(fromJson).toList();
+    }
+    return Isolate.run<List<T>>(
+      () => rawList.cast<Map<String, dynamic>>().map(fromJson).toList(),
     );
   }
 }

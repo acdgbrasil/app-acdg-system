@@ -38,12 +38,16 @@ class RegistryRemote extends RemoteBase implements RegistryContract {
         final body = response.data!;
         final data = body['data'] as List<dynamic>;
         final meta = body['meta'] as Map<String, dynamic>;
+        // T1.2: list mapping above threshold delegates to a background
+        // isolate (per Concurrency Policy §C1). PatientSummaryResponse.
+        // fromJson is a static-method tear-off → sendable.
+        final mapped = await RemoteBase.mapListPossiblyInIsolate(
+          data,
+          PatientSummaryResponse.fromJson,
+        );
         return Success<PaginatedList<PatientSummaryResponse>>(
           PaginatedList<PatientSummaryResponse>(
-            data: data
-                .cast<Map<String, dynamic>>()
-                .map(PatientSummaryResponse.fromJson)
-                .toList(),
+            data: mapped,
             meta: PaginationMeta.fromJson(meta),
           ),
         );
