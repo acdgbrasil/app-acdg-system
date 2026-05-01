@@ -1,18 +1,24 @@
+// T03: the thin `PatientService(bff:)` stub was replaced by the Dio-backed
+// service. The legacy tests continue to exercise the bridge class
+// `LegacyPatientService`, which keeps the old signatures alive for
+// non-regression until T19.
+//
+// ignore_for_file: deprecated_member_use
 import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
-import 'package:social_care/src/data/services/patient_service.dart';
+import 'package:social_care/src/data/services/legacy_patient_service.dart';
 
 void main() {
   late FakeSocialCareBff fakeBff;
-  late PatientService service;
+  late LegacyPatientService service;
 
   setUp(() {
     fakeBff = FakeSocialCareBff(delay: Duration.zero);
-    service = PatientService(bff: fakeBff);
+    service = LegacyPatientService(bff: fakeBff);
   });
 
-  group('PatientService', () {
+  group('PatientService (legacy)', () {
     test('fetchPatient calls bff.fetchPatient correctly', () async {
       // Arrange
       final patientIdRes = PatientId.create(

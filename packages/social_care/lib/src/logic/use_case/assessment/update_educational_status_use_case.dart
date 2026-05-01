@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/assessment_intents.dart';
+import '../../../data/mappers/educational_status_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/assessment_mapper.dart';
 
 /// UseCase to update educational status.
 class UpdateEducationalStatusUseCase
@@ -14,7 +14,7 @@ class UpdateEducationalStatusUseCase
 
   @override
   Future<Result<void>> execute(UpdateEducationalStatusIntent intent) async {
-    final domainRes = AssessmentMapper.toEducationalStatus(intent);
+    final domainRes = EducationalStatusMapper.toEducationalStatus(intent);
     if (domainRes case Failure(:final error)) return Failure(error);
 
     return _patientRepository.updateEducationalStatus(

@@ -4,7 +4,7 @@ import 'package:shared/shared.dart';
 import '../../../logic/use_case/care/update_intake_info_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
 import '../../../logic/use_case/shared/get_lookup_table_use_case.dart';
-import '../../home/mappers/intake_info_detail_mapper.dart';
+import '../../../data/mappers/intake_info_detail_mapper.dart';
 import '../../home/models/intake_info_detail.dart';
 
 class IntakeInfoViewModel extends BaseViewModel {

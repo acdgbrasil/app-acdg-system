@@ -3,14 +3,18 @@ import 'package:social_care/social_care.dart';
 
 import 'infrastructure_providers.dart';
 
-final patientServiceProvider = Provider<PatientService>((ref) {
-  return PatientService(bff: ref.watch(socialCareContractProvider));
+// ignore: deprecated_member_use
+final legacyPatientServiceProvider = Provider<LegacyPatientService>((ref) {
+  // ignore: deprecated_member_use
+  return LegacyPatientService(bff: ref.watch(socialCareContractProvider));
 });
 
+// ignore: deprecated_member_use
 final patientRepositoryProvider = Provider<PatientRepository>((ref) {
+  // ignore: deprecated_member_use
   return BffPatientRepository(
     bff: ref.watch(socialCareContractProvider),
-    patientService: ref.watch(patientServiceProvider),
+    patientService: ref.watch(legacyPatientServiceProvider),
   );
 });
 

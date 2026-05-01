@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/assessment_intents.dart';
+import '../../../data/mappers/socio_economic_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/assessment_mapper.dart';
 
 /// UseCase to update socioeconomic situation.
 class UpdateSocioEconomicUseCase
@@ -14,7 +14,7 @@ class UpdateSocioEconomicUseCase
 
   @override
   Future<Result<void>> execute(UpdateSocioEconomicIntent intent) async {
-    final domainRes = AssessmentMapper.toSocioEconomic(intent);
+    final domainRes = SocioEconomicMapper.toSocioEconomic(intent);
     if (domainRes case Failure(:final error)) return Failure(error);
 
     return _patientRepository.updateSocioEconomicSituation(

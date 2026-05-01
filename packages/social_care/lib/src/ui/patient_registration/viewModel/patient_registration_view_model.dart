@@ -307,7 +307,15 @@ class PatientRegistrationViewModel extends BaseViewModel {
           .map(
             (r) => switch (r) {
               Success(:final value) => value,
-              Failure() => throw StateError('Unreachable'),
+              // Filtrado por `.where((r) => r.isSuccess)` acima — este caso
+              // é logicamente inatingível (type system não captura por causa
+              // do isSuccess dinâmico). `unreachable` garante observabilidade
+              // se a invariante quebrar (ex: alguém remover o where).
+              Failure(:final error) => unreachable(
+                'Failure in diagnosis mapper passed the isSuccess filter',
+                module: 'social-care/patient-registration',
+                cause: error,
+              ),
             },
           )
           .toList(),

@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/intervention_intents.dart';
+import '../../../data/mappers/appointment_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/intervention_mapper.dart';
 
 /// UseCase to register a social care appointment.
 class RegisterAppointmentUseCase
@@ -16,7 +16,7 @@ class RegisterAppointmentUseCase
   Future<Result<AppointmentId>> execute(
     RegisterAppointmentIntent intent,
   ) async {
-    final domainRes = InterventionMapper.toAppointment(intent);
+    final domainRes = AppointmentMapper.toAppointment(intent);
     if (domainRes case Failure(:final error)) return Failure(error);
 
     return _patientRepository.registerAppointment(

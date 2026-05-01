@@ -10,3 +10,4 @@ environment:
 
 dependencies:
   meta: ^1.11.0
+  logging: ^1.2.0

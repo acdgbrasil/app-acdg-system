@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/intervention_intents.dart';
+import '../../../data/mappers/referral_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/intervention_mapper.dart';
 
 /// UseCase to create a new referral.
 class CreateReferralUseCase
@@ -14,7 +14,7 @@ class CreateReferralUseCase
 
   @override
   Future<Result<ReferralId>> execute(CreateReferralIntent intent) async {
-    final domainRes = InterventionMapper.toReferral(intent);
+    final domainRes = ReferralMapper.toReferral(intent);
     if (domainRes case Failure(:final error)) return Failure(error);
 
     return _patientRepository.createReferral(

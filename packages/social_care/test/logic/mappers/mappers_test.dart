@@ -2,10 +2,12 @@ import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
 import 'package:social_care/social_care.dart';
-import 'package:social_care/src/logic/mappers/assessment_mapper.dart';
-import 'package:social_care/src/logic/mappers/family_mapper.dart';
-import 'package:social_care/src/logic/mappers/intervention_mapper.dart';
-import 'package:social_care/src/logic/mappers/registry_mapper.dart';
+import 'package:social_care/src/data/mappers/add_family_member_mapper.dart';
+import 'package:social_care/src/data/mappers/appointment_mapper.dart';
+import 'package:social_care/src/data/mappers/housing_condition_mapper.dart';
+import 'package:social_care/src/data/mappers/patient_register_mapper.dart';
+import 'package:social_care/src/data/mappers/socio_economic_mapper.dart';
+import 'package:social_care/src/data/mappers/violation_report_mapper.dart';
 
 import '../../../testing/social_care_testing.dart';
 
@@ -31,7 +33,7 @@ void main() {
           diagnoses: [PatientFixtures.diagnosis],
         );
 
-        final result = RegistryMapper.toPatient(intent);
+        final result = PatientRegisterMapper.toPatient(intent);
 
         expect(result.isSuccess, isTrue);
         final patient = result.valueOrNull!;
@@ -58,12 +60,12 @@ void main() {
         diagnoses: [PatientFixtures.diagnosis],
       );
 
-      final result = RegistryMapper.toPatient(intent);
+      final result = PatientRegisterMapper.toPatient(intent);
 
       expect(result.isSuccess, isTrue);
       final patient = result.valueOrNull!;
       expect(patient.civilDocuments?.cns, isNotNull);
-      expect(patient.civilDocuments?.cns?.number, '700000000000005');
+      expect(patient.civilDocuments?.cns?.value, '700000000000005');
     });
 
     test('toPatient should set isHomeless on address', () {
@@ -84,7 +86,7 @@ void main() {
       );
 
       final Patient patient;
-      switch (RegistryMapper.toPatient(intent)) {
+      switch (PatientRegisterMapper.toPatient(intent)) {
         case Success(:final value):
           patient = value;
         case Failure(:final error):
@@ -113,7 +115,7 @@ void main() {
       );
 
       final Patient patient;
-      switch (RegistryMapper.toPatient(intent)) {
+      switch (PatientRegisterMapper.toPatient(intent)) {
         case Success(:final value):
           patient = value;
         case Failure(:final error):
@@ -146,7 +148,7 @@ void main() {
       );
 
       final Patient patient;
-      switch (RegistryMapper.toPatient(intent)) {
+      switch (PatientRegisterMapper.toPatient(intent)) {
         case Success(:final value):
           patient = value;
         case Failure(:final error):
@@ -178,7 +180,7 @@ void main() {
         );
 
         final Patient patient;
-        switch (RegistryMapper.toPatient(intent)) {
+        switch (PatientRegisterMapper.toPatient(intent)) {
           case Success(:final value):
             patient = value;
           case Failure(:final error):
@@ -203,7 +205,7 @@ void main() {
           prRelationshipId: PatientFixtures.prRelationshipId.value,
         );
 
-        final result = FamilyMapper.toFamilyMember(intent);
+        final result = AddFamilyMemberMapper.toFamilyMember(intent);
 
         expect(result.isSuccess, isTrue);
         final member = result.valueOrNull!;
@@ -234,7 +236,7 @@ void main() {
         hasDiagnosticObservations: false,
       );
 
-      final result = AssessmentMapper.toHousingCondition(intent);
+      final result = HousingConditionMapper.toHousingCondition(intent);
 
       expect(result.isSuccess, isTrue);
       final condition = result.valueOrNull!;
@@ -260,7 +262,7 @@ void main() {
         hasUnemployed: false,
       );
 
-      final result = AssessmentMapper.toSocioEconomic(intent);
+      final result = SocioEconomicMapper.toSocioEconomic(intent);
 
       expect(result.isFailure, isTrue);
       expect((result as Failure).error.toString(), contains('SBC-002'));
@@ -278,7 +280,7 @@ void main() {
         date: DateTime.now(),
       );
 
-      final result = InterventionMapper.toAppointment(intent);
+      final result = AppointmentMapper.toAppointment(intent);
 
       expect(result.isSuccess, isTrue);
       final appointment = result.valueOrNull!;
@@ -296,7 +298,7 @@ void main() {
         incidentDate: incidentDate,
       );
 
-      final result = InterventionMapper.toViolationReport(intent);
+      final result = ViolationReportMapper.toViolationReport(intent);
 
       expect(result.isSuccess, isTrue);
       final report = result.valueOrNull!;

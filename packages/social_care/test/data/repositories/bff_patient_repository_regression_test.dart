@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared/shared.dart';
@@ -14,7 +15,7 @@ void main() {
     fakeBff = FakeSocialCareBff(delay: Duration.zero);
     repository = BffPatientRepository(
       bff: fakeBff,
-      patientService: PatientService(bff: fakeBff),
+      patientService: LegacyPatientService(bff: fakeBff),
     );
   });
 

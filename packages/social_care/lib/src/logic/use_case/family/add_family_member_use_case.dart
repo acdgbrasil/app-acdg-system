@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/family_intents.dart';
+import '../../../data/mappers/add_family_member_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/family_mapper.dart';
 
 /// Orchestrates adding a family member to a patient record.
 class AddFamilyMemberUseCase extends BaseUseCase<AddFamilyMemberIntent, void> {
@@ -14,7 +14,7 @@ class AddFamilyMemberUseCase extends BaseUseCase<AddFamilyMemberIntent, void> {
   @override
   Future<Result<void>> execute(AddFamilyMemberIntent intent) async {
     // 1. Domain Assembly via specialized Mapper
-    final memberRes = FamilyMapper.toFamilyMember(intent);
+    final memberRes = AddFamilyMemberMapper.toFamilyMember(intent);
     if (memberRes case Failure(:final error)) return Failure(error);
 
     final prRelIdRes = LookupId.create(intent.prRelationshipId);

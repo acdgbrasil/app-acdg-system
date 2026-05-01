@@ -157,11 +157,21 @@ final class TeamHandler {
 
   Future<Response> _handleGetMember(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    final result = await _getTeamMember.execute(
-      GetTeamMemberIntent(memberId: id),
-      obs,
-    );
+    final parsed = GetTeamMemberIntent.parseFromPath(id);
+    return switch (parsed) {
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_GET_TEAM_MEMBER_PARAMS',
+        message: error.toString(),
+      ),
+      Success(:final value) => await _runGetMember(value, obs),
+    };
+  }
 
+  Future<Response> _runGetMember(
+    GetTeamMemberIntent intent,
+    ObservabilityContext obs,
+  ) async {
+    final result = await _getTeamMember.execute(intent, obs);
     return switch (result) {
       Success(:final value) => Response.ok(
         jsonEncode({'data': value.data.toJson(), 'meta': value.meta.toJson()}),
@@ -175,33 +185,48 @@ final class TeamHandler {
 
   Future<Response> _handleDeactivateWorker(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _deactivateWorker.execute(
-        DeactivateWorkerIntent(memberId: id),
-        obs,
+    final parsed = DeactivateWorkerIntent.parseFromPath(id);
+    return switch (parsed) {
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_DEACTIVATE_WORKER_PARAMS',
+        message: error.toString(),
       ),
-    );
+      Success(:final value) => _wrapVoidResult(
+        await _deactivateWorker.execute(value, obs),
+      ),
+    };
   }
 
   // ── PUT /team/<id>/reactivate ─────────────────────────────────────────
 
   Future<Response> _handleReactivateWorker(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _reactivateWorker.execute(
-        ReactivateWorkerIntent(memberId: id),
-        obs,
+    final parsed = ReactivateWorkerIntent.parseFromPath(id);
+    return switch (parsed) {
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_REACTIVATE_WORKER_PARAMS',
+        message: error.toString(),
       ),
-    );
+      Success(:final value) => _wrapVoidResult(
+        await _reactivateWorker.execute(value, obs),
+      ),
+    };
   }
 
   // ── POST /team/<id>/reset-password ────────────────────────────────────
 
   Future<Response> _handleResetPassword(Request request, String id) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _resetPassword.execute(ResetPasswordIntent(memberId: id), obs),
-    );
+    final parsed = ResetPasswordIntent.parseFromPath(id);
+    return switch (parsed) {
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_RESET_PASSWORD_PARAMS',
+        message: error.toString(),
+      ),
+      Success(:final value) => _wrapVoidResult(
+        await _resetPassword.execute(value, obs),
+      ),
+    };
   }
 
   // ── POST /team/<id>/roles ─────────────────────────────────────────────
@@ -237,12 +262,19 @@ final class TeamHandler {
     String roleId,
   ) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _deactivateRole.execute(
-        DeactivateRoleIntent(memberId: id, roleId: roleId),
-        obs,
-      ),
+    final parsed = DeactivateRoleIntent.parseFromParams(
+      rawMemberId: id,
+      rawRoleId: roleId,
     );
+    return switch (parsed) {
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_DEACTIVATE_ROLE_PARAMS',
+        message: error.toString(),
+      ),
+      Success(:final value) => _wrapVoidResult(
+        await _deactivateRole.execute(value, obs),
+      ),
+    };
   }
 
   // ── PUT /team/<id>/roles/<roleId>/reactivate ──────────────────────────
@@ -253,12 +285,19 @@ final class TeamHandler {
     String roleId,
   ) async {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
-    return _wrapVoidResult(
-      await _reactivateRole.execute(
-        ReactivateRoleIntent(memberId: id, roleId: roleId),
-        obs,
-      ),
+    final parsed = ReactivateRoleIntent.parseFromParams(
+      rawMemberId: id,
+      rawRoleId: roleId,
     );
+    return switch (parsed) {
+      Failure(:final error) => _badRequest(
+        code: 'INVALID_REACTIVATE_ROLE_PARAMS',
+        message: error.toString(),
+      ),
+      Success(:final value) => _wrapVoidResult(
+        await _reactivateRole.execute(value, obs),
+      ),
+    };
   }
 
   // ── Helpers (verbatim copy of LookupHandler / RegistryPatientHandler) ──

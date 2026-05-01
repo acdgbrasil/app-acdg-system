@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/assessment_intents.dart';
+import '../../../data/mappers/social_health_summary_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/assessment_mapper.dart';
 
 /// UseCase to update social health summary.
 class UpdateSocialHealthSummaryUseCase
@@ -15,7 +15,7 @@ class UpdateSocialHealthSummaryUseCase
 
   @override
   Future<Result<void>> execute(UpdateSocialHealthSummaryIntent intent) async {
-    final domainRes = AssessmentMapper.toSocialHealthSummary(intent);
+    final domainRes = SocialHealthSummaryMapper.toSocialHealthSummary(intent);
     if (domainRes case Failure(:final error)) return Failure(error);
 
     return _patientRepository.updateSocialHealthSummary(

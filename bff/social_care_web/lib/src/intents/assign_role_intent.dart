@@ -1,15 +1,21 @@
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
+import 'uuid_validation.dart';
+
 /// Intent envelope for `POST /team/{memberId}/roles` — assign a role to a
 /// team member.
 ///
 /// Carries the route-level [memberId] plus the typed [AssignRoleRequest]
-/// payload built from the request body.
+/// payload built from the request body. [parseFromBody] validates the
+/// path parameter as a canonical UUID v4 (per A23 — `validateUuidPathParam`)
+/// and then enforces the presence of the 2 required body fields
+/// (`system`, `role`) using the canonical P2 if-case.
 ///
-/// Per ADR-019 + `PATTERN_MATCHING_POLICY.md §P2`, the DTO has 2 required
-/// top-level strings (`system`, `role`) and no nested sub-DTOs, so the
-/// canonical **P2 if-case manual** path is used.
+/// V2 (§P5): UUID validation chains into body parsing via
+/// [Result.flatMap] — no manual cast on the sealed `Result<T>`. The UUID
+/// gate fires BEFORE body parsing, so a malformed path id surfaces a
+/// [UuidPathParamError] even when the body would also fail.
 final class AssignRoleIntent with Equatable {
   const AssignRoleIntent({required this.memberId, required this.request});
 
@@ -19,12 +25,21 @@ final class AssignRoleIntent with Equatable {
   @override
   List<Object?> get props => [memberId, request];
 
-  /// Parses a decoded JSON body + the route [memberId] into an intent.
+  /// Parses a decoded JSON body + the route [rawMemberId] into an intent.
   ///
-  /// Enforces the 2 required fields (`system`, `role`) as non-empty
-  /// strings. Missing required fields produce a [Failure] whose message
-  /// enumerates the field names WITHOUT echoing any raw value.
+  /// A non-UUID-v4 [rawMemberId] short-circuits with a
+  /// [UuidPathParamError] via `flatMap`. Missing or empty `system` /
+  /// `role` then produce a [Failure] whose message enumerates the
+  /// missing field names WITHOUT echoing any raw value.
   static Result<AssignRoleIntent> parseFromBody(
+    String rawMemberId,
+    Map<String, dynamic> body,
+  ) => validateUuidPathParam(
+    rawMemberId,
+    fieldName: 'memberId',
+  ).flatMap((memberId) => _parseBody(memberId, body));
+
+  static Result<AssignRoleIntent> _parseBody(
     String memberId,
     Map<String, dynamic> body,
   ) {

@@ -19,3 +19,4 @@ export 'src/infrastructure/logging/sentry_logger_impl.dart';
 export 'src/infrastructure/logging/real_sentry_client_adapter.dart';
 export 'src/utils/hml_auth_helper.dart';
 export 'src/utils/custom_masks.dart';
+// unreachable is re-exported transitively from package:core_contracts (line 8 above)

@@ -1,17 +1,18 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/register_patient_intent.dart';
+import '../../../data/mappers/patient_register_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
 import '../../../domain/errors/social_care_errors.dart';
-import '../../mappers/registry_mapper.dart';
 
 /// Orchestrates the registration of a new patient.
 ///
 /// Error mapping is split between layers:
 /// - **HttpSocialCareClient**: maps HTTP responses to [SocialCareError]
 ///   using backend error codes from the contract.
-/// - **This UseCase**: maps domain assembly errors (from [RegistryMapper])
-///   and propagates repository errors as-is (already typed).
+/// - **This UseCase**: maps domain assembly errors (from
+///   [PatientRegisterMapper]) and propagates repository errors as-is
+///   (already typed).
 class RegisterPatientUseCase
     extends BaseUseCase<RegisterPatientIntent, PatientId> {
   RegisterPatientUseCase({required PatientRepository patientRepository})
@@ -24,7 +25,7 @@ class RegisterPatientUseCase
   Future<Result<PatientId>> execute(RegisterPatientIntent intent) async {
     try {
       // 1. Domain Assembly via specialized Mapper
-      final patientRes = RegistryMapper.toPatient(intent);
+      final patientRes = PatientRegisterMapper.toPatient(intent);
 
       if (patientRes case Failure(:final error)) {
         _log.warning('Domain assembly failed: $error');
@@ -55,7 +56,7 @@ class RegisterPatientUseCase
     }
   }
 
-  /// Maps domain assembly errors (RegistryMapper / VO creation) to
+  /// Maps domain assembly errors (PatientRegisterMapper / VO creation) to
   /// [SocialCareError]. These are local validation failures, not
   /// backend responses.
   SocialCareError _mapAssemblyError(Object error) {

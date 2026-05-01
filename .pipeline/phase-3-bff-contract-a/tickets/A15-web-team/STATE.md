@@ -1,9 +1,54 @@
 # Ticket State: A15-web-team
 
 ## Current Phase
-phase: paused — blocked by A23
-agent: implementer
-status: paused at Wave 4.5 — wiring done; awaits A23 (UUID path validation canon) before adding UUID validation to the 9 Team intents
+phase: **DONE** — V2 canon applied, test cheat fixed, reviewer APPROVED
+agent: flutter-code-reviewer (last)
+status: closed 2026-04-29 via 3-agent BFF pipeline (test-writer →
+flutter-bff-implementer → flutter-code-reviewer). All 7 path-UUID
+intents retrofitted to A23 V2 templates (4×A + 2×B + 1×C-P2), 2026-04-28
+test cheat eliminated (`/team/people → 400 INVALID_GET_TEAM_MEMBER_PARAMS`),
+zero MUST_FIX / zero SHOULD_FIX from review. Final BFF Web suite:
+**1071 GREEN / 2 FAIL** (the 2 are pre-existing A21 cleanup).
+
+## Pipeline run (2026-04-29)
+- **Step 1 — test-writer:** 8 test files modified, +49 RED tests
+  (5×Template A intent rejection × 4 + 7×Template B × 2 + 4×C-P2
+  + 11 handler-layer rejections including REGRA #2 fix).
+  Surfaced & resolved one ambiguity (RESUME-PLAN's illustrative
+  `{roleId}` body shape vs current `{system, role}` — preserved
+  current per DTO contract).
+- **Step 2 — flutter-bff-implementer:** 8 production files modified
+  (7 intents + team_handler). V2 canon applied verbatim:
+  `.map(...)` (4×A), `(m, r).combineWith(...)` (2×B),
+  `.flatMap((id) => _parseBody(id, body))` (1×C-P2). Handler emits
+  `INVALID_<X>_PARAMS` for path failures (Template A/B), retains
+  `INVALID_ASSIGN_ROLE_BODY` for assign-role per Template D.
+  Zero `as Success<T>` cast. Zero new analyze issues. Lint custom
+  clean. `check_no_sealed_cast.sh` clean for `bff/social_care_web/`.
+- **Step 3 — flutter-code-reviewer:** APPROVED. Zero MUST_FIX, zero
+  SHOULD_FIX. 2 NICE_TO_HAVE (out of A15 scope): `assign_role` test
+  consistency mirror; future tidy of `GetPatientIntent` (A08) to use
+  `.map(...)` form like the new 4 Template A intents (currently uses
+  explicit switch — older A23 W1 form, less canonical than A15 W4.5).
+
+## REGRA #2 verification (reviewer's words)
+> "Textbook resolution of test cheating: previous shortcut named, root
+> cause stated, real invariant tested, PII guarded."
+
+The 2026-04-28 `topology hiding` group (4-segment-only) is fully
+replaced by `UUID v4 path validation` group at `team_handler_test.dart:
+574-846`. The headline test asserts `GET /team/people → 400
+INVALID_GET_TEAM_MEMBER_PARAMS` directly. Inline comment block at lines
+560-573 cites CLAUDE.md REGRA #2, dates the cheat (2026-04-28), and
+explains the resolution.
+
+## Final numbers
+- 1071 GREEN / 2 FAIL pre-existing A21 (was 1026 at A23 W4 close)
+- +45 net tests (test-writer's prediction was right; RESUME-PLAN's
+  ~15 estimate was outdated — Template A grew from 1 sub-case to 5)
+- 0 new `dart analyze` issues
+- 0 sealed-class downcasts in production
+- 0 violations from `acdg_lints/no_sealed_class_downcast`
 
 ## Why paused
 A15 introduced a query-tolerant intent (`ListTeamIntent`) and a path-only

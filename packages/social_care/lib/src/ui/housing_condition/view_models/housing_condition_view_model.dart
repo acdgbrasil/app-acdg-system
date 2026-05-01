@@ -3,7 +3,7 @@ import 'package:shared/shared.dart';
 
 import '../../../logic/use_case/assessment/update_housing_condition_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
-import '../../home/mappers/housing_condition_detail_mapper.dart';
+import '../../../data/mappers/housing_condition_detail_mapper.dart';
 import '../../home/models/housing_condition_detail.dart';
 
 class HousingConditionViewModel extends BaseViewModel {

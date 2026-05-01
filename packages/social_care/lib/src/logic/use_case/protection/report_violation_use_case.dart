@@ -1,8 +1,8 @@
 import 'package:core/core.dart';
 import 'package:shared/shared.dart';
 import '../../../data/commands/intervention_intents.dart';
+import '../../../data/mappers/violation_report_mapper.dart';
 import '../../../data/repositories/patient_repository.dart';
-import '../../mappers/intervention_mapper.dart';
 
 /// UseCase to report a rights violation.
 class ReportViolationUseCase
@@ -16,7 +16,7 @@ class ReportViolationUseCase
   Future<Result<ViolationReportId>> execute(
     ReportViolationIntent intent,
   ) async {
-    final domainRes = InterventionMapper.toViolationReport(intent);
+    final domainRes = ViolationReportMapper.toViolationReport(intent);
     if (domainRes case Failure(:final error)) return Failure(error);
 
     return _patientRepository.reportViolation(

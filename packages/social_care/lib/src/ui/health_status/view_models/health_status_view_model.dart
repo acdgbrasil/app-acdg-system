@@ -4,7 +4,7 @@ import 'package:shared/shared.dart';
 import '../../../logic/use_case/assessment/update_health_status_use_case.dart';
 import '../../../logic/use_case/registry/get_patient_use_case.dart';
 import '../../../logic/use_case/shared/get_lookup_table_use_case.dart';
-import '../../home/mappers/health_status_detail_mapper.dart';
+import '../../../data/mappers/health_status_detail_mapper.dart';
 import '../../home/models/health_status_detail.dart';
 import '../../shared/models/member_option.dart';
 import '../models/deficiency_row.dart';
