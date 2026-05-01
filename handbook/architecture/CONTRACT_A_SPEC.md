@@ -1,9 +1,10 @@
 # Contract A — Especificação (APP ↔ BFF)
 
 > **Produzido por:** A01 (2026-04-17)
-> **Status:** spec-frozen (guia a implementação A02–A21)
+> **Status:** spec-implementado (guiou A02–A21; rev. final 2026-05-01)
 > **Racional:** `handbook/architecture/CONTRACT_A_PUBLIC_API.md`
 > **Filosofia:** o BFF dita o que o APP pode fazer. O que o backend Swift tem é detalhe de implementação do BFF.
+> **Status pós-implementação:** ver §"Estado pós-implementação" no fim do documento — discrepâncias entre spec e código real.
 
 ---
 
@@ -288,9 +289,76 @@ Nenhum bloqueador crítico. Duas sugestões:
 ---
 
 ## Referências
-- `handbook/architecture/CONTRACT_A_PUBLIC_API.md` — racional filosófico
+- `handbook/architecture/CONTRACT_A_PUBLIC_API.md` — racional filosófico (§14 inclui retrospectiva pós-implementação)
 - `handbook/architecture/DECISIONS.md` — ADRs
 - `.pipeline/phase-3-bff-contract-a/000-request.md` — plano da fase
 - `bff/social_care_web/lib/src/handlers/` — handlers atuais (referência de implementação)
 - `bff/social_care_web/lib/src/intents/` — 4 Intents existentes (padrão a seguir)
 - `.claude/skills/flutter-expert/SKILL.md` — princípios arquiteturais (Result<T>, imutabilidade, Dart 3+)
+
+---
+
+## Estado pós-implementação (2026-05-01)
+
+> Esta seção registra discrepâncias entre o spec congelado em A01 e o código que efetivamente existe após Phase 3. A análise filosófica completa está em `CONTRACT_A_PUBLIC_API.md §14`.
+
+### Sub-contracts: 9 → 11
+
+Spec original previa 9 sub-contracts (Seção E). Implementação fechou em **11**:
+
+| # | Sub-contract | Status spec | Status final | Razão |
+|---|--------------|-------------|--------------|-------|
+| 1 | AuthContract | previsto | implementado em A04 | — |
+| 2 | RegistryContract | previsto | implementado em A04 | — |
+| 3 | AssessmentContract | previsto | implementado em A04 | — |
+| 4 | CareContract | previsto | implementado em A04 | — |
+| 5 | ProtectionContract | previsto | implementado em A04 | — |
+| 6 | LookupContract | previsto | implementado em A04 | — |
+| 7 | TeamContract | previsto | implementado em A04 | — |
+| 8 | AuditContract | previsto | implementado em A04 | — |
+| 9 | AnalyticsContract | previsto | implementado em A04 (placeholder) | usado em #8 (futuro) |
+| 10 | **HealthContract** | não previsto | **adicionado em A04** | probes K8s consomem; A19 canonizou |
+| 11 | **PeopleContract** | não previsto (era cliente interno) | **adicionado em A04** como interno | nunca exportado em `social_care_web.dart` |
+
+**Localização:** `bff/shared/lib/src/contract/sub_contracts/{auth,registry,assessment,care,protection,lookup,team,audit,analytics,health,people}_contract.dart`.
+
+### Endpoints REMOVIDOS (Seção C — A15)
+
+Todos os 6 endpoints `/team/people/*` foram efetivamente removidos em A15 (2026-04-29). Confirmado por reviewer (zero MUST_FIX).
+
+### Endpoint COMPOSTO B5 (lookups batch)
+
+`GET /api/lookups?tables=a,b,c` foi entregue em A14 como previsto. Estreia do **query-only parse strategy** no canon. Cap em 20 tabelas. CSV tolerante (split→trim→filter).
+
+### Wave 4 — Desktop (A16-v2 → A18c-v2)
+
+Spec previa "Desktop continua mesmo contrato — refactor de remote/, storage/, sync/". **Re-baselineado como rebuild** em 2026-04-29 (decisão usuário). Resultado:
+
+| Camada | Spec original | Implementado |
+|--------|---------------|--------------|
+| `remote/` | refactor | rebuild — 8 thin remotes |
+| `storage/` | refactor | substituído por `cache/` (5 contracts Aggregate-Root aligned, não 7 espelhando Contract B) |
+| `sync/` | refactor | rebuild — `SyncDatabase` em arquivo separado, 27 SyncMutation sealed-class |
+| `use_cases/` | (não previsto na spec) | 42 use cases em 3 patterns canônicos (Read cache-first / Write optimistic-through / Health passthrough) |
+| `facade/` | (não previsto) | `SocialCareDesktop` + 7 sub-facades |
+
+### Itens deferidos a Phase 4
+
+A21 listou cleanups em `packages/social_care/` que **não foram executados** em Phase 3 (memória `feedback_packages_user_owned` — packages/ é Phase 4 territory). Inventário:
+
+| Arquivo | Localização | Quem deleta |
+|---------|-------------|-------------|
+| `http_social_care_client.dart` | `packages/social_care/lib/src/data/services/` | Phase 4 |
+| `http/` split | `packages/social_care/lib/src/data/services/` | Phase 4 |
+| `PatientTranslator` | `packages/social_care/lib/src/...` | Phase 4 |
+| `PatientDetailTranslator` | `packages/social_care/lib/src/ui/home/...` | Phase 4 |
+| `bff_patient_repository.dart` | `packages/social_care/lib/src/data/repositories/` | Phase 4 |
+
+Cleanup BFF-side de A21 foi absorvido por A19:
+
+| Arquivo | Localização | Disposição em A19 |
+|---------|-------------|-------------------|
+| `social_care_api_client.dart` | `bff/social_care_web/lib/src/remote/` | DELETADO (god-class implementando `SocialCareContract` morta) |
+| `social_care_api_client_test.dart` | `bff/social_care_web/test/remote/` | DELETADO |
+| `health_handler.dart` | `bff/social_care_web/lib/src/handlers/` | REFATORADO (depende de `HealthContract` agora) |
+| `health_handler_test.dart` | `bff/social_care_web/test/handlers/` | REFATORADO (`FakeSocialCareBff` → `FakeHealthBff`) |

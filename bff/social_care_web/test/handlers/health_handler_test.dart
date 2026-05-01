@@ -9,9 +9,7 @@ import 'package:social_care_web/src/handlers/health_handler.dart';
 import 'test_helpers.dart';
 
 /// A fake contract that fails health checks.
-class _FailingContract extends FakeSocialCareBff {
-  _FailingContract() : super(delay: Duration.zero);
-
+class _FailingContract implements HealthContract {
   @override
   Future<Result<void>> checkHealth() async => const Failure('Service down');
 
@@ -22,11 +20,11 @@ class _FailingContract extends FakeSocialCareBff {
 
 void main() {
   group('HealthHandler', () {
-    late FakeSocialCareBff fakeBff;
+    late FakeHealthBff fakeBff;
     late HealthHandler handler;
 
     setUp(() {
-      fakeBff = FakeSocialCareBff(delay: Duration.zero);
+      fakeBff = FakeHealthBff();
       handler = HealthHandler(contractFactory: (_) => fakeBff);
     });
 

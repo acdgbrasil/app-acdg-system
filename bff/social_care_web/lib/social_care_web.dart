@@ -20,9 +20,6 @@ export 'src/middleware/auth_guard_middleware.dart';
 export 'src/handlers/auth_handler.dart';
 export 'src/handlers/registry_patient_handler.dart';
 
-// Legacy handlers remain in-tree but are NOT exported — they depend on
-// the removed `SocialCareContract` and will be migrated by A09–A15.
-
 // Server
 export 'src/server/app_router.dart';
 export 'src/server/shelf_server.dart';

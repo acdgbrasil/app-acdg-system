@@ -35,14 +35,11 @@ export 'src/domain/assessment/health_status.dart';
 export 'src/domain/assessment/social_health_summary.dart';
 export 'src/domain/assessment/work_and_income.dart';
 
-// Remote Models (legacy — to be replaced by contract DTOs)
+// Remote Models (legacy — consumed only by packages/social_care/ — to be deleted in Phase 4)
 export 'src/infrastructure/dtos/patient_remote.dart';
 export 'src/infrastructure/dtos/patient_overview.dart';
 
-// Translator (legacy — to be replaced by contract mappers)
-export 'src/infrastructure/patient_translator.dart';
-
-// People Context
+// People Context (alive — used by patient_enrichment_service)
 export 'src/infrastructure/people_context_client.dart';
 
 // Services

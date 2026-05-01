@@ -6,10 +6,12 @@ import 'package:shelf/shelf.dart';
 import '../auth/session_store.dart';
 import '../middleware/session_middleware.dart';
 
-/// Factory that creates a [SocialCareContract] for a given [Session].
+/// Factory that creates a sub-contract instance for a given [Session].
 ///
-/// In production, creates a [SocialCareBffRemote] with the session's token.
-/// In tests, returns a [FakeSocialCareBff].
+/// Returns the concrete sub-contract type expected by each handler
+/// (`AuthContract`, `RegistryContract`, `AssessmentContract`, etc.).
+/// Typed as `dynamic` so the same factory shape can be reused across
+/// all handlers regardless of the specific contract they consume.
 typedef ContractFactory = dynamic Function(Session session);
 
 /// Extracts the [Session] from the request context.

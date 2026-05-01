@@ -6,8 +6,8 @@ import 'package:shelf_router/shelf_router.dart';
 import '../auth/session_store.dart';
 import 'handler_utils.dart';
 
-/// Factory that creates a [SocialCareContract] for a given [Session].
-typedef HealthContractFactory = SocialCareContract Function(Session session);
+/// Factory that creates a [HealthContract] for a given [Session].
+typedef HealthContractFactory = HealthContract Function(Session session);
 
 /// Handles health check endpoints.
 ///

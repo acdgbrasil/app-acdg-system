@@ -1,10 +1,11 @@
 # Contract A — Public API (Flutter ↔ BFF)
 
-> **Status:** Proposta (draft)
-> **Autor:** Gabriel + Chat (discussão arquitetural 2026-04-16)
+> **Status:** Implementado (BFF-side) — pendente Phase 4 Flutter migration
+> **Autor:** Gabriel + Chat (discussão arquitetural 2026-04-16; rev. final 2026-05-01)
 > **Aceita breaking changes?** Sim — reformulação deliberada, Web como piloto.
-> **Escopo inicial:** `bff/social_care_web/` + `packages/social_care/`.
+> **Escopo:** `bff/shared/`, `bff/social_care_web/`, `bff/social_care_desktop/` (BFF concluído); `packages/social_care/` (próximo — Phase 4).
 > **Consumido pela skill:** `flutter-expert` (referência oficial — ver §12).
+> **Histórico de implementação:** §"Estado final" no fim deste documento.
 
 ---
 
@@ -727,3 +728,81 @@ final patientRegistrationViewModelOverride =
 ```
 
 Nada disso importa `package:shared/shared.dart`. Essa é a linha que move — e resolve 80 % da dor arquitetural.
+
+---
+
+## 14. Estado final (2026-05-01)
+
+> Esta seção foi adicionada após o fechamento da Phase 3 BFF Contract A. Reflete o que de fato existe no código, com links para os tickets que entregaram cada peça.
+
+### 14.1 Phase 3 — BFF Contract A: 22/22 tickets fechados
+
+**Onda 1 — Design (A01)**
+- `CONTRACT_A_SPEC.md` deste handbook congelou as 35 ações + 9 sub-contracts. Spec foi guia para A02–A21.
+
+**Onda 2 — `bff/shared/` (A02–A06d)**
+- 35 DTOs request + 34 responses (todos com Equatable em A06c).
+- 11 sub-contracts em `bff/shared/lib/src/contract/sub_contracts/` — `auth`, `registry`, `assessment`, `care`, `protection`, `lookup`, `team`, `audit`, `analytics`, `people`, `health`. (Note: 11 e não 9 — `analytics_contract`, `people_contract` são internos ao BFF; `health_contract` é o contract de probes que A19 acabou de canonizar.)
+- 11 fakes per sub-contract + 6 InMemory stores (A06b — composição + SRP) em `bff/shared/lib/src/testing/`.
+- 11 VOs convertidos a `extension type` (A06d) — zero-cost branded types.
+- `SocialCareContract` god-interface DELETADA em A05.
+
+**Onda 3 — `bff/social_care_web/` (A07–A15)**
+- 9 handlers canônicos: `auth_handler`, `registry_patient_handler`, `registry_family_handler`, `assessment_handler`, `care_handler`, `protection_handler`, `lookup_handler`, `team_handler`, `health_handler`.
+- ~50 Intents + ~60 UseCases (Intent extrai dados do Request, UseCase orquestra com sub-contracts injetados via Cascade).
+- `observabilityMiddleware` + `ObservabilityContext` cross-cutting (estabelecido em A07).
+- 1075 testes verdes em `bff/social_care_web/test/`.
+
+**Onda 3.5 — Cross-cutting (A23)**
+- UUID Path Validation Canon (`validateUuidPathParam` helper + `UuidPathParamError`).
+- Templates A/B/C com 3 variantes (A, B, C-P2, C-P2b) consolidados em `flutter-bff-implementer` agent skill.
+- Retrofit em todos os handlers A07-A15 (A23 cobriu ~26 intents path-UUID).
+
+**Onda 4 — `bff/social_care_desktop/` rebuild (A16-v2 → A18c-v2)**
+- **Re-baselineado como rebuild** (decisão usuário 2026-04-29: "tudo do desktop estava ERRADO").
+- A16-v2: 8 thin remotes implementando sub-contracts via Dio (`RemoteBase` + 7 sub-remotes).
+- A17-v2: camada `cache/` com **5 cache contracts Aggregate-Root aligned** (não 7 espelhando sub-contracts) — colapsa Assessment dentro de Patient (fichas embedded), exclui Health (real-time only). Drift como engine + 2 FTS5 virtual tables + optimistic-locking `version` column.
+- A18a-v2: sync infra com `SyncDatabase` em arquivo SEPARADO (`app_sync_queue.sqlite`) — Outbox protection contra Data Loss; 27 SyncMutation sealed-class; SyncEngine com state machine + single-flight drain.
+- A18b-v2: 42 use cases em 3 patterns canônicos (Read cache-first com `staleAfter` / Write optimistic-through `read→build→enqueue→optimistic upsert→trigger drain` / Health passthrough); `Cached<T>` envelope; `Clock` injection cross-cutting.
+- A18c-v2: facade pública `SocialCareDesktop` + 7 sub-facades (42 métodos delegating) + lifecycle + connectivity_plus listener; promoção de `Clock` a `abstract interface class` (H6).
+- 426 testes verdes em `bff/social_care_desktop/test/`.
+
+**Onda 5 — Gate (A19–A21)**
+- A19: `dart analyze` zero errors em src/ dos 3 módulos. 2050 testes GREEN totais.
+- A20: este documento + `CONTRACT_A_SPEC.md` atualizados.
+- A21: cleanup BFF-side (in-tree mortos limpos no próprio A19); cleanup Flutter-side reservado a Phase 4.
+
+### 14.2 Trade-offs vivenciados
+
+1. **Sub-contracts evoluíram de 9 para 11.** Spec original previa 9 (sem `people` e `health` separados). Durante implementação, ficou óbvio que:
+   - `HealthContract` precisa ser sub-contract público porque o `health_handler.dart` é exportado pelo BFF Web e os probes Kubernetes consomem.
+   - `PeopleContract` é interno (cliente nunca vê) — modelado como sub-contract interno do BFF Web, não exportado em `social_care_web.dart`.
+
+2. **5 cache contracts vs 7 sub-contracts no Desktop.** A17-v2 escolheu Aggregate-Root alignment em vez de espelhar Contract B 1:1. Decisão validada pelo reviewer A17. Patient (Aggregate Root) absorve Assessment + Care no cache porque o cliente sempre lê fichas pelo paciente.
+
+3. **`PATTERN_MATCHING_POLICY.md` cresceu durante a fase.** Estreias notáveis:
+   - A11: 1ª aplicação post-ADR-019 do P2 if-case default.
+   - A12: 1ª coexistência P2+P2b no mesmo handler.
+   - A13: estreia do P2-tolerant (parse total sem ParseError).
+   - A14: estreia do query-only parse strategy.
+   - A15: estreia do query-tolerant.
+
+4. **Drift permanece** apesar do ADR-005 prescrever Isar. ADR-021 (2026-04-30) formalizou: Isar abandonado + SPM-incompatível; Drift fica como engine canônico no Desktop.
+
+5. **Test cheating prevenido (REGRA #2 — A15).** Em 2026-04-28, mover de `/team/people` (5xx) para 4-segment 404 era armadilha — usuário interrompeu. Solução textbook: corrigir intenção do teste (`GET /team/people → 400 INVALID_GET_TEAM_MEMBER_PARAMS`) em vez de rota.
+
+6. **Item descartado em A19: "Marcar test/ deprecated".** A diretriz original previa marcar as 3 pastas `test/` BFF como deprecated. Não executado — as suites são canônicas TDD, não legacy. Os únicos 2 testes legados (`health_handler_test`, `social_care_api_client_test` — "2 falhas pré-existentes A21") foram tratados em A19 (refatorado e deletado, respectivamente).
+
+### 14.3 Próximos passos (Phase 4 — Flutter migration)
+
+Phase 4 (`.pipeline/phase-4-flutter-migration/`) destrava com kernel BFF estável. 19 tickets (T01–T19) em 4 ondas, piloto T04 (Housing). Inclui:
+- Cleanup `packages/social_care/` (deletar `HttpSocialCareClient`, `PatientTranslator`, `bff_patient_repository`, `http/` split — itens listados em A21 que foram deferidos para Phase 4).
+- Strangler Fig migration feature por feature (ADR-013 alignment).
+- Activate `package:acdg_lints` custom lint package (`packages/acdg_lints/` — A22 scaffold já existe).
+
+### 14.4 Referências cruzadas
+
+- Especificação congelada: `handbook/architecture/CONTRACT_A_SPEC.md`
+- ADRs derivados durante implementação: ADR-019 (P2 default), ADR-021 (Drift supersede Isar)
+- Handbook de heurísticas: `handbook/principles/DECISION_HEURISTICS.md` (H1-H6)
+- Pipeline state: `.pipeline/phase-3-bff-contract-a/STATE.md`

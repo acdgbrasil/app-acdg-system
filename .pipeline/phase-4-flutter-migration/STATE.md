@@ -1,19 +1,55 @@
-# Pipeline State: phase-4-flutter-migration (ON HOLD — renomeado de phase-3-flutter-acl)
+# Pipeline State: phase-4-flutter-migration
 
 ## Current Phase
-phase: on-hold
+phase: ready
 agent: —
-status: paused — aguarda Fase 3 BFF Contract A completar
+status: **DESTRAVADA 2026-05-01 — Phase 3 BFF Contract A fechou (22/22 tickets, A19+A20+A21 closed).** Aguarda kickoff do usuário.
 
-## Razão da pausa
+## Razão da retomada
 Em 2026-04-17 o plano foi invertido: BFF-first.
-Nova Fase 3 ativa: `.pipeline/phase-3-bff-contract-a/` (21 tickets, só BFF).
-Quando Fase 3 terminar (A21), esta Fase 4 retoma.
+Phase 3 (`.pipeline/phase-3-bff-contract-a/`) fechou em 2026-05-01 com 22/22 tickets.
+Esta Phase 4 destravou e absorve cleanup deferido (ver "Herança de A21" abaixo).
 
 ## Insumos preservados (prontos para consumo em Fase 4)
 - T01 ✅ — 22 domain models em `packages/social_care/lib/src/domain/models/`
 - T02 ✅ — 21 mappers em `packages/social_care/lib/src/data/mappers/`
 - T03 ✅ (split) — HttpSocialCareClient dividido em `data/services/http/` (8 arquivos)
+
+## Herança de A21 (cleanup deferido a Phase 4)
+
+A21 BFF-side fechou; packages-side ficou para esta fase. Inventário a deletar quando cada feature for migrada:
+
+### packages/social_care/lib/src/
+- `data/services/http_social_care_client.dart` (643 LoC, implementa `SocialCareContract` deletada)
+- `data/services/http/` split (8 arquivos):
+  - `_http_shared.dart`, `assessment_http_client.dart`, `care_http_client.dart`,
+    `health_http_client.dart`, `lookup_http_client.dart`, `people_http_client.dart`,
+    `protection_http_client.dart`, `registry_http_client.dart`, `http_clients.dart`
+- `data/services/patient_service.dart` (consome `SocialCareContract`)
+- `data/repositories/bff_patient_repository.dart` (consome `SocialCareContract`)
+- `data/repositories/bff_lookup_repository.dart` (consome `SocialCareContract`)
+- `logic/use_case/registry/register_patient_use_case.dart` (consome `PatientTranslator`)
+
+### packages/social_care/test/
+- `data/services/http_social_care_client_test.dart`
+- `ui/family_composition/family_composition_bugs_test.dart`
+
+### apps/acdg_system/lib/logic/di/
+- `infrastructure_providers.dart` — referência a `SocialCareContract`
+- `app_providers.dart`
+- `dependency_builders.dart`
+- `social_care_providers.dart`
+
+### bff/shared/lib/src/infrastructure/dtos/ (deferido — usados só por packages/)
+- `patient_remote.dart` (+ `.g.dart`)
+- `patient_overview.dart` (+ `.g.dart`)
+- Test: `bff/shared/test/infrastructure/dtos/patient_remote_test.dart`
+- **Phase 4** vai deletar simultaneamente: consumers em packages/ + DTOs no BFF + testes (evita janela de quebra).
+
+### Verificação pós-Phase-4
+```bash
+grep -rln "SocialCareContract\b\|PatientTranslator\b\|HttpSocialCareClient\b" .  # esperado: vazio
+```
 
 ## Completed (preservado)
 - [x] T01 — 22 domain models + barrel created; dart analyze clean; mapping documented
@@ -66,5 +102,6 @@ Total: **19 tickets** agrupados em **4 ondas**.
 (nenhum)
 
 ## Context for Resume
-Last action: phase scaffolded, 19 tickets criados como pastas vazias. Ticket detalhado (com 000-request.md próprio) foi criado apenas para T01 e T04; os demais têm stub.
-Next action: usuário confirma ordem/granularidade. Se OK, executar T01 (foundation).
+Last action: Phase 3 fechou 2026-05-01 (A19+A20+A21 closed). Esta fase destravou; herança de A21 (cleanup deferido) foi absorvida na seção "Herança de A21" acima. T01 já tem progresso parcial (domain models criados). Os demais tickets têm stub — apenas T01 e T04 têm 000-request.md próprio.
+
+Next action: usuário confirma se quer começar com T04 (Housing piloto, conforme spec original) ou se quer revisar a ordem dada que A21 herança ampliou o escopo Phase 4 com `apps/acdg_system/lib/logic/di/` rewire.

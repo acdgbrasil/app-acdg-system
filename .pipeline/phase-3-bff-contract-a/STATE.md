@@ -1,9 +1,9 @@
 # Pipeline State: phase-3-bff-contract-a
 
 ## Current Phase
-phase: implementation (Onda 4 — **EM ANDAMENTO**)
+phase: done
 agent: —
-status: **18/22 tickets done — Onda 4 COMPLETA** | Onda 3 (A07-A15) completa | A23 closed 2026-04-29 | A15 closed 2026-04-29 | A24 spillover (13 Flutter files) | A16-v2 (desktop remote rebuild) closed 2026-04-29 | A17-v2 (cache Drift+FTS5) closed 2026-04-30 | ADR-021 (Drift supersede Isar) closed 2026-04-30 | A18-v2 splitado: **A18a-v2 (sync infra) + A18b-v2 (42 use cases) closed 2026-04-30; A18c-v2 (facade + 4 NICE_TO_HAVE sweep) closed 2026-05-01** | DECISION_HEURISTICS handbook validado 2026-04-30 | **Próximos: Phase 4 (Flutter migration — user-driven, ataca packages/social_care/ + shell rewire) OU Onda 5 (gate final A19-A21 — dart analyze bff/ + CONTRACT_A_PUBLIC_API doc + delete legacy)**
+status: **22/22 tickets done — PHASE 3 CLOSED 2026-05-01.** Onda 1 (A01) | Onda 2 (A02-A06d) | Onda 3 (A07-A15) | Onda 3.5 cross-cutting (A23) | Onda 4 (A16-v2 + A17-v2 + A18a-v2 + A18b-v2 + A18c-v2) | **Onda 5 closed 2026-05-01: A19 (analyze gate — zero errors em src/ dos 3 BFFs, 2 infos rg_document) + A20 (CONTRACT_A_PUBLIC_API §14 + CONTRACT_A_SPEC seção final + README expandido) + A21 (BFF-side complete: PatientTranslator + mappers/ deleted, comentários mortos limpos; packages/-side deferred to Phase 4 conforme memória user-owned)**. Phase 4 (`.pipeline/phase-4-flutter-migration/`) destravada — ataca packages/social_care/ + apps/acdg_system/ + bff/shared/dtos/ herdados.
 
 ## Completed tickets
 - [x] A01 — Contract A design (35 ações mapeadas, 9 sub-contracts, CONTRACT_A_SPEC.md produzido)
@@ -130,10 +130,10 @@ Princípios da skill `flutter-expert` aplicados ao BFF onde fazem sentido: Resul
 
 **ONDA 4 COMPLETA.** 4 sub-tickets BFF/desktop rebuild fechados em 3 dias com pipeline 3-agent Round 1 sem rejeição. Phase 4 (Flutter migration user-driven) é next; Onda 5 (gate final A19-A21) também queued.
 
-### Wave 5 — Gate final (3 tickets)
-- [ ] A19 — dart analyze bff/ zero errors em src/
-- [ ] A20 — Atualizar handbook/architecture/CONTRACT_A_PUBLIC_API.md com Contract A real
-- [ ] A21 — Deletar código legado (HttpSocialCareClient, PatientTranslator, stubs deprecated)
+### Wave 5 — Gate final (3 tickets) — CLOSED 2026-05-01
+- [x] **A19** — `dart analyze bff/` zero errors em src/ dos 3 módulos. Pré-requisito BFF-side absorvido (delete `social_care_api_client.dart` + refactor `health_handler.dart` para depender de `HealthContract` canônico). 2050 GREEN.
+- [x] **A20** — `CONTRACT_A_PUBLIC_API.md` ganhou §14 "Estado final" + `CONTRACT_A_SPEC.md` ganhou seção "Estado pós-implementação" (sub-contracts 9→11, Wave 4 rebuild, deferimentos a Phase 4). README expandido para 12 docs.
+- [x] **A21** — BFF-side cleanup completo (deletado `bff/shared/lib/src/infrastructure/patient_translator.dart` + `mappers/` (5 arquivos) + 14 testes; comentários mortos a `SocialCareContract` removidos em 3 arquivos). Critérios grep passam em `bff/`. Inventário `packages/social_care/` + `apps/acdg_system/` + `bff/shared/dtos/` (12 arquivos + 4 com refs em apps/) deferido a Phase 4 conforme memória user-owned. 2036 GREEN (Δ -14 = patient_translator_test deletado).
 
 ### Cross-cutting — Onda 3.5 (1 ticket — descoberto durante A15)
 - [ ] A23 — UUID Path Validation Canon (helper + retrofit A07-A14, ~26 intents, ~150 tests novos; bloqueia A15 resume)
