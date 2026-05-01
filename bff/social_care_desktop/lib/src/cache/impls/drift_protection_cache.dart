@@ -6,6 +6,7 @@ import 'package:shared/shared.dart';
 import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/failures.dart';
+import '../_shared/payload_decoder.dart';
 import '../contracts/protection_cache.dart';
 import '../daos/protection_dao.dart';
 
@@ -48,15 +49,12 @@ class DriftProtectionCache implements ProtectionCache {
     try {
       await _ready;
       final rows = await _dao.listReferrals(patientId);
-      return Success(
-        rows
-            .map(
-              (r) => ReferralResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: per-patient referral lists delegate decode off main.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        ReferralResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<ReferralResponse>>(CacheFailure(e), stackTrace: st);
     }
@@ -124,15 +122,12 @@ class DriftProtectionCache implements ProtectionCache {
     try {
       await _ready;
       final rows = await _dao.listViolationReports(patientId);
-      return Success(
-        rows
-            .map(
-              (r) => ViolationReportResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: per-patient violation reports delegate decode off main.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        ViolationReportResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<ViolationReportResponse>>(
         CacheFailure(e),

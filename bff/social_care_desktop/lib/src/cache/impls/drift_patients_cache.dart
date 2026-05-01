@@ -7,6 +7,7 @@ import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/cached.dart';
 import '../_shared/failures.dart';
+import '../_shared/payload_decoder.dart';
 import '../contracts/patients_cache.dart';
 import '../daos/patient_dao.dart';
 
@@ -86,15 +87,13 @@ class DriftPatientsCache implements PatientsCache {
     try {
       await _ready;
       final rows = await _dao.listSummaries(status: status, limit: limit);
-      return Success(
-        rows
-            .map(
-              (r) => PatientSummaryResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: large lists delegate jsonDecode + fromJson to a background
+      // isolate (per Concurrency Policy §C1). Single-row reads stay inline.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        PatientSummaryResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<PatientSummaryResponse>>(
         CacheFailure(e),
@@ -110,15 +109,12 @@ class DriftPatientsCache implements PatientsCache {
     try {
       await _ready;
       final rows = await _dao.searchSummaries(term);
-      return Success(
-        rows
-            .map(
-              (r) => PatientSummaryResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: same threshold-guarded path as listSummaries.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        PatientSummaryResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<PatientSummaryResponse>>(
         CacheFailure(e),

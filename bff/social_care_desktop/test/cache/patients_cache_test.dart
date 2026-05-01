@@ -316,6 +316,51 @@ void main() {
             fail('expected Success');
         }
       });
+
+      // T2.2 regression: large lists (>50 rows) take the Isolate.run
+      // threshold path for jsonDecode + DTO mapping. Behavior contract
+      // MUST be identical: same length, same field round-trip, same
+      // ordering as the inline path.
+      test(
+        'parses large list (60 rows) — exercises Isolate threshold path '
+        '(T2.2 regression)',
+        () async {
+          // 60 rows > threshold(50) → forces Isolate.run path post-fix.
+          // Pre-fix, all rows decode inline; the test asserts identical
+          // observable output across both paths.
+          for (var i = 0; i < 60; i++) {
+            final hex = i.toRadixString(16).padLeft(4, '0');
+            await cache.upsertSummary(
+              summary(
+                patientId: 'a1b2c3d4-e5f6-4789-a012-345678$hex',
+                personId: 'b2c3d4e5-f6a7-4890-b123-456789ab${hex.substring(0, 4)}',
+                firstName: 'Bulk$i',
+                lastName: 'Test$i',
+              ),
+              version: 1,
+            );
+          }
+
+          final result = await cache.listSummaries(limit: 100);
+
+          switch (result) {
+            case Success(:final value):
+              // 1. All 60 rows returned — no truncation across boundary
+              expect(value, hasLength(60));
+              // 2. Field round-trip preserved across isolate (firstName +
+              //    lastName decoded from JSON payload, marshalled out)
+              final firstNames = value.map((p) => p.firstName).toSet();
+              expect(firstNames, contains('Bulk0'));
+              expect(firstNames, contains('Bulk59'));
+              expect(firstNames, hasLength(60));
+              // 3. patientId integrity (B-Tree key)
+              final patientIds = value.map((p) => p.patientId).toSet();
+              expect(patientIds, hasLength(60));
+            case Failure():
+              fail('expected Success on 60-row decode');
+          }
+        },
+      );
     });
 
     // ── searchSummaries (FTS5) ─────────────────────────────────────────

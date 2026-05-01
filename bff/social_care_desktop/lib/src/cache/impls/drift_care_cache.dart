@@ -6,6 +6,7 @@ import 'package:shared/shared.dart';
 import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/failures.dart';
+import '../_shared/payload_decoder.dart';
 import '../contracts/care_cache.dart';
 import '../daos/care_dao.dart';
 
@@ -50,15 +51,12 @@ class DriftCareCache implements CareCache {
     try {
       await _ready;
       final rows = await _dao.listByPatient(patientId, limit: limit);
-      return Success(
-        rows
-            .map(
-              (r) => AppointmentResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: large per-patient appointment lists delegate decode off main.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        AppointmentResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<AppointmentResponse>>(
         CacheFailure(e),

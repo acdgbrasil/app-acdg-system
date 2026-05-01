@@ -6,6 +6,7 @@ import 'package:shared/shared.dart';
 import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/failures.dart';
+import '../_shared/payload_decoder.dart';
 import '../contracts/audit_cache.dart';
 import '../daos/audit_dao.dart';
 
@@ -54,15 +55,12 @@ class DriftAuditCache implements AuditCache {
         limit: limit,
         offset: offset,
       );
-      return Success(
-        rows
-            .map(
-              (r) => AuditTrailEntryResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: long audit trails delegate decode to a background isolate.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        AuditTrailEntryResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<AuditTrailEntryResponse>>(
         CacheFailure(e),

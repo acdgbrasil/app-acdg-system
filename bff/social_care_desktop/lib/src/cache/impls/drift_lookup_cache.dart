@@ -7,6 +7,7 @@ import '../../use_cases/_shared/clock.dart';
 import '../_shared/cache_database.dart';
 import '../_shared/cached.dart';
 import '../_shared/failures.dart';
+import '../_shared/payload_decoder.dart';
 import '../contracts/lookup_cache.dart';
 import '../daos/lookup_dao.dart';
 
@@ -56,15 +57,13 @@ class DriftLookupCache implements LookupCache {
     try {
       await _ready;
       final rows = await _dao.listItems(tableName);
-      return Success(
-        rows
-            .map(
-              (r) => LookupItemResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: large lookup item lists (production: municipios_brasil
+      // = 5570 entries) delegate decode off main isolate.
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        LookupItemResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<LookupItemResponse>>(CacheFailure(e), stackTrace: st);
     }
@@ -174,15 +173,12 @@ class DriftLookupCache implements LookupCache {
         tableName: tableName,
         limit: limit,
       );
-      return Success(
-        rows
-            .map(
-              (r) => LookupRequestResponse.fromJson(
-                jsonDecode(r.payload) as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+      // T2.2: lookup request lists (lower volume but consistency win).
+      final mapped = await decodePayloadsPossiblyInIsolate(
+        rows.map((r) => r.payload).toList(),
+        LookupRequestResponse.fromJson,
       );
+      return Success(mapped);
     } catch (e, st) {
       return Failure<List<LookupRequestResponse>>(
         CacheFailure(e),
