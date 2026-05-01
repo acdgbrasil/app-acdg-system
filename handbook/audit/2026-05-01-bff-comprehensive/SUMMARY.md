@@ -225,11 +225,16 @@ Quando usuário atacar `packages/`:
 
 ## Apêndice — referência aos relatórios detalhados
 
-| Relatório | Arquivo | Linhas | Foco |
-|---|---|---:|---|
-| Flutter-Expert | [01-flutter-expert-review.md](./01-flutter-expert-review.md) | 351 | Architectural rigor, ADR adherence, H1-H6 |
-| API Security | [02-api-security.md](./02-api-security.md) | 404 | OWASP API Top 10 + ACDG context |
-| Auth/Session | [03-auth-session-security.md](./03-auth-session-security.md) | 159 | OWASP ASVS L2 + IAM + Zitadel |
-| Red Team | [04-red-team-scan.md](./04-red-team-scan.md) | 952 | Offensive scan, OWASP WSTG, ACDG-specific vectors, attack chains, PoCs |
+| Relatório | Arquivo | Foco |
+|---|---|---|
+| Flutter-Expert | [01-flutter-expert-review.md](./01-flutter-expert-review.md) | Architectural rigor, ADR adherence, H1-H6 |
+| API Security | [02-api-security.md](./02-api-security.md) | OWASP API Top 10 + ACDG context |
+| Auth/Session | [03-auth-session-security.md](./03-auth-session-security.md) | OWASP ASVS L2 + IAM + Zitadel |
+| Red Team | [04-red-team-scan.md](./04-red-team-scan.md) | Offensive scan, OWASP WSTG, ACDG-specific vectors, attack chains, PoCs |
+| **Isolates Opportunities** (addendum) | [05-isolates-opportunities.md](./05-isolates-opportunities.md) | C1 `Isolate.run` analysis — performance, fluidez, segurança via memory isolation, algoritmo |
 
-**Total:** 1866 linhas de findings detalhados com file:line refs, CVSS scoring, e remediation steps específicos.
+**Total:** 4 audits gerais + 1 addendum focado em isolates.
+
+### Achado adicional do isolates audit (Tier 1 — high impact)
+
+**T1.1 — Drift `NativeDatabase` opera na main isolate (`social_care_desktop.dart:697`).** ADR-021 escolheu Drift sobre Isar citando suporte a multi-isolate como vantagem; **a implementação não usa**. Migração para `NativeDatabase.createInBackground` é 1-line × 2 sites com ganho desproporcional (eliminação de toda categoria "DB op freezes UI"). Recomendado adicionar como **A22b** na Onda 4.5.
