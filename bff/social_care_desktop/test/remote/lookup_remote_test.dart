@@ -159,6 +159,38 @@ void main() {
           isA<Failure<StandardResponse<List<LookupItemResponse>>>>(),
         );
       });
+
+      // T2.1 regression: large lookup tables (>50 items — e.g.,
+      // `municipios_brasil` with 5570 items in production) take the
+      // Isolate.run threshold path. Behavior contract MUST be identical.
+      test(
+        'parses large lookup table (200 items) — exercises Isolate '
+        'threshold path (T2.1 regression)',
+        () async {
+          final entries = List<Map<String, dynamic>>.generate(200, (i) {
+            return <String, dynamic>{
+              'id': 'item-${i.toString().padLeft(4, '0')}',
+              'codigo': 'COD${i.toString().padLeft(4, '0')}',
+              'descricao': 'Lookup Item $i',
+            };
+          });
+          dio.nextStatusCode = 200;
+          dio.nextResponseData = <String, dynamic>{'data': entries};
+
+          final result = await remote.getLookupTable('municipios_brasil');
+
+          switch (result) {
+            case Success(:final value):
+              expect(value.data, hasLength(200));
+              expect(value.data.first.id, equals('item-0000'));
+              expect(value.data.last.id, equals('item-0199'));
+              expect(value.data[100].codigo, equals('COD0100'));
+              expect(value.data[100].descricao, equals('Lookup Item 100'));
+            case Failure():
+              fail('Expected Success on 200 with 200-item table');
+          }
+        },
+      );
     });
 
     // ── getLookupsBatch ───────────────────────────────────────────────

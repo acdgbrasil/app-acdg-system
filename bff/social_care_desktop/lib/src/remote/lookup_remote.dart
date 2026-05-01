@@ -27,13 +27,23 @@ class LookupRemote extends RemoteBase implements LookupContract {
       );
       if (response.statusCode == 200) {
         final data = response.data!['data'] as List<dynamic>;
+        // T2.1: large lookup tables (e.g. `municipios_brasil` with 5570
+        // entries) delegate to a background isolate per Concurrency
+        // Policy §C1. Decoding inline on the main isolate would freeze
+        // the UI during the very first form load that consumes the
+        // dropdown. LookupItemResponse.fromJson is a static-method
+        // tear-off → sendable.
+        //
+        // This also benefits `getLookupsBatch` transparently: each
+        // parallel `Future.wait` member runs its own Isolate.run when
+        // it crosses the threshold, leveraging multi-core decode for
+        // the 13-table batch.
+        final mapped = await RemoteBase.mapListPossiblyInIsolate(
+          data,
+          LookupItemResponse.fromJson,
+        );
         return Success<StandardResponse<List<LookupItemResponse>>>(
-          wrapResponse(
-            data
-                .cast<Map<String, dynamic>>()
-                .map(LookupItemResponse.fromJson)
-                .toList(),
-          ),
+          wrapResponse(mapped),
         );
       }
       return backendFailure(response, 'Lookup table $tableName not found');
