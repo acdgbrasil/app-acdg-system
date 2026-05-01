@@ -470,5 +470,66 @@ void main() {
         expect((res as Failure<DrainSummary>).error, isA<SyncFailure>());
       },
     );
+
+    // T2.3 regression: large pending batch (>50 mutations — offline →
+    // online recovery scenario where user was disconnected for hours)
+    // takes the Isolate.run threshold path for batch deserialization
+    // BEFORE the dispatch loop. Behavior contract MUST be identical:
+    // every mutation dispatches to the right contract method, all
+    // entries are marked completed, drain summary counts match.
+    test(
+      'drain large batch (60 pending mutations) — exercises Isolate '
+      'deserialization path (T2.3 regression)',
+      () async {
+        final ctx = buildEngine();
+        addTearDown(() => ctx.engine.close());
+
+        // 60 distinct discharge mutations enqueued sequentially.
+        // 60 > threshold(50) → forces Isolate.run path post-fix.
+        // Pre-fix, all deserialization happens inline in the loop.
+        for (var i = 0; i < 60; i++) {
+          await ctx.outbox.enqueue(
+            dischargeFixture(
+              id: 'mut-${i.toString().padLeft(3, '0')}',
+              createdAt: t0.add(Duration(milliseconds: i)),
+            ),
+          );
+        }
+
+        await ctx.engine.start();
+        final res = await ctx.engine.triggerDrain();
+
+        // 1. Drain succeeded
+        expect(res, isA<Success<DrainSummary>>());
+        final summary = (res as Success<DrainSummary>).value;
+
+        // 2. All 60 mutations processed + completed (fake registry
+        //    returns Success for discharge_patient by default).
+        expect(summary.processed, equals(60));
+        expect(summary.completed, equals(60));
+        expect(summary.failedRetriable, equals(0));
+        expect(summary.failedDead, equals(0));
+
+        // 3. All 60 dispatched to the registry — sealed-class switch
+        //    fired correctly for every deserialized mutation.
+        expect(ctx.registry.calls, hasLength(60));
+        expect(
+          ctx.registry.calls.toSet(),
+          equals({'discharge_patient'}),
+          reason: 'every mutation should map to discharge_patient',
+        );
+
+        // 4. Outbox is now empty of pending — all marked completed.
+        final pending = await ctx.outbox.listByStatus(OutboxStatus.pending);
+        switch (pending) {
+          case Success(:final value):
+            expect(value, isEmpty);
+          case Failure():
+            fail('listByStatus should not fail on healthy DB');
+        }
+      },
+      // Be generous — first isolate spawn + 60-mutation drain.
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
   });
 }

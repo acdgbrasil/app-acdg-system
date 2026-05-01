@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 
@@ -6,6 +8,15 @@ import '../outbox/outbox_repository.dart';
 import '../outbox/sync_mutation.dart';
 import 'conflict_resolver.dart';
 import 'retry_policy.dart';
+
+/// Threshold above which the drain pre-deserializes the entire pending
+/// batch in a background isolate (per Concurrency Policy §C1).
+///
+/// Per-entry isolate would defeat the purpose (spawn cost ~0.5–2ms vs.
+/// deserialization ~0.1–1ms each). One isolate hop for the whole batch
+/// amortizes spawn across N mutations — true win for offline → online
+/// recovery scenarios where N can reach 50–500.
+const int _drainBatchIsolateThreshold = 50;
 
 /// Outcome counters for one drain pass. Returned by
 /// [SyncEngine.triggerDrain] so callers can surface progress in the UI
@@ -130,15 +141,23 @@ class SyncEngine {
         case Failure<List<OutboxEntry>>(:final error, :final stackTrace):
           return Failure<DrainSummary>(error, stackTrace: stackTrace);
         case Success<List<OutboxEntry>>(:final value):
+          // T2.3: pre-deserialize the entire pending batch in one
+          // isolate hop when above threshold. The dispatch loop then
+          // reads pre-typed mutations — zero per-entry main-thread
+          // deserialization cost. Behavior preserved: same indexing,
+          // same per-entry dispatch semantics, same outbox marks.
+          final mutations = await _deserializeBatch(value);
+
           var processed = 0;
           var completed = 0;
           var failedRetriable = 0;
           var failedDead = 0;
-          for (final entry in value) {
+          for (var i = 0; i < value.length; i++) {
+            final entry = value[i];
+            final mutation = mutations[i];
             processed++;
             await _outbox.markInFlight(entry.id);
 
-            final mutation = SyncMutation.fromOutboxEntry(entry);
             final result = await _dispatch(mutation);
 
             switch (result) {
@@ -181,6 +200,35 @@ class SyncEngine {
     } catch (e, st) {
       return Failure<DrainSummary>(SyncFailure(e), stackTrace: st);
     }
+  }
+
+  /// Pre-deserializes the entire pending batch into typed mutations,
+  /// optionally off the main isolate.
+  ///
+  /// Per T2.3 (2026-05-01) + Concurrency Policy §C1: when [entries]
+  /// has more than [_drainBatchIsolateThreshold] members, we pay one
+  /// isolate spawn cost and deserialize all in a single hop. Below the
+  /// threshold, deserialization stays inline (spawn cost would be
+  /// strictly net-negative).
+  ///
+  /// **Sendable contract:** [SyncMutation.fromOutboxEntry] is a static
+  /// factory + sealed-class switch over [OutboxEntry]; both
+  /// `OutboxEntry` (record-like data class with primitive fields +
+  /// `Map<String, dynamic> payload`) and the resulting `SyncMutation`
+  /// final classes are sendable across isolate boundaries.
+  ///
+  /// **Order contract:** the returned list mirrors [entries] index-by-
+  /// index. The dispatch loop relies on this for FIFO ordering and
+  /// per-entry outbox marking.
+  Future<List<SyncMutation>> _deserializeBatch(
+    List<OutboxEntry> entries,
+  ) async {
+    if (entries.length <= _drainBatchIsolateThreshold) {
+      return entries.map(SyncMutation.fromOutboxEntry).toList();
+    }
+    return Isolate.run<List<SyncMutation>>(
+      () => entries.map(SyncMutation.fromOutboxEntry).toList(),
+    );
   }
 
   /// Dispatches a typed [SyncMutation] to the corresponding sub-contract
