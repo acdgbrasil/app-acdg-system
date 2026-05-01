@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ── Dev image: JIT mode for fast restarts ──
-FROM ghcr.io/cirruslabs/flutter:3.41.6
+FROM ghcr.io/cirruslabs/flutter:3.41.9
 ENV CI=true
 WORKDIR /app
 
