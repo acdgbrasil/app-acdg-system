@@ -27,13 +27,17 @@ class AuditRemote extends RemoteBase implements AuditContract {
       );
       if (response.statusCode == 200) {
         final data = response.data!['data'] as List<dynamic>;
+        // T1.3: long audit trails (>50 entries) delegate to a background
+        // isolate per Concurrency Policy §C1. Patients with multi-year
+        // histories routinely surpass the threshold; mapping inline
+        // would freeze the UI while the auditor scrolls. AuditTrail
+        // EntryResponse.fromJson is a static-method tear-off → sendable.
+        final mapped = await RemoteBase.mapListPossiblyInIsolate(
+          data,
+          AuditTrailEntryResponse.fromJson,
+        );
         return Success<StandardResponse<List<AuditTrailEntryResponse>>>(
-          wrapResponse(
-            data
-                .cast<Map<String, dynamic>>()
-                .map(AuditTrailEntryResponse.fromJson)
-                .toList(),
-          ),
+          wrapResponse(mapped),
         );
       }
       return backendFailure(response, 'Failed to fetch audit trail');

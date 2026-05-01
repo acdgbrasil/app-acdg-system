@@ -142,6 +142,50 @@ void main() {
           isA<Failure<StandardResponse<List<AuditTrailEntryResponse>>>>(),
         );
       });
+
+      // T1.3 regression: long audit trails (>50 entries) take the
+      // Isolate.run threshold path. Audit trail can grow to 1000+
+      // entries on long-lived patient records (compliance-relevant
+      // history). Behavior contract MUST be identical to inline path.
+      test(
+        'parses long audit trail (200 entries) — exercises Isolate '
+        'threshold path (T1.3 regression)',
+        () async {
+          final entries = List<Map<String, dynamic>>.generate(200, (i) {
+            return <String, dynamic>{
+              'id': 'audit-${i.toString().padLeft(4, '0')}',
+              'aggregateId': kPatientUuid,
+              'eventType': i.isEven ? 'PatientCreated' : 'PatientUpdated',
+              'payload': <String, dynamic>{'index': i, 'note': 'entry $i'},
+              'occurredAt': '2026-01-${(i % 28) + 1}T10:00:00.000Z',
+              'recordedAt': '2026-01-${(i % 28) + 1}T10:00:01.000Z',
+            };
+          });
+          dio.nextStatusCode = 200;
+          dio.nextResponseData = <String, dynamic>{
+            'data': entries,
+            'meta': <String, dynamic>{'timestamp': '2026-05-01T12:00:00.000Z'},
+          };
+
+          final result = await remote.getAuditTrail(kPatientUuid);
+
+          switch (result) {
+            case Success(:final value):
+              // Behavior preservation contract:
+              // 1. Same number of entries
+              expect(value.data, hasLength(200));
+              // 2. Same ordering
+              expect(value.data.first.id, equals('audit-0000'));
+              expect(value.data.last.id, equals('audit-0199'));
+              // 3. Field round-trip across isolate boundary
+              expect(value.data[100].eventType, equals('PatientCreated'));
+              expect(value.data[100].payload?['index'], equals(100));
+              expect(value.data[100].payload?['note'], equals('entry 100'));
+            case Failure():
+              fail('Expected Success on 200 with 200-entry trail');
+          }
+        },
+      );
     });
   });
 }
