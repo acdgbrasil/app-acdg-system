@@ -1,9 +1,9 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (Onda 1 closed; Onda 1.5 + Onda 2 ready)
+phase: in-progress (Onda 1 + Onda 1.5 closed; Onda 2 next)
 agent: —
-status: **C00 closed 2026-05-02 via 5-wave pipeline (62 tests GREEN, 2098 GREEN total no BFF).** Phase 4 (flutter-migration) marcada superseded. Próximos tickets disponíveis em paralelo: **D01 → D02 → D03 (refactor Desktop facade — débito; não bloqueia)** e **C01 (CLI Scaffold em `apps/cli/`)**.
+status: **C00 + D01 + D02 + D03 closed 2026-05-02. 2172 GREEN +1 skip total BFF.** Onda 1.5 (Desktop facade refactor) reduziu `social_care_desktop.dart` de 718L → 184L (-74.4%) com 3 padrões GoF formalizados (Factory Method, Builder, Observer). Próximo: **C01 — CLI Scaffold (`apps/cli/`)**.
 
 ## Decisão estratégica (2026-05-01)
 

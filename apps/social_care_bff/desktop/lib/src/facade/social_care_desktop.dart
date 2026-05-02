@@ -13,7 +13,7 @@
 ///
 /// Connectivity (D5 γ — trigger-based drain on restore):
 ///   * Subscribes to `connectivity_plus` `onConnectivityChanged` ONCE
-///     at `create()`.
+///     at `create()` via [AutoDrainObserver] (D03).
 ///   * On offline → online edge, fires-and-forgets `engine.triggerDrain()`.
 ///   * Subscription cancelled by `close()`.
 ///
@@ -23,11 +23,21 @@
 ///   * Override via `cacheFilePath` / `syncQueueFilePath`. Use `':memory:'`
 ///     to spin Drift in-memory databases (tests).
 ///
-/// Composition (D02):
+/// Composition (D02 + D03):
 ///   * 7 per-bounded-context builders under `composition/builders/`
 ///     group the 42 use cases into 7 data classes (`RegistryUseCases`,
-///     `AssessmentUseCases`, ...). Adding a new use case touches the
-///     bundle + the relevant sub-facade — `create()` itself is stable.
+///     `AssessmentUseCases`, ...) — added in D02.
+///   * `DesktopAssembler` (Builder GoF, D03) orchestrates the composition
+///     phases with a fluent API; `create()` is a thin wrapper that maps
+///     its named args to `with*()` calls.
+///   * `DesktopRuntime` (D03) bundles the 12 fields the facade
+///     consumes — every sub-facade getter and lifecycle method delegates
+///     to it.
+///
+/// Cross-link: pumping behaviour lives in
+/// `lib/src/sync/engine/pumping_sync_engine.dart` (D01); the offline →
+/// online edge detector lives in
+/// `lib/src/sync/connectivity/auto_drain_observer.dart` (D03).
 library;
 
 import 'dart:async';
@@ -36,35 +46,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
 
-import '../cache/_shared/cache_database.dart';
-import '../cache/impls/drift_audit_cache.dart';
-import '../cache/impls/drift_care_cache.dart';
-import '../cache/impls/drift_lookup_cache.dart';
-import '../cache/impls/drift_patients_cache.dart';
-import '../cache/impls/drift_protection_cache.dart';
-import '../remote/_shared/remote_base.dart';
-import '../remote/assessment_remote.dart';
-import '../remote/audit_remote.dart';
-import '../remote/care_remote.dart';
-import '../remote/health_remote.dart';
-import '../remote/lookup_remote.dart';
-import '../remote/protection_remote.dart';
-import '../remote/registry_remote.dart';
 import '../sync/_shared/failures.dart';
-import '../sync/_shared/sync_database.dart';
-import '../sync/engine/pumping_sync_engine.dart';
 import '../sync/engine/sync_engine.dart';
-import '../sync/outbox/outbox_repository.dart';
 import '../use_cases/_shared/clock.dart';
-import 'composition/builders/assessment_use_cases.dart';
-import 'composition/builders/audit_use_cases.dart';
-import 'composition/builders/care_use_cases.dart';
-import 'composition/builders/health_use_cases.dart';
-import 'composition/builders/lookup_use_cases.dart';
-import 'composition/builders/protection_use_cases.dart';
-import 'composition/builders/registry_use_cases.dart';
-import 'composition/connectivity_helpers.dart';
 import 'composition/db_executor.dart';
+import 'composition/desktop_assembler.dart';
+import 'composition/desktop_runtime.dart';
 import 'sub_facades/assessment_facade.dart';
 import 'sub_facades/audit_facade.dart';
 import 'sub_facades/care_facade.dart';
@@ -77,50 +64,20 @@ import 'sub_facades/registry_facade.dart';
 ///
 /// See file-level doc for lifecycle, connectivity, and path semantics.
 class SocialCareDesktop {
-  SocialCareDesktop._({
-    required this.registry,
-    required this.assessment,
-    required this.care,
-    required this.protection,
-    required this.audit,
-    required this.lookup,
-    required this.health,
-    required SyncEngine engine,
-    required CacheDatabase cacheDb,
-    required SyncDatabase syncDb,
-    required Connectivity connectivity,
-    required StreamController<DrainSummary> drainController,
-    required StreamSubscription<List<ConnectivityResult>> connectivitySub,
-    required bool initialOnline,
-  }) : _engine = engine,
-       _cacheDb = cacheDb,
-       _syncDb = syncDb,
-       _connectivity = connectivity,
-       _drainController = drainController,
-       _connectivitySub = connectivitySub,
-       _wasOnline = initialOnline;
+  SocialCareDesktop._(this._runtime);
 
-  // ── Public sub-facades ─────────────────────────────────────────────
-
-  final RegistryFacade registry;
-  final AssessmentFacade assessment;
-  final CareFacade care;
-  final ProtectionFacade protection;
-  final AuditFacade audit;
-  final LookupFacade lookup;
-  final HealthFacade health;
-
-  // ── Internals ──────────────────────────────────────────────────────
-
-  final SyncEngine _engine;
-  final CacheDatabase _cacheDb;
-  final SyncDatabase _syncDb;
-  // ignore: unused_field
-  final Connectivity _connectivity;
-  final StreamController<DrainSummary> _drainController;
-  final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
-  bool _wasOnline;
+  final DesktopRuntime _runtime;
   bool _closed = false;
+
+  // ── Public sub-facades (delegate to runtime) ─────────────────────────
+
+  RegistryFacade get registry => _runtime.registry;
+  AssessmentFacade get assessment => _runtime.assessment;
+  CareFacade get care => _runtime.care;
+  ProtectionFacade get protection => _runtime.protection;
+  AuditFacade get audit => _runtime.audit;
+  LookupFacade get lookup => _runtime.lookup;
+  HealthFacade get health => _runtime.health;
 
   // ── Public sync state ──────────────────────────────────────────────
 
@@ -128,13 +85,13 @@ class SocialCareDesktop {
   /// completion (manual `triggerDrain` or connectivity-restore edge).
   /// Multiple listeners (e.g. sync_detail_panel + home_page indicator)
   /// receive every event.
-  Stream<DrainSummary> get drainStream => _drainController.stream;
+  Stream<DrainSummary> get drainStream => _runtime.drainController.stream;
 
   /// Manually triggers a drain pass. Pre-`startSync` this is a no-op
   /// (`Success(processed: 0)`) per D4 α; post-`close` it returns
   /// `Failure(SyncFailure)`.
   ///
-  /// The underlying [PumpingSyncEngine] pumps successful drain summaries
+  /// The underlying `PumpingSyncEngine` pumps successful drain summaries
   /// onto [drainStream], so manual triggers AND fire-and-forget triggers
   /// from write use cases all surface there.
   Future<Result<DrainSummary>> triggerDrain() {
@@ -143,19 +100,19 @@ class SocialCareDesktop {
         Failure<DrainSummary>(SyncFailure('SocialCareDesktop closed')),
       );
     }
-    return _engine.triggerDrain();
+    return _runtime.engine.triggerDrain();
   }
 
   // ── Public lifecycle (D4 α) ────────────────────────────────────────
 
   /// Enables the SyncEngine. Idempotent — calling twice is a no-op.
   /// Call this AFTER login when the auth token becomes available.
-  Future<void> startSync() => _engine.start();
+  Future<void> startSync() => _runtime.engine.start();
 
   /// Suspends the SyncEngine. Pending Outbox rows stay queued; subsequent
   /// `triggerDrain` returns `Success(processed: 0)` until `startSync`
   /// is called again.
-  Future<void> stopSync() => _engine.stop();
+  Future<void> stopSync() => _runtime.engine.stop();
 
   /// Releases resources:
   ///   1. Cancels the connectivity subscription.
@@ -165,20 +122,20 @@ class SocialCareDesktop {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
-    await _connectivitySub.cancel();
-    await _engine.close();
+    await _runtime.connectivityObserver.dispose();
+    await _runtime.engine.close();
     try {
-      await _cacheDb.close();
+      await _runtime.cacheDb.close();
     } catch (_) {}
     try {
-      await _syncDb.close();
+      await _runtime.syncDb.close();
     } catch (_) {}
-    if (!_drainController.isClosed) {
-      await _drainController.close();
+    if (!_runtime.drainController.isClosed) {
+      await _runtime.drainController.close();
     }
   }
 
-  // ── Factory (D3 + D4 + D5 + D02 wired) ────────────────────────────
+  // ── Factory (delegates to DesktopAssembler — D03) ───────────────────
 
   /// Builds the full Desktop BFF instance.
   ///
@@ -186,10 +143,14 @@ class SocialCareDesktop {
   /// then opens both Drift databases, builds 7 remotes via Dio (sharing
   /// one client with `X-Actor-Id` + `Authorization`-via-tokenProvider),
   /// composes 42 use cases via 7 per-context builders (D02), groups them
-  /// into 7 sub-facades, and wires the connectivity listener (D5 γ).
+  /// into 7 sub-facades, and wires the connectivity listener (D5 γ /
+  /// D03 [AutoDrainObserver]).
   ///
   /// **Does NOT auto-start the engine** (D4 α). Call `startSync()` after
   /// login.
+  ///
+  /// Public surface preserved 100% across D03 — same parameters as
+  /// before. Internal composition now flows through [DesktopAssembler].
   static Future<SocialCareDesktop> create({
     required String baseUrl,
     required String actorId,
@@ -202,163 +163,22 @@ class SocialCareDesktop {
     Connectivity? connectivity,
     DriftExecutorFactory? executorFactory,
   }) async {
-    final factory = executorFactory ?? DriftExecutorFactory.production;
+    final assembler = DesktopAssembler(
+      baseUrl: baseUrl,
+      actorId: actorId,
+      tokenProvider: tokenProvider,
+    ).withStaleAfter(staleAfter);
 
-    // ── Path resolution (D3) ─────────────────────────────────────────
-    final resolvedCachePath =
-        cacheFilePath ?? await defaultDesktopFilePath('app_cache.sqlite');
-    final resolvedSyncPath =
-        syncQueueFilePath ??
-        await defaultDesktopFilePath('app_sync_queue.sqlite');
+    if (cacheFilePath != null) assembler.withLocalCache(path: cacheFilePath);
+    if (syncQueueFilePath != null) {
+      assembler.withSyncQueue(path: syncQueueFilePath);
+    }
+    if (dio != null) assembler.withDio(dio);
+    if (clock != null) assembler.withClock(clock);
+    if (connectivity != null) assembler.withConnectivity(connectivity);
+    if (executorFactory != null) assembler.withExecutorFactory(executorFactory);
 
-    // ── Database open ────────────────────────────────────────────────
-    final cacheDb = CacheDatabase(factory.open(resolvedCachePath));
-    final syncDb = SyncDatabase(factory.open(resolvedSyncPath));
-
-    // ── Clock + Dio ──────────────────────────────────────────────────
-    final effectiveClock = clock ?? const SystemClock();
-    final effectiveDio =
-        dio ??
-        RemoteBase.buildDio(
-          baseUrl: baseUrl,
-          actorId: actorId,
-          tokenProvider: tokenProvider,
-        );
-
-    // ── Caches (5) ───────────────────────────────────────────────────
-    final patientsCache = DriftPatientsCache(cacheDb, clock: effectiveClock);
-    final careCache = DriftCareCache(cacheDb, clock: effectiveClock);
-    final protectionCache = DriftProtectionCache(
-      cacheDb,
-      clock: effectiveClock,
-    );
-    final auditCache = DriftAuditCache(cacheDb, clock: effectiveClock);
-    final lookupCache = DriftLookupCache(cacheDb, clock: effectiveClock);
-
-    // ── Outbox + remotes (7) ─────────────────────────────────────────
-    final outbox = DriftOutboxRepository(syncDb);
-    final registryRemote = RegistryRemote(dio: effectiveDio);
-    final assessmentRemote = AssessmentRemote(dio: effectiveDio);
-    final careRemote = CareRemote(dio: effectiveDio);
-    final protectionRemote = ProtectionRemote(dio: effectiveDio);
-    final auditRemote = AuditRemote(dio: effectiveDio);
-    final lookupRemote = LookupRemote(dio: effectiveDio);
-    final healthRemote = HealthRemote(dio: effectiveDio);
-
-    // ── DrainStream broadcast (created early so engine can pump it) ──
-    final drainController = StreamController<DrainSummary>.broadcast();
-
-    // ── Sync engine (pumping subclass — see PumpingSyncEngine) ───────
-    final engine = PumpingSyncEngine(
-      outbox: outbox,
-      registry: registryRemote,
-      assessment: assessmentRemote,
-      care: careRemote,
-      protection: protectionRemote,
-      lookup: lookupRemote,
-      drainController: drainController,
-    );
-
-    // ── Use case bundles (D02 — 7 per-bounded-context builders) ──────
-    final registryUseCases = RegistryUseCases.build(
-      patientsCache: patientsCache,
-      remote: registryRemote,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final assessmentUseCases = AssessmentUseCases.build(
-      patientsCache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final careUseCases = CareUseCases.build(
-      careCache: careCache,
-      patientsCache: patientsCache,
-      remote: careRemote,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final protectionUseCases = ProtectionUseCases.build(
-      protectionCache: protectionCache,
-      patientsCache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final auditUseCases = AuditUseCases.build(
-      auditCache: auditCache,
-      remote: auditRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final lookupUseCases = LookupUseCases.build(
-      lookupCache: lookupCache,
-      remote: lookupRemote,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final healthUseCases = HealthUseCases.build(remote: healthRemote);
-
-    // ── Sub-facades (7) ──────────────────────────────────────────────
-    final registryFacade = RegistryFacade.internal(useCases: registryUseCases);
-    final assessmentFacade = AssessmentFacade.internal(
-      useCases: assessmentUseCases,
-    );
-    final careFacade = CareFacade.internal(useCases: careUseCases);
-    final protectionFacade = ProtectionFacade.internal(
-      useCases: protectionUseCases,
-    );
-    final auditFacade = AuditFacade.internal(useCases: auditUseCases);
-    final lookupFacade = LookupFacade.internal(useCases: lookupUseCases);
-    final healthFacade = HealthFacade.internal(useCases: healthUseCases);
-
-    // ── Connectivity wiring (D5 γ) ───────────────────────────────────
-    final effectiveConnectivity = connectivity ?? Connectivity();
-    final initialResults = await effectiveConnectivity.checkConnectivity();
-    final initialOnline = resultsAreOnline(initialResults);
-
-    // The subscription is bound LATE (after construction) so we can
-    // call `triggerDrain` (which uses the wrapper's own logic to pump
-    // the drainStream) when the offline → online edge happens. We
-    // create the subscription with a placeholder closure first; the
-    // closure body captures the constructed instance via `desktop`.
-    late SocialCareDesktop desktop;
-    final connectivitySub = effectiveConnectivity.onConnectivityChanged.listen((
-      results,
-    ) {
-      final isOnline = resultsAreOnline(results);
-      if (isOnline && !desktop._wasOnline) {
-        // Fire-and-forget the drain so the listener stays responsive.
-        unawaited(desktop.triggerDrain());
-      }
-      desktop._wasOnline = isOnline;
-    });
-
-    desktop = SocialCareDesktop._(
-      registry: registryFacade,
-      assessment: assessmentFacade,
-      care: careFacade,
-      protection: protectionFacade,
-      audit: auditFacade,
-      lookup: lookupFacade,
-      health: healthFacade,
-      engine: engine,
-      cacheDb: cacheDb,
-      syncDb: syncDb,
-      connectivity: effectiveConnectivity,
-      drainController: drainController,
-      connectivitySub: connectivitySub,
-      initialOnline: initialOnline,
-    );
-
-    return desktop;
+    final runtime = await assembler.build();
+    return SocialCareDesktop._(runtime);
   }
 }
