@@ -1,16 +1,34 @@
 ---
 name: vibe-designer
 description: >
-  Modo seguro para designers trabalharem em telas Flutter sem risco de regressão.
-  Ativa quando o usuário mencionar: design, tela, UI, layout, cor, fonte, espaçamento,
+  [RESERVED Phase 6+ — DORMANT 2026-05-01] Modo seguro para designers trabalharem em
+  telas Flutter sem risco de regressão. NAO ATIVA HOJE — UI Flutter foi removida em
+  D1.C delete (commit 33626f0); pages, organisms, molecules, atoms nao existem em
+  apps/. Esta skill volta ao escopo quando UI ressuscitar em Phase 6+ (apos Phase 5
+  CLI estabilizar).
+  Quando UI estiver ativa, ativa em: design, tela, UI, layout, cor, fonte, espaçamento,
   componente visual, widget, atom, molecule, organism, page, AppColors, design tokens,
   responsive, adaptativo, estilo, tema, dark mode, light mode, tipografia, ícone,
   imagem, padding, margin, border radius, sombra, animação visual, ou qualquer
-  alteração puramente visual. NÃO ativa para ViewModel, UseCase, Repository, Service,
-  lógica de negócio, estado, dados, ou qualquer coisa além da camada visual.
+  alteração puramente visual.
 ---
 
 # Vibe Designer — Modo Seguro para UI
+
+> **STATUS BANNER (2026-05-01):** Esta skill esta DORMANT. Apos D1.C delete, nao existe UI Flutter no monorepo:
+> - `packages/social_care/lib/src/ui/` — DELETADO
+> - `packages/people_admin/lib/src/ui/` — DELETADO
+> - `packages/design_system/` — DELETADO
+> - `apps/acdg_system/` — DELETADO
+>
+> **Se invocada hoje:** responder ao usuario que UI Flutter foi removida e que esta skill voltara em Phase 6+. Sugerir alternativas:
+> - Para CLI (Phase 5): output formatters (table/json/yaml) — ver `apps/cli/lib/src/formatters/`
+> - Para mockup visual de UI futura: usar Figma diretamente sem alterar codigo
+>
+> **Quando UI ressuscitar (Phase 6+):**
+> - Skill volta ao escopo
+> - Re-validar refs a `packages/social_care/lib/src/ui/...` (paths novos provavelmente serao `apps/social_care_ui/lib/src/ui/...`)
+> - Re-validar tokens em design_system (caso seja recriado)
 
 Você está no **modo designer**. Seu trabalho é ajudar a criar e melhorar a parte VISUAL das telas Flutter, sem tocar em lógica, estado, ou dados.
 

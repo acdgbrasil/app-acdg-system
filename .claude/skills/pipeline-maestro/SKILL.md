@@ -1,19 +1,35 @@
 ---
 name: pipeline-maestro
 description: >
-  Orchestrates a multi-agent fail-first pipeline for Flutter/Dart development in the ACDG monorepo.
-  Coordinates flutter-domain-modeler, flutter-service-builder, flutter-repository-architect,
-  flutter-mapper-engineer, flutter-usecase-orchestrator, flutter-viewmodel-engineer,
-  flutter-view-implementer, flutter-test-writer, flutter-code-reviewer and flutter-quality-checker.
-  Use when the user asks to "implement a feature", "run the pipeline", "create X end-to-end",
-  or any task that should go through model -> service -> repository -> usecase -> viewmodel -> view.
+  Orchestrates a multi-agent fail-first pipeline for Dart development in the ACDG monorepo.
+  Two pipelines: (A) BFF + CLI 4-agent (ACTIVE 2026-05-01): test-writer -> flutter-bff-implementer ->
+  flutter-code-reviewer -> flutter-quality-checker. Used for apps/social_care_bff/ and apps/cli/.
+  (B) UI Flutter multi-agent (RESERVED Phase 6+): flutter-domain-modeler, flutter-service-builder,
+  flutter-repository-architect, flutter-mapper-engineer, flutter-usecase-orchestrator,
+  flutter-viewmodel-engineer, flutter-view-implementer + test-writer, code-reviewer, quality-checker.
+  Use when the user asks to "implement a feature", "run the pipeline", "create X end-to-end".
   Also trigger for "pipeline", "maestro", "multi-agent", "fail-first", "inside-out implementation",
-  "Flutter feature", "Dart pipeline", "MVVM pipeline".
+  "BFF pipeline", "CLI pipeline", "Dart pipeline".
 ---
 
-# Pipeline Maestro — Fail-First Multi-Agent Orchestration (Flutter/Dart)
+# Pipeline Maestro — Fail-First Multi-Agent Orchestration (Dart)
 
-You are the maestro. You coordinate specialized Flutter agents enforcing strict boundaries.
+> **Status banner (2026-05-01):** Pos D1.C delete + ADR-022, o pipeline ATIVO eh o BFF/CLI 4-agent (ver "Pipeline ATIVO" abaixo). O pipeline UI Flutter multi-agent (10 agentes especializados por camada) fica RESERVADO para Phase 6+ quando UI ressuscitar.
+>
+> **NUNCA invocar agentes UI (`flutter-domain-modeler`, `flutter-service-builder`, `flutter-repository-architect`, `flutter-mapper-engineer`, `flutter-usecase-orchestrator`, `flutter-viewmodel-engineer`, `flutter-view-implementer`) hoje** — eles esperam paths e padroes que nao existem mais (`packages/social_care/lib/src/ui/...`, ViewModel + ChangeNotifier, Atomic Design widgets). Se invocados, falham com paths invalidos ou geram codigo orfao.
+>
+> **Pipeline ATIVO (BFF + CLI):**
+>
+> | Wave | Agent | Output |
+> |------|-------|--------|
+> | W0 — RED | `test-writer` | Tests falhando descrevendo contrato esperado |
+> | W1 — GREEN | `flutter-bff-implementer` | Implementacao ate GREEN; cobre Intents, UseCases, Handlers, Caches, Remotes, sub-contracts, Fakes, middleware. CLI tambem (Commands, Formatters, Session). |
+> | W2 — REVIEW | `flutter-code-reviewer` | Audit read-only contra Non-Negotiable Rules; max 3 rounds |
+> | W3 — QUALITY | `flutter-quality-checker` | `dart analyze` zero + `dart format` + `dart test` GREEN |
+>
+> Boundary canonical: `apps/social_care_bff/{contracts,web,desktop}/` e `apps/cli/`. Outros (kernel/, infra/) requerem pipeline targeted (definir caso-a-caso).
+
+You are the maestro. You coordinate specialized Dart agents enforcing strict boundaries.
 
 ## Agent Roster
 

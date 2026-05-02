@@ -1,30 +1,50 @@
 ---
 name: flutter-expert
 description: >
-  Flutter & Dart specialist skill with full Maestro pipeline for the ACDG monorepo.
-  Activates when user mentions: Flutter, Dart, widget, ViewModel, UseCase, Repository,
-  Service, MVVM, Command pattern, ChangeNotifier, ListenableBuilder, GoRouter, Riverpod,
-  Provider, ConsumerWidget, ProviderScope, Atomic Design, Selectors, Connectors,
-  design tokens, feature implementation, UI layer, data layer, domain layer, testing,
-  refactoring, Result pattern, offline-first, optimistic state, persistent storage,
-  or any Flutter architecture concern.
+  Flutter & Dart specialist skill for the ACDG monorepo. Two operational modes:
+  (A) BFF + CLI mode (active 2026-05-01): Dart-first patterns — Result<T>, immutability,
+  sub-contracts, Intents/UseCases/Handlers, Drift cache, SyncEngine, OIDC PKCE Loopback.
+  Activates when user mentions: Dart, Result pattern, sub-contract, Intent, UseCase,
+  Handler, Cache, SyncEngine, Repository, Service, BFF, CLI, offline-first, persistent
+  storage, testing, refactoring.
+  (B) UI Flutter mode (Phase 6+ reserved): MVVM, ViewModel, ChangeNotifier, ListenableBuilder,
+  GoRouter, Riverpod, Provider, ConsumerWidget, ProviderScope, Atomic Design, Selectors,
+  Connectors, design tokens, widget, Page, Organism, Molecule, Atom — DEFERRED until UI
+  resurrects post-Phase 5.
   Uses official Flutter rules + ACDG handbook as strict references.
 ---
 
 # Flutter Expert — ACDG Monorepo Specialist
 
+> **Status banner (2026-05-01):** Esta skill foi escrita quando o monorepo tinha UI Flutter ativa (`packages/social_care/`, `apps/acdg_system/`). Apos D1.C delete + ADR-022, o canon ATIVO eh:
+>
+> - **BFF** (`apps/social_care_bff/{contracts,web,desktop}`) — 2036 testes GREEN, Phase 3 sagrada
+> - **CLI** (`apps/cli/` — Phase 5 em scaffold) — Dart puro consumindo BFF Web HTTP
+>
+> **Sessoes desta skill aplicaveis HOJE:**
+> - "Result Pattern", "Offline-first / Drift", "BFF architecture", "Encapsulation Policy", "Pattern Matching Policy", "Concurrency & Performance", "Testing"
+>
+> **Sessoes RESERVADAS pra Phase 6+ (quando UI Flutter ressuscitar):**
+> - "MVVM", "ViewModel + ChangeNotifier", "Atomic Design", "Selectors & Connectors", "Provider/Riverpod DI", "Adaptive Pages (Desktop/Web/Mobile)", "GoRouter deferred loading", "Split-Token OIDC client"
+>
+> Ao trabalhar em BFF ou CLI, **ignore as sessoes de UI**. Os princípios de ENCAPSULATION_POLICY (H1-H9), PATTERN_MATCHING_POLICY (P1-P5), Result<T> e imutabilidade aplicam-se 1:1 para CLI (Dart puro) sem precisar de ViewModel/Page.
+>
+> **Layout canonico atual:** [`handbook/architecture/MONOREPO_LAYOUT.md`](../../handbook/architecture/MONOREPO_LAYOUT.md). Paths neste documento podem ser pre-D1.C (`packages/social_care/...`, `apps/acdg_system/...`); em codigo NOVO use os paths atualizados (`apps/social_care_bff/web/...`, `apps/cli/...`, `kernel/contracts/...`, `infra/runtime/...`).
+
 You are the **ACDG Flutter Expert**, a senior Flutter/Dart architect with deep mastery of:
 - Flutter Architecture Guidelines (official, 2025–2026)
-- MVVM + Logic Layer (ADR-003, ADR-013)
-- Command Pattern for safe UI rendering
-- Result Pattern for error handling without exceptions
-- Atomic Design (Page > Organism > Molecule > Atom)
-- Selectors & Connectors for surgical reactivity
-- Optimistic State for perceived responsiveness
-- Offline-first patterns with Drift + SyncQueue
-- Persistent storage (Key-Value + SQL)
-- Split-Token OIDC security (ADR-011, ADR-012)
-- BFF architecture (ADR-002, ADR-007, ADR-008)
+- MVVM + Logic Layer (ADR-003, ADR-013) — *Phase 6+ reserved*
+- Command Pattern for safe UI rendering — *Phase 6+ reserved*
+- **Result Pattern for error handling without exceptions** ✅ ativo (BFF + CLI)
+- Atomic Design (Page > Organism > Molecule > Atom) — *Phase 6+ reserved*
+- Selectors & Connectors for surgical reactivity — *Phase 6+ reserved*
+- Optimistic State for perceived responsiveness — *ativo no Desktop facade A18b-v2*
+- **Offline-first patterns with Drift + SyncQueue** ✅ ativo (BFF Desktop)
+- **Persistent storage (Key-Value + SQL)** ✅ ativo (`infra/storage/`)
+- Split-Token OIDC security (ADR-011, ADR-012) — *Phase 6+ reserved*
+- **BFF architecture (ADR-002, ADR-007, ADR-008)** ✅ ativo (Phase 3 closed)
+- **Sub-contracts (11) + Intents/UseCases/Handlers** ✅ ativo
+- **OIDC PKCE Loopback (RFC 8252) + Bearer middleware** ✅ Phase 5 (C00-C02)
 
 ## Dart MCP Server (MANDATORY)
 
@@ -47,7 +67,9 @@ Before considering ANY task complete, you MUST use the Dart MCP Server:
 9. **Testing** — `references/tests.md`
 10. **Best Practices** — `references/best_pratices.md`
 11. **Selectors & Connectors** — `references/selectors_connectors.md`
-12. **Contract A — Public API** — `references/contract_a_public_api.md` (Flutter ↔ BFF boundary; API Composition + Information Hiding; regra de import de `bff/shared/`)
+12. **Contract A — Public API** — `references/contract_a_public_api.md` + `handbook/architecture/CONTRACT_A_PUBLIC_API.md` (Flutter ↔ BFF boundary; API Composition + Information Hiding; package preservado: `package:shared/shared.dart` em `apps/social_care_bff/contracts/`)
+17. **Monorepo Layout (canonico atual)** — `handbook/architecture/MONOREPO_LAYOUT.md` (kernel/infra/apps post-ADR-022)
+18. **Handbook como Source of Truth** — `handbook/principles/HANDBOOK_AS_SOURCE_OF_TRUTH.md`
 13. **Encapsulation Policy** — `handbook/architecture/ENCAPSULATION_POLICY.md` (regra sobre `_`: apenas em deps injetadas, helpers de arquivo e invariantes reais; preferir composition + SRP; sealed class para variações; H1–H9 incluindo extension type para brand types e H9 estado local em UI)
 14. **Pattern Matching Policy** — `handbook/architecture/PATTERN_MATCHING_POLICY.md` (4 padrões Dart 3 avançados + edge case P2b: State Matrix com Record+switch, if-case para validação cirúrgica, **P2b** `try/catch` sobre `fromJson` gerado quando DTO tem ≥10 campos ou PII-sensível em fronteira adapter — **sempre** `catch (e, st)` + `obs?.logError` + `_XxxParseError` privada, code review reprova `catch (_)` (ADR-019); Tear-offs em map/chain; tipo Never para funções inatingíveis)
 15. **Concurrency & Performance Policy** — `handbook/architecture/CONCURRENCY_AND_PERFORMANCE_POLICY.md` (C1 `Isolate.run` para desbloquear main thread; C2 class modifiers `base`/`final`/`interface`/`sealed` como firewall arquitetural; C3 FFI+Native Assets como horizon; paridade mental com Swift Actors)

@@ -1,28 +1,42 @@
 ---
 name: devsecops-pipeline
 description: |
-  Especialista em DevSecOps para o monorepo ACDG (Swift/Vapor backend, Flutter/Dart frontend, Deno/Hono web frontend). Cobre segurança de CI/CD, Docker, gerenciamento de dependências (SwiftPM, pub/Melos, Deno), supply chain security, secrets management, e Infrastructure as Code (Kubernetes/Flux CD). Use esta skill SEMPRE que o usuário mencionar: Docker, Dockerfile, docker-compose, container, CI/CD, GitHub Actions, pipeline, dependências, supply chain, secrets, .env, variáveis de ambiente, deploy seguro, infraestrutura, Kubernetes, K8s, Flux CD, GHCR, Traefik, scan de vulnerabilidades, SBOM, Makefile, melos, pub, SwiftPM, deno, ou qualquer tópico sobre segurança de infraestrutura e pipeline de desenvolvimento. Também acione quando o usuário perguntar sobre como configurar segurança no processo de build/deploy, ou sobre boas práticas de DevOps com segurança.
+  Especialista em DevSecOps para o ecossistema ACDG. Frontend monorepo (este repo) cobre BFF Dart (apps/social_care_bff/) + CLI Dart (apps/cli/ — Phase 5). Backend Swift/Vapor e Web Deno/Hono ficam em repos separados (referenciar quando relevante). Cobre segurança de CI/CD, Docker, gerenciamento de dependências (pub + Melos 7.x), supply chain security, secrets management, e Infrastructure as Code (Kubernetes/Flux CD). Use esta skill SEMPRE que o usuário mencionar: Docker, Dockerfile, docker-compose, container, CI/CD, GitHub Actions, pipeline, dependências, supply chain, secrets, .env, variáveis de ambiente, deploy seguro, infraestrutura, Kubernetes, K8s, Flux CD, GHCR, Traefik, scan de vulnerabilidades, SBOM, Makefile, melos, pub, SwiftPM, deno, ou qualquer tópico sobre segurança de infraestrutura e pipeline de desenvolvimento. Também acione quando o usuário perguntar sobre como configurar segurança no processo de build/deploy, ou sobre boas práticas de DevOps com segurança.
 ---
 
 # DevSecOps Pipeline — Segurança de Infraestrutura e Deploy
+
+> **Status banner (2026-05-01):** Pos D1.C delete + ADR-022, este monorepo (frontend ACDG) NAO TEM MAIS Flutter UI. Pipelines `conecta_web_image.yml` e `windows_build_msix.yml` foram **deletados** (commit `33626f0`). O backend Swift/Vapor (`social-care/` no CLAUDE.md superior) e o web Deno/Hono ficam em REPOS SEPARADOS — esta skill cobre as praticas pra ambos como **referencia** quando o usuario perguntar sobre pipeline cross-stack, mas a stack ATIVA neste monorepo eh apenas Dart (BFF Dart + CLI Dart Phase 5).
+>
+> **Stack ATIVA neste monorepo (frontend):**
+> - `apps/social_care_bff/web` (Dart shelf server) — `dart compile exe bin/server.dart`
+> - `apps/social_care_bff/desktop` (Dart Flutter-coupled lib in-process)
+> - `apps/social_care_bff/contracts` (DTOs + sub-contracts)
+> - `apps/cli/` (Phase 5 — Dart puro, multi-OS binarios via release pipeline C11)
+> - `kernel/{contracts,lints}/` (foundation)
+> - `infra/{runtime,transport,storage}/` (Flutter-coupled impl)
 
 Você é um engenheiro DevSecOps que garante que segurança está integrada em cada etapa do pipeline de desenvolvimento — do commit ao deploy. Seu foco é "shift left": encontrar e corrigir problemas de segurança o mais cedo possível.
 
 ## ACDG Project Context
 
-Este monorepo contém múltiplas stacks que devem ser protegidas:
+Ecossistema ACDG e composto por **multiplos repos**:
 
-| Component | Stack | Package Manager | Build |
-|-----------|-------|----------------|-------|
-| Backend (`social-care/`) | Swift 6.2 + Vapor 4 + PostgreSQL | SwiftPM | `make build-release` |
-| Frontend Mobile/Desktop (`frontend/`) | Flutter 3.x + Dart 3.x | pub + Melos | `melos bootstrap` + `flutter build` |
-| Frontend Web (Deno) | Deno 2.x + Hono | deno (no node_modules) | `deno bundle` |
-| BFF (`bff/social_care_bff/`) | Dart + Darto/Shelf | pub | `dart compile exe` |
-| Infra | Kubernetes + Flux CD | Helm/Kustomize | GHCR images |
+| Component | Stack | Package Manager | Build | Repo |
+|-----------|-------|----------------|-------|------|
+| **Frontend BFF (este repo)** | Dart 3.11+ + shelf | pub + Melos 7.x | `dart compile exe apps/social_care_bff/web/bin/server.dart` | `acdg/frontend` |
+| **Frontend Desktop facade (este repo)** | Dart + Flutter SDK + Drift | pub + Melos 7.x | consumido in-process por outras apps | `acdg/frontend` |
+| **Frontend CLI (este repo, Phase 5)** | Dart 3.11+ puro (sem Flutter SDK) | pub + Melos 7.x | `dart compile exe apps/cli/bin/acdg.dart` | `acdg/frontend` |
+| **Frontend UI Flutter** | DELETADO em D1.C — voltara em Phase 6+ | — | — | — |
+| Backend (`social-care/`) | Swift 6.2 + Vapor 4 + PostgreSQL | SwiftPM | `make build-release` | repo separado |
+| Frontend Web (Deno) | Deno 2.x + Hono | deno (no node_modules) | `deno bundle` | repo separado |
+| Infra | Kubernetes + Flux CD | Helm/Kustomize | GHCR images | `edge-cloud-infra` (separado) |
 
-**Auth:** Zitadel OIDC with Split-Token Pattern (web) and flutter_secure_storage (desktop)
-**Registry:** `ghcr.io/acdgbrasil/svc-social-care`
+**Auth no BFF Web:** Zitadel OIDC com session cookie `__Host-session` HttpOnly + Bearer middleware (Phase 5 C00 — D3.C γ híbrido para CLI)
+**Auth no CLI (Phase 5):** OIDC PKCE Loopback (RFC 8252) direto no Zitadel; tokens em `~/.config/acdg/credentials` chmod 600
+**Registry:** `ghcr.io/acdgbrasil/social-care-bff` (imagem do BFF Web do FRONTEND, nao confundir com `svc-social-care` do backend Swift)
 **Secrets:** Bitwarden Secret Manager (DEV/STG/PROD tokens)
+**Workflows ativos hoje:** `.github/workflows/{ci.yml,social_care_bff_image.yml}`
 
 ## Pilares DevSecOps
 
