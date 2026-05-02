@@ -1,9 +1,9 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: ready
+phase: in-progress (Onda 1 closed; Onda 2 next)
 agent: —
-status: scaffold criado 2026-05-01 — aguarda kickoff de C00. **Phase 4 (flutter-migration) marcada superseded — ver `.pipeline/phase-4-flutter-migration/STATE.md`.**
+status: **C00 closed 2026-05-02 via 5-wave pipeline (62 tests GREEN, 2098 GREEN total no BFF).** Phase 4 (flutter-migration) marcada superseded. Próximo ticket: **C01 — CLI Scaffold (`apps/cli/`)**.
 
 ## Decisão estratégica (2026-05-01)
 
@@ -49,7 +49,7 @@ status: scaffold criado 2026-05-01 — aguarda kickoff de C00. **Phase 4 (flutte
 ## Tickets
 
 ### Onda 1 — Auth foundation (1 ticket)
-- [ ] **C00 — bearer-auth-middleware-bff** — middleware no BFF Web aceitando `Authorization: Bearer`; validação JWT contra JWKS Zitadel; coexiste com session cookie
+- [x] **C00 — bearer-auth-middleware-bff** — CLOSED 2026-05-02 via 5-wave pipeline (test-writer → auth-auditor → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). 62 tests GREEN, 2098 GREEN total no BFF, dart analyze zero. 2 rounds de rejection produtivos (W0.5 GAPS_FOUND fechado em W0-bis; W2 R1 REJECTED por security gap real — case-sensitive cookie strip bypass — fechado em W1 R2). 10 security constraints enforced + 3 CVEs cobertas (CVE-2015-9235 alg none, CVE-2016-10555 alg confusion, CVE-2018-0114 kid traversal). Pré-req infra pendente: provisionar `OIDC_CLI_CLIENT_ID` no Bitwarden.
 
 ### Onda 2 — CLI scaffold + auth (2 tickets)
 - [ ] **C01 — cli-scaffold** — `apps/cli/` Dart puro, `args` parser, `acdg --help`, struct de commands

@@ -29,6 +29,13 @@ dependencies:
   dart_jsonwebtoken: ^3.0.0
   crypto: ^3.0.6
 
+  # Direct dep — JWKS cache parses JWK n/e components into a
+  # `pc.RSAPublicKey` so `dart_jsonwebtoken.RSAPublicKey.raw(...)` can
+  # consume them without round-tripping through PEM. Already a transitive
+  # dep of dart_jsonwebtoken; listed here to satisfy
+  # `depend_on_referenced_packages` and to pin the contract.
+  pointycastle: ^4.0.0
+
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.24.0

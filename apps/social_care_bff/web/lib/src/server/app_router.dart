@@ -4,6 +4,7 @@ import 'package:shared/shared.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
+import '../auth/jwks_cache.dart';
 import '../auth/oidc_server_client.dart';
 import '../auth/session_store.dart';
 import '../config/server_config.dart';
@@ -15,6 +16,7 @@ import '../handlers/protection_handler.dart';
 import '../handlers/registry_family_handler.dart';
 import '../handlers/registry_patient_handler.dart';
 import '../handlers/team_handler.dart';
+import '../middleware/bearer_auth_middleware.dart';
 import '../middleware/observability.dart';
 import '../middleware/session_middleware.dart';
 import '../use_cases/add_family_member_use_case.dart';
@@ -85,6 +87,7 @@ class AppRouter {
     required ServerConfig config,
     required SessionStore sessionStore,
     required OidcServerClient oidcClient,
+    required JwksCache jwksCache,
     required AuthContract authContract,
     required RegistryContract registryContract,
     required PeopleContract peopleContract,
@@ -94,7 +97,9 @@ class AppRouter {
     required ProtectionContract protectionContract,
     required LookupContract lookupContract,
     required TeamContract teamContract,
-  }) : _sessionStore = sessionStore,
+  }) : _config = config,
+       _sessionStore = sessionStore,
+       _jwksCache = jwksCache,
        _authContract = authContract,
        _registryContract = registryContract,
        _peopleContract = peopleContract,
@@ -105,7 +110,9 @@ class AppRouter {
        _lookupContract = lookupContract,
        _teamContract = teamContract;
 
+  final ServerConfig _config;
   final SessionStore _sessionStore;
+  final JwksCache _jwksCache;
   final AuthContract _authContract;
   final RegistryContract _registryContract;
   final PeopleContract _peopleContract;
@@ -172,6 +179,9 @@ class AppRouter {
 
     final protectedPipeline = const Pipeline()
         .addMiddleware(observabilityMiddleware())
+        .addMiddleware(
+          bearerAuthMiddleware(config: _config, jwksCache: _jwksCache),
+        )
         .addMiddleware(sessionMiddleware(_sessionStore))
         .addHandler(protectedRouter);
 
