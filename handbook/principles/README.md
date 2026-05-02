@@ -1,153 +1,173 @@
 # Principios — frontend (Conecta Raros)
 
-Diretrizes fundamentais de design, patterns e convencoes de codigo.
-Estes principios sao **inegociaveis** — qualquer desvio deve ser registrado como ADR.
+> Diretrizes fundamentais de design, patterns e convencoes de codigo.
+> Estes principios sao **inegociaveis** — qualquer desvio deve ser registrado como ADR.
+>
+> **Atualizado 2026-05-01** — pos-D1.C/ADR-022. Principios de UI Flutter (MVVM, Atomic Design, Provider) ficam reservados para Phase 6+ (UI futura). Hoje vale o canon de BFF + CLI.
 
 ---
 
-## 1. Principios de Arquitetura
+## 0. Diretriz Operacional Nuclear
 
-### 1.1 MVVM Estrito
-- **ViewModel** = maxima responsabilidade sobre o estado da tela
-- **View** = exibe dados e captura eventos. Nao toma decisoes.
-- **UseCase** = logica de aplicacao entre ViewModel e Data layer
-- ViewModel NUNCA importa widgets. View NUNCA importa repositories.
+**[HANDBOOK_AS_SOURCE_OF_TRUTH.md](HANDBOOK_AS_SOURCE_OF_TRUTH.md)** — Memoria de agente nao e canonica. Tudo que e fato sobre o projeto vai pro handbook em git, **nao em memoria de LLM**. Auditar e atualizar quando mudancas estruturais ocorrerem.
 
-### 1.2 Estado Atomico
-- Cada pedaco de estado e um `ValueNotifier<T>` individual
-- `ChangeNotifier` na ViewModel agrega os ValueNotifiers
-- Rebuilds cirurgicos — so o widget que escuta aquele ValueNotifier reconstroi
-- ZERO estado global. Estado e sempre local a feature.
+---
 
-### 1.3 Imutabilidade Total
+## 1. Principios Cross-cutting (BFF + CLI + futura UI)
+
+### 1.1 Imutabilidade Total
 - Todos os models: `final` em todos os campos
 - Mudancas via `copyWith()` — nunca mutacao direta
-- Dart trabalha bem com OOP imutavel — abusar disso
 - Listas: `List.unmodifiable()` ou `const []`
+- Use Equatable em todos os DTOs (ENCAPSULATION_POLICY H6)
 
-### 1.4 Models como Schemas
-- Models no Flutter sao **schemas puros** — sem logica de negocio
+### 1.2 Result<T> end-to-end
+- Erros sao valores, nao excecoes
+- `try/catch` SOMENTE no adapter boundary (services HTTP, repositorios), com conversao para `Result<T>` antes de retornar
+- Combinadores idiomaticos: `map`, `flatMap`, `combineWith` (de `core_contracts/`)
+- **NUNCA fazer sealed-class downcast** — `acdg_lints/no_sealed_class_downcast` enforce em CI
+
+### 1.3 Models como Schemas
+- Models no Flutter (e CLI) sao **schemas puros** — sem logica de negocio
 - Toda validacao, transformacao e regra de dominio vive no **BFF**
 - Models tem: campos, `fromJson()`, `toJson()`, `copyWith()`, `==`, `hashCode`
-- NADA MAIS.
 
-### 1.5 Separation of Concerns
+### 1.4 Separation of Concerns
 - Cada classe tem UMA responsabilidade
-- Dependencias fluem SEMPRE para dentro (View -> ViewModel -> UseCase -> Repository -> Service)
-- Nenhuma camada conhece a camada acima dela
+- Dependencias fluem para dentro do dominio (boundary -> domain -> kernel)
+- Camadas inferiores nao conhecem camadas superiores
+
+### 1.5 Imports
+- Use `import type { X }` ou `import 'package:X' show ...` para narrar intent
+- Ordem obrigatoria:
+  ```dart
+  // 1. Dart SDK
+  import 'dart:async';
+
+  // 2. Flutter SDK (quando aplicavel)
+  import 'package:flutter/foundation.dart';
+
+  // 3. Packages externos (pub.dev)
+  import 'package:dio/dio.dart';
+
+  // 4. Packages internos (monorepo — kernel/infra/apps)
+  import 'package:core_contracts/core_contracts.dart';
+  import 'package:shared/shared.dart';
+
+  // 5. Imports relativos (mesmo package)
+  import '../intents/x_intent.dart';
+  ```
 
 ---
 
-## 2. Design Patterns (GoF)
+## 2. Principios BFF (apps/social_care_bff/)
 
-Patterns obrigatorios no codebase:
+### 2.1 Sub-contracts (11 atual: ADR-022)
+`AuthContract`, `RegistryContract`, `AssessmentContract`, `CareContract`, `ProtectionContract`, `LookupContract`, `TeamContract`, `AuditContract`, `AnalyticsContract`, `HealthContract`, `PeopleContract` (interno).
 
-| Pattern | Uso |
-|---------|-----|
-| **Repository** | Abstrai acesso a dados. Fonte única de verdade. |
-| **UseCase** | Orquestra lógica de negócio e interage com múltiplos Repositories. |
-| **Command** | Encapsula ações assíncronas e gerencia estado de execução/erro. |
-| **Factory** | Criação de objetos complexos (ex: `OidcConfigFactory`). |
-| **Observer** | Reatividade via `ValueNotifier` e `ListenableBuilder`. |
+### 2.2 ENCAPSULATION_POLICY (H1-H9)
+Ver [../architecture/ENCAPSULATION_POLICY.md](../architecture/ENCAPSULATION_POLICY.md).
+H6 = Equatable em DTOs; H7 = composition over inheritance; H8 = SRP; H9 = abstract interface class para tipos cross-layer.
 
-### Anti-patterns proibidos
-- **God Object** — nenhuma classe com mais de ~200 linhas
-- **Spaghetti State** — sem setState() fora de atoms triviais
-- **Magic Strings** — constantes sempre tipadas
-- **Service Locator** — usar Provider, nunca GetIt.instance diretamente
+### 2.3 PATTERN_MATCHING_POLICY (P1-P5)
+Ver [../architecture/PATTERN_MATCHING_POLICY.md](../architecture/PATTERN_MATCHING_POLICY.md).
+P1 = state matrix; P2 = if-case default; P2b = try/catch edge case; P3 = tear-offs; P4 = `Never`; P5 = exhaustive switch.
+
+### 2.4 Cascade DI
+Ordem canonica de injecao:
+`patient -> family -> assessment -> care -> protection -> lookup -> team -> audit -> auth`
+
+### 2.5 Error code convention
+- `INVALID_*` — 400 BFF-local (parse/validation falha)
+- `<PREFIX>-<NNN>` — passthrough de BackendErrorResponse upstream
+
+### 2.6 Response wrapping
+`StandardResponse<T>` com `meta.timestamp` em todos os success responses.
+
+### 2.7 UUID validation
+Toda path-param UUID deve passar por `validateUuidPathParam` (canon A23).
 
 ---
 
-## 3. Convencoes de Codigo
+## 3. Principios CLI (apps/cli/ — Phase 5)
 
-### 3.1 Nomenclatura
+### 3.1 Output formatters
+- `table` (default) — colunas truncadas, cores ANSI
+- `json` — `--output=json`
+- `yaml` — `--output=yaml`
+
+### 3.2 Auth — D3.C γ híbrido
+- BFF aceita ambos: cookie `__Host-session` (browser) e `Authorization: Bearer` (CLI)
+- CLI faz OIDC PKCE Loopback (RFC 8252) direto no Zitadel
+- Tokens em `~/.config/acdg/credentials` (chmod 600)
+
+### 3.3 Comando estilo `gh`
+- `acdg <noun> <verb> [args]` (ex: `acdg patient register`, `acdg lookup get`)
+- Sub-comandos por sub-contract BFF
+- `--from-yaml=path` para payloads complexos
+
+---
+
+## 4. Convencoes de Codigo (todos os contextos)
+
+### 4.1 Nomenclatura
 
 | Elemento | Convencao | Exemplo |
 |----------|-----------|---------|
-| Classes | PascalCase | `PatientRegistrationViewModel` |
-| Variaveis/Metodos | camelCase | `patientName`, `loadPatient()` |
-| Constantes | camelCase com `k` prefix ou SCREAMING_SNAKE | `kDefaultTimeout`, `MAX_RETRY` |
-| Arquivos | snake_case | `patient_registration_vm.dart` |
-| Packages | snake_case | `social_care`, `design_system` |
-| Sufixos obrigatorios | Tipo da classe | `*ViewModel`, `*UseCase`, `*Repository`, `*Service`, `*Page` |
+| Classes | PascalCase | `RegistryHandler`, `RegisterPatientIntent` |
+| Variaveis/Metodos | camelCase | `patientId`, `parseFromBody()` |
+| Constantes | camelCase com `k` prefix | `kDefaultTimeout` |
+| Arquivos | snake_case | `register_patient_intent.dart` |
+| Packages | snake_case | `core_contracts`, `social_care_web` |
+| Sufixos BFF | Tipo da classe | `*Handler`, `*Intent`, `*UseCase`, `*Contract`, `*Remote`, `*Cache` |
+| Sufixos CLI | Tipo da classe | `*Command`, `*Formatter`, `*Session` |
 
-### 3.2 Organizacao de Imports
-
-Ordem obrigatoria:
-```dart
-// 1. Dart SDK
-import 'dart:async';
-
-// 2. Flutter SDK
-import 'package:flutter/material.dart';
-
-// 3. Packages externos (pub.dev)
-import 'package:provider/provider.dart';
-
-// 4. Packages internos (monorepo)
-import 'package:core/core.dart';
-import 'package:design_system/design_system.dart';
-
-// 5. Imports relativos (mesmo package)
-import '../view_model/patient_registration_vm.dart';
-```
-
-### 3.3 Documentacao
-
+### 4.2 Documentacao
 - Classes publicas: documentacao obrigatoria (`///`)
 - Metodos privados: documentar se a logica nao for auto-evidente
-- Parametros nomeados sempre que houver mais de 2 parametros
-- UI PT-BR, Code EN — sem excecao
+- UI PT-BR (quando UI existir), Code EN — sem excecao
+- Mensagens de error code: structural (PII-safe), nao concatenam variavel
 
-### 3.4 Testes
-
-- Cada ViewModel tem suite de testes correspondente
-- Cada UseCase tem suite de testes correspondente
+### 4.3 Testes
+- Cada Intent/UseCase/Handler tem suite de testes correspondente
 - Naming: `<nome_original>_test.dart`
-- Estrutura: `group()` + `test()` com descricao clara em ingles
+- Estrutura: `group()` + `test()` em ingles
+- TDD obrigatorio em pipeline 4-agent (test-writer -> implementer -> reviewer -> quality-checker)
+- **REGRA #2 (CLAUDE.md):** No test cheating — verbalizar 4 pontos antes de mexer em teste vermelho
 
 ---
 
-## 4. Atomic Design
+## 5. Anti-patterns proibidos
 
-### 4.1 Hierarquia
-
-```
-Page (orquestrador visual)
-  +-- Template (layout/scaffold)
-       +-- Cell (composicao de atoms com logica visual minima)
-            +-- Atom (widget indivisivel: Button, Input, Icon, Text)
-```
-
-### 4.2 Regras
-
-- **Atom**: sem dependencia de negocio. Recebe dados via parametros. Reutilizavel em qualquer contexto.
-- **Cell**: compoe atoms. Pode ter logica visual minima (mostrar/esconder). Sem acesso a ViewModel.
-- **Template**: define layout (grid, spacing). Sem dados concretos — recebe children.
-- **Page**: conecta ViewModel aos Templates/Cells. Unico ponto de acesso ao estado.
-
-### 4.3 Onde cada um vive
-
-- Atoms, Cells, Templates **genericos** -> `packages/design_system/`
-- Atoms, Cells **especificos da feature** -> `features/<feature>/view/components/`
-- Pages -> `features/<feature>/view/pages/`
+- **God Object** — nenhuma classe com mais de ~200 linhas
+- **Magic Strings** — constantes sempre tipadas (use enums ou `const` String)
+- **`throw`** fora do adapter boundary (use `Result<T>`)
+- **`as` cast sem justificativa** documentada (sealed-class downcast e enforce-banido por lint)
+- **Memory de agente como source of truth** — sempre handbook (ver HANDBOOK_AS_SOURCE_OF_TRUTH)
 
 ---
 
-## 5. Provider e Dependency Injection
+## 6. Principios reservados para Phase 6+ (UI Flutter futura)
 
-### 5.1 Escopo
+Estes principios estavam ativos antes de D1.C delete; ficam **dormentes** ate UI Flutter ser ressuscitada:
+- MVVM estrito (ViewModel concentra estado, View nao decide)
+- Estado atomico via ValueNotifier
+- Atomic Design (Page/Template/Cell/Atom)
+- Provider para DI
+- Adaptive design (3 Pages: Desktop/Web/Mobile)
+- GoRouter com deferred loading
+- Offline First com Drift (ADR-021)
 
-| Escopo | Onde | Exemplo |
-|--------|------|---------|
-| **Global** | `Shell` (root) | `AuthService`, `ConnectivityService`, `DioClient` |
-| **Module** | `*_module.dart` do package | `SocialCareRepository`, BFF interface |
-| **Feature** | Rota da feature | `PatientRegistrationViewModel` |
+Ao ressuscitar UI Flutter, revisar estes principios contra estado atual antes de aplicar.
 
-### 5.2 Regras
+---
 
-- Provider SOMENTE para injecao. Nunca para state management diretamente.
-- `ChangeNotifierProvider` para ViewModels
-- `Provider` para services/repositories stateless
-- `ProxyProvider` para dependencias que dependem de outras
-- Dispose automatico via `ChangeNotifierProvider` (ViewModel morre com a rota)
+## Referencia cruzada
+
+- [HANDBOOK_AS_SOURCE_OF_TRUTH.md](HANDBOOK_AS_SOURCE_OF_TRUTH.md) — diretriz nuclear
+- [DECISION_HEURISTICS.md](DECISION_HEURISTICS.md) — heuristicas H1-H6 validadas
+- [ARCHITECTURAL_GOLD_STANDARD.md](ARCHITECTURAL_GOLD_STANDARD.md) — gold standard arquitetural
+- [../architecture/MONOREPO_LAYOUT.md](../architecture/MONOREPO_LAYOUT.md) — layout canonico
+- [../architecture/DECISIONS.md](../architecture/DECISIONS.md) — ADRs
+- [../architecture/ENCAPSULATION_POLICY.md](../architecture/ENCAPSULATION_POLICY.md)
+- [../architecture/PATTERN_MATCHING_POLICY.md](../architecture/PATTERN_MATCHING_POLICY.md)

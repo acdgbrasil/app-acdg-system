@@ -1,9 +1,25 @@
 # Arquitetura Completa — Frontend ACDG (Conecta Raros)
 
-> **Stack:** Flutter/Dart (Web WASM + Desktop Nativo) | BFF Dart AOT (EDD + DDD) | **Drift** (Offline — ver ADR-021, supersede ADR-005)
-> **Idioma:** Code EN / UI PT-BR
+> **Stack atual (2026-05-01):** BFF Dart (apps/social_care_bff/{contracts,web,desktop}) + CLI Dart puro (apps/cli/ — Phase 5 em scaffold) | **Drift** offline storage | OIDC PKCE + Bearer auth.
+> **Stack reservada Phase 6+:** Flutter UI (Web WASM + Desktop nativo) — ressuscita apos CLI estabilizar.
+> **Idioma:** Code EN / UI PT-BR (quando UI existir).
 >
-> **Nota de manutenção (2026-04-30):** as menções inline a "Isar" no prose deste documento (linhas 45, 247, 266-267, 385) refletem a arquitetura original do ADR-005 e estão desatualizadas. A engine canônica é **Drift** desde A17-v2 (commit `891814a`). Ver `DECISIONS.md` ADR-021 para o registro formal do pivot. Updates inline vão ocorrer incrementalmente conforme cada seção for tocada em fases futuras.
+> **Nota de manutencao (2026-05-01) — DOC EM REWRITE INCREMENTAL:**
+>
+> Este documento foi escrito antes de:
+> - **D1.C delete** (commit `33626f0`) — apagou packages/social_care, people_admin, design_system, auth + apps/acdg_system. Toda a camada UI Flutter foi removida.
+> - **ADR-022 reorganizacao** (commit `af81393`) — `packages/+bff/+apps/acdg_system` virou `kernel/+infra/+apps/`.
+> - **Phase 5 CLI-first kickoff** — UI Flutter foi adiada para Phase 6+; CLI Dart puro substitui como cliente prova-de-conceito do Contract A.
+>
+> **Para informacao canonica atualizada, consulte primeiro:**
+> - [MONOREPO_LAYOUT.md](MONOREPO_LAYOUT.md) — layout atual (kernel/infra/apps)
+> - [DECISIONS.md](DECISIONS.md) — ADR-022 (reorganizacao), ADR-021 (Drift), ADR-019 (P2/P2b parsers)
+> - [BFF_ALIGNMENT_SPEC.md](BFF_ALIGNMENT_SPEC.md) — alinhamento BFF web/desktop
+> - [CONTRACT_A_PUBLIC_API.md](CONTRACT_A_PUBLIC_API.md) — contrato APP <-> BFF (§14 retrospectiva pos-impl)
+> - [../README.md](../README.md) — visao geral atualizada do handbook
+> - [../codebase/README.md](../codebase/README.md) — mapa de packages atual
+>
+> Mencoes inline neste prose a "Shell", "Atomic Design", "ViewModel", "Provider", "GoRouter", "Isar", "packages/social_care/", "bff/" estao desatualizadas — refletem a arquitetura original (pre-D1.C/ADR-022). Mantidas como historico documental; updates inline vao ocorrer incrementalmente conforme cada secao for tocada por mudancas reais. Este header sobrescreve o conteudo conflitante abaixo.
 
 ---
 

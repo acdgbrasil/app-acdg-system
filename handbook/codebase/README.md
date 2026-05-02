@@ -1,136 +1,204 @@
 # Codebase — frontend (Conecta Raros)
 
-Documentacao dos modulos internos, contratos e convencoes de pasta.
+> Mapa dos modulos internos, contratos e convencoes de pasta.
+>
+> **Atualizado 2026-05-01** — pos-D1.C/ADR-022. Layout `kernel/infra/apps/`. Estado anterior (`packages/+bff/+apps/acdg_system`) preservado em [../reports/](../reports/) e historico de commits.
+> **Layout canonico:** [../architecture/MONOREPO_LAYOUT.md](../architecture/MONOREPO_LAYOUT.md).
 
 ---
 
-## 1. Mapa de Packages
+## 1. Mapa de Packages (atual)
 
-| Package | Tipo | Descricao |
-|---------|------|-----------|
-| `shell` | App | Aplicacao principal. Login, roteamento, DI global. |
-| `design_system` | Library | Tokens (cores, tipografia, spacing) + widgets Atomic Design. |
-| `core` | Library | Network (Dio), Offline (Isar/SyncQueue), Auth, Platform, Base classes. |
-| `social_care` | Feature Package | Micro-app do dominio Social Care. Features MVVM. |
-| `people_context` | Feature Package | Micro-app do dominio People Context (futuro). |
-| `social_care_bff` | BFF | Backend for Frontend do Social Care. EDD + DDD. Dart AOT. |
-| `people_context_bff` | BFF | BFF do People Context (futuro). |
+### kernel/ — Dart-pure foundation
+
+| Path | Package name | Tipo | Descricao |
+|------|--------------|------|-----------|
+| `kernel/contracts/` | `core_contracts` | Library | Result<T>, branded types (extension type), base contracts |
+| `kernel/lints/` | `acdg_lints` | Library | Custom lint rules via `custom_lint` (no_sealed_class_downcast) |
+
+### infra/ — Flutter-coupled implementacao concreta
+
+| Path | Package name | Tipo | Descricao |
+|------|--------------|------|-----------|
+| `infra/runtime/` | `core` | Library | AcdgLogger, JWT parsing, Sentry, Command pattern, base classes |
+| `infra/transport/` | `network` | Library | Dio wrapper, connectivity_plus |
+| `infra/storage/` | `persistence` | Library | Drift + sqlite (offline cache) |
+
+### apps/ — unidades entregaveis
+
+| Path | Package name | Tipo | Descricao |
+|------|--------------|------|-----------|
+| `apps/social_care_bff/contracts/` | `shared` | Library | DTOs Contract A + 11 sub-contracts + Fakes |
+| `apps/social_care_bff/web/` | `social_care_web` | App | Servidor HTTP shelf, OIDC, proxy backend (entrypoint: `bin/server.dart`) |
+| `apps/social_care_bff/desktop/` | `social_care_desktop` | App | Lib in-process com cache Drift + sync engine |
+| `apps/cli/` | `acdg_cli` | App | **Phase 5** — CLI Dart puro consumindo BFF Web via HTTP |
+| `apps/social_care_ui/` | TBD | App | **Phase 6+** (futuro) — UI Flutter |
+| `apps/analytics_bi/` | TBD | App | **Phase 7+** (futuro) — dashboards |
 
 ---
 
 ## 2. Dependencias entre Packages
 
-```
-shell
-  +-- core
-  +-- design_system
-  +-- social_care
-  |     +-- core
-  |     +-- design_system
-  |     +-- social_care_bff (desktop: in-process)
-  +-- people_context (futuro)
-        +-- core
-        +-- design_system
-        +-- people_context_bff (desktop: in-process)
-```
+### kernel deps
+- `kernel/contracts` — sem deps internas
+- `kernel/lints` — sem deps internas
 
-**Regra:** Feature packages NUNCA dependem uns dos outros. Comunicacao entre dominios passa pelo Shell (routing).
+### infra deps
+- `infra/runtime` -> `kernel/contracts`, `infra/storage`
+- `infra/transport` — sem deps internas
+- `infra/storage` — sem deps internas
 
----
+### apps deps
+- `apps/social_care_bff/contracts` -> `kernel/contracts`
+- `apps/social_care_bff/web` -> `kernel/contracts`, `kernel/lints` (dev), `apps/social_care_bff/contracts`
+- `apps/social_care_bff/desktop` -> `kernel/contracts`, `infra/runtime`, `infra/transport`, `infra/storage`, `apps/social_care_bff/contracts`
+- `apps/cli` (Phase 5) -> `apps/social_care_bff/contracts`, `kernel/contracts`, dio, args, oidc
 
-## 3. Estrutura de Feature (template)
-
-Toda feature segue esta estrutura:
-
-```
-features/<feature_name>/
-+-- view/
-|   +-- pages/
-|   |   +-- <feature>_desktop_page.dart
-|   |   +-- <feature>_web_page.dart
-|   |   +-- <feature>_mobile_page.dart
-|   +-- components/
-|       +-- atoms/        # Widgets atomicos especificos da feature
-|       +-- cells/        # Composicoes especificas da feature
-+-- view_model/
-|   +-- <feature>_view_model.dart
-+-- use_case/
-|   +-- <action>_use_case.dart
-+-- model/
-    +-- repositories/
-    |   +-- <entity>_repository.dart     # Interface
-    |   +-- <entity>_repository_impl.dart # Implementacao
-    +-- services/
-        +-- <entity>_service.dart
-```
+**Regra:** apps NAO dependem umas das outras. Comunicacao entre apps acontece via:
+- BFF Web HTTP (CLI -> BFF web)
+- in-process import (futura UI Flutter desktop -> apps/social_care_bff/desktop como facade)
 
 ---
 
-## 4. Features do Social Care
+## 3. Contracts BFF — Contract A vs Contract B
 
-| Feature | API Endpoints | Descricao |
-|---------|--------------|-----------|
-| `patient_registration` | POST /patients, GET /patients/:id | Cadastro da PR (3 partes: dados, endereco, composicao) |
-| `family_composition` | POST/DELETE family-members, PUT primary-caregiver | Composicao familiar + perfil etario |
-| `housing_assessment` | PUT /housing-condition | Condicoes habitacionais + densidade |
-| `health_status` | PUT /health-status | Saude, deficiencias, gestantes |
-| `work_income` | PUT /work-and-income | Rendimento e trabalho (4 calculos automaticos) |
-| `education` | PUT /educational-status | Educacao + vulnerabilidades |
-| `socioeconomic` | PUT /socioeconomic-situation | Situacao socioeconomica |
-| `benefits` | (via socioeconomic) | Beneficios sociais (metadata-driven) |
-| `community_support` | PUT /community-support-network | Rede de apoio comunitario |
-| `social_health_summary` | PUT /social-health-summary | Resumo de saude social |
-| `protection` | PUT placement-history, POST violation-reports, POST referrals | Acolhimento + violencia + encaminhamentos |
-| `care` | POST appointments, PUT intake-info | Atendimentos + ingresso |
-| `audit_trail` | GET /audit-trail | Historico de eventos |
-| `lookup` | GET /dominios/:table | Tabelas de dominio (dropdowns) |
+### Contract A (APP <-> BFF — publico)
+DTOs em `apps/social_care_bff/contracts/lib/src/contract/dto/{requests,responses}/`.
+35 acoes funcionais distribuidas em **11 sub-contracts**:
+- `AuthContract` (5 acoes)
+- `RegistryContract` (11 acoes — patient + family + identity + lifecycle)
+- `AssessmentContract` (7 fichas)
+- `CareContract` (2 acoes)
+- `ProtectionContract` (3 acoes)
+- `LookupContract` (9 acoes — incluindo batch)
+- `TeamContract` (9 acoes)
+- `AuditContract` (1 acao)
+- `AnalyticsContract` (1 acao — futuro)
+- `HealthContract` (2 probes)
+- `PeopleContract` (interno — nao exportado)
 
----
+Spec completa: [../architecture/CONTRACT_A_SPEC.md](../architecture/CONTRACT_A_SPEC.md).
 
-## 5. Contratos BFF
-
-### 5.1 Interface In-Process (Desktop)
-
-O BFF expoe classes Dart com metodos tipados:
-
-```dart
-abstract class SocialCareBffContract {
-  Future<Result<PatientModel>> getPatient(String patientId);
-  Future<Result<String>> registerPatient(RegisterPatientCommand command);
-  Future<Result<void>> updateHousing(String patientId, UpdateHousingCommand command);
-  // ... demais operacoes
-}
-```
-
-### 5.2 Interface HTTP (Web)
-
-O BFF expoe endpoints HTTP via Darto que espelham o contrato in-process:
-
-```
-BFF Routes (Darto):
-  GET  /bff/patients/:id        -> getPatient()
-  POST /bff/patients            -> registerPatient()
-  PUT  /bff/patients/:id/housing -> updateHousing()
-  ...
-```
-
-O Flutter web usa Dio para chamar esses endpoints.
-O Flutter desktop importa o package e chama os metodos diretamente.
+### Contract B (BFF <-> backends Swift/Vapor — interno)
+Backend agnostic dos detalhes de upstream. Mesmas 11 abstract interface classes em `apps/social_care_bff/contracts/lib/src/contract/sub_contracts/`. Implementacoes:
+- Web: `apps/social_care_bff/web/lib/src/remote/*_remote.dart` (Dio + JWT)
+- Desktop: `apps/social_care_bff/desktop/lib/src/remote/*_remote.dart` (Dio direto, Bearer)
 
 ---
 
-## 6. Convencoes de Arquivo
+## 4. Layout interno por app
 
+### apps/social_care_bff/web/
+```
+lib/
+  social_care_web.dart          # barrel
+  src/
+    config/                     # ServerConfig
+    auth/                       # OidcServerClient, SessionStore
+    middleware/                 # session, auth_guard, observability, (Phase 5: bearer)
+    handlers/                   # auth, registry_patient, registry_family, assessment, care,
+                                #   protection, lookup, team, health (1 por sub-contract)
+    intents/                    # parseFromBody/parseFromQuery/parseFromPath por endpoint
+    use_cases/                  # orquestracao com sub-contracts via Cascade DI
+    server/                     # app_router, shelf_server
+bin/server.dart                 # entrypoint
+test/                           # 1075 GREEN baseline
+```
+
+### apps/social_care_bff/desktop/
+```
+lib/
+  social_care_desktop.dart      # barrel + facade `SocialCareDesktop`
+  src/
+    facade/                     # 7 sub-facades + 42 metodos delegating
+    remote/                     # 7 thin remotes implementando sub-contracts via Dio
+    cache/                      # 5 cache contracts Aggregate-Root aligned (Drift + FTS5)
+    sync/                       # SyncDatabase separado, 27 SyncMutation sealed classes,
+                                #   SyncEngine state machine + outbox + retry policy
+    use_cases/                  # 42 use cases em 3 patterns canonicos
+test/                           # 426 GREEN +1 skip baseline
+```
+
+### apps/social_care_bff/contracts/
+```
+lib/
+  shared.dart                   # barrel
+  src/
+    contract/
+      dto/{requests,responses}/   # 35 request DTOs + 34 response DTOs
+      sub_contracts/              # 11 abstract interface classes
+    domain/                       # VOs, kernel, registry, assessment, care, protection
+    services/                     # patient_enrichment_service
+    testing/                      # 11 fakes per sub-contract + 6 InMemory stores
+    infrastructure/               # PeopleContextClient (interno)
+test/                           # 535 GREEN baseline
+```
+
+### apps/cli/ (Phase 5 — futuro)
+```
+bin/acdg.dart                   # entrypoint
+lib/
+  src/
+    cli_runner.dart             # CommandRunner
+    commands/                   # auth, patient, family, assessment, care, protection, lookup, team
+    formatters/                 # json, table, yaml
+    session/                    # PKCE flow + credential store
+test/
+  commands/                     # unit tests
+  golden/                       # ~50 snapshot tests
+  _fixtures/                    # BFF response samples
+```
+
+---
+
+## 5. Convencoes de Arquivo
+
+### BFF
 | Tipo | Sufixo | Exemplo |
 |------|--------|---------|
-| Page | `_page.dart` | `patient_registration_desktop_page.dart` |
-| ViewModel | `_view_model.dart` | `patient_registration_view_model.dart` |
+| Handler | `_handler.dart` | `registry_patient_handler.dart` |
+| Intent | `_intent.dart` | `register_patient_intent.dart` |
 | UseCase | `_use_case.dart` | `register_patient_use_case.dart` |
-| Repository (interface) | `_repository.dart` | `patient_repository.dart` |
-| Repository (impl) | `_repository_impl.dart` | `patient_repository_impl.dart` |
-| Service | `_service.dart` | `patient_service.dart` |
-| Model | `_model.dart` | `patient_model.dart` |
-| Atom | Widget name | `acdg_button.dart`, `acdg_text_field.dart` |
-| Cell | Widget name | `patient_info_card.dart` |
-| Template | `_template.dart` | `form_layout_template.dart` |
-| Test | `_test.dart` | `patient_registration_view_model_test.dart` |
+| Sub-contract | `_contract.dart` | `registry_contract.dart` |
+| Remote | `_remote.dart` | `registry_remote.dart` |
+| Cache | `_cache.dart` | `patients_cache.dart` |
+| Mutation | `_mutation.dart` | `register_patient_mutation.dart` |
+| Fake | `fake_*.dart` | `fake_registry_bff.dart` |
+| InMemory store | `in_memory_*.dart` | `in_memory_patient_store.dart` |
+| Test | `_test.dart` | `register_patient_use_case_test.dart` |
+
+### CLI (Phase 5)
+| Tipo | Sufixo | Exemplo |
+|------|--------|---------|
+| Command | `_command.dart` | `patient_command.dart` |
+| Formatter | `_formatter.dart` | `json_formatter.dart` |
+| Session | `_session.dart`, `_store.dart` | `credential_store.dart` |
+
+---
+
+## 6. Path deps cruzados (referencia)
+
+```
+apps/social_care_bff/web/
+├── shared           → ../contracts
+├── core_contracts   → ../../../kernel/contracts
+└── acdg_lints (dev) → ../../../kernel/lints
+
+apps/social_care_bff/desktop/
+├── shared           → ../contracts
+├── core_contracts   → ../../../kernel/contracts
+├── core             → ../../../infra/runtime
+├── network          → ../../../infra/transport
+└── persistence      → ../../../infra/storage
+
+apps/social_care_bff/contracts/
+└── core_contracts   → ../../../kernel/contracts
+
+infra/runtime/
+├── core_contracts   → ../../kernel/contracts
+└── persistence      → ../storage
+```
+
+Quando criar nova app em `apps/<name>/`:
+- Path deps relativos a `../../kernel/X` ou `../../infra/X`
+- Reusar names de packages existentes; nunca duplicar
