@@ -22,6 +22,12 @@
 ///   * SyncQueue: `getApplicationDocumentsDirectory()/app_sync_queue.sqlite`
 ///   * Override via `cacheFilePath` / `syncQueueFilePath`. Use `':memory:'`
 ///     to spin Drift in-memory databases (tests).
+///
+/// Composition (D02):
+///   * 7 per-bounded-context builders under `composition/builders/`
+///     group the 42 use cases into 7 data classes (`RegistryUseCases`,
+///     `AssessmentUseCases`, ...). Adding a new use case touches the
+///     bundle + the relevant sub-facade — `create()` itself is stable.
 library;
 
 import 'dart:async';
@@ -50,48 +56,13 @@ import '../sync/engine/pumping_sync_engine.dart';
 import '../sync/engine/sync_engine.dart';
 import '../sync/outbox/outbox_repository.dart';
 import '../use_cases/_shared/clock.dart';
-import '../use_cases/assessment/update_community_support_network_use_case.dart';
-import '../use_cases/assessment/update_educational_status_use_case.dart';
-import '../use_cases/assessment/update_health_status_use_case.dart';
-import '../use_cases/assessment/update_housing_condition_use_case.dart';
-import '../use_cases/assessment/update_social_health_summary_use_case.dart';
-import '../use_cases/assessment/update_socio_economic_situation_use_case.dart';
-import '../use_cases/assessment/update_work_and_income_use_case.dart';
-import '../use_cases/audit/fetch_audit_trail_use_case.dart';
-import '../use_cases/care/list_appointments_use_case.dart';
-import '../use_cases/care/register_appointment_use_case.dart';
-import '../use_cases/care/update_intake_info_use_case.dart';
-import '../use_cases/health/check_health_use_case.dart';
-import '../use_cases/health/check_ready_use_case.dart';
-import '../use_cases/lookup/approve_lookup_request_use_case.dart';
-import '../use_cases/lookup/create_lookup_item_use_case.dart';
-import '../use_cases/lookup/create_lookup_request_use_case.dart';
-import '../use_cases/lookup/find_lookup_request_by_id_use_case.dart';
-import '../use_cases/lookup/get_lookup_table_use_case.dart';
-import '../use_cases/lookup/get_lookups_batch_use_case.dart';
-import '../use_cases/lookup/list_lookup_requests_use_case.dart';
-import '../use_cases/lookup/reject_lookup_request_use_case.dart';
-import '../use_cases/lookup/toggle_lookup_item_use_case.dart';
-import '../use_cases/lookup/update_lookup_item_use_case.dart';
-import '../use_cases/protection/create_referral_use_case.dart';
-import '../use_cases/protection/fetch_placement_history_use_case.dart';
-import '../use_cases/protection/list_referrals_use_case.dart';
-import '../use_cases/protection/list_violation_reports_use_case.dart';
-import '../use_cases/protection/report_violation_use_case.dart';
-import '../use_cases/protection/update_placement_history_use_case.dart';
-import '../use_cases/registry/add_family_member_use_case.dart';
-import '../use_cases/registry/admit_patient_use_case.dart';
-import '../use_cases/registry/assign_primary_caregiver_use_case.dart';
-import '../use_cases/registry/discharge_patient_use_case.dart';
-import '../use_cases/registry/fetch_patient_by_person_id_use_case.dart';
-import '../use_cases/registry/fetch_patient_use_case.dart';
-import '../use_cases/registry/list_patients_use_case.dart';
-import '../use_cases/registry/readmit_patient_use_case.dart';
-import '../use_cases/registry/register_patient_use_case.dart';
-import '../use_cases/registry/remove_family_member_use_case.dart';
-import '../use_cases/registry/search_patients_use_case.dart';
-import '../use_cases/registry/update_social_identity_use_case.dart';
-import '../use_cases/registry/withdraw_patient_use_case.dart';
+import 'composition/builders/assessment_use_cases.dart';
+import 'composition/builders/audit_use_cases.dart';
+import 'composition/builders/care_use_cases.dart';
+import 'composition/builders/health_use_cases.dart';
+import 'composition/builders/lookup_use_cases.dart';
+import 'composition/builders/protection_use_cases.dart';
+import 'composition/builders/registry_use_cases.dart';
 import 'composition/connectivity_helpers.dart';
 import 'composition/db_executor.dart';
 import 'sub_facades/assessment_facade.dart';
@@ -207,15 +178,15 @@ class SocialCareDesktop {
     }
   }
 
-  // ── Factory (D3 + D4 + D5 wired) ──────────────────────────────────
+  // ── Factory (D3 + D4 + D5 + D02 wired) ────────────────────────────
 
   /// Builds the full Desktop BFF instance.
   ///
   /// Resolves file paths via `path_provider` (D3) when not overridden,
   /// then opens both Drift databases, builds 7 remotes via Dio (sharing
   /// one client with `X-Actor-Id` + `Authorization`-via-tokenProvider),
-  /// composes 42 use cases, groups them into 7 sub-facades, and wires
-  /// the connectivity listener (D5 γ).
+  /// composes 42 use cases via 7 per-context builders (D02), groups them
+  /// into 7 sub-facades, and wires the connectivity listener (D5 γ).
   ///
   /// **Does NOT auto-start the engine** (D4 α). Call `startSync()` after
   /// login.
@@ -264,7 +235,7 @@ class SocialCareDesktop {
     final auditCache = DriftAuditCache(cacheDb, clock: effectiveClock);
     final lookupCache = DriftLookupCache(cacheDb, clock: effectiveClock);
 
-    // ── Outbox + remotes ─────────────────────────────────────────────
+    // ── Outbox + remotes (7) ─────────────────────────────────────────
     final outbox = DriftOutboxRepository(syncDb);
     final registryRemote = RegistryRemote(dio: effectiveDio);
     final assessmentRemote = AssessmentRemote(dio: effectiveDio);
@@ -288,310 +259,66 @@ class SocialCareDesktop {
       drainController: drainController,
     );
 
-    // ── Use cases — Registry (13) ────────────────────────────────────
-    final fetchPatient = FetchPatientUseCase(
-      cache: patientsCache,
+    // ── Use case bundles (D02 — 7 per-bounded-context builders) ──────
+    final registryUseCases = RegistryUseCases.build(
+      patientsCache: patientsCache,
       remote: registryRemote,
+      outbox: outbox,
+      engine: engine,
       clock: effectiveClock,
       staleAfter: staleAfter,
     );
-    final fetchPatientByPersonId = FetchPatientByPersonIdUseCase(
-      cache: patientsCache,
-      remote: registryRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final listPatients = ListPatientsUseCase(
-      cache: patientsCache,
-      remote: registryRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final searchPatients = SearchPatientsUseCase(
-      cache: patientsCache,
-      remote: registryRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final registerPatient = RegisterPatientUseCase(
-      cache: patientsCache,
+    final assessmentUseCases = AssessmentUseCases.build(
+      patientsCache: patientsCache,
       outbox: outbox,
       engine: engine,
       clock: effectiveClock,
     );
-    final addFamilyMember = AddFamilyMemberUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final removeFamilyMember = RemoveFamilyMemberUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final assignPrimaryCaregiver = AssignPrimaryCaregiverUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateSocialIdentity = UpdateSocialIdentityUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final dischargePatient = DischargePatientUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final readmitPatient = ReadmitPatientUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final admitPatient = AdmitPatientUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final withdrawPatient = WithdrawPatientUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-
-    // ── Use cases — Assessment (7) ───────────────────────────────────
-    final updateHealthStatus = UpdateHealthStatusUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateHousingCondition = UpdateHousingConditionUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateEducationalStatus = UpdateEducationalStatusUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateSocioEconomicSituation = UpdateSocioEconomicSituationUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateWorkAndIncome = UpdateWorkAndIncomeUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateCommunitySupportNetwork = UpdateCommunitySupportNetworkUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateSocialHealthSummary = UpdateSocialHealthSummaryUseCase(
-      cache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-
-    // ── Use cases — Care (3) ─────────────────────────────────────────
-    final listAppointments = ListAppointmentsUseCase(
-      cache: careCache,
-      remote: careRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final registerAppointment = RegisterAppointmentUseCase(
+    final careUseCases = CareUseCases.build(
       careCache: careCache,
+      patientsCache: patientsCache,
+      remote: careRemote,
       outbox: outbox,
       engine: engine,
       clock: effectiveClock,
+      staleAfter: staleAfter,
     );
-    final updateIntakeInfo = UpdateIntakeInfoUseCase(
+    final protectionUseCases = ProtectionUseCases.build(
+      protectionCache: protectionCache,
       patientsCache: patientsCache,
       outbox: outbox,
       engine: engine,
       clock: effectiveClock,
-    );
-
-    // ── Use cases — Protection (6) ───────────────────────────────────
-    final createReferral = CreateReferralUseCase(
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final listReferrals = ListReferralsUseCase(
-      cache: protectionCache,
-      clock: effectiveClock,
       staleAfter: staleAfter,
     );
-    final reportViolation = ReportViolationUseCase(
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final listViolationReports = ListViolationReportsUseCase(
-      cache: protectionCache,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final fetchPlacementHistory = FetchPlacementHistoryUseCase(
-      cache: protectionCache,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final updatePlacementHistory = UpdatePlacementHistoryUseCase(
-      patientsCache: patientsCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-
-    // ── Use cases — Audit (1) ────────────────────────────────────────
-    final fetchAuditTrail = FetchAuditTrailUseCase(
-      cache: auditCache,
+    final auditUseCases = AuditUseCases.build(
+      auditCache: auditCache,
       remote: auditRemote,
       clock: effectiveClock,
       staleAfter: staleAfter,
     );
-
-    // ── Use cases — Lookup (10) ──────────────────────────────────────
-    final getLookupTable = GetLookupTableUseCase(
-      cache: lookupCache,
+    final lookupUseCases = LookupUseCases.build(
+      lookupCache: lookupCache,
       remote: lookupRemote,
+      outbox: outbox,
+      engine: engine,
       clock: effectiveClock,
       staleAfter: staleAfter,
     );
-    final getLookupsBatch = GetLookupsBatchUseCase(
-      cache: lookupCache,
-      remote: lookupRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final createLookupItem = CreateLookupItemUseCase(
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final updateLookupItem = UpdateLookupItemUseCase(
-      cache: lookupCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final toggleLookupItem = ToggleLookupItemUseCase(
-      cache: lookupCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final createLookupRequest = CreateLookupRequestUseCase(
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final listLookupRequests = ListLookupRequestsUseCase(
-      cache: lookupCache,
-      remote: lookupRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final findLookupRequestById = FindLookupRequestByIdUseCase(
-      cache: lookupCache,
-      remote: lookupRemote,
-      clock: effectiveClock,
-      staleAfter: staleAfter,
-    );
-    final approveLookupRequest = ApproveLookupRequestUseCase(
-      cache: lookupCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-    final rejectLookupRequest = RejectLookupRequestUseCase(
-      cache: lookupCache,
-      outbox: outbox,
-      engine: engine,
-      clock: effectiveClock,
-    );
-
-    // ── Use cases — Health (2) ───────────────────────────────────────
-    final checkHealth = CheckHealthUseCase(remote: healthRemote);
-    final checkReady = CheckReadyUseCase(remote: healthRemote);
+    final healthUseCases = HealthUseCases.build(remote: healthRemote);
 
     // ── Sub-facades (7) ──────────────────────────────────────────────
-    final registryFacade = RegistryFacade.internal(
-      fetchPatient: fetchPatient,
-      fetchPatientByPersonId: fetchPatientByPersonId,
-      listPatients: listPatients,
-      searchPatients: searchPatients,
-      registerPatient: registerPatient,
-      addFamilyMember: addFamilyMember,
-      removeFamilyMember: removeFamilyMember,
-      assignPrimaryCaregiver: assignPrimaryCaregiver,
-      updateSocialIdentity: updateSocialIdentity,
-      dischargePatient: dischargePatient,
-      readmitPatient: readmitPatient,
-      admitPatient: admitPatient,
-      withdrawPatient: withdrawPatient,
-    );
+    final registryFacade = RegistryFacade.internal(useCases: registryUseCases);
     final assessmentFacade = AssessmentFacade.internal(
-      updateHealthStatus: updateHealthStatus,
-      updateHousingCondition: updateHousingCondition,
-      updateEducationalStatus: updateEducationalStatus,
-      updateSocioEconomicSituation: updateSocioEconomicSituation,
-      updateWorkAndIncome: updateWorkAndIncome,
-      updateCommunitySupportNetwork: updateCommunitySupportNetwork,
-      updateSocialHealthSummary: updateSocialHealthSummary,
+      useCases: assessmentUseCases,
     );
-    final careFacade = CareFacade.internal(
-      listAppointments: listAppointments,
-      registerAppointment: registerAppointment,
-      updateIntakeInfo: updateIntakeInfo,
-    );
+    final careFacade = CareFacade.internal(useCases: careUseCases);
     final protectionFacade = ProtectionFacade.internal(
-      createReferral: createReferral,
-      listReferrals: listReferrals,
-      reportViolation: reportViolation,
-      listViolationReports: listViolationReports,
-      fetchPlacementHistory: fetchPlacementHistory,
-      updatePlacementHistory: updatePlacementHistory,
+      useCases: protectionUseCases,
     );
-    final auditFacade = AuditFacade.internal(fetchAuditTrail: fetchAuditTrail);
-    final lookupFacade = LookupFacade.internal(
-      getLookupTable: getLookupTable,
-      getLookupsBatch: getLookupsBatch,
-      createLookupItem: createLookupItem,
-      updateLookupItem: updateLookupItem,
-      toggleLookupItem: toggleLookupItem,
-      createLookupRequest: createLookupRequest,
-      listLookupRequests: listLookupRequests,
-      findLookupRequestById: findLookupRequestById,
-      approveLookupRequest: approveLookupRequest,
-      rejectLookupRequest: rejectLookupRequest,
-    );
-    final healthFacade = HealthFacade.internal(
-      checkHealth: checkHealth,
-      checkReady: checkReady,
-    );
+    final auditFacade = AuditFacade.internal(useCases: auditUseCases);
+    final lookupFacade = LookupFacade.internal(useCases: lookupUseCases);
+    final healthFacade = HealthFacade.internal(useCases: healthUseCases);
 
     // ── Connectivity wiring (D5 γ) ───────────────────────────────────
     final effectiveConnectivity = connectivity ?? Connectivity();
