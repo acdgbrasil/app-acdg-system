@@ -35,7 +35,9 @@ export 'src/domain/assessment/health_status.dart';
 export 'src/domain/assessment/social_health_summary.dart';
 export 'src/domain/assessment/work_and_income.dart';
 
-// Remote Models (legacy — consumed only by packages/social_care/ — to be deleted in Phase 4)
+// Remote Models (orphaned 2026-05-01 — original consumer packages/social_care/ deleted in D1.C;
+// retained as wire-format reference for backend Patient aggregate; safe to delete after Phase 5
+// confirms CLI uses sub-contract DTOs end-to-end)
 export 'src/infrastructure/dtos/patient_remote.dart';
 export 'src/infrastructure/dtos/patient_overview.dart';
 

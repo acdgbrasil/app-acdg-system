@@ -1,19 +1,16 @@
-/// RED-phase end-to-end integration tests for [SocialCareDesktop] (A18c-v2).
+/// End-to-end integration tests for [SocialCareDesktop] facade (A18c-v2).
 ///
-/// These tests exercise the full facade lifecycle WITHOUT touching
-/// `apps/acdg_system/`. They prove that:
+/// These tests exercise the full facade lifecycle in isolation. They prove that:
 ///   1. A write call through a sub-facade enqueues a mutation in the
 ///      Outbox, optimistically patches the cache, and surfaces a
 ///      `DrainSummary` on `drainStream` once the engine drains.
 ///   2. A connectivity offline → online edge auto-triggers drain even
 ///      when no manual call was made.
 ///
-/// Boundary scoping (REGRA #2 H4): these tests do NOT validate the shell
-/// rewire (W1's responsibility, validated via `flutter analyze
-/// apps/acdg_system/` + existing widget tests). They only validate the
-/// facade's promised behavior.
-///
-/// IMPORTANT (RED phase): the facade does NOT exist yet. Imports fail.
+/// Boundary scoping (H4): these tests validate only the facade's promised
+/// behavior — they do not exercise any consumer (Phase 5 CLI is the next
+/// consumer to come online; previous shell consumer was removed in D1.C
+/// delete batch 2026-05-01).
 library;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
