@@ -1,9 +1,9 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (Onda 1 closed; Onda 2 next)
+phase: in-progress (Onda 1 closed; Onda 1.5 + Onda 2 ready)
 agent: —
-status: **C00 closed 2026-05-02 via 5-wave pipeline (62 tests GREEN, 2098 GREEN total no BFF).** Phase 4 (flutter-migration) marcada superseded. Próximo ticket: **C01 — CLI Scaffold (`apps/cli/`)**.
+status: **C00 closed 2026-05-02 via 5-wave pipeline (62 tests GREEN, 2098 GREEN total no BFF).** Phase 4 (flutter-migration) marcada superseded. Próximos tickets disponíveis em paralelo: **D01 → D02 → D03 (refactor Desktop facade — débito; não bloqueia)** e **C01 (CLI Scaffold em `apps/cli/`)**.
 
 ## Decisão estratégica (2026-05-01)
 
@@ -50,6 +50,14 @@ status: **C00 closed 2026-05-02 via 5-wave pipeline (62 tests GREEN, 2098 GREEN 
 
 ### Onda 1 — Auth foundation (1 ticket)
 - [x] **C00 — bearer-auth-middleware-bff** — CLOSED 2026-05-02 via 5-wave pipeline (test-writer → auth-auditor → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). 62 tests GREEN, 2098 GREEN total no BFF, dart analyze zero. 2 rounds de rejection produtivos (W0.5 GAPS_FOUND fechado em W0-bis; W2 R1 REJECTED por security gap real — case-sensitive cookie strip bypass — fechado em W1 R2). 10 security constraints enforced + 3 CVEs cobertas (CVE-2015-9235 alg none, CVE-2016-10555 alg confusion, CVE-2018-0114 kid traversal). Pré-req infra pendente: provisionar `OIDC_CLI_CLIENT_ID` no Bitwarden.
+
+### Onda 1.5 — Refactor débito do Desktop facade (3 tickets) — não bloqueiam C01
+
+`apps/social_care_bff/desktop/lib/src/facade/social_care_desktop.dart` acumulou 718L com 6 responsabilidades (composition root + lifecycle + connectivity + drain pump + helpers + entry class). Análise completa em conversa-sessão 2026-05-02. Padrões GoF aplicados: Factory Method (D01), Builder + Observer (D03). Decorator + Strategy reservados (D6/D7) sem demanda real hoje (Rule of Three). 426 GREEN do Desktop preservados durante todo o refactor.
+
+- [ ] **D01 — pump-engine-helpers-factory** — Move `_PumpingSyncEngine` → `sync/engine/`. Cria `composition/db_executor.dart` com `DriftExecutorFactory` (Factory Method). Move `_defaultPath` + `_resultsAreOnline` pra helpers. Reduz facade 718L → ~600L.
+- [ ] **D02 — use-case-builders** — 7 builders por bounded context (RegistryUseCases, AssessmentUseCases, etc.) agrupando os 42 use cases. Sub-facades passam a receber data class agrupado. Reduz facade ~600L → ~350L.
+- [ ] **D03 — assembler-observer** — `DesktopAssembler` (Builder fluente) + `AutoDrainObserver` (Observer, elimina self-reference circular). `SocialCareDesktop._()` reduz de 14 parâmetros pra 1 (DesktopRuntime). Reduz facade ~350L → ~150L.
 
 ### Onda 2 — CLI scaffold + auth (2 tickets)
 - [ ] **C01 — cli-scaffold** — `apps/cli/` Dart puro, `args` parser, `acdg --help`, struct de commands
