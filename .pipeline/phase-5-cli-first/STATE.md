@@ -52,7 +52,7 @@ status: scaffold criado 2026-05-01 — aguarda kickoff de C00. **Phase 4 (flutte
 - [ ] **C00 — bearer-auth-middleware-bff** — middleware no BFF Web aceitando `Authorization: Bearer`; validação JWT contra JWKS Zitadel; coexiste com session cookie
 
 ### Onda 2 — CLI scaffold + auth (2 tickets)
-- [ ] **C01 — cli-scaffold** — `apps/acdg_cli/` Dart puro, `args` parser, `acdg --help`, struct de commands
+- [ ] **C01 — cli-scaffold** — `apps/cli/` Dart puro, `args` parser, `acdg --help`, struct de commands
 - [ ] **C02 — cli-auth-pkce-loopback** — `acdg auth login/status/logout/refresh`, OIDC PKCE + Loopback, file-based credential store
 
 ### Onda 3 — Read commands (4 tickets — leitura primeiro pra validar Bearer + parsing)
@@ -73,7 +73,7 @@ status: scaffold criado 2026-05-01 — aguarda kickoff de C00. **Phase 4 (flutte
 ## Layout target
 
 ```
-apps/acdg_cli/
+apps/cli/
   bin/
     acdg.dart                    # entrypoint
   lib/

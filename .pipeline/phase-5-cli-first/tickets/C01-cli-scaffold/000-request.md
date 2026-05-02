@@ -1,13 +1,13 @@
-# C01 — CLI Scaffold (`apps/acdg_cli/`)
+# C01 — CLI Scaffold (`apps/cli/`)
 
 ## Onda: 2 | Profile: scaffold | Depende de: C00
 
 ## Escopo
 
-### Criar `apps/acdg_cli/` Dart-only package
+### Criar `apps/cli/` Dart-only package
 
 ```
-apps/acdg_cli/
+apps/cli/
   bin/
     acdg.dart                    # entrypoint
   lib/
@@ -71,7 +71,7 @@ Sub-comandos retornam stub `not implemented yet — pending Cnn`.
 
 ### Workspace integration
 
-- Adicionar `apps/acdg_cli` ao `pubspec.yaml` workspace.
+- Adicionar `apps/cli` ao `pubspec.yaml` workspace.
 - `melos bs` deve resolver clean.
 
 ## Pipeline
@@ -80,8 +80,8 @@ W0 (test-writer) → W1 (flutter-bff-implementer) → W2 (flutter-code-reviewer)
 
 ## Critérios
 
-- [ ] `dart run apps/acdg_cli:acdg --help` exibe banner correto
-- [ ] `dart run apps/acdg_cli:acdg <command> --help` para cada sub-comando
+- [ ] `dart run apps/cli:acdg --help` exibe banner correto
+- [ ] `dart run apps/cli:acdg <command> --help` para cada sub-comando
 - [ ] Tests: parsing args + stub responses + global options
 - [ ] `dart analyze` zero issues
 - [ ] README com instruções de instalação (`dart compile exe bin/acdg.dart -o ~/.local/bin/acdg`)
