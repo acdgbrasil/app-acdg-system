@@ -13,13 +13,13 @@ dependencies:
   flutter:
     sdk: flutter
   core_contracts:
-    path: ../core_contracts
+    path: ../../kernel/contracts
   meta: ^1.11.0
   logging: ^1.2.0
   dio: ^5.7.0
   dart_jsonwebtoken: ^3.0.0
   persistence:
-    path: ../persistence
+    path: ../storage
   drift: ^2.22.1
   drift_flutter: ^0.2.4
   path_provider: ^2.1.5

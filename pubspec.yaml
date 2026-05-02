@@ -1,25 +1,39 @@
-name: acdg_system_workspace
+name: acdg_frontend_root
 publish_to: 'none'
 
 environment:
   sdk: ^3.11.1
 
+# Dart workspace — single shared resolution across all packages.
+# Layout (Padrão Bsemântico):
+#   kernel/   — Dart-pure foundation (contracts, lints)
+#   infra/    — Flutter-coupled infrastructure (runtime, transport, storage)
+#   apps/     — entregáveis/executáveis (cada app é unidade autônoma)
+#
+# Migration to per-app independent workspaces is preserved as a future option:
+# any apps/<x>/ can be promoted to its own workspace by adding a pubspec.yaml
+# with its own workspace: list and removing the entry from the list below.
 workspace:
-  - packages/core
-  - packages/core_contracts
-  - packages/network
-  - packages/persistence
-  - packages/acdg_lints
-  - bff/shared
-  - bff/social_care_desktop
-  - bff/social_care_web
+  # kernel — primitives Dart-puros
+  - kernel/contracts
+  - kernel/lints
+
+  # infra — implementação concrete (Flutter-coupled)
+  - infra/runtime
+  - infra/transport
+  - infra/storage
+
+  # apps — unidades entregáveis
+  - apps/social_care_bff/contracts
+  - apps/social_care_bff/web
+  - apps/social_care_bff/desktop
 
 dev_dependencies:
   melos: ^7.4.0
   yaml: ^3.1.2
 
 melos:
-  name: acdg_system
+  name: acdg_frontend
   repository: https://github.com/acdgbrasil/acdg
 
   command:
@@ -29,13 +43,14 @@ melos:
         flutter: ">=3.41.0 <4.0.0"
 
   scripts:
+    # ── Cross-cutting (todos os packages) ───────────────────────────────
     analyze:
       run: melos exec -- "dart analyze --fatal-infos"
       description: Run dart analyze in all packages.
 
     test:
       run: melos exec -- "flutter test"
-      description: Run tests in all packages.
+      description: Run tests in Flutter-dependent packages.
       packageFilters:
         flutter: true
 
@@ -59,3 +74,20 @@ melos:
       description: Run build_runner in packages that depend on it.
       packageFilters:
         dependsOn: build_runner
+
+    # ── Bucket scopes (kernel / infra / apps) ───────────────────────────
+    analyze:kernel:
+      run: melos exec --dir-exists=lib --scope="core_contracts,acdg_lints" -- "dart analyze --fatal-infos lib"
+      description: Analyze only kernel/* packages (Dart-pure).
+
+    analyze:infra:
+      run: melos exec --dir-exists=lib --scope="core,network,persistence" -- "dart analyze --fatal-infos lib"
+      description: Analyze only infra/* packages (Flutter-coupled).
+
+    analyze:bff:
+      run: melos exec --dir-exists=lib --scope="shared,social_care_web,social_care_desktop" -- "dart analyze --fatal-infos lib"
+      description: Analyze only apps/social_care_bff/* packages.
+
+    test:bff:
+      run: melos exec --dir-exists=test --scope="shared,social_care_web,social_care_desktop" -- "flutter test"
+      description: Run BFF test suites (~2036 tests in current baseline).

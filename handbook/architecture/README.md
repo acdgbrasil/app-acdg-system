@@ -7,6 +7,7 @@ Este diretorio contem as decisoes arquiteturais, diagramas e ADRs (Architecture 
 | Documento | Descricao |
 |-----------|-----------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Visao geral da arquitetura completa |
+| [MONOREPO_LAYOUT.md](MONOREPO_LAYOUT.md) | Layout canonico do monorepo (kernel/infra/apps) — atualizado 2026-05-01 |
 | [DECISIONS.md](DECISIONS.md) | Registro de decisoes arquiteturais (ADRs) |
 | [DIAGRAMS.md](DIAGRAMS.md) | Diagramas de fluxo, camadas e comunicacao |
 | [CONTRACT_A_PUBLIC_API.md](CONTRACT_A_PUBLIC_API.md) | Contrato publico Flutter ↔ BFF — racional, exemplos e §14 retrospectiva pos-implementacao (Phase 3 fechada 2026-05-01) |

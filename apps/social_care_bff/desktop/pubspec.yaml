@@ -10,15 +10,15 @@ environment:
 
 dependencies:
   shared:
-    path: ../shared
+    path: ../contracts
   core_contracts:
-    path: ../../packages/core_contracts
+    path: ../../../kernel/contracts
   network:
-    path: ../../packages/network
+    path: ../../../infra/transport
   persistence:
-    path: ../../packages/persistence
+    path: ../../../infra/storage
   core:
-    path: ../../packages/core
+    path: ../../../infra/runtime
   flutter:
     sdk: flutter
   dio: ^5.9.2

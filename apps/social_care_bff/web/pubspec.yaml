@@ -10,9 +10,9 @@ environment:
 
 dependencies:
   shared:
-    path: ../shared
+    path: ../contracts
   core_contracts:
-    path: ../../packages/core_contracts
+    path: ../../../kernel/contracts
 
   # HTTP server
   shelf: ^1.4.2
@@ -34,4 +34,4 @@ dev_dependencies:
   test: ^1.24.0
   custom_lint: ^0.8.1
   acdg_lints:
-    path: ../../packages/acdg_lints
+    path: ../../../kernel/lints
