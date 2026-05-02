@@ -55,7 +55,7 @@ status: **C00 closed 2026-05-02 via 5-wave pipeline (62 tests GREEN, 2098 GREEN 
 
 `apps/social_care_bff/desktop/lib/src/facade/social_care_desktop.dart` acumulou 718L com 6 responsabilidades (composition root + lifecycle + connectivity + drain pump + helpers + entry class). Análise completa em conversa-sessão 2026-05-02. Padrões GoF aplicados: Factory Method (D01), Builder + Observer (D03). Decorator + Strategy reservados (D6/D7) sem demanda real hoje (Rule of Three). 426 GREEN do Desktop preservados durante todo o refactor.
 
-- [ ] **D01 — pump-engine-helpers-factory** — Move `_PumpingSyncEngine` → `sync/engine/`. Cria `composition/db_executor.dart` com `DriftExecutorFactory` (Factory Method). Move `_defaultPath` + `_resultsAreOnline` pra helpers. Reduz facade 718L → ~600L.
+- [x] **D01 — pump-engine-helpers-factory** — CLOSED 2026-05-02 via 5-wave pipeline (test-writer → fixture-fix → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). Factory Method GoF aplicado. Facade reduzido 718L → 637L (-81L). 24 new tests GREEN; 2122 GREEN +1 skip total BFF (era 2098, +24). 4 REGRA #2 exceptions documentadas (fixture-fix). W2 APPROVED Round 1/3 zero MUST_FIX.
 - [ ] **D02 — use-case-builders** — 7 builders por bounded context (RegistryUseCases, AssessmentUseCases, etc.) agrupando os 42 use cases. Sub-facades passam a receber data class agrupado. Reduz facade ~600L → ~350L.
 - [ ] **D03 — assembler-observer** — `DesktopAssembler` (Builder fluente) + `AutoDrainObserver` (Observer, elimina self-reference circular). `SocialCareDesktop._()` reduz de 14 parâmetros pra 1 (DesktopRuntime). Reduz facade ~350L → ~150L.
 

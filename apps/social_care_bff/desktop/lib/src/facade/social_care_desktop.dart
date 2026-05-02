@@ -25,14 +25,10 @@
 library;
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:core_contracts/core_contracts.dart';
 import 'package:dio/dio.dart';
-import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../cache/_shared/cache_database.dart';
 import '../cache/impls/drift_audit_cache.dart';
@@ -50,6 +46,7 @@ import '../remote/protection_remote.dart';
 import '../remote/registry_remote.dart';
 import '../sync/_shared/failures.dart';
 import '../sync/_shared/sync_database.dart';
+import '../sync/engine/pumping_sync_engine.dart';
 import '../sync/engine/sync_engine.dart';
 import '../sync/outbox/outbox_repository.dart';
 import '../use_cases/_shared/clock.dart';
@@ -95,6 +92,8 @@ import '../use_cases/registry/remove_family_member_use_case.dart';
 import '../use_cases/registry/search_patients_use_case.dart';
 import '../use_cases/registry/update_social_identity_use_case.dart';
 import '../use_cases/registry/withdraw_patient_use_case.dart';
+import 'composition/connectivity_helpers.dart';
+import 'composition/db_executor.dart';
 import 'sub_facades/assessment_facade.dart';
 import 'sub_facades/audit_facade.dart';
 import 'sub_facades/care_facade.dart';
@@ -102,48 +101,6 @@ import 'sub_facades/health_facade.dart';
 import 'sub_facades/lookup_facade.dart';
 import 'sub_facades/protection_facade.dart';
 import 'sub_facades/registry_facade.dart';
-
-/// In-memory marker recognised by Drift's `NativeDatabase` factory; used
-/// by tests to spin a transient cache/sync DB without touching disk.
-const String _inMemoryMarker = ':memory:';
-
-/// SyncEngine subclass that pumps every successful drain summary onto
-/// a broadcast controller. The facade exposes that controller as
-/// [SocialCareDesktop.drainStream], so UI panels see EVERY drain
-/// completion — including the ones triggered fire-and-forget by write
-/// use cases (which call `_engine.triggerDrain()` directly).
-///
-/// Failures are NOT pumped — the panel UI surfaces them via the Result
-/// returned from `triggerDrain` (or the engine's internal state). The
-/// stream is intentionally success-only so a flapping connection
-/// doesn't spam the UI with `Failure` events.
-class _PumpingSyncEngine extends SyncEngine {
-  _PumpingSyncEngine({
-    required super.outbox,
-    required super.registry,
-    required super.assessment,
-    required super.care,
-    required super.protection,
-    required super.lookup,
-    required StreamController<DrainSummary> drainController,
-  }) : _drainController = drainController;
-
-  final StreamController<DrainSummary> _drainController;
-
-  @override
-  Future<Result<DrainSummary>> triggerDrain() async {
-    final result = await super.triggerDrain();
-    switch (result) {
-      case Success<DrainSummary>(:final value):
-        if (!_drainController.isClosed) {
-          _drainController.add(value);
-        }
-      case Failure<DrainSummary>():
-        break;
-    }
-    return result;
-  }
-}
 
 /// Public entry point for the Desktop BFF.
 ///
@@ -206,7 +163,7 @@ class SocialCareDesktop {
   /// (`Success(processed: 0)`) per D4 α; post-`close` it returns
   /// `Failure(SyncFailure)`.
   ///
-  /// The underlying [_PumpingSyncEngine] pumps successful drain summaries
+  /// The underlying [PumpingSyncEngine] pumps successful drain summaries
   /// onto [drainStream], so manual triggers AND fire-and-forget triggers
   /// from write use cases all surface there.
   Future<Result<DrainSummary>> triggerDrain() {
@@ -272,16 +229,20 @@ class SocialCareDesktop {
     Clock? clock,
     Duration staleAfter = const Duration(minutes: 5),
     Connectivity? connectivity,
+    DriftExecutorFactory? executorFactory,
   }) async {
+    final factory = executorFactory ?? DriftExecutorFactory.production;
+
     // ── Path resolution (D3) ─────────────────────────────────────────
     final resolvedCachePath =
-        cacheFilePath ?? await _defaultPath('app_cache.sqlite');
+        cacheFilePath ?? await defaultDesktopFilePath('app_cache.sqlite');
     final resolvedSyncPath =
-        syncQueueFilePath ?? await _defaultPath('app_sync_queue.sqlite');
+        syncQueueFilePath ??
+        await defaultDesktopFilePath('app_sync_queue.sqlite');
 
     // ── Database open ────────────────────────────────────────────────
-    final cacheDb = CacheDatabase(_openDriftExecutor(resolvedCachePath));
-    final syncDb = SyncDatabase(_openDriftExecutor(resolvedSyncPath));
+    final cacheDb = CacheDatabase(factory.open(resolvedCachePath));
+    final syncDb = SyncDatabase(factory.open(resolvedSyncPath));
 
     // ── Clock + Dio ──────────────────────────────────────────────────
     final effectiveClock = clock ?? const SystemClock();
@@ -316,8 +277,8 @@ class SocialCareDesktop {
     // ── DrainStream broadcast (created early so engine can pump it) ──
     final drainController = StreamController<DrainSummary>.broadcast();
 
-    // ── Sync engine (pumping subclass — see _PumpingSyncEngine) ──────
-    final engine = _PumpingSyncEngine(
+    // ── Sync engine (pumping subclass — see PumpingSyncEngine) ───────
+    final engine = PumpingSyncEngine(
       outbox: outbox,
       registry: registryRemote,
       assessment: assessmentRemote,
@@ -635,7 +596,7 @@ class SocialCareDesktop {
     // ── Connectivity wiring (D5 γ) ───────────────────────────────────
     final effectiveConnectivity = connectivity ?? Connectivity();
     final initialResults = await effectiveConnectivity.checkConnectivity();
-    final initialOnline = _resultsAreOnline(initialResults);
+    final initialOnline = resultsAreOnline(initialResults);
 
     // The subscription is bound LATE (after construction) so we can
     // call `triggerDrain` (which uses the wrapper's own logic to pump
@@ -646,7 +607,7 @@ class SocialCareDesktop {
     final connectivitySub = effectiveConnectivity.onConnectivityChanged.listen((
       results,
     ) {
-      final isOnline = _resultsAreOnline(results);
+      final isOnline = resultsAreOnline(results);
       if (isOnline && !desktop._wasOnline) {
         // Fire-and-forget the drain so the listener stays responsive.
         unawaited(desktop.triggerDrain());
@@ -673,46 +634,4 @@ class SocialCareDesktop {
 
     return desktop;
   }
-
-  // ── Helpers ────────────────────────────────────────────────────────
-
-  /// Resolves the default file path under `path_provider`'s
-  /// `getApplicationDocumentsDirectory()`. Tests that omit
-  /// `cacheFilePath` / `syncQueueFilePath` fall through here, which
-  /// throws `MissingPluginException` in unit tests (intentional — see
-  /// the path_provider gate test in `social_care_desktop_test.dart`).
-  static Future<String> _defaultPath(String fileName) async {
-    final dir = await getApplicationDocumentsDirectory();
-    return '${dir.path}/$fileName';
-  }
-
-  /// Maps a file path to a Drift `QueryExecutor`. The literal
-  /// `':memory:'` (canonical SQLite in-memory marker) yields
-  /// [NativeDatabase.memory()] for tests; any other string is treated
-  /// as a real disk path.
-  ///
-  /// **T1.1 (2026-05-01):** disk-backed databases are opened via
-  /// [NativeDatabase.createInBackground], which spawns a dedicated
-  /// background isolate that owns the SQLite handle. The main isolate
-  /// then communicates with it via `SendPort` — every Drift query runs
-  /// off the UI/event-loop thread.
-  ///
-  /// Honors ADR-021's cited rationale (Drift's first-class multi-isolate
-  /// support) which previously was paid-for-but-unused in production.
-  /// In-memory databases stay on the calling isolate by design — Drift
-  /// has no `createInBackground` for `NativeDatabase.memory()` and tests
-  /// rely on synchronous in-isolate state.
-  static QueryExecutor _openDriftExecutor(String filePath) {
-    if (filePath == _inMemoryMarker) {
-      return NativeDatabase.memory();
-    }
-    return NativeDatabase.createInBackground(File(filePath));
-  }
-
-  /// True if any [ConnectivityResult] in the list is non-`none`. The
-  /// `connectivity_plus` v7 plugin emits a list per change to support
-  /// devices with multiple active interfaces; ANY non-`none` member
-  /// counts as online for our trigger.
-  static bool _resultsAreOnline(List<ConnectivityResult> results) =>
-      results.any((r) => r != ConnectivityResult.none);
 }
