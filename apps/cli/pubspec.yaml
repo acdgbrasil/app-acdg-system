@@ -1,0 +1,29 @@
+name: cli
+description: ACDG CLI — operate the social care system from the command line.
+version: 0.1.0
+publish_to: 'none'
+
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  args: ^2.6.0
+  dio: ^5.7.0
+  yaml: ^3.1.2
+
+  # Contract A DTOs (BFF request/response shapes)
+  shared:
+    path: ../social_care_bff/contracts
+
+  # Result<T> + Equatable + uuid utilities
+  core_contracts:
+    path: ../../kernel/contracts
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.24.0
+  custom_lint: ^0.8.1
+  acdg_lints:
+    path: ../../kernel/lints

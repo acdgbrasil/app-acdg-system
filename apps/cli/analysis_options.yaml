@@ -1,0 +1,36 @@
+include: package:lints/recommended.yaml
+
+# Mirrors apps/social_care_bff/web/analysis_options.yaml so CLI inherits the
+# same Pattern Matching / Encapsulation enforcement (P5 lint, exhaustive
+# switch, no default cases, tear-offs).
+linter:
+  rules:
+    # Error handling — alinha com P2b (ADR-019)
+    empty_catches: true
+    avoid_catching_errors: true
+    use_rethrow_when_possible: true
+
+    # Pattern matching — alinha com P1 exhaustiveness
+    exhaustive_cases: true
+    no_default_cases: true
+
+    # Tear-offs — alinha com P3
+    unnecessary_lambdas: true
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  plugins:
+    - custom_lint
+  errors:
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+custom_lint:
+  rules:
+    - no_sealed_class_downcast

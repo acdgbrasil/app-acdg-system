@@ -1,9 +1,9 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (Onda 1 + Onda 1.5 closed; Onda 2 next)
+phase: in-progress (Onda 1 + Onda 1.5 + C01 closed; C02 next)
 agent: —
-status: **C00 + D01 + D02 + D03 closed 2026-05-02. 2172 GREEN +1 skip total BFF.** Onda 1.5 (Desktop facade refactor) reduziu `social_care_desktop.dart` de 718L → 184L (-74.4%) com 3 padrões GoF formalizados (Factory Method, Builder, Observer). Próximo: **C01 — CLI Scaffold (`apps/cli/`)**.
+status: **C00 + D01 + D02 + D03 + C01 closed 2026-05-02. 2249 GREEN +1 skip total** (535 contracts + 1137 web + 500 desktop + 77 cli). CLI scaffold em `apps/cli/` operacional — AOT compile produz binário `acdg`. Próximo: **C02 — CLI Auth (PKCE Loopback)** (depende de NATIVE_API client_id provisionado no Bitwarden).
 
 ## Decisão estratégica (2026-05-01)
 
@@ -60,7 +60,7 @@ status: **C00 + D01 + D02 + D03 closed 2026-05-02. 2172 GREEN +1 skip total BFF.
 - [ ] **D03 — assembler-observer** — `DesktopAssembler` (Builder fluente) + `AutoDrainObserver` (Observer, elimina self-reference circular). `SocialCareDesktop._()` reduz de 14 parâmetros pra 1 (DesktopRuntime). Reduz facade ~350L → ~150L.
 
 ### Onda 2 — CLI scaffold + auth (2 tickets)
-- [ ] **C01 — cli-scaffold** — `apps/cli/` Dart puro, `args` parser, `acdg --help`, struct de commands
+- [x] **C01 — cli-scaffold** — CLOSED 2026-05-02 via 4-wave pipeline (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). 77 GREEN no novo `apps/cli/`; 2249 GREEN +1 skip total (4 packages). Decisões D1-D5 implementadas (package `cli`, workspace global, binário `acdg`, auto-detect output, XDG creds path). 5 padrões aplicados (Facade, Strategy, Sealed Class, Factory Method, Adapter). AOT compile produz binário funcional. W2 APPROVED Round 1/3 zero MUST_FIX, 3 SHOULD_FIX deferidos a C02 (schema-mismatch TypeError em boundaries — não-bloqueante no scaffold).
 - [ ] **C02 — cli-auth-pkce-loopback** — `acdg auth login/status/logout/refresh`, OIDC PKCE + Loopback, file-based credential store
 
 ### Onda 3 — Read commands (4 tickets — leitura primeiro pra validar Bearer + parsing)

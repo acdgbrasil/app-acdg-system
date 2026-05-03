@@ -24,6 +24,7 @@ workspace:
   - infra/storage
 
   # apps — unidades entregáveis
+  - apps/cli
   - apps/social_care_bff/contracts
   - apps/social_care_bff/web
   - apps/social_care_bff/desktop
