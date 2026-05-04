@@ -1418,6 +1418,430 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // C08 ADDITIVE — `patch<T>` verb contract.
+  // ---------------------------------------------------------------------------
+  //
+  // **5th HTTP verb** added by C08 (was: get/post/put/delete). Required for
+  // `acdg lookup toggle` which hits `PATCH /lookups/<table>/<id>/toggle`.
+  //
+  // W1 must add a `patch<T>` method to `BffClient` matching the `put<T>`
+  // shape (PATCH semantically idempotent partial update — body required for
+  // the toggle case, but kept optional in the verb signature for future
+  // PATCH endpoints):
+  //
+  // ```dart
+  // Future<Result<T>> patch<T>(
+  //   String path, {
+  //   Object? body,
+  //   T Function(Object? data)? decode,
+  // });
+  // ```
+  //
+  // Behavior — identical to `put<T>` modulo the wire-method:
+  //   * Wire-method MUST be `PATCH` (lower-case `patch` on Dio.fetch).
+  //   * Body serialized as JSON (`application/json` content-type).
+  //   * Same Bearer interceptor (uses the existing one).
+  //   * Same 401 → refresh → retry-once invariant. Retry MUST resend the
+  //     original body (not drop it).
+  //   * 4xx (other than 401) and 5xx → `Failure(ServerError(status, ...))`.
+  //   * Network failure → `Failure(NetworkError(...))`.
+  //   * 200/201 with `decode` → `Success(decode(parsed))`.
+  //   * 200/201/204 without `decode` → `Success(raw as T)`.
+  //   * No infinite retry loop on persistent 401.
+  group('BffClient — patch<T> verb (C08)', () {
+    test('uses the PATCH method on the wire', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '',
+          204,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      await client.patch<Object?>(
+        '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+        body: const {'active': true},
+      );
+
+      expect(adapter.lastOptions!.method.toUpperCase(), equals('PATCH'));
+    });
+
+    test('204 No Content → Success', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '',
+          204,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.patch<Object?>(
+        '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+        body: const {'active': false},
+      );
+
+      expect(result, isA<Success<Object?>>());
+    });
+
+    test(
+      'serializes body as JSON on the wire (active: bool round-trips)',
+      () async {
+        final adapter = _CapturingAdapter(
+          response: ResponseBody.fromString(
+            '',
+            204,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        );
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(stored: _aSession());
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+        );
+
+        final body = {'active': true};
+        await client.patch<Object?>(
+          '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+          body: body,
+        );
+
+        final captured = adapter.lastOptions!;
+        final raw = captured.data;
+        if (raw is Map<String, Object?>) {
+          // BFF requires `bool` type, not string.
+          expect(raw['active'], isA<bool>());
+          expect(raw['active'], equals(true));
+        } else if (raw is String) {
+          // Stringified JSON should still carry true (not "true").
+          expect(raw, contains('"active"'));
+          expect(raw, contains('true'));
+        } else {
+          fail('Unexpected body shape on the wire: ${raw.runtimeType}');
+        }
+      },
+    );
+
+    test('attaches Authorization: Bearer on PATCH too', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '',
+          204,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(
+        stored: _aSession(accessToken: 'patch-bearer-fixture'),
+      );
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      await client.patch<Object?>(
+        '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+        body: const {'active': true},
+      );
+
+      final auth =
+          adapter.lastOptions!.headers['Authorization'] ??
+          adapter.lastOptions!.headers['authorization'];
+      expect(auth, equals('Bearer patch-bearer-fixture'));
+    });
+
+    test(
+      '401 → refresh → retries PATCH once with new bearer + same body',
+      () async {
+        final adapter = _SequencedAdapter([
+          ResponseBody.fromString(
+            'unauthorized',
+            401,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+          ResponseBody.fromString(
+            '',
+            204,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        ]);
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(
+          stored: _aSession(accessToken: 'old', refreshToken: 'rt-old'),
+        );
+        final tokenClient = _RefreshOnlyTokenClient(
+          refreshResult: Success(
+            TokenResponse(
+              accessToken: 'new-access',
+              refreshToken: 'new-refresh',
+              idToken: _idToken(),
+              tokenType: 'Bearer',
+              expiresIn: const Duration(seconds: 43200),
+            ),
+          ),
+        );
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+          tokenClient: tokenClient,
+          discovery: _kDiscovery,
+        );
+
+        final body = const {'active': true};
+        final result = await client.patch<Object?>(
+          '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+          body: body,
+        );
+
+        expect(result, isA<Success<Object?>>());
+        expect(adapter.calls, equals(2));
+        // Retry must carry the new bearer.
+        final secondAuth =
+            adapter.captured[1].headers['Authorization'] ??
+            adapter.captured[1].headers['authorization'];
+        expect(secondAuth, equals('Bearer new-access'));
+        // Retry must resend the same body — body MUST NOT be dropped.
+        final retryBody = adapter.captured[1].data;
+        if (retryBody is Map<String, Object?>) {
+          expect(retryBody['active'], equals(true));
+        } else if (retryBody is String) {
+          expect(retryBody, contains('"active"'));
+          expect(retryBody, contains('true'));
+        }
+        // Retry must use PATCH on the wire.
+        expect(adapter.captured[1].method.toUpperCase(), equals('PATCH'));
+        expect(tokenClient.refreshCalls, equals(1));
+      },
+    );
+
+    test(
+      '401 → refresh RefreshTokenInvalid → clears store + AuthRequiredError',
+      () async {
+        final adapter = _SequencedAdapter([
+          ResponseBody.fromString(
+            'unauthorized',
+            401,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        ]);
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(stored: _aSession());
+        final tokenClient = _RefreshOnlyTokenClient(
+          refreshResult: const Failure(RefreshTokenInvalidError()),
+        );
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+          tokenClient: tokenClient,
+          discovery: _kDiscovery,
+        );
+
+        final result = await client.patch<Object?>(
+          '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+          body: const {'active': true},
+        );
+
+        expect(result, isA<Failure<Object?>>());
+        expect((result as Failure<Object?>).error, isA<AuthRequiredError>());
+        expect(await store.read(), isNull);
+        expect(adapter.calls, equals(1));
+      },
+    );
+
+    test('500 → Failure(ServerError(500, ...))', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          'internal error',
+          500,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.patch<Object?>(
+        '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+        body: const {'active': true},
+      );
+
+      expect(result, isA<Failure<Object?>>());
+      final failure = result as Failure<Object?>;
+      expect(failure.error, isA<ServerError>());
+      expect((failure.error as ServerError).statusCode, equals(500));
+    });
+
+    test(
+      '400 (NOT 401) → Failure(ServerError(400, ...)), no refresh, no retry',
+      () async {
+        final adapter = _SequencedAdapter([
+          ResponseBody.fromString(
+            '{"error":{"code":"INVALID_TOGGLE_LOOKUP_ITEM_BODY",'
+            '"message":"missing or invalid [active]"}}',
+            400,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        ]);
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(stored: _aSession());
+        final tokenClient = _RefreshOnlyTokenClient(
+          refreshResult: Success(
+            TokenResponse(
+              accessToken: 'unused',
+              refreshToken: 'unused',
+              idToken: _idToken(),
+              tokenType: 'Bearer',
+              expiresIn: const Duration(seconds: 60),
+            ),
+          ),
+        );
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+          tokenClient: tokenClient,
+          discovery: _kDiscovery,
+        );
+
+        final result = await client.patch<Object?>(
+          '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+          body: const <String, Object?>{},
+        );
+
+        expect(result, isA<Failure<Object?>>());
+        expect((result as Failure<Object?>).error, isA<ServerError>());
+        expect((result.error as ServerError).statusCode, equals(400));
+        // 400 must NOT have triggered a refresh.
+        expect(tokenClient.refreshCalls, equals(0));
+        // Exactly one HTTP call — no retry.
+        expect(adapter.calls, equals(1));
+      },
+    );
+
+    test('Network failure → Failure(NetworkError)', () async {
+      final adapter = _ThrowingAdapter();
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.patch<Object?>(
+        '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+        body: const {'active': true},
+      );
+
+      expect(result, isA<Failure<Object?>>());
+      expect((result as Failure<Object?>).error, isA<NetworkError>());
+    });
+
+    test(
+      'persistent 401 (refresh succeeds, retry still 401) → no infinite loop',
+      () async {
+        final adapter = _SequencedAdapter([
+          ResponseBody.fromString(
+            'unauth-1',
+            401,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+          ResponseBody.fromString(
+            'unauth-2',
+            401,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        ]);
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(stored: _aSession());
+        final tokenClient = _RefreshOnlyTokenClient(
+          refreshResult: Success(
+            TokenResponse(
+              accessToken: 'new',
+              refreshToken: 'new-rt',
+              idToken: _idToken(),
+              tokenType: 'Bearer',
+              expiresIn: const Duration(seconds: 60),
+            ),
+          ),
+        );
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+          tokenClient: tokenClient,
+          discovery: _kDiscovery,
+        );
+
+        final result = await client.patch<Object?>(
+          '/lookups/dominio_x/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/toggle',
+          body: const {'active': true},
+        );
+
+        expect(result, isA<Failure<Object?>>());
+        // Refresh path attempted exactly once (no infinite loop).
+        expect(tokenClient.refreshCalls, equals(1));
+        // At most 2 HTTP calls (original + retry-once).
+        expect(adapter.calls, lessThanOrEqualTo(2));
+      },
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------

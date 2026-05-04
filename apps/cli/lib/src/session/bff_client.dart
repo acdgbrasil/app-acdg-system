@@ -24,6 +24,12 @@
 ///     public API), but dispatches DELETE.
 ///   * Both reuse the existing `_attempt`/`_refreshAndRetry` helpers; the
 ///     only new dispatch knob is the `method` string.
+///
+/// C08 extension:
+///   * `patch<T>` mirrors `put<T>` — same body+401 contract, dispatches
+///     PATCH on the wire. Required for `acdg lookup toggle` (the first
+///     PATCH endpoint surfaced by Contract A — see
+///     `apps/social_care_bff/lib/src/intents/governance/toggle_lookup_item_intent.dart`).
 library;
 
 import 'dart:convert';
@@ -85,15 +91,22 @@ final class BffClient {
   /// * 2xx without [decode] → [Success] wrapping the raw response data
   ///   coerced to `T`.
   /// * 401 with a wired [TokenClient] → refresh + retry once.
+  ///
+  /// [queryParameters] are forwarded to Dio so the captured
+  /// `RequestOptions.path` stays clean (e.g. `/lookups`) and the query string
+  /// is reachable via `lastOptions.uri.queryParameters` — pinned by the C08
+  /// `lookup batch` contract.
   Future<Result<T>> get<T>(
     String path, {
     T Function(Object? data)? decode,
+    Map<String, Object?>? queryParameters,
   }) async {
     final firstAttempt = await _attempt<T>(
       method: 'GET',
       path: path,
       body: null,
       decode: decode,
+      queryParameters: queryParameters,
     );
     return firstAttempt.flatMapWith(
       onSuccess: Success<T>.new,
@@ -102,6 +115,7 @@ final class BffClient {
         path: path,
         body: null,
         decode: decode,
+        queryParameters: queryParameters,
       ),
       onOther: Failure<T>.new,
     );
@@ -165,6 +179,35 @@ final class BffClient {
     );
   }
 
+  /// Issues `PATCH [path]` with [body] serialized as JSON and returns a [Result].
+  ///
+  /// Mirrors [put] semantics — only the wire method differs. PATCH carries
+  /// idempotent partial updates (e.g. `lookup toggle` flipping the `active`
+  /// flag); the verb keeps [body] optional so future PATCH endpoints can
+  /// dispatch without a payload if the BFF intent is path-only.
+  Future<Result<T>> patch<T>(
+    String path, {
+    Object? body,
+    T Function(Object? data)? decode,
+  }) async {
+    final firstAttempt = await _attempt<T>(
+      method: 'PATCH',
+      path: path,
+      body: body,
+      decode: decode,
+    );
+    return firstAttempt.flatMapWith(
+      onSuccess: Success<T>.new,
+      on401: () => _refreshAndRetry<T>(
+        method: 'PATCH',
+        path: path,
+        body: body,
+        decode: decode,
+      ),
+      onOther: Failure<T>.new,
+    );
+  }
+
   /// Issues `DELETE [path]` and returns a [Result].
   ///
   /// Mirrors [get] semantics — no body is sent on the wire (DELETE per HTTP
@@ -191,13 +234,15 @@ final class BffClient {
     );
   }
 
-  /// Single HTTP attempt — used by every verb (GET/POST/PUT/DELETE). Returns
-  /// an [_Attempt] envelope so the refresh-retry orchestration stays linear.
+  /// Single HTTP attempt — used by every verb (GET/POST/PUT/DELETE/PATCH).
+  /// Returns an [_Attempt] envelope so the refresh-retry orchestration stays
+  /// linear.
   Future<_Attempt<T>> _attempt<T>({
     required String method,
     required String path,
     required Object? body,
     T Function(Object? data)? decode,
+    Map<String, Object?>? queryParameters,
   }) async {
     try {
       // `validateStatus: (_) => true` keeps Dio from throwing on non-2xx;
@@ -219,6 +264,7 @@ final class BffClient {
       final response = await _dio.request<List<int>>(
         path,
         data: body,
+        queryParameters: queryParameters,
         options: options,
       );
       final status = response.statusCode;
@@ -251,6 +297,7 @@ final class BffClient {
     required String path,
     required Object? body,
     T Function(Object? data)? decode,
+    Map<String, Object?>? queryParameters,
   }) async {
     final tokenClient = _tokenClient;
     final session = await _credentialStore.read();
@@ -278,6 +325,7 @@ final class BffClient {
           path: path,
           body: body,
           decode: decode,
+          queryParameters: queryParameters,
         );
         return retry.flatMapWith(
           onSuccess: Success<T>.new,

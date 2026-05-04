@@ -43,7 +43,17 @@ import 'commands/family_command.dart';
 import 'commands/family_remove_command.dart';
 import 'commands/family_update_identity_command.dart';
 import 'commands/health_command.dart';
+import 'commands/lookup_batch_command.dart';
 import 'commands/lookup_command.dart';
+import 'commands/lookup_create_command.dart';
+import 'commands/lookup_get_command.dart';
+import 'commands/lookup_request_approve_command.dart';
+import 'commands/lookup_request_command.dart';
+import 'commands/lookup_request_create_command.dart';
+import 'commands/lookup_request_list_command.dart';
+import 'commands/lookup_request_reject_command.dart';
+import 'commands/lookup_toggle_command.dart';
+import 'commands/lookup_update_command.dart';
 import 'commands/patient_admit_command.dart';
 import 'commands/patient_audit_command.dart';
 import 'commands/patient_command.dart';
@@ -157,7 +167,13 @@ final class CliRunner {
           stderr: _stderr,
         ),
       )
-      ..addCommand(LookupCommand(stdout: stdout))
+      ..addCommand(
+        _buildLookupCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(TeamCommand(stdout: stdout))
       ..addCommand(HealthCommand(stdout: stdout));
   }
@@ -491,6 +507,76 @@ ProtectionCommand _buildProtectionCommand({
       fileReader: (path) => File(path).readAsString(),
       stdout: stdout,
       stderr: stderr,
+    ),
+  );
+}
+
+/// Builds the production [LookupCommand] with all five admin/read leaves and
+/// the four governance leaves (under the `request` sub-parent) wired against
+/// the shared [bffClient]. The default formatter is JSON; per-invocation
+/// `--output` will be respected once the resolver lands in C10.
+LookupCommand _buildLookupCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  return LookupCommand(
+    get: LookupGetCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    batch: LookupBatchCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    create: LookupCreateCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    update: LookupUpdateCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    toggle: LookupToggleCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    request: LookupRequestCommand(
+      list: LookupRequestListCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
+      create: LookupRequestCreateCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
+      approve: LookupRequestApproveCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
+      reject: LookupRequestRejectCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
     ),
   );
 }
