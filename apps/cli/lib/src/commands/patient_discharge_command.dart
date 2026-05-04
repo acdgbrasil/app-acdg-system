@@ -14,7 +14,7 @@ import 'package:core_contracts/core_contracts.dart';
 
 import '../formatters/output_formatter.dart';
 import '../session/bff_client.dart';
-import '_patient_helpers.dart';
+import '_command_helpers.dart';
 
 /// `acdg patient discharge`.
 final class PatientDischargeCommand extends Command<int> {

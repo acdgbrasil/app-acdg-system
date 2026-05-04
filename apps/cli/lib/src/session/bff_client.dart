@@ -16,6 +16,14 @@
 ///   * `post<T>` mirrors `get<T>` — JSON-serialized body, same Bearer
 ///     interceptor, same 401 → refresh → retry-once invariant. The retry
 ///     resends the original body verbatim.
+///
+/// C04 extension:
+///   * `put<T>` mirrors `post<T>` — same body+401 contract, dispatches PUT
+///     on the wire.
+///   * `delete<T>` mirrors `get<T>` for the wire shape (no body on the
+///     public API), but dispatches DELETE.
+///   * Both reuse the existing `_attempt`/`_refreshAndRetry` helpers; the
+///     only new dispatch knob is the `method` string.
 library;
 
 import 'dart:convert';
@@ -131,8 +139,60 @@ final class BffClient {
     );
   }
 
-  /// Single HTTP attempt — used by both GET and POST. Returns an [_Attempt]
-  /// envelope so the refresh-retry orchestration stays linear.
+  /// Issues `PUT [path]` with [body] serialized as JSON and returns a [Result].
+  ///
+  /// Mirrors [post] semantics — only the wire method differs.
+  Future<Result<T>> put<T>(
+    String path, {
+    Object? body,
+    T Function(Object? data)? decode,
+  }) async {
+    final firstAttempt = await _attempt<T>(
+      method: 'PUT',
+      path: path,
+      body: body,
+      decode: decode,
+    );
+    return firstAttempt.flatMapWith(
+      onSuccess: Success<T>.new,
+      on401: () => _refreshAndRetry<T>(
+        method: 'PUT',
+        path: path,
+        body: body,
+        decode: decode,
+      ),
+      onOther: Failure<T>.new,
+    );
+  }
+
+  /// Issues `DELETE [path]` and returns a [Result].
+  ///
+  /// Mirrors [get] semantics — no body is sent on the wire (DELETE per HTTP
+  /// convention). The 401 retry path resends the same path with no body.
+  Future<Result<T>> delete<T>(
+    String path, {
+    T Function(Object? data)? decode,
+  }) async {
+    final firstAttempt = await _attempt<T>(
+      method: 'DELETE',
+      path: path,
+      body: null,
+      decode: decode,
+    );
+    return firstAttempt.flatMapWith(
+      onSuccess: Success<T>.new,
+      on401: () => _refreshAndRetry<T>(
+        method: 'DELETE',
+        path: path,
+        body: null,
+        decode: decode,
+      ),
+      onOther: Failure<T>.new,
+    );
+  }
+
+  /// Single HTTP attempt — used by every verb (GET/POST/PUT/DELETE). Returns
+  /// an [_Attempt] envelope so the refresh-retry orchestration stays linear.
   Future<_Attempt<T>> _attempt<T>({
     required String method,
     required String path,

@@ -11,6 +11,11 @@
 library;
 
 export 'src/cli_runner.dart';
+export 'src/commands/family_add_command.dart';
+export 'src/commands/family_assign_caregiver_command.dart';
+export 'src/commands/family_command.dart';
+export 'src/commands/family_remove_command.dart';
+export 'src/commands/family_update_identity_command.dart';
 export 'src/commands/patient_admit_command.dart';
 export 'src/commands/patient_audit_command.dart';
 export 'src/commands/patient_command.dart';

@@ -22,7 +22,7 @@ import 'package:yaml/yaml.dart';
 import '../errors/cli_error.dart';
 import '../formatters/output_formatter.dart';
 import '../session/bff_client.dart';
-import '_patient_helpers.dart';
+import '_command_helpers.dart';
 
 /// `acdg patient register`.
 final class PatientRegisterCommand extends Command<int> {

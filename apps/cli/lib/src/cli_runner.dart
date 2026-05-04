@@ -28,7 +28,11 @@ import 'commands/auth_logout_command.dart';
 import 'commands/auth_refresh_command.dart';
 import 'commands/auth_status_command.dart';
 import 'commands/care_command.dart';
+import 'commands/family_add_command.dart';
+import 'commands/family_assign_caregiver_command.dart';
 import 'commands/family_command.dart';
+import 'commands/family_remove_command.dart';
+import 'commands/family_update_identity_command.dart';
 import 'commands/health_command.dart';
 import 'commands/lookup_command.dart';
 import 'commands/patient_admit_command.dart';
@@ -113,7 +117,13 @@ final class CliRunner {
           stderr: _stderr,
         ),
       )
-      ..addCommand(FamilyCommand(stdout: stdout))
+      ..addCommand(
+        _buildFamilyCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(AssessmentCommand(stdout: stdout))
       ..addCommand(CareCommand(stdout: stdout))
       ..addCommand(ProtectionCommand(stdout: stdout))
@@ -286,6 +296,43 @@ PatientCommand _buildPatientCommand({
       stderr: stderr,
     ),
     withdraw: PatientWithdrawCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+  );
+}
+
+/// Builds the production [FamilyCommand] with all four subcommands wired
+/// against the shared [bffClient]. The default formatter is JSON; per-
+/// invocation `--output` will be respected once the resolver lands in C10.
+FamilyCommand _buildFamilyCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  return FamilyCommand(
+    add: FamilyAddCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    remove: FamilyRemoveCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    assignCaregiver: FamilyAssignCaregiverCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    updateIdentity: FamilyUpdateIdentityCommand(
       bffClient: bffClient,
       formatter: formatter,
       stdout: stdout,

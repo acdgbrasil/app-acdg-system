@@ -1,7 +1,7 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (Onda 1 + Onda 1.5 + Onda 2 + C03 closed; **C04 next**)
+phase: in-progress (C04 closed; **C05 next**)
 agent: —
 status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushed em `6cf1b80` + smoke-tested contra Zitadel real. C03 closed via pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 com 1 MUST_FIX (`event_type`→`eventType` casing bug) + 4 SHOULD_FIX → fixes aplicados (M1+S1+S2) → W3 PASSED). 8 comandos `acdg patient ...` operacionais. **219 GREEN no apps/cli** (era 145, +74). dart analyze zero issues. AOT compila. `BffClient.post<T>` adicionado com retry-once invariant compartilhado com `get<T>`. Workspace reachable: **1891 GREEN** (cli + bff/web + bff/contracts; desktop env-blocked não-regressão). Próximo: **C04 — cli-family** (add, remove, assign-caregiver, update-identity).
 
@@ -65,7 +65,7 @@ status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushe
 
 ### Onda 3 — Read commands (4 tickets — leitura primeiro pra validar Bearer + parsing)
 - [x] **C03 — cli-patient** — CLOSED 2026-05-04 via pipeline 4-wave (test-writer → flutter-bff-implementer → flutter-code-reviewer REJECTED Round 1 com 1 MUST_FIX → fixes → flutter-quality-checker). 8 comandos `acdg patient {list, get, audit, register, admit, discharge, readmit, withdraw}` operacionais. 219 GREEN no apps/cli (era 145, +74). `BffClient.post<T>` adicionado; `_attempt`/`_refreshAndRetry` generalizados pra GET+POST com retry-once invariant by construction. M1: W0 §4.3 source claim de snake_case `event_type` estava factualmente errado — BFF lê `eventType` (camelCase); CLI flipped pra match. Test permissivo do W0 (`qp['event_type'] ?? qp['eventType']`) mascarou o bug; W2 catch evitou silent semantic drop em produção. Decisões: DTO-faithful body shapes (discharge sem timestamp, readmit só notes, withdraw reason REQUIRED conforme DTOs); cursor surfacing em stderr; `--from-yaml` com reader injetado; `_buildBffClient` ainda sem refresh-on-401 wiring (deferido a C04). Patterns: Sealed sum types via `_Attempt<T>` (encoda retry-once invariant), DTO-as-canon (W0 §4.1).
-- [ ] **C04 — cli-family** (add, remove, assign-caregiver, update-identity)
+- [x] **C04 — cli-family** — CLOSED 2026-05-04 via pipeline 4-wave (W0 57 RED → W1 277 GREEN → W2 APPROVED Round 1 com 0 MUST_FIX + 4 SHOULD_FIX defer-to-future → W3 PASSED). 4 verbs operacionais: `add` (POST `/patients/<id>/family-members`), `remove` (DELETE), `assign-caregiver` (PUT `/primary-caregiver`), `update-identity` (PUT `/social-identity`). BffClient extendido com `put<T>` + `delete<T>` reusando `_attempt`/`_refreshAndRetry` C03 (knob `method` já genérico). Helper renomeado `_patient_helpers.dart` → `_command_helpers.dart` (byte-identical) + 8 patient imports atualizados. DTO-as-canon adherence: ticket prose pedia `--gender --pronoun` mas DTO `UpdateSocialIdentityRequest` é `{typeId, description?}` — CLI segue DTO (lição C03 W2 M1 aplicada com sucesso). Wire format cross-checked vs 4 BFF intents — zero surpresas de casing. 277 GREEN no apps/cli (era 219, +58); 1949 GREEN reachable workspace.
 - [ ] **C05 — cli-assessment** (7 fichas: housing, socioeconomic, work-income, education, health, community-support, social-health-summary)
 
 ### Onda 4 — Write commands (4 tickets)
@@ -154,7 +154,7 @@ Débitos abertos pra C04+:
 - **`--output` global flag resolver (C10)**: hoje `JsonFormatter` é hardcoded; resolver lê flag.
 - **`formatter` field unused** nas 4 lifecycle commands (admit/discharge/readmit/withdraw retornam 204 No Content): drop quando C10 introduzir resolver runner-level.
 
-Next action: commit C03, então kickoff **C04 — cli-family** (add, remove, assign-caregiver, update-identity). Pré-req: `BffClient.post<T>` C03 + Family sub-contract DTOs em `apps/social_care_bff/contracts/lib/src/contract/dto/requests/registry/{add_family_member_request,assign_primary_caregiver_request,update_social_identity_request}.dart`.
+Next action: kickoff **C05 — cli-assessment** (7 fichas: housing, socioeconomic, work-income, education, health, community-support, social-health-summary). Pré-req: `BffClient` ja tem GET/POST/PUT/DELETE; provavelmente C05 só usa PUT (assessment endpoints idempotentes). Assessment sub-contract em `apps/social_care_bff/contracts/lib/src/contract/sub_contracts/assessment_contract.dart`. Pipeline 4-wave igual.
 
 Requirements não-negociáveis para o W0 (extraídos da spike §3-§5):
 - LoopbackListener defensivo: filtra `_rsc=`, valida `state==expected`, drena 204 silencioso, hard timeout 5min, bind em porta efêmera (`InternetAddress.loopbackIPv4, 0`), NUNCA loga query string completa.

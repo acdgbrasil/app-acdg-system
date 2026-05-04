@@ -1,4 +1,8 @@
-/// Shared helpers for `acdg patient ...` subcommands (C03).
+/// Shared helpers for every `acdg ...` subcommand that hits the BFF.
+///
+/// Originally `_patient_helpers.dart` (C03); renamed to `_command_helpers.dart`
+/// in C04 because the same three helpers serve the family verbs verbatim and
+/// will keep growing across `assessment`, `care`, `protection`, `team`, etc.
 ///
 /// Two responsibilities:
 ///   1. Map error → exit code + stderr message in one place so every verb
