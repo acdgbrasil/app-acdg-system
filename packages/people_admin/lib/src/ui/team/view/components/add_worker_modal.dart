@@ -305,10 +305,9 @@ class _ModalField extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color:
-                    hasError
-                        ? AppColors.danger
-                        : AppColors.textMuted.withValues(alpha: 0.4),
+                color: hasError
+                    ? AppColors.danger
+                    : AppColors.textMuted.withValues(alpha: 0.4),
                 width: hasError ? 2.0 : 1.0,
               ),
             ),
@@ -382,10 +381,9 @@ class _RoleOption extends StatelessWidget {
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
               size: 18,
-              color:
-                  selected
-                      ? AppColors.accent
-                      : AppColors.textMuted.withValues(alpha: 0.7),
+              color: selected
+                  ? AppColors.accent
+                  : AppColors.textMuted.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 8),
             Text(

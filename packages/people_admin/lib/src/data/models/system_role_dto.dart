@@ -28,10 +28,9 @@ final class SystemRoleDto with EquatableMixin {
       system: json['system'] as String? ?? '',
       role: json['role'] as String? ?? '',
       active: json['active'] as bool? ?? false,
-      assignedAt:
-          json['assignedAt'] != null
-              ? DateTime.tryParse(json['assignedAt'] as String)
-              : null,
+      assignedAt: json['assignedAt'] != null
+          ? DateTime.tryParse(json['assignedAt'] as String)
+          : null,
     );
   }
 

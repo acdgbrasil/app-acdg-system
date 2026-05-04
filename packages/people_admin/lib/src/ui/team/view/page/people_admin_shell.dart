@@ -46,8 +46,8 @@ class _PeopleAdminShellState extends ConsumerState<PeopleAdminShell> {
               Expanded(
                 child: PeopleMasterPanel(
                   viewModel: listVm,
-                  onSelectPerson:
-                      (id) => detailVm.loadPersonCommand.execute(id),
+                  onSelectPerson: (id) =>
+                      detailVm.loadPersonCommand.execute(id),
                 ),
               ),
               const VerticalDivider(width: 1),
@@ -89,28 +89,25 @@ void _showAddWorkerModal(BuildContext context, PeopleListViewModel listVm) {
   showDialog<bool>(
     context: context,
     barrierColor: Colors.black54,
-    builder:
-        (_) => AddWorkerModal(
-          formState: formState,
-          canSubmit: () => formState.isValid,
-          onRegister: () async {
-            final intent = RegisterWorkerIntent(
-              fullName: formState.fullName.text.trim(),
-              birthDate: formState.birthDate.text.trim(),
-              email: formState.email.text.trim(),
-              role: formState.selectedRole.value!,
-              cpf:
-                  formState.cpf.text.trim().isEmpty
-                      ? null
-                      : formState.cpf.text.trim(),
-              initialPassword:
-                  formState.initialPassword.text.trim().isEmpty
-                      ? null
-                      : formState.initialPassword.text.trim(),
-            );
-            await listVm.registerCommand.execute(intent);
-          },
-        ),
+    builder: (_) => AddWorkerModal(
+      formState: formState,
+      canSubmit: () => formState.isValid,
+      onRegister: () async {
+        final intent = RegisterWorkerIntent(
+          fullName: formState.fullName.text.trim(),
+          birthDate: formState.birthDate.text.trim(),
+          email: formState.email.text.trim(),
+          role: formState.selectedRole.value!,
+          cpf: formState.cpf.text.trim().isEmpty
+              ? null
+              : formState.cpf.text.trim(),
+          initialPassword: formState.initialPassword.text.trim().isEmpty
+              ? null
+              : formState.initialPassword.text.trim(),
+        );
+        await listVm.registerCommand.execute(intent);
+      },
+    ),
   ).then((_) => formState.dispose());
 }
 
@@ -220,10 +217,9 @@ class PersonListTile extends StatelessWidget {
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color:
-              active
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.danger.withValues(alpha: 0.1),
+          color: active
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : AppColors.danger.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -284,16 +280,10 @@ class PersonDetailPanel extends StatelessWidget {
               const SizedBox(height: 24),
               PersonRolesSection(
                 roles: viewModel.roles,
-                onAssignRole:
-                    (system, role) => viewModel.assignRoleCommand.execute((
-                      system: system,
-                      role: role,
-                    )),
-                onToggleRole:
-                    (roleId, activate) => viewModel.toggleRoleCommand.execute((
-                      roleId: roleId,
-                      activate: activate,
-                    )),
+                onAssignRole: (system, role) => viewModel.assignRoleCommand
+                    .execute((system: system, role: role)),
+                onToggleRole: (roleId, activate) => viewModel.toggleRoleCommand
+                    .execute((roleId: roleId, activate: activate)),
               ),
             ],
           ),
@@ -339,10 +329,9 @@ class PersonHeaderSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color:
-                    active
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : AppColors.danger.withValues(alpha: 0.1),
+                color: active
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.danger.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(

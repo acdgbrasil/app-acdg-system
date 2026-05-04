@@ -46,11 +46,10 @@ class PeopleAdminClient {
         final data = response.data;
         if (data != null && data['items'] is List) {
           final itemsList = data['items'] as List<dynamic>;
-          final items =
-              itemsList
-                  .cast<Map<String, dynamic>>()
-                  .map((json) => PersonDto.fromJson(json).toDomain())
-                  .toList();
+          final items = itemsList
+              .cast<Map<String, dynamic>>()
+              .map((json) => PersonDto.fromJson(json).toDomain())
+              .toList();
 
           final nextCursor = data['nextCursor'] as String?;
 
@@ -222,11 +221,10 @@ class PeopleAdminClient {
       if (_isSuccessStatus(response.statusCode)) {
         final data = response.data;
         if (data != null) {
-          final roles =
-              data
-                  .cast<Map<String, dynamic>>()
-                  .map((json) => SystemRoleDto.fromJson(json).toDomain())
-                  .toList();
+          final roles = data
+              .cast<Map<String, dynamic>>()
+              .map((json) => SystemRoleDto.fromJson(json).toDomain())
+              .toList();
           return Success(roles);
         }
         return const Failure(UnexpectedTeamError('Invalid response payload'));
@@ -294,11 +292,10 @@ class PeopleAdminClient {
       if (_isSuccessStatus(response.statusCode)) {
         final data = response.data;
         if (data != null) {
-          final roles =
-              data
-                  .cast<Map<String, dynamic>>()
-                  .map((json) => SystemRoleDto.fromJson(json).toDomain())
-                  .toList();
+          final roles = data
+              .cast<Map<String, dynamic>>()
+              .map((json) => SystemRoleDto.fromJson(json).toDomain())
+              .toList();
           return Success(roles);
         }
         return const Failure(UnexpectedTeamError('Invalid response payload'));
@@ -334,10 +331,9 @@ class PeopleAdminClient {
         if (match != null) {
           code = match.group(1)!;
           final parsedMessage = match.group(2);
-          message =
-              (parsedMessage != null && parsedMessage.trim().isNotEmpty)
-                  ? parsedMessage
-                  : (messageStr ?? fallback);
+          message = (parsedMessage != null && parsedMessage.trim().isNotEmpty)
+              ? parsedMessage
+              : (messageStr ?? fallback);
         } else {
           message = messageStr ?? errorStr;
         }
