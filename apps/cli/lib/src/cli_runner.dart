@@ -31,15 +31,26 @@ import 'commands/care_command.dart';
 import 'commands/family_command.dart';
 import 'commands/health_command.dart';
 import 'commands/lookup_command.dart';
+import 'commands/patient_admit_command.dart';
+import 'commands/patient_audit_command.dart';
 import 'commands/patient_command.dart';
+import 'commands/patient_discharge_command.dart';
+import 'commands/patient_get_command.dart';
+import 'commands/patient_list_command.dart';
+import 'commands/patient_readmit_command.dart';
+import 'commands/patient_register_command.dart';
+import 'commands/patient_withdraw_command.dart';
 import 'commands/protection_command.dart';
-import 'errors/cli_error.dart';
 import 'commands/team_command.dart';
 import 'config/oidc_config.dart';
+import 'errors/cli_error.dart';
+import 'formatters/json_formatter.dart';
+import 'formatters/output_formatter.dart';
 import 'oidc/loopback_listener.dart';
 import 'oidc/oidc_discovery.dart';
 import 'oidc/pkce_pair.dart';
 import 'oidc/token_client.dart';
+import 'session/bff_client.dart';
 import 'session/credential_store.dart';
 
 const String _executableName = 'acdg';
@@ -76,9 +87,32 @@ final class CliRunner {
         help: 'suppress info logs',
       );
 
+    final httpClient = http.Client();
+    final credentialStore = FileCredentialStore(
+      path: FileCredentialStore.defaultPath(env: Platform.environment),
+    );
+    Future<Result<OidcDiscovery>> loadDiscovery() =>
+        OidcDiscovery.load(httpClient: httpClient, issuer: OidcConfig.issuer);
+
+    final bffClient = _buildBffClient(credentialStore: credentialStore);
+
     _runner
-      ..addCommand(_buildAuthCommand(stdout: stdout, stderr: _stderr))
-      ..addCommand(PatientCommand(stdout: stdout))
+      ..addCommand(
+        _buildAuthCommand(
+          httpClient: httpClient,
+          credentialStore: credentialStore,
+          loadDiscovery: loadDiscovery,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
+      ..addCommand(
+        _buildPatientCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(FamilyCommand(stdout: stdout))
       ..addCommand(AssessmentCommand(stdout: stdout))
       ..addCommand(CareCommand(stdout: stdout))
@@ -138,17 +172,12 @@ final class _CapturingCommandRunner extends CommandRunner<int> {
 /// PKCE generator, browser opener, and state/nonce factory all use real
 /// production impls.
 AuthCommand _buildAuthCommand({
+  required http.Client httpClient,
+  required CredentialStore credentialStore,
+  required Future<Result<OidcDiscovery>> Function() loadDiscovery,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  final httpClient = http.Client();
-  final store = FileCredentialStore(
-    path: FileCredentialStore.defaultPath(env: Platform.environment),
-  );
-
-  Future<Result<OidcDiscovery>> loadDiscovery() =>
-      OidcDiscovery.load(httpClient: httpClient, issuer: OidcConfig.issuer);
-
   return AuthCommand(
     login: AuthLoginCommand(
       discoveryLoader: loadDiscovery,
@@ -157,19 +186,19 @@ AuthCommand _buildAuthCommand({
           LoopbackListener(expectedState: expectedState),
       tokenClientFactory: (discovery) =>
           TokenClient(discovery: discovery, httpClient: httpClient),
-      credentialStore: store,
+      credentialStore: credentialStore,
       browserOpener: _openBrowser,
       stateNonceFactory: _generateStateNonce,
       stdout: stdout,
       stderr: stderr,
     ),
     status: AuthStatusCommand(
-      credentialStore: store,
+      credentialStore: credentialStore,
       stdout: stdout,
       stderr: stderr,
     ),
     logout: AuthLogoutCommand(
-      credentialStore: store,
+      credentialStore: credentialStore,
       discoveryLoader: loadDiscovery,
       revoker: ({required discovery, required refreshToken}) =>
           _revokeRefreshToken(
@@ -181,10 +210,84 @@ AuthCommand _buildAuthCommand({
       stderr: stderr,
     ),
     refresh: AuthRefreshCommand(
-      credentialStore: store,
+      credentialStore: credentialStore,
       discoveryLoader: loadDiscovery,
       tokenClientFactory: (discovery) =>
           TokenClient(discovery: discovery, httpClient: httpClient),
+      stdout: stdout,
+      stderr: stderr,
+    ),
+  );
+}
+
+/// Builds the production [BffClient] using the shared [credentialStore].
+///
+/// The [TokenClient] / [OidcDiscovery] wiring is deferred until the first
+/// 401: [BffClient] receives a `tokenClient` only after discovery resolves,
+/// so the shared `loadDiscovery` is invoked on demand inside the closure.
+/// In the C03 wave, the simpler shape (no refresh-on-401 wiring) is fine —
+/// the auth subcommands handle refresh explicitly.
+BffClient _buildBffClient({required CredentialStore credentialStore}) {
+  return BffClient(baseUrl: _defaultBffUrl, credentialStore: credentialStore);
+}
+
+/// Builds the production [PatientCommand] with all eight subcommands wired
+/// against the shared [bffClient]. The default formatter is JSON (the
+/// pipe-friendly default); per-invocation `--output` will be respected
+/// once the resolver lands in C10.
+PatientCommand _buildPatientCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  return PatientCommand(
+    list: PatientListCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    get: PatientGetCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    audit: PatientAuditCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    register: PatientRegisterCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: (path) => File(path).readAsString(),
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    admit: PatientAdmitCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    discharge: PatientDischargeCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    readmit: PatientReadmitCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    withdraw: PatientWithdrawCommand(
+      bffClient: bffClient,
+      formatter: formatter,
       stdout: stdout,
       stderr: stderr,
     ),

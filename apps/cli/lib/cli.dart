@@ -11,6 +11,15 @@
 library;
 
 export 'src/cli_runner.dart';
+export 'src/commands/patient_admit_command.dart';
+export 'src/commands/patient_audit_command.dart';
+export 'src/commands/patient_command.dart';
+export 'src/commands/patient_discharge_command.dart';
+export 'src/commands/patient_get_command.dart';
+export 'src/commands/patient_list_command.dart';
+export 'src/commands/patient_readmit_command.dart';
+export 'src/commands/patient_register_command.dart';
+export 'src/commands/patient_withdraw_command.dart';
 export 'src/errors/cli_error.dart';
 export 'src/formatters/auto_formatter.dart';
 export 'src/formatters/json_formatter.dart';

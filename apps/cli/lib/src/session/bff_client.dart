@@ -11,6 +11,11 @@
 ///     with the new bearer. `RefreshTokenInvalidError` clears the local
 ///     store and surfaces [AuthRequiredError]. The retry path is invoked
 ///     AT MOST ONCE per outbound request — no infinite loops.
+///
+/// C03 extension:
+///   * `post<T>` mirrors `get<T>` — JSON-serialized body, same Bearer
+///     interceptor, same 401 → refresh → retry-once invariant. The retry
+///     resends the original body verbatim.
 library;
 
 import 'dart:convert';
@@ -76,34 +81,85 @@ final class BffClient {
     String path, {
     T Function(Object? data)? decode,
   }) async {
-    final firstAttempt = await _attemptGet<T>(path, decode: decode);
+    final firstAttempt = await _attempt<T>(
+      method: 'GET',
+      path: path,
+      body: null,
+      decode: decode,
+    );
     return firstAttempt.flatMapWith(
       onSuccess: Success<T>.new,
-      on401: () => _refreshAndRetryGet<T>(path, decode: decode),
+      on401: () => _refreshAndRetry<T>(
+        method: 'GET',
+        path: path,
+        body: null,
+        decode: decode,
+      ),
       onOther: Failure<T>.new,
     );
   }
 
-  Future<_Attempt<T>> _attemptGet<T>(
+  /// Issues `POST [path]` with [body] serialized as JSON and returns a [Result].
+  ///
+  /// Mirrors [get] semantics:
+  ///   * Adapter throws → [Failure] wrapping a translated [CliError].
+  ///   * 2xx with a [decode] callback → [Success] wrapping the decoded value.
+  ///   * 2xx without [decode] → [Success] wrapping the raw response data
+  ///     coerced to `T` (may be `null` on 204).
+  ///   * 401 with a wired [TokenClient] → refresh + retry once with the
+  ///     original [body].
+  Future<Result<T>> post<T>(
     String path, {
+    Object? body,
+    T Function(Object? data)? decode,
+  }) async {
+    final firstAttempt = await _attempt<T>(
+      method: 'POST',
+      path: path,
+      body: body,
+      decode: decode,
+    );
+    return firstAttempt.flatMapWith(
+      onSuccess: Success<T>.new,
+      on401: () => _refreshAndRetry<T>(
+        method: 'POST',
+        path: path,
+        body: body,
+        decode: decode,
+      ),
+      onOther: Failure<T>.new,
+    );
+  }
+
+  /// Single HTTP attempt — used by both GET and POST. Returns an [_Attempt]
+  /// envelope so the refresh-retry orchestration stays linear.
+  Future<_Attempt<T>> _attempt<T>({
+    required String method,
+    required String path,
+    required Object? body,
     T Function(Object? data)? decode,
   }) async {
     try {
       // `validateStatus: (_) => true` keeps Dio from throwing on non-2xx;
       // we want full control over 401 detection (so the refresh-retry
-      // path stays inside `_attemptGet`, never inside Dio's exception
-      // machinery). Errors from transport / parsing are still surfaced
-      // as `DioException`.
+      // path stays inside `_attempt`, never inside Dio's exception
+      // machinery).
       // Read as bytes so Dio's transformer never JSON-decodes before we
       // see the status (a non-JSON 4xx body would otherwise blow up
       // before reaching the catch). We decode JSON ourselves on the
       // success path.
-      final response = await _dio.get<List<int>>(
+      final options = Options(
+        method: method,
+        validateStatus: (_) => true,
+        responseType: ResponseType.bytes,
+        // For POST with a body, set the JSON content-type so the BFF
+        // and Dio's request transformer agree on the serialization.
+        contentType: body != null ? Headers.jsonContentType : null,
+      );
+      final response = await _dio.request<List<int>>(
         path,
-        options: Options(
-          validateStatus: (_) => true,
-          responseType: ResponseType.bytes,
-        ),
+        data: body,
+        options: options,
       );
       final status = response.statusCode;
       if (status == 401) {
@@ -115,10 +171,10 @@ final class BffClient {
         );
       }
       final raw = response.data;
-      final body = raw is List<int> && raw.isNotEmpty
+      final bodyStr = raw is List<int> && raw.isNotEmpty
           ? utf8.decode(raw, allowMalformed: true)
           : '';
-      final data = body.isNotEmpty ? _safeJsonDecode(body) : null;
+      final data = bodyStr.isNotEmpty ? _safeJsonDecode(bodyStr) : null;
       if (decode != null) {
         return _Attempt<T>.success(decode(data));
       }
@@ -128,8 +184,12 @@ final class BffClient {
     }
   }
 
-  Future<Result<T>> _refreshAndRetryGet<T>(
-    String path, {
+  /// Refreshes the access token (once) and retries the original request
+  /// (once). The retry path returns Failure on persistent 401 — no recursion.
+  Future<Result<T>> _refreshAndRetry<T>({
+    required String method,
+    required String path,
+    required Object? body,
     T Function(Object? data)? decode,
   }) async {
     final tokenClient = _tokenClient;
@@ -153,7 +213,12 @@ final class BffClient {
         await _credentialStore.write(rotated);
         // Retry exactly once — any second 401 is propagated as Failure
         // without recursion.
-        final retry = await _attemptGet<T>(path, decode: decode);
+        final retry = await _attempt<T>(
+          method: method,
+          path: path,
+          body: body,
+          decode: decode,
+        );
         return retry.flatMapWith(
           onSuccess: Success<T>.new,
           on401: () async => const Failure(AuthRequiredError()),
@@ -207,7 +272,7 @@ final class BffClient {
   }
 }
 
-/// Internal sum type representing a single GET attempt outcome:
+/// Internal sum type representing a single HTTP attempt outcome:
 /// success, unauthorized (401), or other failure.
 sealed class _Attempt<T> {
   const _Attempt();

@@ -329,6 +329,365 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // C03 ADDITIVE — `post<T>` verb contract (mirrors `get<T>` from C02).
+  // ---------------------------------------------------------------------------
+  //
+  // W1 must add a `post<T>` method to `BffClient` matching the `get<T>` shape:
+  //
+  // ```dart
+  // Future<Result<T>> post<T>(
+  //   String path, {
+  //   Object? body,
+  //   T Function(Object? data)? decode,
+  // });
+  // ```
+  //
+  // Behavior:
+  //   * Body serialized as JSON (`application/json` content-type).
+  //   * Same Bearer interceptor (no change needed — uses the existing one).
+  //   * Same 401 → refresh → retry-once behavior. Retry MUST resend the
+  //     original body (not drop it).
+  //   * 4xx (other than 401) and 5xx → `Failure(ServerError(status, ...))`.
+  //   * Network failure → `Failure(NetworkError(...))`.
+  //   * 200/201 with `decode` → `Success(decode(parsed))`.
+  //   * 200/201/204 without `decode` → `Success(raw as T)` (raw can be `null`
+  //     for 204 — the caller decodes via the type parameter).
+  group('BffClient — post<T> verb (C03)', () {
+    test('200 with decode → Success(decoded)', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '{"data":{"id":"new-uuid"},"meta":{"timestamp":"2026-05-04T00:00:00Z"}}',
+          200,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.post<String>(
+        '/patients',
+        body: const <String, Object?>{'foo': 'bar'},
+        decode: (Object? data) {
+          final map = data! as Map<String, Object?>;
+          final inner = map['data']! as Map<String, Object?>;
+          return inner['id']! as String;
+        },
+      );
+
+      expect(result, isA<Success<String>>());
+      expect((result as Success<String>).value, equals('new-uuid'));
+    });
+
+    test('204 without decode → Success(null) for nullable T', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '',
+          204,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.post<Object?>(
+        '/patients/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/admit',
+        body: const {'reason': 'x', 'admittedAt': '2026-04-30T10:00:00Z'},
+      );
+
+      expect(result, isA<Success<Object?>>());
+    });
+
+    test('serializes body as JSON on the wire', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '{}',
+          200,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final body = {
+        'reason': 'No-show 3 attempts',
+        'notes': 'family unreachable',
+      };
+      await client.post<Object?>('/patients/x/withdraw', body: body);
+
+      final captured = adapter.lastOptions!;
+      expect(captured.method.toUpperCase(), equals('POST'));
+      // Either `data == body` (Dio passes the Map through), or the request
+      // already serialized to JSON. Assert at least the keys round-trip.
+      final raw = captured.data;
+      if (raw is Map<String, Object?>) {
+        expect(raw['reason'], equals('No-show 3 attempts'));
+        expect(raw['notes'], equals('family unreachable'));
+      } else if (raw is String) {
+        expect(raw, contains('"reason"'));
+        expect(raw, contains('No-show 3 attempts'));
+      } else {
+        fail('Unexpected body shape on the wire: ${raw.runtimeType}');
+      }
+    });
+
+    test('attaches Authorization: Bearer on POST too', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          '{}',
+          200,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(
+        stored: _aSession(accessToken: 'bearer-fixture'),
+      );
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      await client.post<Object?>('/patients', body: const <String, Object?>{});
+
+      final auth =
+          adapter.lastOptions!.headers['Authorization'] ??
+          adapter.lastOptions!.headers['authorization'];
+      expect(auth, equals('Bearer bearer-fixture'));
+    });
+
+    test(
+      '401 → refresh → retries POST once with new bearer + same body',
+      () async {
+        final adapter = _SequencedAdapter([
+          ResponseBody.fromString(
+            'unauthorized',
+            401,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+          ResponseBody.fromString(
+            '{"ok":true}',
+            200,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        ]);
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(
+          stored: _aSession(accessToken: 'old', refreshToken: 'rt-old'),
+        );
+        final tokenClient = _RefreshOnlyTokenClient(
+          refreshResult: Success(
+            TokenResponse(
+              accessToken: 'new-access',
+              refreshToken: 'new-refresh',
+              idToken: _idToken(),
+              tokenType: 'Bearer',
+              expiresIn: const Duration(seconds: 43200),
+            ),
+          ),
+        );
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+          tokenClient: tokenClient,
+          discovery: _kDiscovery,
+        );
+
+        final body = const {'reason': 'foo'};
+        final result = await client.post<Object?>(
+          '/patients/x/admit',
+          body: body,
+        );
+
+        expect(result, isA<Success<Object?>>());
+        expect(adapter.calls, equals(2));
+        // Retry must carry the new bearer.
+        final secondAuth =
+            adapter.captured[1].headers['Authorization'] ??
+            adapter.captured[1].headers['authorization'];
+        expect(secondAuth, equals('Bearer new-access'));
+        // Retry must resend the same body.
+        final retryBody = adapter.captured[1].data;
+        if (retryBody is Map<String, Object?>) {
+          expect(retryBody['reason'], equals('foo'));
+        } else if (retryBody is String) {
+          expect(retryBody, contains('"reason"'));
+          expect(retryBody, contains('foo'));
+        }
+        expect(tokenClient.refreshCalls, equals(1));
+      },
+    );
+
+    test(
+      '401 → refresh RefreshTokenInvalid → clears store + AuthRequiredError',
+      () async {
+        final adapter = _SequencedAdapter([
+          ResponseBody.fromString(
+            'unauthorized',
+            401,
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        ]);
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+          ..httpClientAdapter = adapter;
+        final store = _FakeOidcStore(stored: _aSession());
+        final tokenClient = _RefreshOnlyTokenClient(
+          refreshResult: const Failure(RefreshTokenInvalidError()),
+        );
+        final client = BffClient(
+          baseUrl: 'http://localhost:3000',
+          credentialStore: store,
+          dio: dio,
+          tokenClient: tokenClient,
+          discovery: _kDiscovery,
+        );
+
+        final result = await client.post<Object?>(
+          '/patients/x/admit',
+          body: const {'reason': 'foo'},
+        );
+
+        expect(result, isA<Failure<Object?>>());
+        expect((result as Failure<Object?>).error, isA<AuthRequiredError>());
+        expect(await store.read(), isNull);
+        expect(adapter.calls, equals(1));
+      },
+    );
+
+    test('500 → Failure(ServerError(500, ...))', () async {
+      final adapter = _CapturingAdapter(
+        response: ResponseBody.fromString(
+          'internal error',
+          500,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      );
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.post<Object?>(
+        '/patients',
+        body: const {'foo': 'bar'},
+      );
+
+      expect(result, isA<Failure<Object?>>());
+      final failure = result as Failure<Object?>;
+      expect(failure.error, isA<ServerError>());
+      expect((failure.error as ServerError).statusCode, equals(500));
+    });
+
+    test('422 (validation) → Failure(ServerError(422, ...))', () async {
+      // Validation errors are NOT 401 — must NOT trigger refresh-retry.
+      final adapter = _SequencedAdapter([
+        ResponseBody.fromString(
+          '{"error":{"code":"INVALID_BODY","message":"reason missing"}}',
+          422,
+          headers: {
+            'content-type': ['application/json'],
+          },
+        ),
+      ]);
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final tokenClient = _RefreshOnlyTokenClient(
+        refreshResult: Success(
+          TokenResponse(
+            accessToken: 'unused',
+            refreshToken: 'unused',
+            idToken: _idToken(),
+            tokenType: 'Bearer',
+            expiresIn: const Duration(seconds: 60),
+          ),
+        ),
+      );
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+        tokenClient: tokenClient,
+        discovery: _kDiscovery,
+      );
+
+      final result = await client.post<Object?>(
+        '/patients/x/discharge',
+        body: const <String, Object?>{},
+      );
+
+      expect(result, isA<Failure<Object?>>());
+      expect((result as Failure<Object?>).error, isA<ServerError>());
+      expect((result.error as ServerError).statusCode, equals(422));
+      // 422 must NOT have triggered a refresh.
+      expect(tokenClient.refreshCalls, equals(0));
+      // Exactly one HTTP call — no retry.
+      expect(adapter.calls, equals(1));
+    });
+
+    test('Network failure → Failure(NetworkError)', () async {
+      final adapter = _ThrowingAdapter();
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
+        ..httpClientAdapter = adapter;
+      final store = _FakeOidcStore(stored: _aSession());
+      final client = BffClient(
+        baseUrl: 'http://localhost:3000',
+        credentialStore: store,
+        dio: dio,
+      );
+
+      final result = await client.post<Object?>(
+        '/patients',
+        body: const <String, Object?>{},
+      );
+
+      expect(result, isA<Failure<Object?>>());
+      expect((result as Failure<Object?>).error, isA<NetworkError>());
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

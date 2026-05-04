@@ -1,9 +1,9 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (Onda 1 + Onda 1.5 + Onda 2 closed; C03 next)
+phase: in-progress (Onda 1 + Onda 1.5 + Onda 2 + C03 closed; **C04 next**)
 agent: —
-status: **C00 + D01 + D02 + D03 + C01 + C02 closed 2026-05-04**. C02 fechou via pipeline 4-wave completa (W0 test-writer → W1 flutter-bff-implementer → W2 flutter-code-reviewer APPROVED Round 1/3 com 4 SHOULD_FIX → W3 flutter-quality-checker PASSED). Native App PKCE "ACDG CLI" (`OIDC_CLI_CLIENT_ID=371410163745226755`) operacional. **2317 GREEN +1 skip total** no apps/cli + bff/web + bff/contracts (era 2249, +68 do C02; 145 GREEN no apps/cli). dart analyze zero issues no apps/cli/. AOT compile produz binário funcional. Próximo: **C03 — cli-patient** (leitura: list, get, audit-trail; depois escrita: register, admit, discharge, readmit, withdraw).
+status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushed em `6cf1b80` + smoke-tested contra Zitadel real. C03 closed via pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 com 1 MUST_FIX (`event_type`→`eventType` casing bug) + 4 SHOULD_FIX → fixes aplicados (M1+S1+S2) → W3 PASSED). 8 comandos `acdg patient ...` operacionais. **219 GREEN no apps/cli** (era 145, +74). dart analyze zero issues. AOT compila. `BffClient.post<T>` adicionado com retry-once invariant compartilhado com `get<T>`. Workspace reachable: **1891 GREEN** (cli + bff/web + bff/contracts; desktop env-blocked não-regressão). Próximo: **C04 — cli-family** (add, remove, assign-caregiver, update-identity).
 
 ## Decisão estratégica (2026-05-01)
 
@@ -64,7 +64,7 @@ status: **C00 + D01 + D02 + D03 + C01 + C02 closed 2026-05-04**. C02 fechou via 
 - [x] **C02 — cli-auth-pkce-loopback** — CLOSED 2026-05-04 via pipeline 4-wave completa (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). `acdg auth login/status/logout/refresh`, OIDC PKCE + Loopback (RFC 8252) estilo `gh`, file-based credential store via `OidcSession` (Strategy A migration de `Credentials` C01). 145 GREEN no apps/cli (era 77, +68). 9 novos arquivos lib + 7 modificados; 11 novos test files (~68 tests). dart analyze zero issues. AOT compile funcional. Spec source-of-truth: `handbook/spikes/OICD_AUTH_SPIKE.md` v1.0. W2 APPROVED Round 1/3 com 4 SHOULD_FIX (S1 XSS escape no error page; S2 `_RevokeFailure` → CliError family; S3 dead getter `_unusedDiscovery`; S4 barrel exports), todos aplicados antes do W3. Padrões aplicados: PKCE S256, listener loopback defensivo (filtra `_rsc=`, valida state CSRF, drena 204, multi-hit), `prompt=login` mandatory, `client_secret` jamais enviado, `RefreshTokenInvalid` no-retry + exit 7, refresh rotation enforced, JWT decode no CLI sem signature validation (delegada ao BFF Bearer middleware C00).
 
 ### Onda 3 — Read commands (4 tickets — leitura primeiro pra validar Bearer + parsing)
-- [ ] **C03 — cli-patient** (leitura: list, get, audit-trail; depois escrita: register, admit, discharge, readmit, withdraw)
+- [x] **C03 — cli-patient** — CLOSED 2026-05-04 via pipeline 4-wave (test-writer → flutter-bff-implementer → flutter-code-reviewer REJECTED Round 1 com 1 MUST_FIX → fixes → flutter-quality-checker). 8 comandos `acdg patient {list, get, audit, register, admit, discharge, readmit, withdraw}` operacionais. 219 GREEN no apps/cli (era 145, +74). `BffClient.post<T>` adicionado; `_attempt`/`_refreshAndRetry` generalizados pra GET+POST com retry-once invariant by construction. M1: W0 §4.3 source claim de snake_case `event_type` estava factualmente errado — BFF lê `eventType` (camelCase); CLI flipped pra match. Test permissivo do W0 (`qp['event_type'] ?? qp['eventType']`) mascarou o bug; W2 catch evitou silent semantic drop em produção. Decisões: DTO-faithful body shapes (discharge sem timestamp, readmit só notes, withdraw reason REQUIRED conforme DTOs); cursor surfacing em stderr; `--from-yaml` com reader injetado; `_buildBffClient` ainda sem refresh-on-401 wiring (deferido a C04). Patterns: Sealed sum types via `_Attempt<T>` (encoda retry-once invariant), DTO-as-canon (W0 §4.1).
 - [ ] **C04 — cli-family** (add, remove, assign-caregiver, update-identity)
 - [ ] **C05 — cli-assessment** (7 fichas: housing, socioeconomic, work-income, education, health, community-support, social-health-summary)
 
@@ -146,9 +146,15 @@ Total: 697 arquivos, -60367 LoC.
 (none)
 
 ## Context for Resume
-Last action: 2026-05-04 — C02 fechado. Pipeline 4-wave completa em ~30min total (W0 191 errors RED → W1 145 GREEN → W2 APPROVED+4 SHOULD_FIX → S1-S4 aplicados pelo orchestrador → W3 PASSED). 5 reports persistidos em `.pipeline/phase-5-cli-first/tickets/C02-cli-auth-pkce/{002-tests,003-impl,004-code-review,005-quality}/`. 12 commits acumulados aguardando push (a partir do commit `2d6b94d` C01).
+Last action: 2026-05-04 — C03 fechado. Pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 → fixes M1+S1+S2 → W3 PASSED). 4 reports persistidos em `.pipeline/phase-5-cli-first/tickets/C03-cli-patient/{002-tests,003-impl,004-code-review,005-quality}/`. C02 commit `6cf1b80` já em origin/dev; C03 commit pendente (próximo passo do orchestrator).
 
-Next action: kickoff C03 — cli-patient. Read commands first (`list`, `get`, `audit-trail`), depois write (`register`, `admit`, `discharge`, `readmit`, `withdraw`). Mesma pipeline 4-wave. Pré-req: `BffClient` C02 + ContractA web client + Patient sub-contract DTOs já em `apps/social_care_bff/contracts/`.
+Débitos abertos pra C04+:
+- **`BffClient` runner-level refresh-on-401**: hoje patient verbs surfacem `AuthRequiredError` em 401 e exigem `acdg auth refresh` manual. Implementar `BffClientFactory` com discovery cache + tokenClient lazy.
+- **`--bff` global flag**: parsed mas ignorado (`_buildBffClient` hardcoda `_defaultBffUrl`). Pre-C03 debt.
+- **`--output` global flag resolver (C10)**: hoje `JsonFormatter` é hardcoded; resolver lê flag.
+- **`formatter` field unused** nas 4 lifecycle commands (admit/discharge/readmit/withdraw retornam 204 No Content): drop quando C10 introduzir resolver runner-level.
+
+Next action: commit C03, então kickoff **C04 — cli-family** (add, remove, assign-caregiver, update-identity). Pré-req: `BffClient.post<T>` C03 + Family sub-contract DTOs em `apps/social_care_bff/contracts/lib/src/contract/dto/requests/registry/{add_family_member_request,assign_primary_caregiver_request,update_social_identity_request}.dart`.
 
 Requirements não-negociáveis para o W0 (extraídos da spike §3-§5):
 - LoopbackListener defensivo: filtra `_rsc=`, valida `state==expected`, drena 204 silencioso, hard timeout 5min, bind em porta efêmera (`InternetAddress.loopbackIPv4, 0`), NUNCA loga query string completa.
