@@ -17,12 +17,11 @@ library;
 
 import 'package:args/command_runner.dart';
 import 'package:core_contracts/core_contracts.dart';
-import 'package:yaml/yaml.dart';
 
-import '../errors/cli_error.dart';
 import '../formatters/output_formatter.dart';
 import '../session/bff_client.dart';
 import '_command_helpers.dart';
+import '_yaml_helpers.dart';
 
 /// `acdg patient register`.
 final class PatientRegisterCommand extends Command<int> {
@@ -97,7 +96,7 @@ final class PatientRegisterCommand extends Command<int> {
 
     final Map<String, Object?> body;
     if (fromYaml != null && fromYaml.isNotEmpty) {
-      final parsed = await _readYamlBody(fromYaml);
+      final parsed = await readYamlBody(path: fromYaml, fileReader: fileReader);
       switch (parsed) {
         case Success(:final value):
           body = value;
@@ -209,62 +208,6 @@ final class PatientRegisterCommand extends Command<int> {
     if (personal.isNotEmpty) body['personalData'] = personal;
     if (civil.isNotEmpty) body['civilDocuments'] = civil;
     return body;
-  }
-
-  /// Reads [path] via the injected [fileReader], parses YAML, and returns
-  /// the resulting JSON-shaped Map. Adapter boundary — file I/O and YAML
-  /// parsing are translated to [CliError] here.
-  Future<Result<Map<String, Object?>>> _readYamlBody(String path) async {
-    String contents;
-    try {
-      contents = await fileReader(path);
-    } on Object catch (e) {
-      return Failure<Map<String, Object?>>(
-        InvalidArgError('Cannot read --from-yaml file at "$path": $e'),
-      );
-    }
-    final Object? parsed;
-    try {
-      parsed = loadYaml(contents);
-    } on YamlException catch (e) {
-      return Failure<Map<String, Object?>>(
-        InvalidArgError('Invalid YAML in "$path": $e'),
-      );
-    }
-    if (parsed is! YamlMap && parsed is! Map) {
-      return Failure<Map<String, Object?>>(
-        InvalidArgError('YAML at "$path" must be a map at the top level.'),
-      );
-    }
-    return Success(_yamlToJsonMap(parsed));
-  }
-
-  /// Recursively converts a YAML node into a plain Dart JSON-shaped tree.
-  Object? _yamlToJsonNode(Object? node) {
-    if (node is YamlMap) {
-      return <String, Object?>{
-        for (final entry in node.entries)
-          entry.key.toString(): _yamlToJsonNode(entry.value),
-      };
-    }
-    if (node is YamlList) {
-      return [for (final item in node) _yamlToJsonNode(item)];
-    }
-    if (node is Map) {
-      return <String, Object?>{
-        for (final entry in node.entries)
-          entry.key.toString(): _yamlToJsonNode(entry.value),
-      };
-    }
-    if (node is List) {
-      return [for (final item in node) _yamlToJsonNode(item)];
-    }
-    return node;
-  }
-
-  Map<String, Object?> _yamlToJsonMap(Object? node) {
-    final converted = _yamlToJsonNode(node);
-    return converted is Map<String, Object?> ? converted : const {};
   }
 
   void _writeOut(String text) {

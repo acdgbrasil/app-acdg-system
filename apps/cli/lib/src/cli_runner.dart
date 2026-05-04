@@ -22,6 +22,13 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:http/http.dart' as http;
 
 import 'commands/assessment_command.dart';
+import 'commands/assessment_community_support_command.dart';
+import 'commands/assessment_education_command.dart';
+import 'commands/assessment_health_command.dart';
+import 'commands/assessment_housing_command.dart';
+import 'commands/assessment_social_health_summary_command.dart';
+import 'commands/assessment_socioeconomic_command.dart';
+import 'commands/assessment_work_income_command.dart';
 import 'commands/auth_command.dart';
 import 'commands/auth_login_command.dart';
 import 'commands/auth_logout_command.dart';
@@ -124,7 +131,13 @@ final class CliRunner {
           stderr: _stderr,
         ),
       )
-      ..addCommand(AssessmentCommand(stdout: stdout))
+      ..addCommand(
+        _buildAssessmentCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(CareCommand(stdout: stdout))
       ..addCommand(ProtectionCommand(stdout: stdout))
       ..addCommand(LookupCommand(stdout: stdout))
@@ -335,6 +348,71 @@ FamilyCommand _buildFamilyCommand({
     updateIdentity: FamilyUpdateIdentityCommand(
       bffClient: bffClient,
       formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+  );
+}
+
+/// Builds the production [AssessmentCommand] with all seven ficha
+/// subcommands wired against the shared [bffClient]. The default formatter
+/// is JSON; per-invocation `--output` will be respected once the resolver
+/// lands in C10. Each ficha shares the same `fileReader` closure so
+/// `--from-yaml` paths are read uniformly.
+AssessmentCommand _buildAssessmentCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  Future<String> readFile(String path) => File(path).readAsString();
+  return AssessmentCommand(
+    housing: AssessmentHousingCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    socioeconomic: AssessmentSocioeconomicCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    workIncome: AssessmentWorkIncomeCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    education: AssessmentEducationCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    health: AssessmentHealthCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    communitySupport: AssessmentCommunitySupportCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    socialHealthSummary: AssessmentSocialHealthSummaryCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: readFile,
       stdout: stdout,
       stderr: stderr,
     ),

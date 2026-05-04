@@ -11,6 +11,14 @@
 library;
 
 export 'src/cli_runner.dart';
+export 'src/commands/assessment_command.dart';
+export 'src/commands/assessment_community_support_command.dart';
+export 'src/commands/assessment_education_command.dart';
+export 'src/commands/assessment_health_command.dart';
+export 'src/commands/assessment_housing_command.dart';
+export 'src/commands/assessment_social_health_summary_command.dart';
+export 'src/commands/assessment_socioeconomic_command.dart';
+export 'src/commands/assessment_work_income_command.dart';
 export 'src/commands/family_add_command.dart';
 export 'src/commands/family_assign_caregiver_command.dart';
 export 'src/commands/family_command.dart';
