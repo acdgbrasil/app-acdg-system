@@ -58,3 +58,15 @@ final class ServerError extends CliError {
   /// HTTP status code returned by the BFF.
   final int statusCode;
 }
+
+/// Refresh token rotated or revoked at the IdP — the local session is
+/// dead and the user MUST run `acdg auth login` again.
+///
+/// Distinct from [AuthRequiredError] so commands can tell apart "no
+/// session yet" (run login) from "session was invalidated" (run login
+/// again — the previous one is stale on the IdP). The CLI maps this
+/// to exit code 7 in `acdg auth refresh`.
+final class RefreshTokenInvalidError extends CliError {
+  const RefreshTokenInvalidError([String? detail])
+    : super(detail ?? 'Refresh token rotated or revoked. Run: acdg auth login');
+}

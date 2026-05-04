@@ -1,14 +1,30 @@
-/// W0.5 RED — `AuthCommand` stub contract.
+/// W0 RED — `AuthCommand` parent contract under C02.
 ///
-/// W1 must create `apps/cli/lib/src/commands/auth_command.dart` with an
-/// `AuthCommand` class that:
-///   * extends `args.Command<int>`
-///   * has `name == 'auth'`
-///   * has a non-empty `description`
-///   * accepts an injectable `StringSink stdout`
-///   * `run()` returns 0 and prints `'Not implemented yet — pending C02'` to stdout
+/// **Replaces the C01 stub contract.** C01 declared `AuthCommand` as a leaf
+/// command that printed "Not implemented yet — pending C02". C02 makes it
+/// a parent command holding 4 subcommands: `login`, `status`, `logout`,
+/// `refresh` (spike §1 ticket §Comandos).
 ///
-/// Real auth implementation lands in C02 (PKCE Loopback).
+/// W1 must update `apps/cli/lib/src/commands/auth_command.dart` so that:
+///
+/// ```dart
+/// class AuthCommand extends Command<int> {
+///   AuthCommand({...injectable collaborators...}) {
+///     addSubcommand(AuthLoginCommand(...));
+///     addSubcommand(AuthStatusCommand(...));
+///     addSubcommand(AuthLogoutCommand(...));
+///     addSubcommand(AuthRefreshCommand(...));
+///   }
+///   @override String get name => 'auth';
+///   @override String get description => '...non-empty...';
+/// }
+/// ```
+///
+/// Subcommand-level orchestration tests live in:
+///   * `auth_login_command_test.dart`
+///   * `auth_status_command_test.dart`
+///   * `auth_logout_command_test.dart`
+///   * `auth_refresh_command_test.dart`
 library;
 
 import 'package:args/command_runner.dart';
@@ -17,7 +33,7 @@ import 'package:test/test.dart';
 import 'package:cli/src/commands/auth_command.dart';
 
 void main() {
-  group('AuthCommand (stub — pending C02)', () {
+  group('AuthCommand parent (C02)', () {
     test('extends args.Command<int>', () {
       expect(AuthCommand(), isA<Command<int>>());
     });
@@ -30,15 +46,17 @@ void main() {
       expect(AuthCommand().description, isNotEmpty);
     });
 
-    test('run() returns 0 and prints stub message naming C02', () async {
-      final out = StringBuffer();
-      final cmd = AuthCommand(stdout: out);
+    test(
+      'registers the 4 subcommands required by the spike: login/status/logout/refresh',
+      () {
+        final cmd = AuthCommand();
+        final names = cmd.subcommands.keys.toSet();
 
-      final exitCode = await cmd.run();
-
-      expect(exitCode, equals(0));
-      expect(out.toString(), contains('Not implemented yet'));
-      expect(out.toString(), contains('C02'));
-    });
+        expect(names, contains('login'));
+        expect(names, contains('status'));
+        expect(names, contains('logout'));
+        expect(names, contains('refresh'));
+      },
+    );
   });
 }

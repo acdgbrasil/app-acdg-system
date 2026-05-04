@@ -1,76 +1,43 @@
 /// Credential persistence for the CLI session — D5 (XDG path).
 ///
-/// C01 ships:
-///   * [Credentials] — immutable triple (access/refresh tokens + expiry).
-///   * [CredentialStore] — sub-contract per ENCAPSULATION_POLICY H5
-///     (`abstract interface class`, foreign-implementable).
-///   * [FileCredentialStore] — JSON-on-disk implementation with chmod 600
-///     (best-effort; skipped on Windows) + XDG path resolution.
+/// C02 evolution (Strategy A): the C01 `Credentials` struct is replaced
+/// by [OidcSession] (richer: id_token + sub + email + roles + expiry).
+/// The store contract is identical at the verb level (`read/write/clear`),
+/// only the value type changes. Tests that previously worked on
+/// `Credentials` MUST be migrated to `OidcSession` fixtures.
 ///
-/// PKCE acquisition + refresh-on-401 land in C02. C01 only needs the
-/// read/write/clear surface so other layers (BffClient, AuthCommand stub)
-/// can compile.
+/// Pre-C02 credentials files (3 fields: accessToken, refreshToken,
+/// expiresAt) fail to parse here and the read returns `null` — treated
+/// as "no session". The user re-runs `acdg auth login`, no migration
+/// dance, no hard error.
 library;
 
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:core_contracts/core_contracts.dart';
-
-/// Immutable token triple persisted between CLI invocations.
-///
-/// `with Equatable` so tests can assert structural equality (and the value
-/// can ride inside a [Result] without bespoke `==` overrides).
-final class Credentials with Equatable {
-  Credentials({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.expiresAt,
-  });
-
-  /// JSON deserializer — used by [FileCredentialStore.read].
-  factory Credentials.fromJson(Map<String, Object?> json) => Credentials(
-    accessToken: json['accessToken']! as String,
-    refreshToken: json['refreshToken']! as String,
-    expiresAt: DateTime.parse(json['expiresAt']! as String),
-  );
-
-  final String accessToken;
-  final String refreshToken;
-  final DateTime expiresAt;
-
-  /// JSON serializer — used by [FileCredentialStore.write].
-  Map<String, Object?> toJson() => {
-    'accessToken': accessToken,
-    'refreshToken': refreshToken,
-    'expiresAt': expiresAt.toIso8601String(),
-  };
-
-  @override
-  List<Object?> get props => [accessToken, refreshToken, expiresAt];
-}
+import 'oidc_session.dart';
 
 /// Sub-contract for credential persistence.
 ///
-/// `abstract interface class` (H5) so foreign packages — including the C02
-/// PKCE flow and the test suite — can `implements CredentialStore` without
-/// inheriting any state.
+/// `abstract interface class` (H5) so foreign packages — including the
+/// PKCE flow and the test suite — can `implements CredentialStore`
+/// without inheriting any state.
 abstract interface class CredentialStore {
-  /// Returns persisted credentials, or `null` if none exist.
-  Future<Credentials?> read();
+  /// Returns the persisted session, or `null` if none / corrupt.
+  Future<OidcSession?> read();
 
-  /// Persists [credentials], replacing any prior value.
-  Future<void> write(Credentials credentials);
+  /// Persists [session], replacing any prior value.
+  Future<void> write(OidcSession session);
 
-  /// Removes the persisted credentials (no-op when absent).
+  /// Removes the persisted session (no-op when absent).
   Future<void> clear();
 }
 
 /// File-backed [CredentialStore] living at [path].
 ///
 /// File I/O is the one place `try/catch` is allowed (adapter boundary):
-/// corrupt JSON → treated as "no credentials" so the user can recover by
-/// re-running `acdg auth login`.
+/// corrupt JSON or stale C01-shape file → treated as "no session" so the
+/// user can recover by re-running `acdg auth login`.
 final class FileCredentialStore implements CredentialStore {
   FileCredentialStore({required this.path});
 
@@ -92,15 +59,16 @@ final class FileCredentialStore implements CredentialStore {
   }
 
   @override
-  Future<Credentials?> read() async {
+  Future<OidcSession?> read() async {
     final file = File(path);
     if (!await file.exists()) return null;
     try {
       final contents = await file.readAsString();
-      final json = jsonDecode(contents) as Map<String, Object?>;
-      return Credentials.fromJson(json);
+      final decoded = jsonDecode(contents);
+      if (decoded is! Map<String, Object?>) return null;
+      return OidcSession.fromJson(decoded);
     } on FormatException {
-      // Corrupt JSON — caller should re-authenticate.
+      // Corrupt JSON or pre-C02 (3-field) shape — caller should re-auth.
       return null;
     } on FileSystemException {
       // Race with concurrent delete / unreadable — treat as missing.
@@ -109,10 +77,10 @@ final class FileCredentialStore implements CredentialStore {
   }
 
   @override
-  Future<void> write(Credentials credentials) async {
+  Future<void> write(OidcSession session) async {
     final file = File(path);
     await file.parent.create(recursive: true);
-    await file.writeAsString(jsonEncode(credentials.toJson()));
+    await file.writeAsString(jsonEncode(session.toJson()));
     if (!Platform.isWindows) {
       // Best-effort chmod 600; ignore failures (filesystem may not support).
       try {

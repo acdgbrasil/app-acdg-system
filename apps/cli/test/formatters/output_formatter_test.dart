@@ -30,14 +30,16 @@ void main() {
       expect(const YamlFormatter(), isA<OutputFormatter>());
     });
 
-    test('OutputFormatter is implementable from foreign code (H5 contract)',
-        () {
-      // If `OutputFormatter` is not `abstract interface class`, this line
-      // either won't compile (abstract class with hidden state) or will
-      // accept inheritance (`extends` — wrong shape per H5).
-      const OutputFormatter f = _ExternalFakeFormatter();
-      expect(f.format('anything'), equals('fake'));
-    });
+    test(
+      'OutputFormatter is implementable from foreign code (H5 contract)',
+      () {
+        // If `OutputFormatter` is not `abstract interface class`, this line
+        // either won't compile (abstract class with hidden state) or will
+        // accept inheritance (`extends` — wrong shape per H5).
+        const OutputFormatter f = _ExternalFakeFormatter();
+        expect(f.format('anything'), equals('fake'));
+      },
+    );
   });
 }
 

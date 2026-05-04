@@ -66,33 +66,34 @@ void main() {
   });
 
   group('CliError exhaustive switch (P5 — sealed)', () {
-    test(
-      'switch over CliError covers every variant — compiler enforced',
-      () {
-        // The compiler will refuse this switch if `CliError` ever loses
-        // exhaustiveness or if W1 adds a variant without a case here.
-        const CliError invalid = InvalidArgError('bad');
-        final tag = _tagOf(invalid);
-        expect(tag, equals('invalid'));
+    test('switch over CliError covers every variant — compiler enforced', () {
+      // The compiler will refuse this switch if `CliError` ever loses
+      // exhaustiveness or if W1 adds a variant without a case here.
+      const CliError invalid = InvalidArgError('bad');
+      final tag = _tagOf(invalid);
+      expect(tag, equals('invalid'));
 
-        const CliError auth = AuthRequiredError();
-        expect(_tagOf(auth), equals('auth'));
+      const CliError auth = AuthRequiredError();
+      expect(_tagOf(auth), equals('auth'));
 
-        const CliError network = NetworkError('boom');
-        expect(_tagOf(network), equals('network'));
+      const CliError network = NetworkError('boom');
+      expect(_tagOf(network), equals('network'));
 
-        const CliError server = ServerError(500, 'oops');
-        expect(_tagOf(server), equals('server'));
-      },
-    );
+      const CliError server = ServerError(500, 'oops');
+      expect(_tagOf(server), equals('server'));
+    });
   });
 }
 
 /// Helper that forces an exhaustive switch — analyzer fails this file if a
 /// new variant is added without a matching arm.
+///
+/// C02 added [RefreshTokenInvalidError] to the sealed family; this switch
+/// caught it (compiler-enforced), and the new arm is the W1 migration.
 String _tagOf(CliError error) => switch (error) {
-      InvalidArgError() => 'invalid',
-      AuthRequiredError() => 'auth',
-      NetworkError() => 'network',
-      ServerError() => 'server',
-    };
+  InvalidArgError() => 'invalid',
+  AuthRequiredError() => 'auth',
+  NetworkError() => 'network',
+  ServerError() => 'server',
+  RefreshTokenInvalidError() => 'refresh_invalid',
+};

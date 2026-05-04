@@ -1,35 +1,11 @@
-/// W0.5 RED — `CredentialStore` interface + `FileCredentialStore` impl (D5).
+/// W1 GREEN — `CredentialStore` interface + `FileCredentialStore` impl (D5).
 ///
-/// W1 must create `apps/cli/lib/src/session/credential_store.dart` with:
-///
-/// ```dart
-/// abstract interface class CredentialStore {
-///   Future<Credentials?> read();
-///   Future<void> write(Credentials credentials);
-///   Future<void> clear();
-/// }
-///
-/// final class Credentials with Equatable { ... accessToken, refreshToken, expiresAt }
-///
-/// final class FileCredentialStore implements CredentialStore {
-///   FileCredentialStore({required this.path});
-///   final String path;
-///
-///   /// XDG path resolution — D5.
-///   /// `XDG_CONFIG_HOME` env var if set+non-empty, else `$HOME/.config`,
-///   /// then suffixed with `/acdg/credentials`.
-///   /// `env` is injectable so tests don't depend on Platform.environment.
-///   static String defaultPath({required Map<String, String> env});
-///
-///   @override Future<Credentials?> read();
-///   @override Future<void> write(Credentials credentials);
-///   @override Future<void> clear();
-/// }
-/// ```
-///
-/// PKCE flow + chmod 600 + JSON serialization happen here too, but real
-/// PKCE login lands in C02. C01 just needs read/write/clear correctness +
-/// path resolution.
+/// W0 left this file using the C01 `Credentials` fixture. Per W0 REPORT
+/// §4.1 Strategy A, W1 owns the migration: the contract under test is now
+/// `Future<OidcSession?> read()` / `Future<void> write(OidcSession)` /
+/// `Future<void> clear()`. The verb shape is identical — only the value
+/// type changed. Test intent is preserved: round-trip persistence, missing
+/// file = null (no throw), clear is idempotent, foreign-impl works.
 library;
 
 import 'dart:io';
@@ -37,29 +13,26 @@ import 'dart:io';
 import 'package:test/test.dart';
 
 import 'package:cli/src/session/credential_store.dart';
+import 'package:cli/src/session/oidc_session.dart';
 
 void main() {
   group('FileCredentialStore.defaultPath (XDG resolution — D5)', () {
     test('uses XDG_CONFIG_HOME when set and non-empty', () {
-      final path = FileCredentialStore.defaultPath(env: {
-        'XDG_CONFIG_HOME': '/custom/xdg',
-        'HOME': '/home/user',
-      });
+      final path = FileCredentialStore.defaultPath(
+        env: {'XDG_CONFIG_HOME': '/custom/xdg', 'HOME': '/home/user'},
+      );
       expect(path, equals('/custom/xdg/acdg/credentials'));
     });
 
     test('falls back to \$HOME/.config when XDG_CONFIG_HOME unset', () {
-      final path = FileCredentialStore.defaultPath(env: {
-        'HOME': '/home/user',
-      });
+      final path = FileCredentialStore.defaultPath(env: {'HOME': '/home/user'});
       expect(path, equals('/home/user/.config/acdg/credentials'));
     });
 
     test('falls back when XDG_CONFIG_HOME is empty string', () {
-      final path = FileCredentialStore.defaultPath(env: {
-        'XDG_CONFIG_HOME': '',
-        'HOME': '/home/user',
-      });
+      final path = FileCredentialStore.defaultPath(
+        env: {'XDG_CONFIG_HOME': '', 'HOME': '/home/user'},
+      );
       expect(path, equals('/home/user/.config/acdg/credentials'));
     });
   });
@@ -79,12 +52,16 @@ void main() {
       }
     });
 
-    test('write then read returns the same Credentials', () async {
+    test('write then read returns the same OidcSession', () async {
       final store = FileCredentialStore(path: tmpFile.path);
-      final original = Credentials(
+      final original = OidcSession(
         accessToken: 'tok-abc',
         refreshToken: 'ref-xyz',
-        expiresAt: DateTime.utc(2099, 1, 1),
+        idToken: 'id-eyJ',
+        accessExpiresAt: DateTime.utc(2099, 1, 1),
+        sub: '363088829932634233',
+        email: 'user@example.com',
+        roles: const ['social_worker'],
       );
 
       await store.write(original);
@@ -93,23 +70,32 @@ void main() {
       expect(readBack, isNotNull);
       expect(readBack!.accessToken, equals('tok-abc'));
       expect(readBack.refreshToken, equals('ref-xyz'));
-      expect(readBack.expiresAt, equals(DateTime.utc(2099, 1, 1)));
+      expect(readBack.idToken, equals('id-eyJ'));
+      expect(readBack.accessExpiresAt, equals(DateTime.utc(2099, 1, 1)));
+      expect(readBack.sub, equals('363088829932634233'));
+      expect(readBack.email, equals('user@example.com'));
+      expect(readBack.roles, equals(['social_worker']));
     });
 
     test('read on missing file returns null (no throw)', () async {
       final store = FileCredentialStore(path: tmpFile.path);
-      // tmpFile guaranteed not to exist (setUp just builds the path).
       expect(await tmpFile.exists(), isFalse);
       expect(await store.read(), isNull);
     });
 
     test('clear removes the credentials file', () async {
       final store = FileCredentialStore(path: tmpFile.path);
-      await store.write(Credentials(
-        accessToken: 'tok',
-        refreshToken: 'ref',
-        expiresAt: DateTime.utc(2099, 1, 1),
-      ));
+      await store.write(
+        OidcSession(
+          accessToken: 'tok',
+          refreshToken: 'ref',
+          idToken: 'id',
+          accessExpiresAt: DateTime.utc(2099, 1, 1),
+          sub: 's',
+          email: 'e@e',
+          roles: const [],
+        ),
+      );
       expect(await tmpFile.exists(), isTrue);
 
       await store.clear();
@@ -140,10 +126,10 @@ class _ExternalFakeStore implements CredentialStore {
   const _ExternalFakeStore();
 
   @override
-  Future<Credentials?> read() async => null;
+  Future<OidcSession?> read() async => null;
 
   @override
-  Future<void> write(Credentials credentials) async {}
+  Future<void> write(OidcSession session) async {}
 
   @override
   Future<void> clear() async {}

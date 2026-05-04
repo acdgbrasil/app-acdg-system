@@ -1,9 +1,9 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (Onda 1 + Onda 1.5 + C01 closed; C02 next)
+phase: in-progress (Onda 1 + Onda 1.5 + Onda 2 closed; C03 next)
 agent: —
-status: **C00 + D01 + D02 + D03 + C01 closed 2026-05-02. 2249 GREEN +1 skip total** (535 contracts + 1137 web + 500 desktop + 77 cli). CLI scaffold em `apps/cli/` operacional — AOT compile produz binário `acdg`. Próximo: **C02 — CLI Auth (PKCE Loopback)** (depende de NATIVE_API client_id provisionado no Bitwarden).
+status: **C00 + D01 + D02 + D03 + C01 + C02 closed 2026-05-04**. C02 fechou via pipeline 4-wave completa (W0 test-writer → W1 flutter-bff-implementer → W2 flutter-code-reviewer APPROVED Round 1/3 com 4 SHOULD_FIX → W3 flutter-quality-checker PASSED). Native App PKCE "ACDG CLI" (`OIDC_CLI_CLIENT_ID=371410163745226755`) operacional. **2317 GREEN +1 skip total** no apps/cli + bff/web + bff/contracts (era 2249, +68 do C02; 145 GREEN no apps/cli). dart analyze zero issues no apps/cli/. AOT compile produz binário funcional. Próximo: **C03 — cli-patient** (leitura: list, get, audit-trail; depois escrita: register, admit, discharge, readmit, withdraw).
 
 ## Decisão estratégica (2026-05-01)
 
@@ -57,11 +57,11 @@ status: **C00 + D01 + D02 + D03 + C01 closed 2026-05-02. 2249 GREEN +1 skip tota
 
 - [x] **D01 — pump-engine-helpers-factory** — CLOSED 2026-05-02 via 5-wave pipeline (test-writer → fixture-fix → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). Factory Method GoF aplicado. Facade reduzido 718L → 637L (-81L). 24 new tests GREEN; 2122 GREEN +1 skip total BFF (era 2098, +24). 4 REGRA #2 exceptions documentadas (fixture-fix). W2 APPROVED Round 1/3 zero MUST_FIX.
 - [x] **D02 — use-case-builders** — CLOSED 2026-05-02 via 4-wave pipeline (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). 7 builders criados (610L total) agrupando 42 use cases por bounded context. Facade reduzido 637L → 364L (-273L, -42.9%). Sub-facades reduzidas -129L coletivos. 21 new tests GREEN; 2143 GREEN +1 skip total BFF (era 2122, +21). Spec divergence APPROVED: abstract `XxxContract` em build() signatures vs concrete `XxxRemote` do spec original. W2 mechanical audit confirmou 42/42 use cases byte-identical com legacy. W2 APPROVED Round 1/3 zero MUST_FIX.
-- [ ] **D03 — assembler-observer** — `DesktopAssembler` (Builder fluente) + `AutoDrainObserver` (Observer, elimina self-reference circular). `SocialCareDesktop._()` reduz de 14 parâmetros pra 1 (DesktopRuntime). Reduz facade ~350L → ~150L.
+- [x] **D03 — assembler-observer** — CLOSED 2026-05-02 commit `b7a53ee`. `DesktopAssembler` (Builder fluente) + `AutoDrainObserver` (Observer GoF, elimina self-reference circular do `_pumpStreamSubscription`). Facade `SocialCareDesktop._()` reduzido de 14 params para 1 (`DesktopRuntime`). Padrões aplicados: Builder + Observer. 426 GREEN do Desktop preservados; 2249 GREEN +1 skip total mantido.
 
 ### Onda 2 — CLI scaffold + auth (2 tickets)
 - [x] **C01 — cli-scaffold** — CLOSED 2026-05-02 via 4-wave pipeline (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). 77 GREEN no novo `apps/cli/`; 2249 GREEN +1 skip total (4 packages). Decisões D1-D5 implementadas (package `cli`, workspace global, binário `acdg`, auto-detect output, XDG creds path). 5 padrões aplicados (Facade, Strategy, Sealed Class, Factory Method, Adapter). AOT compile produz binário funcional. W2 APPROVED Round 1/3 zero MUST_FIX, 3 SHOULD_FIX deferidos a C02 (schema-mismatch TypeError em boundaries — não-bloqueante no scaffold).
-- [ ] **C02 — cli-auth-pkce-loopback** — `acdg auth login/status/logout/refresh`, OIDC PKCE + Loopback, file-based credential store
+- [x] **C02 — cli-auth-pkce-loopback** — CLOSED 2026-05-04 via pipeline 4-wave completa (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker). `acdg auth login/status/logout/refresh`, OIDC PKCE + Loopback (RFC 8252) estilo `gh`, file-based credential store via `OidcSession` (Strategy A migration de `Credentials` C01). 145 GREEN no apps/cli (era 77, +68). 9 novos arquivos lib + 7 modificados; 11 novos test files (~68 tests). dart analyze zero issues. AOT compile funcional. Spec source-of-truth: `handbook/spikes/OICD_AUTH_SPIKE.md` v1.0. W2 APPROVED Round 1/3 com 4 SHOULD_FIX (S1 XSS escape no error page; S2 `_RevokeFailure` → CliError family; S3 dead getter `_unusedDiscovery`; S4 barrel exports), todos aplicados antes do W3. Padrões aplicados: PKCE S256, listener loopback defensivo (filtra `_rsc=`, valida state CSRF, drena 204, multi-hit), `prompt=login` mandatory, `client_secret` jamais enviado, `RefreshTokenInvalid` no-retry + exit 7, refresh rotation enforced, JWT decode no CLI sem signature validation (delegada ao BFF Bearer middleware C00).
 
 ### Onda 3 — Read commands (4 tickets — leitura primeiro pra validar Bearer + parsing)
 - [ ] **C03 — cli-patient** (leitura: list, get, audit-trail; depois escrita: register, admit, discharge, readmit, withdraw)
@@ -146,5 +146,17 @@ Total: 697 arquivos, -60367 LoC.
 (none)
 
 ## Context for Resume
-Last action: scaffold criado 2026-05-01 imediatamente após commits `61d032c` (Phase 3 close) + `33626f0` (D1.C delete).
-Next action: kickoff C00 — Bearer middleware no BFF Web. Pipeline 3-agent (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker).
+Last action: 2026-05-04 — C02 fechado. Pipeline 4-wave completa em ~30min total (W0 191 errors RED → W1 145 GREEN → W2 APPROVED+4 SHOULD_FIX → S1-S4 aplicados pelo orchestrador → W3 PASSED). 5 reports persistidos em `.pipeline/phase-5-cli-first/tickets/C02-cli-auth-pkce/{002-tests,003-impl,004-code-review,005-quality}/`. 12 commits acumulados aguardando push (a partir do commit `2d6b94d` C01).
+
+Next action: kickoff C03 — cli-patient. Read commands first (`list`, `get`, `audit-trail`), depois write (`register`, `admit`, `discharge`, `readmit`, `withdraw`). Mesma pipeline 4-wave. Pré-req: `BffClient` C02 + ContractA web client + Patient sub-contract DTOs já em `apps/social_care_bff/contracts/`.
+
+Requirements não-negociáveis para o W0 (extraídos da spike §3-§5):
+- LoopbackListener defensivo: filtra `_rsc=`, valida `state==expected`, drena 204 silencioso, hard timeout 5min, bind em porta efêmera (`InternetAddress.loopbackIPv4, 0`), NUNCA loga query string completa.
+- Authorize URL com `prompt=login` (defesa contra cookie residual + RSC prefetch do Next.js).
+- PKCE S256 only (sem fallback `plain`); verifier 64 random bytes b64url no-pad.
+- `aud.contains(PROJECT_ID)` — nunca `==` (vem com 9 entries).
+- `azp` NÃO existe no access_token (só id_token) — não validar lá.
+- `email`/profile NÃO viajam no access_token — buscar via `/userinfo` no primeiro login.
+- Refresh `invalid_grant: RefreshTokenInvalid` ⇒ SEM retry; clear sessão; exit 7; força `acdg auth login`.
+- Discovery dinâmico no boot — fetch `.well-known`, valida `issuer == OIDC_ISSUER`, cacheia.
+- Tokens em `~/.config/acdg/credentials` chmod 600 (já existe `FileCredentialStore` do C01 — estender pra `OidcSession` com idToken + sub + email + roles + accessExpiresAt).

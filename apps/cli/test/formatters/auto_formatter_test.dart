@@ -31,20 +31,17 @@ import 'package:cli/src/formatters/yaml_formatter.dart';
 void main() {
   group('resolveFormatter — explicit override', () {
     test('"json" returns JsonFormatter', () {
-      final f =
-          resolveFormatter(explicitFormat: 'json', isTerminal: true);
+      final f = resolveFormatter(explicitFormat: 'json', isTerminal: true);
       expect(f, isA<JsonFormatter>());
     });
 
     test('"table" returns TableFormatter', () {
-      final f =
-          resolveFormatter(explicitFormat: 'table', isTerminal: false);
+      final f = resolveFormatter(explicitFormat: 'table', isTerminal: false);
       expect(f, isA<TableFormatter>());
     });
 
     test('"yaml" returns YamlFormatter', () {
-      final f =
-          resolveFormatter(explicitFormat: 'yaml', isTerminal: true);
+      final f = resolveFormatter(explicitFormat: 'yaml', isTerminal: true);
       expect(f, isA<YamlFormatter>());
     });
 
@@ -67,8 +64,7 @@ void main() {
       expect(f, isA<JsonFormatter>());
     });
 
-    test('return type is OutputFormatter — no caller leaks concrete branch',
-        () {
+    test('return type is OutputFormatter — no caller leaks concrete branch', () {
       // OutputFormatter (abstract interface — H5) must be the public return type
       // so callers don't pattern-match on concrete formatters.
       final OutputFormatter f = resolveFormatter(isTerminal: false);
