@@ -68,6 +68,16 @@ import 'commands/protection_placement_history_command.dart';
 import 'commands/protection_referral_command.dart';
 import 'commands/protection_violation_command.dart';
 import 'commands/team_command.dart';
+import 'commands/team_deactivate_command.dart';
+import 'commands/team_get_command.dart';
+import 'commands/team_list_command.dart';
+import 'commands/team_reactivate_command.dart';
+import 'commands/team_register_command.dart';
+import 'commands/team_reset_password_command.dart';
+import 'commands/team_role_assign_command.dart';
+import 'commands/team_role_command.dart';
+import 'commands/team_role_deactivate_command.dart';
+import 'commands/team_role_reactivate_command.dart';
 import 'config/oidc_config.dart';
 import 'errors/cli_error.dart';
 import 'formatters/json_formatter.dart';
@@ -174,7 +184,13 @@ final class CliRunner {
           stderr: _stderr,
         ),
       )
-      ..addCommand(TeamCommand(stdout: stdout))
+      ..addCommand(
+        _buildTeamCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(HealthCommand(stdout: stdout));
   }
 
@@ -572,6 +588,76 @@ LookupCommand _buildLookupCommand({
         stderr: stderr,
       ),
       reject: LookupRequestRejectCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
+    ),
+  );
+}
+
+/// Builds the production [TeamCommand] with all six top-level leaves and the
+/// three role-assignment leaves (under the `role` sub-parent) wired against
+/// the shared [bffClient]. The default formatter is JSON; per-invocation
+/// `--output` will be respected once the resolver lands in C10.
+TeamCommand _buildTeamCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  return TeamCommand(
+    list: TeamListCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    register: TeamRegisterCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    get: TeamGetCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    deactivate: TeamDeactivateCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    reactivate: TeamReactivateCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    resetPassword: TeamResetPasswordCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    role: TeamRoleCommand(
+      assign: TeamRoleAssignCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
+      deactivate: TeamRoleDeactivateCommand(
+        bffClient: bffClient,
+        formatter: formatter,
+        stdout: stdout,
+        stderr: stderr,
+      ),
+      reactivate: TeamRoleReactivateCommand(
         bffClient: bffClient,
         formatter: formatter,
         stdout: stdout,
