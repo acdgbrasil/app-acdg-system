@@ -71,8 +71,8 @@ class SocioEconomicViewModel extends BaseViewModel {
 
   void _populateFormState(Patient patient) {
     final pd = patient.personalData;
-    formState.patientName =
-        '${pd?.firstName ?? ''} ${pd?.lastName ?? ''}'.trim();
+    formState.patientName = '${pd?.firstName ?? ''} ${pd?.lastName ?? ''}'
+        .trim();
 
     formState.familyMembers = [
       MemberOption(
@@ -82,10 +82,8 @@ class SocioEconomicViewModel extends BaseViewModel {
             : 'Pessoa de referencia',
       ),
       ...patient.familyMembers.map(
-        (m) => MemberOption(
-          id: m.personId.value,
-          label: m.fullName ?? 'Membro',
-        ),
+        (m) =>
+            MemberOption(id: m.personId.value, label: m.fullName ?? 'Membro'),
       ),
     ];
 

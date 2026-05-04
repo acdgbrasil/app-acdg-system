@@ -30,7 +30,8 @@ class _PkceState {
 /// - `GET  /auth/me`       - Return current user info
 /// - `POST /auth/refresh`  - Refresh tokens
 /// Factory that creates a [PeopleContextClient] for enrichment during auth.
-typedef AuthPeopleContextFactory = PeopleContextClient Function(Session session);
+typedef AuthPeopleContextFactory =
+    PeopleContextClient Function(Session session);
 
 class AuthHandler {
   AuthHandler({
@@ -139,12 +140,16 @@ class AuthHandler {
         );
         try {
           final pc = _peopleContextFactory(tempSession);
-          print('[AuthHandler] People Context enrichment: calling getPerson($userId)');
+          print(
+            '[AuthHandler] People Context enrichment: calling getPerson($userId)',
+          );
           final result = await pc.getPerson(userId);
           switch (result) {
             case Success(:final value):
               displayName = value['fullName'] as String?;
-              print('[AuthHandler] People Context enrichment OK: displayName=$displayName');
+              print(
+                '[AuthHandler] People Context enrichment OK: displayName=$displayName',
+              );
             case Failure(:final error):
               print('[AuthHandler] People Context enrichment FAILED: $error');
           }
@@ -268,11 +273,7 @@ class AuthHandler {
 
   /// Builds the `Set-Cookie` header value for the session cookie.
   String _buildSessionCookie(String sessionId) {
-    final parts = [
-      '__session=$sessionId',
-      'HttpOnly',
-      'Path=/',
-    ];
+    final parts = ['__session=$sessionId', 'HttpOnly', 'Path=/'];
     if (_secureCookies) {
       parts.addAll(['Secure', 'SameSite=Strict']);
     } else {
@@ -287,12 +288,7 @@ class AuthHandler {
 
   /// Builds the `Set-Cookie` header value to clear the session cookie.
   String _buildClearSessionCookie() {
-    final parts = [
-      '__session=',
-      'HttpOnly',
-      'Path=/',
-      'Max-Age=0',
-    ];
+    final parts = ['__session=', 'HttpOnly', 'Path=/', 'Max-Age=0'];
     if (_secureCookies) {
       parts.addAll(['Secure', 'SameSite=Strict']);
     } else {

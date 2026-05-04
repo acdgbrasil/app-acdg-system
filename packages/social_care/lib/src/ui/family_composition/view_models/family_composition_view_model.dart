@@ -149,7 +149,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
         );
         if (pessoaRef.isNotEmpty) _prRelationshipId = pessoaRef.first.id;
       case Failure(:final error):
-        print('Failed to load parentesco lookups ${error}');
+        print('Failed to load parentesco lookups $error');
         errors.add('Falha ao carregar parentescos');
     }
 
@@ -163,7 +163,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
             .map((i) => i.copyWith(id: i.id.toLowerCase()))
             .toList();
       case Failure(:final error):
-        print('Failed to load especificidade lookups ${error}');
+        print('Failed to load especificidade lookups $error');
         errors.add('Falha ao carregar especificidades');
     }
 
@@ -189,7 +189,7 @@ class FamilyCompositionViewModel extends BaseViewModel {
         _selectedSpecificityId = specId;
         _originalSpecificityId = specId;
       case Failure(:final error):
-        print('Failed to load patient: $patientId ${error}');
+        print('Failed to load patient: $patientId $error');
         _members = [];
         _ageProfileCache = null;
     }

@@ -1,22 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../view_models/socio_economic_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/socio_economic_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/socio_economic_view_model.dart';
 import '../../../shared/components/assessment_action_bar.dart';
-import '../../view_models/socio_economic_view_model.dart';
 import '../../../shared/components/assessment_header.dart';
-import '../../view_models/socio_economic_view_model.dart';
 import '../../../shared/components/assessment_nav_bar.dart';
-import '../../view_models/socio_economic_view_model.dart';
 import '../../constants/socio_economic_l10n.dart';
-import '../../view_models/socio_economic_view_model.dart';
 import '../../di/socio_economic_providers.dart';
 import '../../view_models/socio_economic_view_model.dart';
 import '../components/socio_economic_content.dart';
-import '../../view_models/socio_economic_view_model.dart';
 
 class SocioEconomicPage extends ConsumerStatefulWidget {
   const SocioEconomicPage({super.key, required this.patientId});
@@ -44,11 +36,7 @@ class _SocioEconomicPageState extends ConsumerState<SocioEconomicPage> {
         type: ToastType.success,
       );
     } else if (vm.saveCommand.error) {
-      AcdgToast.show(
-        context,
-        message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
-      );
+      AcdgToast.show(context, message: 'Falha ao salvar. Tente novamente.');
     }
   }
 

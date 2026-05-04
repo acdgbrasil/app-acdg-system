@@ -81,9 +81,9 @@ class _AddWorkerModalState extends State<AddWorkerModal> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           TeamL10n.modalTitleAdd,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Playfair Display',
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
@@ -147,9 +147,9 @@ class _AddWorkerModalState extends State<AddWorkerModal> {
                     const SizedBox(height: 16),
 
                     // Role
-                    Text(
+                    const Text(
                       TeamL10n.fieldRole,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Satoshi',
                         fontWeight: FontWeight.w500,
                         fontSize: 13,
@@ -203,9 +203,7 @@ class _AddWorkerModalState extends State<AddWorkerModal> {
                     ),
 
                     const SizedBox(height: 24),
-                    Divider(
-                      color: AppColors.background.withValues(alpha: 0.1),
-                    ),
+                    Divider(color: AppColors.background.withValues(alpha: 0.1)),
                     const SizedBox(height: 16),
 
                     // Actions
@@ -238,8 +236,8 @@ class _AddWorkerModalState extends State<AddWorkerModal> {
                           onPressed: _submitting ? null : _handleRegister,
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            disabledBackgroundColor:
-                                AppColors.primary.withValues(alpha: 0.4),
+                            disabledBackgroundColor: AppColors.primary
+                                .withValues(alpha: 0.4),
                             shape: const StadiumBorder(),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
@@ -383,7 +381,9 @@ class _RoleOption extends StatelessWidget {
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
               size: 18,
-              color: selected ? AppColors.accent : AppColors.textMuted.withValues(alpha: 0.7),
+              color: selected
+                  ? AppColors.accent
+                  : AppColors.textMuted.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 8),
             Text(

@@ -5,7 +5,7 @@ import '../../domain/models/person.dart';
 
 class GetPersonUseCase extends BaseUseCase<String, Person> {
   GetPersonUseCase({required PeopleRepository peopleRepository})
-      : _peopleRepository = peopleRepository;
+    : _peopleRepository = peopleRepository;
 
   final PeopleRepository _peopleRepository;
 

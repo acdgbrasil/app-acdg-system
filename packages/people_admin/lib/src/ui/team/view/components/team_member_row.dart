@@ -55,10 +55,9 @@ class TeamMemberRow extends StatelessWidget {
         ),
         leading: CircleAvatar(
           radius: 20,
-          backgroundColor:
-              isActive
-                  ? AppColors.accent.withValues(alpha: 0.12)
-                  : AppColors.textMuted.withValues(alpha: 0.12),
+          backgroundColor: isActive
+              ? AppColors.accent.withValues(alpha: 0.12)
+              : AppColors.textMuted.withValues(alpha: 0.12),
           child: AcdgText(
             _initials,
             variant: AcdgTextVariant.bodyMedium,
@@ -75,10 +74,9 @@ class TeamMemberRow extends StatelessWidget {
         subtitle: AcdgText(
           _statusLine,
           variant: AcdgTextVariant.caption,
-          color:
-              isActive
-                  ? AppColors.textMuted
-                  : AppColors.textMuted.withValues(alpha: 0.6),
+          color: isActive
+              ? AppColors.textMuted
+              : AppColors.textMuted.withValues(alpha: 0.6),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -109,48 +107,46 @@ class TeamMemberRow extends StatelessWidget {
                     onResetPassword(member.personId);
                 }
               },
-              itemBuilder:
-                  (_) => [
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Row(
-                        children: [
-                          Icon(
-                            isActive ? Icons.block : Icons.check_circle_outline,
-                            color:
-                                isActive ? AppColors.danger : AppColors.primary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: AppSpacing.space2),
-                          AcdgText(
-                            isActive
-                                ? TeamL10n.actionDeactivate
-                                : TeamL10n.actionReactivate,
-                            variant: AcdgTextVariant.caption,
-                            color: AppColors.textOnDark,
-                          ),
-                        ],
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'toggle',
+                  child: Row(
+                    children: [
+                      Icon(
+                        isActive ? Icons.block : Icons.check_circle_outline,
+                        color: isActive ? AppColors.danger : AppColors.primary,
+                        size: 18,
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'reset_password',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lock_reset,
-                            color: AppColors.textMuted,
-                            size: 18,
-                          ),
-                          SizedBox(width: AppSpacing.space2),
-                          AcdgText(
-                            TeamL10n.actionResetPassword,
-                            variant: AcdgTextVariant.caption,
-                            color: AppColors.textOnDark,
-                          ),
-                        ],
+                      const SizedBox(width: AppSpacing.space2),
+                      AcdgText(
+                        isActive
+                            ? TeamL10n.actionDeactivate
+                            : TeamL10n.actionReactivate,
+                        variant: AcdgTextVariant.caption,
+                        color: AppColors.textOnDark,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'reset_password',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.lock_reset,
+                        color: AppColors.textMuted,
+                        size: 18,
+                      ),
+                      SizedBox(width: AppSpacing.space2),
+                      AcdgText(
+                        TeamL10n.actionResetPassword,
+                        variant: AcdgTextVariant.caption,
+                        color: AppColors.textOnDark,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

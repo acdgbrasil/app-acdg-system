@@ -1,25 +1,15 @@
-
 import 'package:design_system/design_system.dart';
-import '../../view_models/health_status_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/health_status_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/health_status_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/health_status_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/health_status_view_model.dart';
 import '../../di/health_status_providers.dart';
 import '../../view_models/health_status_view_model.dart';
 import '../components/health_status_action_bar.dart';
-import '../../view_models/health_status_view_model.dart';
 import '../components/health_status_content.dart';
-import '../../view_models/health_status_view_model.dart';
 import '../components/health_status_header.dart';
-import '../../view_models/health_status_view_model.dart';
 import '../components/health_status_nav_bar.dart';
-import '../../view_models/health_status_view_model.dart';
 
 class HealthStatusPage extends ConsumerStatefulWidget {
   const HealthStatusPage({super.key, required this.patientId});
@@ -34,9 +24,7 @@ class _HealthStatusPageState extends ConsumerState<HealthStatusPage> {
   @override
   void initState() {
     super.initState();
-    print(
-      '📱 initState — calling loadCommand.execute()',
-    );
+    print('📱 initState — calling loadCommand.execute()');
     final vm = ref.read(healthStatusViewModelProvider(widget.patientId));
     vm.loadCommand.execute();
     vm.saveCommand.addListener(() => _onSaveStateChanged(vm));
@@ -51,11 +39,7 @@ class _HealthStatusPageState extends ConsumerState<HealthStatusPage> {
         type: ToastType.success,
       );
     } else if (vm.saveCommand.error) {
-      AcdgToast.show(
-        context,
-        message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
-      );
+      AcdgToast.show(context, message: 'Falha ao salvar. Tente novamente.');
     }
   }
 

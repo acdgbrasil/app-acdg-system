@@ -55,5 +55,4 @@ void _initializeApp() {
 
   final sentryAdapter = dsn.isNotEmpty ? RealSentryClientAdapter() : null;
   AcdgLogger.initialize(sentryClient: sentryAdapter);
-
 }

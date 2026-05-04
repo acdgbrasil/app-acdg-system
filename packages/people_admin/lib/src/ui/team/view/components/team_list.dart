@@ -51,9 +51,8 @@ class TeamList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80),
       itemCount: members.length,
-      separatorBuilder:
-          (_, _) =>
-              const Divider(height: 1, indent: 72, color: AppColors.border),
+      separatorBuilder: (_, _) =>
+          const Divider(height: 1, indent: 72, color: AppColors.border),
       itemBuilder: (context, index) {
         return TeamMemberRow(
           member: members[index],

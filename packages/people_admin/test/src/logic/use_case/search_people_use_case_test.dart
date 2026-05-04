@@ -21,9 +21,7 @@ void main() {
     test('should return PaginatedResult on Success', () async {
       // Arrange
       const fakeResult = PaginatedResult(
-        items: [
-          Person(id: '1', fullName: 'Alice', active: true),
-        ],
+        items: [Person(id: '1', fullName: 'Alice', active: true)],
         nextCursor: 'abc',
       );
 
@@ -50,7 +48,7 @@ void main() {
       expect(value.items.length, 1);
       expect(value.items.first.fullName, 'Alice');
       expect(value.nextCursor, 'abc');
-      
+
       verify(() => mockRepo.fetchPeople(limit: 10, name: 'Alice')).called(1);
     });
 
@@ -74,8 +72,10 @@ void main() {
       ));
 
       // Assert
-      expect(result, isA<Failure>());
-      verify(() => mockRepo.fetchPeople(limit: 20, cpf: '123', cursor: 'xyz')).called(1);
+      expect(result, isA<Failure<dynamic>>());
+      verify(
+        () => mockRepo.fetchPeople(limit: 20, cpf: '123', cursor: 'xyz'),
+      ).called(1);
     });
   });
 }

@@ -48,12 +48,12 @@ class _SocioEconomicContentState extends State<SocioEconomicContent> {
   void initState() {
     super.initState();
     final fs = vm.formState;
-    _totalIncomeCtrl = TextEditingController(
-      text: _formatBRL(fs.totalFamilyIncome),
-    )..addListener(() {
-        fs.totalFamilyIncome = _parseBRL(_totalIncomeCtrl.text);
-        vm.notifyListeners();
-      });
+    _totalIncomeCtrl =
+        TextEditingController(text: _formatBRL(fs.totalFamilyIncome))
+          ..addListener(() {
+            fs.totalFamilyIncome = _parseBRL(_totalIncomeCtrl.text);
+            vm.notifyListeners();
+          });
     _mainSourceCtrl = TextEditingController(text: fs.mainSourceOfIncome)
       ..addListener(() {
         fs.mainSourceOfIncome = _mainSourceCtrl.text;
@@ -173,11 +173,7 @@ class _SocioEconomicContentState extends State<SocioEconomicContent> {
                   fs.addBenefit();
                   vm.notifyListeners();
                 },
-                icon: const Icon(
-                  Icons.add,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
+                icon: const Icon(Icons.add, size: 18, color: AppColors.primary),
                 label: const Text(
                   SocioEconomicL10n.addBenefit,
                   style: TextStyle(

@@ -1,24 +1,15 @@
 import 'package:design_system/design_system.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/housing_condition_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import '../../di/housing_condition_providers.dart';
 import '../../view_models/housing_condition_view_model.dart';
 import '../components/housing_condition_action_bar.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import '../components/housing_condition_content.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import '../components/housing_condition_header.dart';
-import '../../view_models/housing_condition_view_model.dart';
 import '../components/housing_condition_nav_bar.dart';
-import '../../view_models/housing_condition_view_model.dart';
 
 class HousingConditionPage extends ConsumerStatefulWidget {
   const HousingConditionPage({super.key, required this.patientId});
@@ -48,11 +39,7 @@ class _HousingConditionPageState extends ConsumerState<HousingConditionPage> {
         type: ToastType.success,
       );
     } else if (vm.saveCommand.error) {
-      AcdgToast.show(
-        context,
-        message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
-      );
+      AcdgToast.show(context, message: 'Falha ao salvar. Tente novamente.');
     }
   }
 

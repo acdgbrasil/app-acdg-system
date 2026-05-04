@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../../shared/models/benefit_row.dart';
 import '../../shared/models/member_option.dart';
 

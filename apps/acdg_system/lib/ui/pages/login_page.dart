@@ -14,10 +14,7 @@ import '../molecules/login_submit_button.dart';
 class LoginPage extends ConsumerWidget {
   const LoginPage({super.key});
 
-  static const _appEnv = String.fromEnvironment(
-    'APP_ENV',
-    defaultValue: 'dev',
-  );
+  static const _appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
 
   bool get _isProduction => _appEnv == 'production';
 

@@ -21,7 +21,6 @@ class SocialIdentityViewModel extends BaseViewModel {
     print('🏗️ Created with patientId=$patientId');
   }
 
-
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateSocialIdentityUseCase _updateSocialIdentityUseCase;
@@ -77,7 +76,7 @@ class SocialIdentityViewModel extends BaseViewModel {
           '📋 Lookup loaded: dominio_tipo_identidade (${value.length} items)',
         );
       case Failure(:final error):
-        print('📋 Lookup FAILED: dominio_tipo_identidade ${error}');
+        print('📋 Lookup FAILED: dominio_tipo_identidade $error');
     }
     notifyListeners();
   }
@@ -101,7 +100,7 @@ class SocialIdentityViewModel extends BaseViewModel {
           '⬇️ _load SUCCESS — hasData=$_hasLoadedData, patientName=$_patientName',
         );
       case Failure(:final error):
-        print('⬇️ _load FAILED ${error}');
+        print('⬇️ _load FAILED $error');
         _errorMessage = 'Falha ao carregar paciente';
     }
     notifyListeners();
@@ -150,7 +149,7 @@ class SocialIdentityViewModel extends BaseViewModel {
         }
         return result;
       case Failure(:final error):
-        print('⬆️ _save FAILED ${error}');
+        print('⬆️ _save FAILED $error');
         return Failure(error);
     }
   }

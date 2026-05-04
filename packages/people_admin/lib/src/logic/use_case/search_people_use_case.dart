@@ -13,7 +13,7 @@ typedef SearchPeopleParams = ({
 class SearchPeopleUseCase
     extends BaseUseCase<SearchPeopleParams, PaginatedResult<Person>> {
   SearchPeopleUseCase({required PeopleRepository peopleRepository})
-      : _peopleRepository = peopleRepository;
+    : _peopleRepository = peopleRepository;
 
   final PeopleRepository _peopleRepository;
 

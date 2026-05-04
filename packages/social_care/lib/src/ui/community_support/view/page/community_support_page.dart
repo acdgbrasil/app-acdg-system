@@ -1,21 +1,13 @@
-
 import 'package:design_system/design_system.dart';
-import '../../view_models/community_support_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/community_support_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/community_support_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/community_support_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/community_support_view_model.dart';
 import '../../constants/community_support_l10n.dart';
-import '../../view_models/community_support_view_model.dart';
 import '../../di/community_support_providers.dart';
 import '../../view_models/community_support_view_model.dart';
 import '../components/community_support_content.dart';
-import '../../view_models/community_support_view_model.dart';
 
 class CommunitySupportPage extends ConsumerStatefulWidget {
   const CommunitySupportPage({super.key, required this.patientId});
@@ -31,9 +23,7 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
   @override
   void initState() {
     super.initState();
-    print(
-      '📱 initState — calling loadCommand.execute()',
-    );
+    print('📱 initState — calling loadCommand.execute()');
     final vm = ref.read(communitySupportViewModelProvider(widget.patientId));
     vm.loadCommand.execute();
     vm.saveCommand.addListener(() => _onSaveStateChanged(vm));
@@ -48,11 +38,7 @@ class _CommunitySupportPageState extends ConsumerState<CommunitySupportPage> {
         type: ToastType.success,
       );
     } else if (vm.saveCommand.error) {
-      AcdgToast.show(
-        context,
-        message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
-      );
+      AcdgToast.show(context, message: 'Falha ao salvar. Tente novamente.');
     }
   }
 

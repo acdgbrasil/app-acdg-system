@@ -4,7 +4,7 @@ import '../../domain/models/register_worker_intent.dart';
 
 class RegisterWorkerUseCase extends BaseUseCase<RegisterWorkerIntent, String> {
   RegisterWorkerUseCase({required PeopleRepository peopleRepository})
-      : _peopleRepository = peopleRepository;
+    : _peopleRepository = peopleRepository;
 
   final PeopleRepository _peopleRepository;
 

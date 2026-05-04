@@ -31,9 +31,7 @@ void main() {
     mockResetPassword = MockResetPasswordUseCase();
     mockRolesUseCase = MockManageRolesUseCase();
 
-    registerFallbackValue(
-      (personId: '', currentlyActive: false),
-    );
+    registerFallbackValue((personId: '', currentlyActive: false));
 
     viewModel = PersonDetailViewModel(
       getPersonUseCase: mockGetPerson,
@@ -56,10 +54,12 @@ void main() {
     ];
 
     test('loadPersonCommand should fetch person and roles', () async {
-      when(() => mockGetPerson.execute('p1'))
-          .thenAnswer((_) async => const Success(fakePerson));
-      when(() => mockRolesUseCase.loadRoles('p1'))
-          .thenAnswer((_) async => Success(fakeRoles));
+      when(
+        () => mockGetPerson.execute('p1'),
+      ).thenAnswer((_) async => const Success(fakePerson));
+      when(
+        () => mockRolesUseCase.loadRoles('p1'),
+      ).thenAnswer((_) async => Success(fakeRoles));
 
       await viewModel.loadPersonCommand.execute('p1');
 
@@ -75,14 +75,17 @@ void main() {
     test(
       'toggleStatusPersonCommand should deactivate an active person and update state',
       () async {
-        when(() => mockGetPerson.execute('p1'))
-            .thenAnswer((_) async => const Success(fakePerson));
-        when(() => mockRolesUseCase.loadRoles('p1'))
-            .thenAnswer((_) async => const Success([]));
+        when(
+          () => mockGetPerson.execute('p1'),
+        ).thenAnswer((_) async => const Success(fakePerson));
+        when(
+          () => mockRolesUseCase.loadRoles('p1'),
+        ).thenAnswer((_) async => const Success([]));
         await viewModel.loadPersonCommand.execute('p1');
 
-        when(() => mockToggleStatus.execute(any()))
-            .thenAnswer((_) async => const Success(null));
+        when(
+          () => mockToggleStatus.execute(any()),
+        ).thenAnswer((_) async => const Success(null));
 
         await viewModel.toggleStatusPersonCommand.execute();
 
@@ -92,10 +95,12 @@ void main() {
     );
 
     test('assignRoleCommand should assign role and reload roles', () async {
-      when(() => mockGetPerson.execute('p1'))
-          .thenAnswer((_) async => const Success(fakePerson));
-      when(() => mockRolesUseCase.loadRoles('p1'))
-          .thenAnswer((_) async => const Success([]));
+      when(
+        () => mockGetPerson.execute('p1'),
+      ).thenAnswer((_) async => const Success(fakePerson));
+      when(
+        () => mockRolesUseCase.loadRoles('p1'),
+      ).thenAnswer((_) async => const Success([]));
       await viewModel.loadPersonCommand.execute('p1');
 
       when(
@@ -115,8 +120,9 @@ void main() {
           active: true,
         ),
       ];
-      when(() => mockRolesUseCase.loadRoles('p1'))
-          .thenAnswer((_) async => Success(newRoles));
+      when(
+        () => mockRolesUseCase.loadRoles('p1'),
+      ).thenAnswer((_) async => Success(newRoles));
 
       await viewModel.assignRoleCommand.execute((
         system: 'sys2',

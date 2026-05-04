@@ -3,11 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuthStatus', () {
-    const user = AuthUser(
-      id: '123',
-      name: 'Maria',
-      roles: {AuthRole.worker},
-    );
+    const user = AuthUser(id: '123', name: 'Maria', roles: {AuthRole.worker});
 
     group('Authenticated', () {
       test('holds user reference', () {

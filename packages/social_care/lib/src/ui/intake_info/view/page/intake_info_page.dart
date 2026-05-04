@@ -1,25 +1,15 @@
-
 import 'package:design_system/design_system.dart';
-import '../../view_models/intake_info_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/intake_info_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/intake_info_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/intake_info_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/intake_info_view_model.dart';
 import '../../di/intake_info_providers.dart';
 import '../../view_models/intake_info_view_model.dart';
 import '../components/intake_info_action_bar.dart';
-import '../../view_models/intake_info_view_model.dart';
 import '../components/intake_info_content.dart';
-import '../../view_models/intake_info_view_model.dart';
 import '../components/intake_info_header.dart';
-import '../../view_models/intake_info_view_model.dart';
 import '../components/intake_info_nav_bar.dart';
-import '../../view_models/intake_info_view_model.dart';
 
 class IntakeInfoPage extends ConsumerStatefulWidget {
   const IntakeInfoPage({super.key, required this.patientId});
@@ -34,9 +24,7 @@ class _IntakeInfoPageState extends ConsumerState<IntakeInfoPage> {
   @override
   void initState() {
     super.initState();
-    print(
-      '📱 initState — calling loadCommand.execute()',
-    );
+    print('📱 initState — calling loadCommand.execute()');
     final vm = ref.read(intakeInfoViewModelProvider(widget.patientId));
     vm.loadCommand.execute();
     vm.saveCommand.addListener(() => _onSaveStateChanged(vm));
@@ -51,11 +39,7 @@ class _IntakeInfoPageState extends ConsumerState<IntakeInfoPage> {
         type: ToastType.success,
       );
     } else if (vm.saveCommand.error) {
-      AcdgToast.show(
-        context,
-        message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
-      );
+      AcdgToast.show(context, message: 'Falha ao salvar. Tente novamente.');
     }
   }
 

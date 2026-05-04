@@ -19,8 +19,8 @@ export 'src/domain/models/team_member.dart';
 // Logic — Use Cases
 export 'src/logic/use_case/get_person_use_case.dart';
 export 'src/logic/use_case/manage_roles_use_case.dart';
-export 'src/logic/use_case/reset_password_use_case.dart';
 export 'src/logic/use_case/register_worker_use_case.dart';
+export 'src/logic/use_case/reset_password_use_case.dart';
 export 'src/logic/use_case/search_people_use_case.dart';
 export 'src/logic/use_case/toggle_person_status_use_case.dart';
 // UI — DI

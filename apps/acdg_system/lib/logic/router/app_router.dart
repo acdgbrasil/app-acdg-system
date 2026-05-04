@@ -162,7 +162,8 @@ class AppRouter {
       GoRoute(
         path: '${AppRoutes.socialIdentity}/:patientId',
         redirect: _requireAuth,
-        builder: (context, state) => SocialIdentityPage(patientId: state.pathParameters['patientId']!),
+        builder: (context, state) =>
+            SocialIdentityPage(patientId: state.pathParameters['patientId']!),
       ),
       GoRoute(
         path: AppRoutes.team,

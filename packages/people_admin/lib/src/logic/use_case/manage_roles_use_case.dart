@@ -4,7 +4,7 @@ import '../../domain/models/system_role.dart';
 
 class ManageRolesUseCase {
   ManageRolesUseCase({required RoleRepository roleRepository})
-      : _roleRepository = roleRepository;
+    : _roleRepository = roleRepository;
 
   final RoleRepository _roleRepository;
 

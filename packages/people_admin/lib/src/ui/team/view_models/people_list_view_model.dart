@@ -9,8 +9,8 @@ class PeopleListViewModel extends BaseViewModel {
   PeopleListViewModel({
     required SearchPeopleUseCase searchPeopleUseCase,
     required RegisterWorkerUseCase registerWorkerUseCase,
-  })  : _searchPeopleUseCase = searchPeopleUseCase,
-        _registerWorkerUseCase = registerWorkerUseCase {
+  }) : _searchPeopleUseCase = searchPeopleUseCase,
+       _registerWorkerUseCase = registerWorkerUseCase {
     loadCommand = Command0<void>(_initialLoad);
     searchCommand = Command1<void, String>(_search);
     loadMoreCommand = Command0<void>(_loadMore);

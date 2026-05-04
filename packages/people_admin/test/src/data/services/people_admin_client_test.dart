@@ -25,13 +25,9 @@ void main() {
       // Arrange
       final responseData = {
         'items': [
-          {
-            'id': '123',
-            'fullName': 'John Doe',
-            'active': true,
-          }
+          {'id': '123', 'fullName': 'John Doe', 'active': true},
         ],
-        'nextCursor': 'cursor-123'
+        'nextCursor': 'cursor-123',
       };
 
       when(
@@ -79,7 +75,7 @@ void main() {
       final result = await client.fetchPeople();
 
       // Assert
-      expect(result, isA<Failure>());
+      expect(result, isA<Failure<dynamic>>());
       final error = (result as Failure).error;
       expect(error, isA<TeamServerError>());
     });
@@ -94,8 +90,8 @@ void main() {
           'personId': 'p1',
           'system': 'social-care',
           'role': 'admin',
-          'active': true
-        }
+          'active': true,
+        },
       ];
 
       when(

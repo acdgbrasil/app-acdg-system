@@ -53,7 +53,9 @@ class _WorkAndIncomeBenefitCardState extends State<WorkAndIncomeBenefitCard> {
   Widget build(BuildContext context) {
     final validBen =
         widget.benefit.beneficiaryId != null &&
-            widget.uniqueMembers.any((m) => m.id == widget.benefit.beneficiaryId)
+            widget.uniqueMembers.any(
+              (m) => m.id == widget.benefit.beneficiaryId,
+            )
         ? widget.benefit.beneficiaryId
         : null;
 

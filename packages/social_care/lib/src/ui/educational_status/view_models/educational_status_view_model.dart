@@ -24,7 +24,6 @@ class EducationalStatusViewModel extends BaseViewModel {
     print('🏗️ Created with patientId=$patientId');
   }
 
-
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateEducationalStatusUseCase _updateEducationalStatusUseCase;
@@ -134,7 +133,7 @@ class EducationalStatusViewModel extends BaseViewModel {
           '📋 Lookup loaded: dominio_nivel_escolaridade (${value.length} items)',
         );
       case Failure(:final error):
-        print('📋 Lookup FAILED: dominio_nivel_escolaridade ${error}');
+        print('📋 Lookup FAILED: dominio_nivel_escolaridade $error');
     }
     final r2 = await _getLookupTableUseCase.execute('dominio_efeito_programa');
     switch (r2) {
@@ -144,7 +143,7 @@ class EducationalStatusViewModel extends BaseViewModel {
           '📋 Lookup loaded: dominio_efeito_programa (${value.length} items)',
         );
       case Failure(:final error):
-        print('📋 Lookup FAILED: dominio_efeito_programa ${error}');
+        print('📋 Lookup FAILED: dominio_efeito_programa $error');
     }
     notifyListeners();
   }
@@ -201,7 +200,7 @@ class EducationalStatusViewModel extends BaseViewModel {
           '⬇️ _load SUCCESS — hasData=$_hasLoadedData, patientName=$_patientName',
         );
       case Failure(:final error):
-        print('⬇️ _load FAILED ${error}');
+        print('⬇️ _load FAILED $error');
         _errorMessage = 'Falha ao carregar paciente';
     }
     notifyListeners();

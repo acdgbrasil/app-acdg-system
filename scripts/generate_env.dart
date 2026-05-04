@@ -42,5 +42,7 @@ void main(List<String> args) {
   final outputFile = File('apps/acdg_system/.env');
   outputFile.writeAsStringSync(buffer.toString());
 
-  stdout.writeln('Successfully generated apps/acdg_system/.env for "$targetEnv"');
+  stdout.writeln(
+    'Successfully generated apps/acdg_system/.env for "$targetEnv"',
+  );
 }

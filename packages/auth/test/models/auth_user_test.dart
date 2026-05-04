@@ -50,10 +50,7 @@ void main() {
       });
 
       test('hasAnyRole returns true when intersection exists', () {
-        expect(
-          user.hasAnyRole({AuthRole.worker, AuthRole.admin}),
-          isTrue,
-        );
+        expect(user.hasAnyRole({AuthRole.worker, AuthRole.admin}), isTrue);
       });
 
       test('hasAnyRole returns false when no intersection', () {

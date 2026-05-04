@@ -7,7 +7,7 @@ typedef TogglePersonStatusInput = ({String personId, bool currentlyActive});
 class TogglePersonStatusUseCase
     extends BaseUseCase<TogglePersonStatusInput, void> {
   TogglePersonStatusUseCase({required PeopleRepository peopleRepository})
-      : _peopleRepository = peopleRepository;
+    : _peopleRepository = peopleRepository;
 
   final PeopleRepository _peopleRepository;
 

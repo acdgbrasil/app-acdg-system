@@ -42,8 +42,9 @@ class UserMenuButton extends StatelessWidget {
               Wrap(
                 spacing: 4,
                 runSpacing: 4,
-                children:
-                    user.roles.map((role) => RoleBadge(role: role)).toList(),
+                children: user.roles
+                    .map((role) => RoleBadge(role: role))
+                    .toList(),
               ),
             ],
           ),

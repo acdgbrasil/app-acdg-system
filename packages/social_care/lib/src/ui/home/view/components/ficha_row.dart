@@ -34,7 +34,9 @@ class _FichaRowState extends State<FichaRow> {
         onTap: disabled ? null : widget.onTap,
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 150),
-          opacity: disabled ? 0.35 : (_hovered ? 1.0 : (widget.ficha.filled ? 0.9 : 0.5)),
+          opacity: disabled
+              ? 0.35
+              : (_hovered ? 1.0 : (widget.ficha.filled ? 0.9 : 0.5)),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 18),
             decoration: BoxDecoration(

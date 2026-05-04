@@ -20,9 +20,7 @@ abstract final class AppColors {
   static const Color textOnDark = Color(
     0xFFF4F2EC,
   ); // Warm beige (text on dark backgrounds)
-  static const Color textMuted = Color(
-    0xFF7A7872,
-  ); // Warm gray (--muted)
+  static const Color textMuted = Color(0xFF7A7872); // Warm gray (--muted)
   static const Color textAntiFlash = Color(
     0xFFEBEBEB,
   ); // Anti Flash (labels inside desktop popup)
@@ -31,17 +29,25 @@ abstract final class AppColors {
   ); // Absolute black (documents needed labels)
 
   // Semantic Colors
-  static const Color primary = Color(0xFFC94D2A); // Deep coral (--accent-hover, main action)
-  static const Color accent = Color(0xFFE65C3B); // Coral/terracotta (--accent, brand accent)
+  static const Color primary = Color(
+    0xFFC94D2A,
+  ); // Deep coral (--accent-hover, main action)
+  static const Color accent = Color(
+    0xFFE65C3B,
+  ); // Coral/terracotta (--accent, brand accent)
   static const Color danger = Color(0xFFA6290D); // Red (Cancel/Clear)
   static const Color warning = Color(0xFFC9960A); // Gold/Amber (caregiver star)
-  static const Color surface = Color(0xFFFAF8F4); // Lightest warm white (FAB, dialogs)
+  static const Color surface = Color(
+    0xFFFAF8F4,
+  ); // Lightest warm white (FAB, dialogs)
   static const Color surfaceLight = Color(
     0xFFFCFBF8,
   ); // Almost white with warm tint (icons on dark, toast text)
 
   // Overlays
-  static const Color barrierDark = Color(0x590D0D0B); // Charcoal barrier overlay
+  static const Color barrierDark = Color(
+    0x590D0D0B,
+  ); // Charcoal barrier overlay
 
   // Interactions & Elements
   static const Color border = Color(0xFFD6D2CA); // Warm gray border (--border)

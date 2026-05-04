@@ -46,14 +46,12 @@ final class PersonDto with EquatableMixin {
       birthDate: json['birthDate'] as String?,
       email: json['email'] as String?,
       zitadelUserId: json['zitadelUserId'] as String?,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'] as String)
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(json['updatedAt'] as String)
-              : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 

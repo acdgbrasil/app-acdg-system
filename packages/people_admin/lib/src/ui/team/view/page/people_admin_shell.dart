@@ -38,9 +38,7 @@ class _PeopleAdminShellState extends ConsumerState<PeopleAdminShell> {
     final detailVm = ref.read(personDetailViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(TeamL10n.pageTitle),
-      ),
+      appBar: AppBar(title: const Text(TeamL10n.pageTitle)),
       body: Stack(
         children: [
           Row(
@@ -53,10 +51,7 @@ class _PeopleAdminShellState extends ConsumerState<PeopleAdminShell> {
                 ),
               ),
               const VerticalDivider(width: 1),
-              Expanded(
-                flex: 2,
-                child: PersonDetailPanel(viewModel: detailVm),
-              ),
+              Expanded(flex: 2, child: PersonDetailPanel(viewModel: detailVm)),
             ],
           ),
           Positioned(
@@ -154,13 +149,12 @@ class PeopleMasterPanel extends StatelessWidget {
               }
 
               if (viewModel.people.isEmpty) {
-                return const Center(
-                  child: Text(TeamL10n.emptyState),
-                );
+                return const Center(child: Text(TeamL10n.emptyState));
               }
 
               return ListView.separated(
-                itemCount: viewModel.people.length + (viewModel.hasMore ? 1 : 0),
+                itemCount:
+                    viewModel.people.length + (viewModel.hasMore ? 1 : 0),
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   if (index == viewModel.people.length) {
@@ -286,16 +280,10 @@ class PersonDetailPanel extends StatelessWidget {
               const SizedBox(height: 24),
               PersonRolesSection(
                 roles: viewModel.roles,
-                onAssignRole: (system, role) =>
-                    viewModel.assignRoleCommand.execute((
-                  system: system,
-                  role: role,
-                )),
-                onToggleRole: (roleId, activate) =>
-                    viewModel.toggleRoleCommand.execute((
-                  roleId: roleId,
-                  activate: activate,
-                )),
+                onAssignRole: (system, role) => viewModel.assignRoleCommand
+                    .execute((system: system, role: role)),
+                onToggleRole: (roleId, activate) => viewModel.toggleRoleCommand
+                    .execute((roleId: roleId, activate: activate)),
               ),
             ],
           ),
@@ -362,8 +350,7 @@ class PersonHeaderSection extends StatelessWidget {
         ],
         if (cpf != null) ...[
           const SizedBox(height: 4),
-          Text('CPF: $cpf',
-              style: const TextStyle(color: AppColors.textMuted)),
+          Text('CPF: $cpf', style: const TextStyle(color: AppColors.textMuted)),
         ],
       ],
     );
