@@ -184,7 +184,7 @@ class HealthStatusViewModel extends BaseViewModel {
       case Success(:final value):
         _deficiencyTypeLookup = value;
       case Failure(:final error):
-        print('Failed to load deficiency type lookups ${error}');
+        print('Failed to load deficiency type lookups $error');
         _errorMessage = 'Falha ao carregar tipos de deficiencia';
     }
     _lookupsLoaded = true;
@@ -205,7 +205,7 @@ class HealthStatusViewModel extends BaseViewModel {
         // Build family member options for dropdowns
         final members = <MemberOption>[];
         // Add reference person
-        final prSex = pd?.sex?.name;
+        final prSex = pd?.sex.name;
         members.add(
           MemberOption(
             id: value.personId.value,
@@ -260,7 +260,7 @@ class HealthStatusViewModel extends BaseViewModel {
         }
         _hasLoadedData = true;
       case Failure(:final error):
-        print('Failed to load patient ${error}');
+        print('Failed to load patient $error');
         _errorMessage = 'Falha ao carregar paciente';
     }
 

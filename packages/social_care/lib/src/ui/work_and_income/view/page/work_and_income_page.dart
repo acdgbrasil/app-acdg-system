@@ -1,20 +1,14 @@
 
 import 'package:design_system/design_system.dart';
-import '../../view_models/work_and_income_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/work_and_income_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/work_and_income_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/work_and_income_view_model.dart';
+
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/work_and_income_view_model.dart';
 import '../../constants/work_and_income_l10n.dart';
-import '../../view_models/work_and_income_view_model.dart';
 import '../../di/work_and_income_providers.dart';
 import '../../view_models/work_and_income_view_model.dart';
 import '../components/work_and_income_content.dart';
-import '../../view_models/work_and_income_view_model.dart';
 
 class WorkAndIncomePage extends ConsumerStatefulWidget {
   const WorkAndIncomePage({super.key, required this.patientId});
@@ -47,7 +41,6 @@ class _WorkAndIncomePageState extends ConsumerState<WorkAndIncomePage> {
       AcdgToast.show(
         context,
         message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
       );
     }
   }

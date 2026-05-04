@@ -1,21 +1,14 @@
 
 import 'package:design_system/design_system.dart';
-import '../../view_models/social_identity_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/social_identity_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/social_identity_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/social_identity_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/social_identity_view_model.dart';
 import '../../constants/social_identity_l10n.dart';
-import '../../view_models/social_identity_view_model.dart';
 import '../../di/social_identity_providers.dart';
 import '../../view_models/social_identity_view_model.dart';
 import '../components/social_identity_content.dart';
-import '../../view_models/social_identity_view_model.dart';
 
 class SocialIdentityPage extends ConsumerStatefulWidget {
   const SocialIdentityPage({super.key, required this.patientId});
@@ -49,7 +42,6 @@ class _SocialIdentityPageState extends ConsumerState<SocialIdentityPage> {
       AcdgToast.show(
         context,
         message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
       );
     }
   }

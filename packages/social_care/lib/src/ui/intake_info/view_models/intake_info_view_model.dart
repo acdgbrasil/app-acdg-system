@@ -134,7 +134,7 @@ class IntakeInfoViewModel extends BaseViewModel {
       case Success(:final value):
         _ingressTypeLookup = value;
       case Failure(:final error):
-        print('Failed to load ingress type lookups ${error}');
+        print('Failed to load ingress type lookups $error');
         errors.add('Falha ao carregar tipos de ingresso');
     }
 
@@ -145,7 +145,7 @@ class IntakeInfoViewModel extends BaseViewModel {
       case Success(:final value):
         _socialProgramsLookup = value;
       case Failure(:final error):
-        print('Failed to load social programs lookups ${error}');
+        print('Failed to load social programs lookups $error');
         errors.add('Falha ao carregar programas sociais');
     }
 
@@ -195,7 +195,7 @@ class IntakeInfoViewModel extends BaseViewModel {
           _originalLinkedPrograms = List.of(_linkedPrograms);
         }
       case Failure(:final error):
-        print('Failed to load patient ${error}');
+        print('Failed to load patient $error');
         _errorMessage = 'Falha ao carregar paciente';
     }
 

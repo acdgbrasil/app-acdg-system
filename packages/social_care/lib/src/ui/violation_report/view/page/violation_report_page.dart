@@ -1,20 +1,14 @@
 
 import 'package:design_system/design_system.dart';
-import '../../view_models/violation_report_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/violation_report_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/violation_report_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/violation_report_view_model.dart';
+
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/violation_report_view_model.dart';
 import '../../constants/violation_report_l10n.dart';
-import '../../view_models/violation_report_view_model.dart';
 import '../../di/violation_report_providers.dart';
 import '../../view_models/violation_report_view_model.dart';
 import '../components/violation_report_content.dart';
-import '../../view_models/violation_report_view_model.dart';
 
 class ViolationReportPage extends ConsumerStatefulWidget {
   const ViolationReportPage({super.key, required this.patientId});
@@ -48,7 +42,6 @@ class _ViolationReportPageState extends ConsumerState<ViolationReportPage> {
       AcdgToast.show(
         context,
         message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
       );
     }
   }

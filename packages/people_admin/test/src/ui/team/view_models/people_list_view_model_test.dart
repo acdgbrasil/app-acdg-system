@@ -3,19 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:people_admin/src/domain/models/paginated_result.dart';
 import 'package:people_admin/src/domain/models/person.dart';
+import 'package:people_admin/src/logic/use_case/register_worker_use_case.dart';
 import 'package:people_admin/src/logic/use_case/search_people_use_case.dart';
 import 'package:people_admin/src/ui/team/view_models/people_list_view_model.dart';
 
 class MockSearchPeopleUseCase extends Mock implements SearchPeopleUseCase {}
 
+class MockRegisterWorkerUseCase extends Mock implements RegisterWorkerUseCase {}
+
 void main() {
   late MockSearchPeopleUseCase mockUseCase;
+  late MockRegisterWorkerUseCase mockRegisterUseCase;
   late PeopleListViewModel viewModel;
 
   setUp(() {
     registerFallbackValue((limit: null, name: null, cpf: null, cursor: null) as SearchPeopleParams);
     mockUseCase = MockSearchPeopleUseCase();
-    viewModel = PeopleListViewModel(searchPeopleUseCase: mockUseCase);
+    mockRegisterUseCase = MockRegisterWorkerUseCase();
+    viewModel = PeopleListViewModel(
+      searchPeopleUseCase: mockUseCase,
+      registerWorkerUseCase: mockRegisterUseCase,
+    );
   });
 
   group('PeopleListViewModel', () {

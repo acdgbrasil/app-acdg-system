@@ -81,9 +81,9 @@ class _AddWorkerModalState extends State<AddWorkerModal> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           TeamL10n.modalTitleAdd,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Playfair Display',
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
@@ -147,9 +147,9 @@ class _AddWorkerModalState extends State<AddWorkerModal> {
                     const SizedBox(height: 16),
 
                     // Role
-                    Text(
+                    const Text(
                       TeamL10n.fieldRole,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Satoshi',
                         fontWeight: FontWeight.w500,
                         fontSize: 13,

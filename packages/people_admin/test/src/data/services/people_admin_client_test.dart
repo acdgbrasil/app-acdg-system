@@ -79,7 +79,7 @@ void main() {
       final result = await client.fetchPeople();
 
       // Assert
-      expect(result, isA<Failure>());
+      expect(result, isA<Failure<dynamic>>());
       final error = (result as Failure).error;
       expect(error, isA<TeamServerError>());
     });

@@ -46,7 +46,7 @@ class HomeViewModel extends BaseViewModel {
         homeFormState.families.value = value;
         print('Loaded ${value.length} patients');
       case Failure(:final error):
-        print('Failed to load patients ${error}');
+        print('Failed to load patients $error');
     }
     return result;
   }

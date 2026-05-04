@@ -1,21 +1,14 @@
 
 import 'package:design_system/design_system.dart';
-import '../../view_models/educational_status_view_model.dart';
 import 'package:flutter/material.dart';
-import '../../view_models/educational_status_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../view_models/educational_status_view_model.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/educational_status_view_model.dart';
 
 import '../../../shared/components/acdg_toast.dart';
-import '../../view_models/educational_status_view_model.dart';
 import '../../constants/educational_status_l10n.dart';
-import '../../view_models/educational_status_view_model.dart';
 import '../../di/educational_status_providers.dart';
 import '../../view_models/educational_status_view_model.dart';
 import '../components/educational_status_content.dart';
-import '../../view_models/educational_status_view_model.dart';
 
 class EducationalStatusPage extends ConsumerStatefulWidget {
   const EducationalStatusPage({super.key, required this.patientId});
@@ -49,7 +42,6 @@ class _EducationalStatusPageState extends ConsumerState<EducationalStatusPage> {
       AcdgToast.show(
         context,
         message: 'Falha ao salvar. Tente novamente.',
-        type: ToastType.error,
       );
     }
   }

@@ -67,8 +67,8 @@ class _HealthGestatingCardState extends State<HealthGestatingCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.femaleFamilyMembers.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
               child: Text(
                 HealthStatusL10n.gestatingOnlyFemaleError,
                 style: TextStyle(
@@ -83,7 +83,7 @@ class _HealthGestatingCardState extends State<HealthGestatingCard> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: validMember,
+                  initialValue: validMember,
                   decoration: const InputDecoration(
                     labelText: HealthStatusL10n.gestatingMemberLabel,
                   ),

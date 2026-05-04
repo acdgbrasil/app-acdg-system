@@ -149,7 +149,7 @@ class CommunitySupportViewModel extends BaseViewModel {
           '⬇️ _load SUCCESS — hasData=$_hasLoadedData, patientName=$_patientName',
         );
       case Failure(:final error):
-        print('⬇️ _load FAILED ${error}');
+        print('⬇️ _load FAILED $error');
         _errorMessage = 'Falha ao carregar paciente';
     }
 

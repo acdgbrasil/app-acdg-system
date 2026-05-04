@@ -74,7 +74,7 @@ void main() {
       ));
 
       // Assert
-      expect(result, isA<Failure>());
+      expect(result, isA<Failure<dynamic>>());
       verify(() => mockRepo.fetchPeople(limit: 20, cpf: '123', cursor: 'xyz')).called(1);
     });
   });

@@ -236,7 +236,7 @@ class HousingConditionViewModel extends BaseViewModel {
           _saveOriginals();
         }
       case Failure(:final error):
-        print('Failed to load patient ${error}');
+        print('Failed to load patient $error');
         _errorMessage = 'Falha ao carregar paciente';
     }
 
