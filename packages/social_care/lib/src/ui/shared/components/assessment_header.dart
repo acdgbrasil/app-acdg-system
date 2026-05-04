@@ -6,11 +6,7 @@ import 'package:flutter/material.dart';
 /// Shows title + patient name subtitle.
 /// Pure Selector widget.
 class AssessmentHeader extends StatelessWidget {
-  const AssessmentHeader({
-    super.key,
-    required this.title,
-    this.patientName,
-  });
+  const AssessmentHeader({super.key, required this.title, this.patientName});
 
   final String title;
   final String? patientName;

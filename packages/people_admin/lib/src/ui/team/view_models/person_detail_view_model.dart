@@ -13,17 +13,19 @@ class PersonDetailViewModel extends BaseViewModel {
     required TogglePersonStatusUseCase togglePersonStatusUseCase,
     required ResetPasswordUseCase resetPasswordUseCase,
     required ManageRolesUseCase manageRolesUseCase,
-  })  : _getPersonUseCase = getPersonUseCase,
-        _togglePersonStatusUseCase = togglePersonStatusUseCase,
-        _resetPasswordUseCase = resetPasswordUseCase,
-        _manageRolesUseCase = manageRolesUseCase {
+  }) : _getPersonUseCase = getPersonUseCase,
+       _togglePersonStatusUseCase = togglePersonStatusUseCase,
+       _resetPasswordUseCase = resetPasswordUseCase,
+       _manageRolesUseCase = manageRolesUseCase {
     loadPersonCommand = Command1<void, String>(_loadPerson);
     toggleStatusPersonCommand = Command0<void>(_toggleStatusPerson);
     requestPasswordResetCommand = Command0<void>(_requestPasswordReset);
-    assignRoleCommand =
-        Command1<void, ({String system, String role})>(_assignRole);
-    toggleRoleCommand =
-        Command1<void, ({String roleId, bool activate})>(_toggleRole);
+    assignRoleCommand = Command1<void, ({String system, String role})>(
+      _assignRole,
+    );
+    toggleRoleCommand = Command1<void, ({String roleId, bool activate})>(
+      _toggleRole,
+    );
   }
 
   final GetPersonUseCase _getPersonUseCase;
@@ -110,9 +112,7 @@ class PersonDetailViewModel extends BaseViewModel {
     return result;
   }
 
-  Future<Result<void>> _assignRole(
-    ({String system, String role}) input,
-  ) async {
+  Future<Result<void>> _assignRole(({String system, String role}) input) async {
     final current = _person;
     if (current == null) {
       return Failure(Exception('No person loaded'));

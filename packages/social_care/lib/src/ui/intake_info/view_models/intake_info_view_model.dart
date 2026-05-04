@@ -21,7 +21,6 @@ class IntakeInfoViewModel extends BaseViewModel {
     _loadLookups();
   }
 
-
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateIntakeInfoUseCase _updateIntakeInfoUseCase;
@@ -169,12 +168,20 @@ class IntakeInfoViewModel extends BaseViewModel {
         _patientName = '$first $last'.trim();
 
         final intake = value.intakeInfo;
-        print('📋 IntakeInfo from backend: ${intake != null ? 'EXISTS' : 'NULL'}');
+        print(
+          '📋 IntakeInfo from backend: ${intake != null ? 'EXISTS' : 'NULL'}',
+        );
         if (intake != null) {
           print('📋 ingressTypeId: ${intake.ingressTypeId.value}');
-          print('📋 linkedPrograms: ${intake.linkedSocialPrograms.map((p) => p.programId.value).toList()}');
-          print('📋 lookup ingress IDs: ${_ingressTypeLookup.map((l) => l.id).toList()}');
-          print('📋 lookup program IDs: ${_socialProgramsLookup.map((l) => l.id).toList()}');
+          print(
+            '📋 linkedPrograms: ${intake.linkedSocialPrograms.map((p) => p.programId.value).toList()}',
+          );
+          print(
+            '📋 lookup ingress IDs: ${_ingressTypeLookup.map((l) => l.id).toList()}',
+          );
+          print(
+            '📋 lookup program IDs: ${_socialProgramsLookup.map((l) => l.id).toList()}',
+          );
           _ingressTypeId = intake.ingressTypeId.value.toUpperCase();
           _originName = intake.originName ?? '';
           _originContact = intake.originContact ?? '';

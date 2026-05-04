@@ -17,7 +17,6 @@ class CommunitySupportViewModel extends BaseViewModel {
     print('🏗️ Created with patientId=$patientId');
   }
 
-
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateCommunitySupportUseCase _updateCommunitySupportUseCase;

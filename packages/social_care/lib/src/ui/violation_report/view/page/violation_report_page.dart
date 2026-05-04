@@ -1,4 +1,3 @@
-
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,9 +21,7 @@ class _ViolationReportPageState extends ConsumerState<ViolationReportPage> {
   @override
   void initState() {
     super.initState();
-    print(
-      '📱 initState — calling loadCommand.execute()',
-    );
+    print('📱 initState — calling loadCommand.execute()');
     final vm = ref.read(violationReportViewModelProvider(widget.patientId));
     vm.loadCommand.execute();
     vm.saveCommand.addListener(() => _onSaveStateChanged(vm));
@@ -39,10 +36,7 @@ class _ViolationReportPageState extends ConsumerState<ViolationReportPage> {
         type: ToastType.success,
       );
     } else if (vm.saveCommand.error) {
-      AcdgToast.show(
-        context,
-        message: 'Falha ao salvar. Tente novamente.',
-      );
+      AcdgToast.show(context, message: 'Falha ao salvar. Tente novamente.');
     }
   }
 

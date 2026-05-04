@@ -25,13 +25,9 @@ void main() {
       // Arrange
       final responseData = {
         'items': [
-          {
-            'id': '123',
-            'fullName': 'John Doe',
-            'active': true,
-          }
+          {'id': '123', 'fullName': 'John Doe', 'active': true},
         ],
-        'nextCursor': 'cursor-123'
+        'nextCursor': 'cursor-123',
       };
 
       when(
@@ -94,8 +90,8 @@ void main() {
           'personId': 'p1',
           'system': 'social-care',
           'role': 'admin',
-          'active': true
-        }
+          'active': true,
+        },
       ];
 
       when(

@@ -31,7 +31,10 @@ class IntakeInfoActionBar extends StatelessWidget {
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.danger,
                 shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,

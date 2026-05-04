@@ -17,7 +17,9 @@ void main() {
   late PeopleListViewModel viewModel;
 
   setUp(() {
-    registerFallbackValue((limit: null, name: null, cpf: null, cursor: null) as SearchPeopleParams);
+    registerFallbackValue(
+      (limit: null, name: null, cpf: null, cursor: null) as SearchPeopleParams,
+    );
     mockUseCase = MockSearchPeopleUseCase();
     mockRegisterUseCase = MockRegisterWorkerUseCase();
     viewModel = PeopleListViewModel(
@@ -39,7 +41,9 @@ void main() {
         nextCursor: 'cursor_2',
       );
 
-      when(() => mockUseCase.execute(any())).thenAnswer((_) async => const Success(fakeResult));
+      when(
+        () => mockUseCase.execute(any()),
+      ).thenAnswer((_) async => const Success(fakeResult));
 
       // Act
       await viewModel.searchCommand.execute('Ali');
@@ -61,14 +65,18 @@ void main() {
         items: [Person(id: '1', fullName: 'Alice', active: true)],
         nextCursor: 'cursor_2',
       );
-      when(() => mockUseCase.execute(any())).thenAnswer((_) async => const Success(firstResult));
+      when(
+        () => mockUseCase.execute(any()),
+      ).thenAnswer((_) async => const Success(firstResult));
       await viewModel.searchCommand.execute(''); // Load first page
 
       // Arrange - Mock second page
       const secondResult = PaginatedResult(
         items: [Person(id: '2', fullName: 'Bob', active: true)],
       );
-      when(() => mockUseCase.execute(any())).thenAnswer((_) async => const Success(secondResult));
+      when(
+        () => mockUseCase.execute(any()),
+      ).thenAnswer((_) async => const Success(secondResult));
 
       // Act - Load second page
       await viewModel.loadMoreCommand.execute();
@@ -87,7 +95,9 @@ void main() {
 
     test('searchCommand should clear list on error', () async {
       // Arrange
-      when(() => mockUseCase.execute(any())).thenAnswer((_) async => Failure(Exception('Error')));
+      when(
+        () => mockUseCase.execute(any()),
+      ).thenAnswer((_) async => Failure(Exception('Error')));
 
       // Act
       await viewModel.searchCommand.execute('Fail');

@@ -24,7 +24,6 @@ class HealthStatusViewModel extends BaseViewModel {
     _loadLookups();
   }
 
-
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateHealthStatusUseCase _updateHealthStatusUseCase;
@@ -218,11 +217,13 @@ class HealthStatusViewModel extends BaseViewModel {
         // Add family members
         for (final member in value.familyMembers) {
           final name = member.fullName ?? 'Membro';
-          members.add(MemberOption(
-            id: member.personId.value,
-            label: name,
-            sex: member.sex,
-          ));
+          members.add(
+            MemberOption(
+              id: member.personId.value,
+              label: name,
+              sex: member.sex,
+            ),
+          );
         }
         _familyMembers = members;
 

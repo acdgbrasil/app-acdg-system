@@ -29,8 +29,9 @@ class _ModuleCardState extends State<ModuleCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: MouseRegion(
-        cursor:
-            widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        cursor: widget.onTap != null
+            ? SystemMouseCursors.click
+            : MouseCursor.defer,
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: AnimatedContainer(
@@ -68,14 +69,12 @@ class _ModuleCardState extends State<ModuleCard> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(AppSpacing.space3),
                 decoration: BoxDecoration(
-                  color: widget.accentColor.withValues(alpha: _hovered ? 0.15 : 0.08),
+                  color: widget.accentColor.withValues(
+                    alpha: _hovered ? 0.15 : 0.08,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  widget.icon,
-                  color: widget.accentColor,
-                  size: 40,
-                ),
+                child: Icon(widget.icon, color: widget.accentColor, size: 40),
               ),
               const SizedBox(width: AppSpacing.space4),
               Expanded(

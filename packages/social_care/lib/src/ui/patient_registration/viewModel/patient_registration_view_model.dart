@@ -350,11 +350,17 @@ class PatientRegistrationViewModel extends BaseViewModel {
   List<FamilyMember> _buildFamilyMembers() {
     final snapshots = familyCompositionFormState.members.value;
     final members = <FamilyMember>[];
-    print('👨‍👩‍👧 Building ${snapshots.length} family members from snapshots');
-    print('👨‍👩‍👧 Lookups available: ${_parentescoLookup.length} parentesco items');
+    print(
+      '👨‍👩‍👧 Building ${snapshots.length} family members from snapshots',
+    );
+    print(
+      '👨‍👩‍👧 Lookups available: ${_parentescoLookup.length} parentesco items',
+    );
 
     for (final snap in snapshots) {
-      print('👨‍👩‍👧 Processing member: name=${snap.name}, rel=${snap.relationshipCode}, birth=${snap.birthDate}');
+      print(
+        '👨‍👩‍👧 Processing member: name=${snap.name}, rel=${snap.relationshipCode}, birth=${snap.birthDate}',
+      );
 
       final personIdRes = PersonId.create(UuidUtil.generateV4());
       if (personIdRes case Failure(:final error)) {
@@ -366,28 +372,39 @@ class PatientRegistrationViewModel extends BaseViewModel {
       // Resolve relationship code → lookup UUID
       // Try matching by codigo first, then by id (case-insensitive)
       final relItem = _parentescoLookup
-          .where((item) =>
-              item.codigo == snap.relationshipCode ||
-              item.id == snap.relationshipCode ||
-              item.codigo.toLowerCase() == snap.relationshipCode.toLowerCase())
+          .where(
+            (item) =>
+                item.codigo == snap.relationshipCode ||
+                item.id == snap.relationshipCode ||
+                item.codigo.toLowerCase() ==
+                    snap.relationshipCode.toLowerCase(),
+          )
           .firstOrNull;
 
       if (relItem == null) {
-        final available = _parentescoLookup.map((i) => '${i.codigo}(${i.id})').join(', ');
-        print('👨‍👩‍👧 SKIPPED — No lookup match for rel="${snap.relationshipCode}". Available: $available');
+        final available = _parentescoLookup
+            .map((i) => '${i.codigo}(${i.id})')
+            .join(', ');
+        print(
+          '👨‍👩‍👧 SKIPPED — No lookup match for rel="${snap.relationshipCode}". Available: $available',
+        );
         continue;
       }
 
       final relIdRes = LookupId.create(relItem.id);
       if (relIdRes case Failure(:final error)) {
-        print('👨‍👩‍👧 SKIPPED — LookupId.create failed for "${relItem.id}": $error');
+        print(
+          '👨‍👩‍👧 SKIPPED — LookupId.create failed for "${relItem.id}": $error',
+        );
         continue;
       }
       final relId = (relIdRes as Success<LookupId>).value;
 
       final birthRes = TimeStamp.fromDate(snap.birthDate);
       if (birthRes case Failure(:final error)) {
-        print('👨‍👩‍👧 SKIPPED — TimeStamp.fromDate failed for "${snap.birthDate}": $error');
+        print(
+          '👨‍👩‍👧 SKIPPED — TimeStamp.fromDate failed for "${snap.birthDate}": $error',
+        );
         continue;
       }
       final birthTs = (birthRes as Success<TimeStamp>).value;
@@ -419,7 +436,9 @@ class PatientRegistrationViewModel extends BaseViewModel {
       }
     }
 
-    print('👨‍👩‍👧 Final result: ${members.length}/${snapshots.length} members built');
+    print(
+      '👨‍👩‍👧 Final result: ${members.length}/${snapshots.length} members built',
+    );
     return members;
   }
 

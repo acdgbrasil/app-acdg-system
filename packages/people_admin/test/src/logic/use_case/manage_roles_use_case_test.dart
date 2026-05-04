@@ -29,8 +29,9 @@ void main() {
         ),
       ];
 
-      when(() => mockRepo.fetchRolesForPerson('p1', active: any(named: 'active')))
-          .thenAnswer((_) async => Success(fakeRoles));
+      when(
+        () => mockRepo.fetchRolesForPerson('p1', active: any(named: 'active')),
+      ).thenAnswer((_) async => Success(fakeRoles));
 
       // Act
       final result = await useCase.loadRoles('p1');
@@ -46,11 +47,8 @@ void main() {
     test('should assign a new role successfully', () async {
       // Arrange
       when(
-        () => mockRepo.assignRole(
-          personId: 'p1',
-          system: 'sys1',
-          role: 'admin',
-        ),
+        () =>
+            mockRepo.assignRole(personId: 'p1', system: 'sys1', role: 'admin'),
       ).thenAnswer((_) async => const Success(null));
 
       // Act
@@ -63,11 +61,8 @@ void main() {
       // Assert
       expect(result, isA<Success<void>>());
       verify(
-        () => mockRepo.assignRole(
-          personId: 'p1',
-          system: 'sys1',
-          role: 'admin',
-        ),
+        () =>
+            mockRepo.assignRole(personId: 'p1', system: 'sys1', role: 'admin'),
       ).called(1);
     });
 
@@ -86,7 +81,9 @@ void main() {
 
       // Assert
       expect(result, isA<Success<void>>());
-      verify(() => mockRepo.deactivateRole(personId: 'p1', roleId: 'r1')).called(1);
+      verify(
+        () => mockRepo.deactivateRole(personId: 'p1', roleId: 'r1'),
+      ).called(1);
     });
   });
 }

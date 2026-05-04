@@ -18,10 +18,7 @@ import '../molecules/user_menu_button.dart';
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  static const _appEnv = String.fromEnvironment(
-    'APP_ENV',
-    defaultValue: 'dev',
-  );
+  static const _appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -193,9 +190,7 @@ class _ModuleGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final cards = <Widget>[
       ModuleCard(
-        icon: user.canWrite
-            ? Icons.people_outline
-            : Icons.visibility_outlined,
+        icon: user.canWrite ? Icons.people_outline : Icons.visibility_outlined,
         title: 'Social Care',
         subtitle: user.canWrite
             ? 'Prontuário social e acompanhamento'

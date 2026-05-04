@@ -32,8 +32,9 @@ final getPersonUseCaseProvider = Provider<GetPersonUseCase>((ref) {
   );
 });
 
-final togglePersonStatusUseCaseProvider =
-    Provider<TogglePersonStatusUseCase>((ref) {
+final togglePersonStatusUseCaseProvider = Provider<TogglePersonStatusUseCase>((
+  ref,
+) {
   return TogglePersonStatusUseCase(
     peopleRepository: ref.watch(peopleRepositoryProvider),
   );
@@ -52,15 +53,14 @@ final registerWorkerUseCaseProvider = Provider<RegisterWorkerUseCase>((ref) {
 });
 
 final manageRolesUseCaseProvider = Provider<ManageRolesUseCase>((ref) {
-  return ManageRolesUseCase(
-    roleRepository: ref.watch(roleRepositoryProvider),
-  );
+  return ManageRolesUseCase(roleRepository: ref.watch(roleRepositoryProvider));
 });
 
 // ── ViewModel Overrides ──
 
-final peopleListViewModelOverride =
-    peopleListViewModelProvider.overrideWith((ref) {
+final peopleListViewModelOverride = peopleListViewModelProvider.overrideWith((
+  ref,
+) {
   final vm = PeopleListViewModel(
     searchPeopleUseCase: ref.watch(searchPeopleUseCaseProvider),
     registerWorkerUseCase: ref.watch(registerWorkerUseCaseProvider),
@@ -69,14 +69,14 @@ final peopleListViewModelOverride =
   return vm;
 });
 
-final personDetailViewModelOverride =
-    personDetailViewModelProvider.overrideWith((ref) {
-  final vm = PersonDetailViewModel(
-    getPersonUseCase: ref.watch(getPersonUseCaseProvider),
-    togglePersonStatusUseCase: ref.watch(togglePersonStatusUseCaseProvider),
-    resetPasswordUseCase: ref.watch(resetPasswordUseCaseProvider),
-    manageRolesUseCase: ref.watch(manageRolesUseCaseProvider),
-  );
-  ref.onDispose(() => vm.dispose());
-  return vm;
-});
+final personDetailViewModelOverride = personDetailViewModelProvider
+    .overrideWith((ref) {
+      final vm = PersonDetailViewModel(
+        getPersonUseCase: ref.watch(getPersonUseCaseProvider),
+        togglePersonStatusUseCase: ref.watch(togglePersonStatusUseCaseProvider),
+        resetPasswordUseCase: ref.watch(resetPasswordUseCaseProvider),
+        manageRolesUseCase: ref.watch(manageRolesUseCaseProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });

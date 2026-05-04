@@ -17,7 +17,6 @@ class HousingConditionViewModel extends BaseViewModel {
     saveCommand = Command0<void>(_save);
   }
 
-
   final String patientId;
   final GetPatientUseCase _getPatientUseCase;
   final UpdateHousingConditionUseCase _updateHousingConditionUseCase;

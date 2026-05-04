@@ -126,11 +126,17 @@ class RegistryHandler {
         }
       }
 
-      print('[BFF:Register] Total members: ${familyMembers.length}, PR rel: $prRelationshipId, extra: ${extraMembers.length}');
+      print(
+        '[BFF:Register] Total members: ${familyMembers.length}, PR rel: $prRelationshipId, extra: ${extraMembers.length}',
+      );
 
       // Keep only the PR member for the initial registration
       body['familyMembers'] = familyMembers
-          .where((m) => m is Map<String, dynamic> && m['relationship'] == prRelationshipId)
+          .where(
+            (m) =>
+                m is Map<String, dynamic> &&
+                m['relationship'] == prRelationshipId,
+          )
           .toList();
 
       final patientResult = PatientTranslator.fromJson(body);
@@ -155,7 +161,9 @@ class RegistryHandler {
           case Success(:final value):
             prRelId = value;
           case Failure():
-            print('[BFF:Register] ⚠️ Invalid prRelationshipId, skipping extra members');
+            print(
+              '[BFF:Register] ⚠️ Invalid prRelationshipId, skipping extra members',
+            );
             return jsonOk({'id': patientId.value});
         }
 
@@ -164,7 +172,9 @@ class RegistryHandler {
           final memberBirth = memberJson['birthDate'] as String? ?? '';
           final memberCpf = memberJson['cpf'] as String?;
 
-          print('[BFF:Register] Adding extra member: rel=${memberJson['relationship']}, name=$memberName');
+          print(
+            '[BFF:Register] Adding extra member: rel=${memberJson['relationship']}, name=$memberName',
+          );
 
           // 1. Register in People Context (same logic as _addFamilyMember)
           if (memberName.isNotEmpty && memberBirth.isNotEmpty) {
@@ -175,21 +185,31 @@ class RegistryHandler {
             );
             switch (pcResult) {
               case Success(value: final canonicalId):
-                print('[BFF:Register] People Context OK: personId=$canonicalId');
+                print(
+                  '[BFF:Register] People Context OK: personId=$canonicalId',
+                );
                 memberJson['personId'] = canonicalId;
                 memberJson['memberPersonId'] = canonicalId;
               case Failure(:final error):
-                print('[BFF:Register] People Context failed (non-blocking): $error');
+                print(
+                  '[BFF:Register] People Context failed (non-blocking): $error',
+                );
             }
           }
 
           // 2. Add to patient via contract
           memberJson['prRelationshipId'] = prRelationshipId;
 
-          final memberResult = PatientTranslator.familyMemberFromJson(memberJson);
+          final memberResult = PatientTranslator.familyMemberFromJson(
+            memberJson,
+          );
           switch (memberResult) {
             case Success(:final value):
-              final addResult = await contract.addFamilyMember(patientId, value, prRelId);
+              final addResult = await contract.addFamilyMember(
+                patientId,
+                value,
+                prRelId,
+              );
               switch (addResult) {
                 case Success():
                   print('[BFF:Register] ✅ Extra member added');
@@ -208,7 +228,9 @@ class RegistryHandler {
       final intakeInfoJson = body['intakeInfo'] as Map<String, dynamic>?;
       if (intakeInfoJson != null) {
         print('[BFF:Register] Saving intakeInfo via PUT');
-        final intakeResult = PatientTranslator.intakeInfoFromJson(intakeInfoJson);
+        final intakeResult = PatientTranslator.intakeInfoFromJson(
+          intakeInfoJson,
+        );
         switch (intakeResult) {
           case Success(:final value):
             final putResult = await contract.updateIntakeInfo(patientId, value);
@@ -223,13 +245,19 @@ class RegistryHandler {
         }
       }
 
-      final socialIdentityJson = body['socialIdentity'] as Map<String, dynamic>?;
+      final socialIdentityJson =
+          body['socialIdentity'] as Map<String, dynamic>?;
       if (socialIdentityJson != null) {
         print('[BFF:Register] Saving socialIdentity via PUT');
-        final idResult = PatientTranslator.socialIdentityFromJson(socialIdentityJson);
+        final idResult = PatientTranslator.socialIdentityFromJson(
+          socialIdentityJson,
+        );
         switch (idResult) {
           case Success(:final value):
-            final putResult = await contract.updateSocialIdentity(patientId, value);
+            final putResult = await contract.updateSocialIdentity(
+              patientId,
+              value,
+            );
             switch (putResult) {
               case Success():
                 print('[BFF:Register] ✅ SocialIdentity saved');
@@ -296,7 +324,9 @@ class RegistryHandler {
       final memberBirthDate = body['birthDate'] as String? ?? '';
       final cpf = body['cpf'] as String?;
       print('[BFF:AddMember] body keys: ${body.keys.toList()}');
-      print('[BFF:AddMember] fullName="$fullName", birthDate="$memberBirthDate", sex=${body['sex']}');
+      print(
+        '[BFF:AddMember] fullName="$fullName", birthDate="$memberBirthDate", sex=${body['sex']}',
+      );
 
       if (fullName.isNotEmpty && memberBirthDate.isNotEmpty) {
         final pcResult = await peopleContext.registerPerson(
@@ -306,7 +336,9 @@ class RegistryHandler {
         );
         switch (pcResult) {
           case Success(value: final canonicalPersonId):
-            print('[BFF:AddMember] people-context OK: personId=$canonicalPersonId');
+            print(
+              '[BFF:AddMember] people-context OK: personId=$canonicalPersonId',
+            );
             body['personId'] = canonicalPersonId;
             body['memberPersonId'] = canonicalPersonId;
           case Failure(:final error):
@@ -314,7 +346,9 @@ class RegistryHandler {
             break;
         }
       } else {
-        print('[BFF:AddMember] SKIPPED people-context: fullName or birthDate empty');
+        print(
+          '[BFF:AddMember] SKIPPED people-context: fullName or birthDate empty',
+        );
       }
 
       final LookupId prRelId;

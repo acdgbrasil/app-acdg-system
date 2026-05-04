@@ -109,34 +109,93 @@ final familyCompositionViewModelOverride = familyCompositionViewModelProvider
       return vm;
     });
 
-final updateSocioEconomicUseCaseProvider = Provider<UpdateSocioEconomicUseCase>((ref) => UpdateSocioEconomicUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
-final socioEconomicViewModelOverride = socioEconomicViewModelProvider.overrideWith((ref, patientId) {
-  final vm = SocioEconomicViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocioEconomicUseCase: ref.watch(updateSocioEconomicUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
-  ref.onDispose(() => vm.dispose()); return vm;
-});
+final updateSocioEconomicUseCaseProvider = Provider<UpdateSocioEconomicUseCase>(
+  (ref) => UpdateSocioEconomicUseCase(
+    patientRepository: ref.watch(patientRepositoryProvider),
+  ),
+);
+final socioEconomicViewModelOverride = socioEconomicViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = SocioEconomicViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateSocioEconomicUseCase: ref.watch(
+          updateSocioEconomicUseCaseProvider,
+        ),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
-final updateEducationalStatusUseCaseProvider = Provider<UpdateEducationalStatusUseCase>((ref) => UpdateEducationalStatusUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
-final educationalStatusViewModelOverride = educationalStatusViewModelProvider.overrideWith((ref, patientId) {
-  final vm = EducationalStatusViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateEducationalStatusUseCase: ref.watch(updateEducationalStatusUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
-  ref.onDispose(() => vm.dispose()); return vm;
-});
+final updateEducationalStatusUseCaseProvider =
+    Provider<UpdateEducationalStatusUseCase>(
+      (ref) => UpdateEducationalStatusUseCase(
+        patientRepository: ref.watch(patientRepositoryProvider),
+      ),
+    );
+final educationalStatusViewModelOverride = educationalStatusViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = EducationalStatusViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateEducationalStatusUseCase: ref.watch(
+          updateEducationalStatusUseCaseProvider,
+        ),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
-final updateWorkAndIncomeUseCaseProvider = Provider<UpdateWorkAndIncomeUseCase>((ref) => UpdateWorkAndIncomeUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
-final workAndIncomeViewModelOverride = workAndIncomeViewModelProvider.overrideWith((ref, patientId) {
-  final vm = WorkAndIncomeViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateWorkAndIncomeUseCase: ref.watch(updateWorkAndIncomeUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
-  ref.onDispose(() => vm.dispose()); return vm;
-});
+final updateWorkAndIncomeUseCaseProvider = Provider<UpdateWorkAndIncomeUseCase>(
+  (ref) => UpdateWorkAndIncomeUseCase(
+    patientRepository: ref.watch(patientRepositoryProvider),
+  ),
+);
+final workAndIncomeViewModelOverride = workAndIncomeViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = WorkAndIncomeViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateWorkAndIncomeUseCase: ref.watch(
+          updateWorkAndIncomeUseCaseProvider,
+        ),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
-final reportViolationUseCaseProvider = Provider<ReportViolationUseCase>((ref) => ReportViolationUseCase(patientRepository: ref.watch(patientRepositoryProvider)));
-final violationReportViewModelOverride = violationReportViewModelProvider.overrideWith((ref, patientId) {
-  final vm = ViolationReportViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), reportViolationUseCase: ref.watch(reportViolationUseCaseProvider));
-  ref.onDispose(() => vm.dispose()); return vm;
-});
+final reportViolationUseCaseProvider = Provider<ReportViolationUseCase>(
+  (ref) => ReportViolationUseCase(
+    patientRepository: ref.watch(patientRepositoryProvider),
+  ),
+);
+final violationReportViewModelOverride = violationReportViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = ViolationReportViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        reportViolationUseCase: ref.watch(reportViolationUseCaseProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
-final socialIdentityViewModelOverride = socialIdentityViewModelProvider.overrideWith((ref, patientId) {
-  final vm = SocialIdentityViewModel(patientId: patientId, getPatientUseCase: ref.watch(getPatientUseCaseProvider), updateSocialIdentityUseCase: ref.watch(updateSocialIdentityUseCaseProvider), getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider));
-  ref.onDispose(() => vm.dispose()); return vm;
-});
+final socialIdentityViewModelOverride = socialIdentityViewModelProvider
+    .overrideWith((ref, patientId) {
+      final vm = SocialIdentityViewModel(
+        patientId: patientId,
+        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+        updateSocialIdentityUseCase: ref.watch(
+          updateSocialIdentityUseCaseProvider,
+        ),
+        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
+      );
+      ref.onDispose(() => vm.dispose());
+      return vm;
+    });
 
 final updateCommunitySupportUseCaseProvider =
     Provider<UpdateCommunitySupportUseCase>((ref) {
@@ -158,12 +217,13 @@ final communitySupportViewModelOverride = communitySupportViewModelProvider
       return vm;
     });
 
-final updateHealthStatusUseCaseProvider =
-    Provider<UpdateHealthStatusUseCase>((ref) {
-      return UpdateHealthStatusUseCase(
-        patientRepository: ref.watch(patientRepositoryProvider),
-      );
-    });
+final updateHealthStatusUseCaseProvider = Provider<UpdateHealthStatusUseCase>((
+  ref,
+) {
+  return UpdateHealthStatusUseCase(
+    patientRepository: ref.watch(patientRepositoryProvider),
+  );
+});
 
 /// Override for the [healthStatusViewModelProvider] stub in social_care.
 final healthStatusViewModelOverride = healthStatusViewModelProvider
@@ -210,17 +270,19 @@ final updateIntakeInfoUseCaseProvider = Provider<UpdateIntakeInfoUseCase>((
 
 /// Override for the [intakeInfoViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case providers.
-final intakeInfoViewModelOverride = intakeInfoViewModelProvider
-    .overrideWith((ref, patientId) {
-      final vm = IntakeInfoViewModel(
-        patientId: patientId,
-        getPatientUseCase: ref.watch(getPatientUseCaseProvider),
-        updateIntakeInfoUseCase: ref.watch(updateIntakeInfoUseCaseProvider),
-        getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
-      );
-      ref.onDispose(() => vm.dispose());
-      return vm;
-    });
+final intakeInfoViewModelOverride = intakeInfoViewModelProvider.overrideWith((
+  ref,
+  patientId,
+) {
+  final vm = IntakeInfoViewModel(
+    patientId: patientId,
+    getPatientUseCase: ref.watch(getPatientUseCaseProvider),
+    updateIntakeInfoUseCase: ref.watch(updateIntakeInfoUseCaseProvider),
+    getLookupTableUseCase: ref.watch(getLookupTableUseCaseProvider),
+  );
+  ref.onDispose(() => vm.dispose());
+  return vm;
+});
 
 /// Override for the [homeViewModelProvider] stub in social_care.
 /// Wires the ViewModel with the shell's use case providers.

@@ -9,6 +9,7 @@ import 'package:people_admin/src/ui/team/view_models/people_list_view_model.dart
 import 'package:people_admin/src/ui/team/view_models/person_detail_view_model.dart';
 
 class MockPeopleListViewModel extends Mock implements PeopleListViewModel {}
+
 class MockPersonDetailViewModel extends Mock implements PersonDetailViewModel {}
 
 void main() {
@@ -22,17 +23,13 @@ void main() {
     // Stub initial states for list
     when(() => mockListViewModel.people).thenReturn([]);
     when(() => mockListViewModel.hasMore).thenReturn(false);
-    
+
     // Stub commands
-    final searchCmd = Command1<void, String>(
-      (_) async => const Success(null),
-    );
-    final loadMoreCmd = Command0<void>(
-      () async => const Success(null),
-    );
+    final searchCmd = Command1<void, String>((_) async => const Success(null));
+    final loadMoreCmd = Command0<void>(() async => const Success(null));
     when(() => mockListViewModel.searchCommand).thenReturn(searchCmd);
     when(() => mockListViewModel.loadMoreCommand).thenReturn(loadMoreCmd);
-    
+
     // Listeners mock behavior (since they extend ChangeNotifier)
     when(() => mockListViewModel.addListener(any())).thenAnswer((_) {});
     when(() => mockListViewModel.removeListener(any())).thenAnswer((_) {});
@@ -52,9 +49,7 @@ void main() {
         peopleListViewModelProvider.overrideWithValue(mockListViewModel),
         personDetailViewModelProvider.overrideWithValue(mockDetailViewModel),
       ],
-      child: const MaterialApp(
-        home: PeopleAdminShell(),
-      ),
+      child: const MaterialApp(home: PeopleAdminShell()),
     );
   }
 

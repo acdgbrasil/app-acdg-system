@@ -86,7 +86,9 @@ class HttpSocialCareClient implements SocialCareContract {
       final members = payload['familyMembers'] as List?;
       print('📤 POST /patients — familyMembers count: ${members?.length ?? 0}');
       for (final m in members ?? []) {
-        print('📤   member: personId=${m['personId']}, rel=${m['relationship']}, name=${m['fullName']}');
+        print(
+          '📤   member: personId=${m['personId']}, rel=${m['relationship']}, name=${m['fullName']}',
+        );
       }
 
       final response = await _dio.post<Map<String, dynamic>>(

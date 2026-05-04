@@ -89,10 +89,8 @@ class _HealthGestatingCardState extends State<HealthGestatingCard> {
                   ),
                   items: widget.femaleFamilyMembers
                       .map(
-                        (m) => DropdownMenuItem(
-                          value: m.id,
-                          child: Text(m.label),
-                        ),
+                        (m) =>
+                            DropdownMenuItem(value: m.id, child: Text(m.label)),
                       )
                       .toList(),
                   onChanged: (v) {

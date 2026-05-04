@@ -4,7 +4,7 @@ import '../../data/repositories/people_repository.dart';
 
 class ResetPasswordUseCase extends BaseUseCase<String, void> {
   ResetPasswordUseCase({required PeopleRepository peopleRepository})
-      : _peopleRepository = peopleRepository;
+    : _peopleRepository = peopleRepository;
 
   final PeopleRepository _peopleRepository;
 
