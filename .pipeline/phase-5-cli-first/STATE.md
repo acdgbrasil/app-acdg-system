@@ -1,7 +1,7 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (C06 closed; **C07 next** — cli-protection)
+phase: in-progress (C07 closed; **C08 next** — cli-lookup, kicking now)
 agent: —
 status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushed em `6cf1b80` + smoke-tested contra Zitadel real. C03 closed via pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 com 1 MUST_FIX (`event_type`→`eventType` casing bug) + 4 SHOULD_FIX → fixes aplicados (M1+S1+S2) → W3 PASSED). 8 comandos `acdg patient ...` operacionais. **219 GREEN no apps/cli** (era 145, +74). dart analyze zero issues. AOT compila. `BffClient.post<T>` adicionado com retry-once invariant compartilhado com `get<T>`. Workspace reachable: **1891 GREEN** (cli + bff/web + bff/contracts; desktop env-blocked não-regressão). Próximo: **C04 — cli-family** (add, remove, assign-caregiver, update-identity).
 
@@ -70,7 +70,7 @@ status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushe
 
 ### Onda 4 — Write commands (4 tickets)
 - [x] **C06 — cli-care** — CLOSED 2026-05-04 via pipeline 4-wave (W0 31 RED → W1 405 GREEN → W2 APPROVED Round 1 com 0 MUST_FIX + 0 SHOULD_FIX → W3 PASSED). 2 commands operacionais: `appointment` (POST `/patients/<id>/appointments` + decode `StandardIdResponse` + print `Created appointment <id>`) e `intake` (PUT `/patients/<id>/intake`, void). 405 GREEN no apps/cli (era 378, +27); 2077 GREEN reachable workspace (Δ +27). **Novo pattern: StandardIdResponse decode + print** — primeiro endpoint write que retorna ID generated. CLI usa `bffClient.post<String?>(...)` com decode callback walking `data['data']['id']` 3-guard defensive null. Wire format DTO-as-canon (3ª aplicação consecutiva da lição C03 M1): ticket pedia `--reason --intake-at [--notes]` mas DTO é `{ingressTypeId, serviceReason, originName?, originContact?, linkedSocialPrograms?[]}`. CLI segue DTO. ZERO surpresas de casing.
-- [ ] **C07 — cli-protection** (violation, referral, placement-history)
+- [x] **C07 — cli-protection** — CLOSED 2026-05-04 via pipeline 4-wave (W0 49 RED → W1 450 GREEN → W2 APPROVED Round 1 com 0 MUST_FIX → W3 PASSED). 3 commands: `violation` (POST + StandardIdResponse), `referral` (POST + StandardIdResponse), `placement-history` (PUT void, **YAML-only** — nested DTOs explodem flag surface). 450 GREEN no apps/cli (era 405, +45); 2122 GREEN reachable workspace (Δ +45). **Wins arquiteturais:** `decodeStandardIdResponse` extraído pra `_command_helpers.dart` (3-guard defensive walk; 3 call-sites: care/appointment + protection/violation + protection/referral); `_yaml_helpers.readYamlBody` reusado em placement-history (mesmo padrão C03+C05). DTO-as-canon 6ª aplicação consecutiva: ticket pedia `--type --reported-at --description` (violation) e `--institution --reason --referred-at` (referral); DTOs requerem `victimId+violationType+descriptionOfFact` e `referredPersonId+destinationService+reason`. CLI segue DTO. ZERO surpresas de casing.
 - [ ] **C08 — cli-lookup** (8 endpoints + batch + requests)
 - [ ] **C09 — cli-team** (9 endpoints, sem `/people/by-cpf` etc)
 

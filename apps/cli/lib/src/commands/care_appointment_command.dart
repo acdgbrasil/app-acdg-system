@@ -115,7 +115,7 @@ final class CareAppointmentCommand extends Command<int> {
     final result = await bffClient.post<String?>(
       '/patients/$patientId/appointments',
       body: body,
-      decode: _decodeAppointmentId,
+      decode: decodeStandardIdResponse,
     );
     switch (result) {
       case Success(:final value):
@@ -131,17 +131,6 @@ final class CareAppointmentCommand extends Command<int> {
         _writeErr(stderrMessageFor(error));
         return exitCodeFor(error);
     }
-  }
-
-  /// Reads `data.id` from the `StandardResponse<IdData>` envelope. Returns
-  /// `null` when the envelope shape is unexpected (the success path then
-  /// degrades to a generic "Appointment created" line).
-  static String? _decodeAppointmentId(Object? data) {
-    if (data is! Map<String, Object?>) return null;
-    final inner = data['data'];
-    if (inner is! Map<String, Object?>) return null;
-    final id = inner['id'];
-    return id is String ? id : null;
   }
 
   void _writeOut(String line) {

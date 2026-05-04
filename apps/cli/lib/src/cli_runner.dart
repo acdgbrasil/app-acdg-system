@@ -54,6 +54,9 @@ import 'commands/patient_readmit_command.dart';
 import 'commands/patient_register_command.dart';
 import 'commands/patient_withdraw_command.dart';
 import 'commands/protection_command.dart';
+import 'commands/protection_placement_history_command.dart';
+import 'commands/protection_referral_command.dart';
+import 'commands/protection_violation_command.dart';
 import 'commands/team_command.dart';
 import 'config/oidc_config.dart';
 import 'errors/cli_error.dart';
@@ -147,7 +150,13 @@ final class CliRunner {
           stderr: _stderr,
         ),
       )
-      ..addCommand(ProtectionCommand(stdout: stdout))
+      ..addCommand(
+        _buildProtectionCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(LookupCommand(stdout: stdout))
       ..addCommand(TeamCommand(stdout: stdout))
       ..addCommand(HealthCommand(stdout: stdout));
@@ -446,6 +455,40 @@ CareCommand _buildCareCommand({
     intake: CareIntakeCommand(
       bffClient: bffClient,
       formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+  );
+}
+
+/// Builds the production [ProtectionCommand] with all three subcommands
+/// wired against the shared [bffClient]. The default formatter is JSON;
+/// per-invocation `--output` will be respected once the resolver lands in
+/// C10. The `placement-history` verb is YAML-only and shares the same
+/// `fileReader` closure used by C03 patient register + C05 assessments.
+ProtectionCommand _buildProtectionCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  return ProtectionCommand(
+    violation: ProtectionViolationCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    referral: ProtectionReferralCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    placementHistory: ProtectionPlacementHistoryCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      fileReader: (path) => File(path).readAsString(),
       stdout: stdout,
       stderr: stderr,
     ),
