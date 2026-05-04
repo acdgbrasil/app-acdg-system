@@ -33,10 +33,10 @@ final class TeamServerError extends TeamError {
   List<Object?> get props => [httpStatus, backendCode, backendMessage];
 
   @override
-  String toString() =>
-      backendMessage.isNotEmpty
-          ? backendMessage
-          : 'Erro no servidor (codigo $backendCode). Tente novamente.';
+  String toString() {
+    if (backendMessage.isNotEmpty) return backendMessage;
+    return 'Erro no servidor (codigo $backendCode). Tente novamente.';
+  }
 }
 
 final class TeamNotFoundError extends TeamError {
