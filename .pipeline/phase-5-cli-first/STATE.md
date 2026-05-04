@@ -1,7 +1,7 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (C10 closed; **C11 next** — last Phase 5 ticket, docs only)
+phase: **CLOSED** — Phase 5 fechada 2026-05-04. Todos os 12 tickets C-series + 3 D-series + spike OIDC fechados.
 agent: —
 status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushed em `6cf1b80` + smoke-tested contra Zitadel real. C03 closed via pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 com 1 MUST_FIX (`event_type`→`eventType` casing bug) + 4 SHOULD_FIX → fixes aplicados (M1+S1+S2) → W3 PASSED). 8 comandos `acdg patient ...` operacionais. **219 GREEN no apps/cli** (era 145, +74). dart analyze zero issues. AOT compila. `BffClient.post<T>` adicionado com retry-once invariant compartilhado com `get<T>`. Workspace reachable: **1891 GREEN** (cli + bff/web + bff/contracts; desktop env-blocked não-regressão). Próximo: **C04 — cli-family** (add, remove, assign-caregiver, update-identity).
 
@@ -76,7 +76,7 @@ status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushe
 
 ### Onda 5 — Polish (2 tickets)
 - [x] **C10 — cli-golden-tests** — CLOSED 2026-05-04 via pipeline 4-wave (W0 46 RED → W1 R1 686 GREEN/18 RED por contract drift → W1 R2 704 GREEN com 11 cluster fixes A-K → W2 APPROVED Round 1 com 0 MUST_FIX → W3 PASSED). 46 golden tests + MockBffServer + 17 fixtures + 44 .golden files (30 com text + 14 intentionally empty pra 204). 704 GREEN no apps/cli (era 658, +46); **2376 GREEN reachable workspace** (Δ +46). **3 Onda 4 debts resolvidos**: `--output` resolver runner-level (tabela/JSON/YAML/auto), `--bff` global flag wiring, `CliRunner` testing injection (adapter/credentialStore/clock additive named-optional params). W1 R2 alinhou 11 W0 contract drifts com C02-C09 impls (impls são source of truth — REGRA #2 honored, sem test cheating).
-- [ ] **C11 — cli-docs** — README + man pages + autocomplete bash/zsh
+- [x] **C11 — cli-docs** — CLOSED 2026-05-04 (sem TDD, docs only). `apps/cli/README.md` reescrito completo (instalação + quickstart + 35+ commands organizados em 9 namespaces + output formats + env vars + exit codes + auth flow + troubleshooting + architecture + dev). `apps/cli/man/acdg.1` (groff format, 196 linhas, instalável em `~/.local/share/man/man1/`). `apps/cli/tool/generate_man.dart` (helper Dart pra regenerar man do `--help` runtime — starting point pra futuro auto-gen). `apps/cli/completions/acdg.bash` (bash completion 9 namespaces + sub-parents `lookup request` e `team role` + global flags). `apps/cli/completions/_acdg` (zsh completion com descrições por verb). `pubspec.yaml` bump 0.1.0 → **1.0.0** (Phase 5 close release). 704 GREEN preservados; dart analyze zero issues. CI release pipeline (GitHub Actions matrix com 4 binários) deferido a follow-up post-Phase-5.
 
 ## Layout target
 
@@ -154,7 +154,34 @@ Débitos abertos pra C04+:
 - **`--output` global flag resolver (C10)**: hoje `JsonFormatter` é hardcoded; resolver lê flag.
 - **`formatter` field unused** nas 4 lifecycle commands (admit/discharge/readmit/withdraw retornam 204 No Content): drop quando C10 introduzir resolver runner-level.
 
-Next action: **Onda 5 começa.** Kickoff C10 — cli-golden-tests (snapshot tests dos ~35 comandos contra fixtures BFF). Depois C11 — cli-docs (README + man pages + autocomplete bash/zsh). Phase 5 fecha após C11. Pipeline 4-wave provavelmente diferente em Onda 5 (mais "polish" do que feature) — pode haver mais SHOULD_FIX e iterações.
+## Phase 5 — FINAL SUMMARY
+
+**Closed:** 2026-05-04. 12 C-series tickets + 3 D-series tickets + 1 spike (OICD_AUTH_SPIKE).
+
+**Métricas finais:**
+- `apps/cli/`: **704 tests GREEN** (era 0 → 77 C01 → 704 C11)
+- Workspace reachable: **2376 GREEN** (cli + bff/web + bff/contracts)
+- `dart analyze`: zero issues
+- AOT compile: ✅ produz binário `acdg` standalone
+- 35+ commands em 9 namespaces operacionais
+- 5 HTTP verbs cobertos (GET/POST/PUT/DELETE/PATCH)
+- OIDC PKCE Loopback authentication operacional contra Zitadel real (verificado em smoke test)
+
+**Wins arquiteturais consolidados:**
+- DTO-as-canon methodology — 8 aplicações consecutivas (C03 M1 catch valioso → C04-C09 zero surpresas)
+- `decodeStandardIdResponse` helper compartilhado: 7 call-sites
+- `_yaml_helpers.dart` (`yamlToJsonMap` + `readYamlBody`) extraído em C05, reusado em 8+ lugares
+- Sub-parent two-level nesting (lookup request, team role)
+- 6 aprovações Round 1 consecutivas (C04-C09)
+- Pipeline 4-wave (test-writer → flutter-bff-implementer → flutter-code-reviewer → flutter-quality-checker) sustentável e replicável
+
+**Open debts pra fora-da-Phase-5 (tracked):**
+- BffClient runner-level refresh-on-401 (cross-cutting; 23 commands afetados)
+- Bool/numeric helper duplication ~70 LOC across commands
+- formatter field unused em 14 lifecycle/204 commands
+- CI release pipeline (GitHub Actions matrix com 4 binários) — post-1.0 release artifact
+
+Next phase: TBD pelo usuário. Phase 5 entregue.
 
 Requirements não-negociáveis para o W0 (extraídos da spike §3-§5):
 - LoopbackListener defensivo: filtra `_rsc=`, valida `state==expected`, drena 204 silencioso, hard timeout 5min, bind em porta efêmera (`InternetAddress.loopbackIPv4, 0`), NUNCA loga query string completa.

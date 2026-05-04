@@ -1,6 +1,6 @@
 name: cli
 description: ACDG CLI — operate the social care system from the command line.
-version: 0.1.0
+version: 1.0.0
 publish_to: 'none'
 
 resolution: workspace

@@ -1,0 +1,125 @@
+#compdef acdg
+# zsh completion for acdg
+#
+# Install:
+#   - Copy to a directory in $fpath, e.g.:
+#     cp _acdg ~/.zsh/completions/_acdg
+#   - Ensure that directory is in your fpath (in .zshrc):
+#     fpath=(~/.zsh/completions $fpath)
+#     autoload -Uz compinit && compinit
+
+_acdg() {
+    local -a commands
+
+    _arguments -C \
+        '--bff[BFF base URL]:url:' \
+        '--output[Output format]:format:(table json yaml auto)' \
+        '--quiet[Suppress info logs]' \
+        '--help[Show help]' \
+        '1: :->command' \
+        '2: :->subcommand' \
+        '3: :->subsubcommand' \
+        '*::arg:->args'
+
+    case $state in
+        command)
+            commands=(
+                'auth:Manage authentication (login, status, logout, refresh)'
+                'patient:Patient registry operations'
+                'family:Family member operations'
+                'assessment:Update assessment forms (7 fichas)'
+                'care:Care appointments and intake'
+                'protection:Violations, referrals, placement history'
+                'lookup:Lookup tables and approval requests'
+                'team:Team management (workers + roles)'
+                'health:Service health probes'
+            )
+            _describe -t commands 'acdg command' commands
+            ;;
+        subcommand)
+            case $words[2] in
+                auth)
+                    _values 'auth subcommand' \
+                        'login[OIDC PKCE Loopback flow]' \
+                        'status[Show session info]' \
+                        'logout[Revoke + clear local credentials]' \
+                        'refresh[Force token refresh]'
+                    ;;
+                patient)
+                    _values 'patient subcommand' \
+                        'list[List patients (paginated)]' \
+                        'get[Patient detail by ID]' \
+                        'audit[Audit trail]' \
+                        'register[Register new patient]' \
+                        'admit[Admit patient]' \
+                        'discharge[Discharge patient]' \
+                        'readmit[Readmit patient]' \
+                        'withdraw[Withdraw patient]'
+                    ;;
+                family)
+                    _values 'family subcommand' \
+                        'add[Add family member]' \
+                        'remove[Remove family member]' \
+                        'assign-caregiver[Assign primary caregiver]' \
+                        'update-identity[Update social identity]'
+                    ;;
+                assessment)
+                    _values 'assessment subcommand' \
+                        'housing[Housing condition]' \
+                        'socioeconomic[Socioeconomic situation]' \
+                        'work-income[Work and income]' \
+                        'education[Educational status]' \
+                        'health[Health status]' \
+                        'community-support[Community support network]' \
+                        'social-health-summary[Social health summary]'
+                    ;;
+                care)
+                    _values 'care subcommand' \
+                        'appointment[Register appointment]' \
+                        'intake[Update intake info]'
+                    ;;
+                protection)
+                    _values 'protection subcommand' \
+                        'violation[Report rights violation]' \
+                        'referral[Create referral]' \
+                        'placement-history[Update placement history (YAML)]'
+                    ;;
+                lookup)
+                    _values 'lookup subcommand' \
+                        'get[Get one table]' \
+                        'batch[Batch fetch up to 20 tables]' \
+                        'create[Create lookup item (admin)]' \
+                        'update[Update lookup item (admin)]' \
+                        'toggle[Toggle active flag (admin, PATCH)]' \
+                        'request[Governance requests]'
+                    ;;
+                team)
+                    _values 'team subcommand' \
+                        'list[List team members]' \
+                        'register[Register worker]' \
+                        'get[Member detail]' \
+                        'deactivate[Deactivate worker]' \
+                        'reactivate[Reactivate worker]' \
+                        'reset-password[Trigger password reset]' \
+                        'role[Role lifecycle]'
+                    ;;
+            esac
+            ;;
+        subsubcommand)
+            if [[ $words[2] == "lookup" && $words[3] == "request" ]]; then
+                _values 'lookup request subcommand' \
+                    'list[List governance requests]' \
+                    'create[Submit governance proposal]' \
+                    'approve[Approve request (admin)]' \
+                    'reject[Reject request (admin)]'
+            elif [[ $words[2] == "team" && $words[3] == "role" ]]; then
+                _values 'team role subcommand' \
+                    'assign[Assign role to member]' \
+                    'deactivate[Deactivate role assignment]' \
+                    'reactivate[Reactivate role assignment]'
+            fi
+            ;;
+    esac
+}
+
+compdef _acdg acdg

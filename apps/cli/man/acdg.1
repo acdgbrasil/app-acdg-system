@@ -1,0 +1,196 @@
+Display help information for acdg.
+
+Usage: acdg help [command]
+-h, --help    Print this usage information.
+
+Run "acdg help" to see global options.
+Manage authentication (PKCE Loopback OIDC against Zitadel)
+
+Usage: acdg auth <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  login     Authenticate via OIDC (PKCE Loopback against Zitadel)
+  logout    Revoke refresh token and clear local session
+  refresh   Force a refresh of the access/refresh token pair
+  status    Show current login status, roles and expiration
+
+Run "acdg help" to see global options.
+Patient registry operations (list, get, audit, register, lifecycle).
+
+Usage: acdg patient <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  admit       Admit a patient from the waitlist.
+  audit       List the audit trail for a patient.
+  discharge   Discharge a currently-admitted patient.
+  get         Fetch a single patient by id (full detail).
+  list        List patients (paginated; supports search, status, cursor).
+  readmit     Readmit a previously-discharged patient.
+  register    Register a new patient (composite — flags or --from-yaml).
+  withdraw    Withdraw a patient from the waitlist.
+
+Run "acdg help" to see global options.
+Family member operations (add, remove, assign caregiver, update identity).
+
+Usage: acdg family <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  add                Add a family member to a patient (saga: registers in People Context + Registry).
+  assign-caregiver   Mark an existing family member as the primary caregiver for a patient.
+  remove             Remove a family member from a patient roster.
+  update-identity    Update a patient's social identity (type id + optional description).
+
+Run "acdg help" to see global options.
+Update assessment forms (housing, socioeconomic, work-income, education, health, community-support, social-health-summary).
+
+Usage: acdg assessment <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  community-support       Update the community-support-network ficha (7 required scalars: 6 bools + familyConflicts as String).
+  education               Update the educational-status ficha (single-profile shortcut via flags; multiple profiles or programOccurrences[] only via --from-yaml).
+  health                  Update the health-status ficha (--food-insecurity required; deficiencies[]/gestatingMembers[] only via --from-yaml).
+  housing                 Update the housing-condition ficha (15 required fields).
+  social-health-summary   Update the social-health summary ficha (3 required bools + optional functional-dependency multi-option).
+  socioeconomic           Update the socio-economic situation ficha (5 required scalars + optional socialBenefits[] via --from-yaml).
+  work-income             Update the work-and-income ficha (--has-retired-members required; individualIncomes[]/socialBenefits[] only via --from-yaml).
+
+Run "acdg help" to see global options.
+Care operations (register appointment, update intake info).
+
+Usage: acdg care <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  appointment   Register a care appointment for a patient.
+  intake        Update the intake info (ingress type + service reason) for a patient.
+
+Run "acdg help" to see global options.
+Protection operations (report violation, register referral, replace placement history).
+
+Usage: acdg protection <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  placement-history   Replace the patient placement-history aggregate (YAML-only).
+  referral            Register a referral to another service or institution.
+  violation           Report a rights-violation occurrence for a patient.
+
+Run "acdg help" to see global options.
+Lookup tables and approval requests (get, batch, create, update, toggle, request).
+
+Usage: acdg lookup <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  batch     Fetch up to 20 lookup tables in a single round trip.
+  create    Create a new lookup item in <table-name> (admin only).
+  get       Fetch a lookup table by name (full item list).
+  request   Lookup governance requests (list, create, approve, reject).
+  toggle    Toggle the active flag of a lookup item (PATCH; admin only).
+  update    Partially update a lookup item (code and/or label).
+
+Run "acdg help" to see global options.
+Team management (list, register, get, deactivate, reactivate, reset-password, role).
+
+Usage: acdg team <subcommand> [arguments]
+-h, --help    Print this usage information.
+
+Available subcommands:
+  deactivate       Deactivate a team member.
+  get              Fetch a team member by id (full detail).
+  list             List team members (filters: --role, --active, --search; all optional).
+  reactivate       Reactivate a previously deactivated team member.
+  register         Register a new worker (composite saga: people + team + initial role).
+  reset-password   Kick off a password reset for a team member (Zitadel side effect).
+  role             Role assignments for a team member (assign, deactivate, reactivate).
+
+Run "acdg help" to see global options.
+Service health probes
+
+Usage: acdg health [arguments]
+-h, --help    Print this usage information.
+
+Run "acdg help" to see global options.
+.TH ACDG 1 "2026-05-04" "ACDG CLI" "User Commands"
+.SH NAME
+acdg \- Operate the ACDG social care system from the command line.
+.SH SYNOPSIS
+.B acdg
+[\fIglobal options\fR] \fIcommand\fR [\fIargs\fR...]
+.SH DESCRIPTION
+ACDG CLI — Operate the social care system from the command line.
+
+Usage: acdg <command> [arguments]
+
+Global options:
+-h, --help      Print this usage information.
+    --bff       BFF base URL
+                (defaults to "http://localhost:3000")
+    --output    json | table | yaml (default: auto — tty=table, pipe=json)
+                [json, table, yaml, auto (default)]
+    --quiet     suppress info logs
+
+Available commands:
+  assessment   Update assessment forms (housing, socioeconomic, work-income, education, health, community-support, social-health-summary).
+  auth         Manage authentication (PKCE Loopback OIDC against Zitadel)
+  care         Care operations (register appointment, update intake info).
+  family       Family member operations (add, remove, assign caregiver, update identity).
+  health       Service health probes
+  lookup       Lookup tables and approval requests (get, batch, create, update, toggle, request).
+  patient      Patient registry operations (list, get, audit, register, lifecycle).
+  protection   Protection operations (report violation, register referral, replace placement history).
+  team         Team management (list, register, get, deactivate, reactivate, reset-password, role).
+
+Run "acdg help <command>" for more information about a command.
+
+.SH COMMANDS
+.SS help
+
+.SS auth
+
+.SS patient
+
+.SS family
+
+.SS assessment
+
+.SS care
+
+.SS protection
+
+.SS lookup
+
+.SS team
+
+.SS health
+
+.SH ENVIRONMENT
+.TP
+.B ACDG_BFF_URL
+BFF Web base URL (compile-time \fB--dart-define\fR). Default: \fIhttp://localhost:8081\fR.
+.SH FILES
+.TP
+.B ~/.config/acdg/credentials
+OIDC session (chmod 600). Created by \fBacdg auth login\fR.
+.SH EXIT STATUS
+.TP
+0   Success
+.TP
+1   Server error (4xx/5xx other than 401)
+.TP
+2   Authentication required
+.TP
+3   Network failure
+.TP
+7   Refresh token invalidated (run \fBacdg auth login\fR)
+.TP
+64  Usage error (EX_USAGE)
+.SH SEE ALSO
+\fBgh\fR(1), \fBgcloud\fR(1) — sibling CLIs with the same PKCE Loopback authentication pattern.
+.SH AUTHORS
+ACDG Technology — https://acdgbrasil.com.br
+
