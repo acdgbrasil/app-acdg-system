@@ -5,26 +5,19 @@ import 'package:shared/src/utils/app_error.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('RGDocument - Validações', () {
+  group('RGDocument - Validações (alinhadas ao contrato OpenAPI)', () {
     late TimeStamp validDate;
-    late TimeStamp now;
 
     setUp(() {
       validDate = TimeStamp.fromIso('2020-01-01T00:00:00.000Z').valueOrNull!;
-      now = TimeStamp.fromIso('2026-03-12T00:00:00.000Z').valueOrNull!;
     });
 
-    test('Deve criar RG válido (check digit numérico)', () {
-      // 1*2 + 2*3 + 3*4 + 4*5 + 5*6 + 6*7 + 7*8 + 8*9
-      // 2 + 6 + 12 + 20 + 30 + 42 + 56 + 72 = 240
-      // 240 % 11 = 9
-      // 11 - 9 = 2. Logo o check digit esperado é 2.
+    test('Aceita RG livre — sem regex/check digit', () {
       final result = RgDocument.create(
         number: '12345678-2',
         issuingState: 'sp',
         issuingAgency: '  ssp   sp  ',
         issueDate: validDate,
-        now: now,
       );
 
       expect(result.isSuccess, isTrue);
@@ -32,67 +25,96 @@ void main() {
       expect(rg.number, '123456782');
       expect(rg.issuingState, 'SP');
       expect(rg.issuingAgency, 'SSP SP');
-      expect(rg.formattedNumber, '12345678-2');
     });
 
-    test('Deve rejeitar número vazio', () {
-      final result = RgDocument.create(
-        number: ' ',
-        issuingState: 'SP',
-        issuingAgency: 'SSP',
-        issueDate: validDate,
-        now: now,
-      );
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-001');
-    });
-
-    test('Deve rejeitar formato inválido', () {
+    test('Aceita formato curto (3 chars) — número é livre', () {
       final result = RgDocument.create(
         number: '123',
         issuingState: 'SP',
         issuingAgency: 'SSP',
         issueDate: validDate,
-        now: now,
       );
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-005');
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull!.number, '123');
     });
 
-    test('Deve rejeitar check digit inválido', () {
+    test('Aceita check digit "errado" — sem cálculo', () {
       final result = RgDocument.create(
         number: '12345678-3',
         issuingState: 'SP',
         issuingAgency: 'SSP',
         issueDate: validDate,
-        now: now,
       );
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-006');
+      expect(result.isSuccess, isTrue);
     });
 
-    test('Deve rejeitar estado inválido', () {
+    test('Aceita UF fora da whitelist — sem enum', () {
       final result = RgDocument.create(
         number: '12345678-2',
         issuingState: 'XX',
         issuingAgency: 'SSP',
         issueDate: validDate,
-        now: now,
       );
-      expect(result.isFailure, isTrue);
-      expect(((result as Failure).error as AppError).code, 'RGD-002');
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull!.issuingState, 'XX');
     });
 
-    test('Deve rejeitar data no futuro', () {
+    test('Aceita data no futuro — sem regra not_future', () {
       final futureDate = TimeStamp.fromIso(
-        '2030-01-01T00:00:00.000Z',
+        '2099-01-01T00:00:00.000Z',
       ).valueOrNull!;
       final result = RgDocument.create(
         number: '12345678-2',
         issuingState: 'SP',
         issuingAgency: 'SSP',
         issueDate: futureDate,
-        now: now,
+      );
+      expect(result.isSuccess, isTrue);
+    });
+
+    // Os 4 campos seguem obrigatórios pelo contrato OpenAPI
+    // (RegisterPatientRequest.rgDocument.required = [number, issuingState,
+    // issuingAgency, issueDate]).
+
+    test('Rejeita número vazio', () {
+      final result = RgDocument.create(
+        number: ' ',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+      );
+      expect(result.isFailure, isTrue);
+      expect(((result as Failure).error as AppError).code, 'RGD-001');
+    });
+
+    test('Rejeita UF vazia', () {
+      final result = RgDocument.create(
+        number: '12345678-2',
+        issuingState: '   ',
+        issuingAgency: 'SSP',
+        issueDate: validDate,
+      );
+      expect(result.isFailure, isTrue);
+      expect(((result as Failure).error as AppError).code, 'RGD-002');
+    });
+
+    test('Rejeita órgão emissor vazio', () {
+      final result = RgDocument.create(
+        number: '12345678-2',
+        issuingState: 'SP',
+        issuingAgency: '   ',
+        issueDate: validDate,
+      );
+      expect(result.isFailure, isTrue);
+      expect(((result as Failure).error as AppError).code, 'RGD-003');
+    });
+
+    test('Rejeita data nula', () {
+      final result = RgDocument.create(
+        number: '12345678-2',
+        issuingState: 'SP',
+        issuingAgency: 'SSP',
+        issueDate: null,
       );
       expect(result.isFailure, isTrue);
       expect(((result as Failure).error as AppError).code, 'RGD-004');

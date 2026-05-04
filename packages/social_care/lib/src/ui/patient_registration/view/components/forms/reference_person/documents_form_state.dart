@@ -12,18 +12,7 @@ class DocumentsFormState {
   final birthDate = TextEditingController();
   final rgUf = ValueNotifier<String?>(null);
 
-  // 2. Helpers — grupo RG condicional
-  bool get _hasAnyRgField =>
-      rgNumber.text.trim().isNotEmpty ||
-      rgUf.value != null ||
-      rgAgency.text.trim().isNotEmpty ||
-      rgDate.text.replaceAll(RegExp(r'\D'), '').isNotEmpty;
-
-  bool get _allRgFieldsFilled =>
-      rgNumber.text.trim().isNotEmpty &&
-      rgUf.value != null &&
-      rgAgency.text.trim().isNotEmpty &&
-      rgDate.text.replaceAll(RegExp(r'\D'), '').length == 8;
+  // 2. Helpers — RG é totalmente opcional/livre (sem validação grupal).
 
   // 3. Helpers — parse de data BR (DDMMAAAA ou DD / MM / AAAA)
   DateTime? _parseDateBr(String text) {
@@ -63,34 +52,11 @@ class DocumentsFormState {
     return null;
   }
 
-  String? get rgNumberError {
-    if (!_hasAnyRgField) return null;
-    if (rgNumber.text.trim().isEmpty) return ReferencePersonLn10.rgGroupError;
-    return null;
-  }
-
-  String? get rgUfError {
-    if (!_hasAnyRgField) return null;
-    if (rgUf.value == null) return ReferencePersonLn10.rgGroupError;
-    return null;
-  }
-
-  String? get rgAgencyError {
-    if (!_hasAnyRgField) return null;
-    if (rgAgency.text.trim().isEmpty) return ReferencePersonLn10.rgGroupError;
-    return null;
-  }
-
-  String? get rgDateError {
-    if (!_hasAnyRgField) return null;
-    final digits = rgDate.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return ReferencePersonLn10.rgGroupError;
-    if (digits.length != 8) return ReferencePersonLn10.errorDateIncomplete;
-    if (_parseDateBr(digits) == null) {
-      return ReferencePersonLn10.errorDateInvalid;
-    }
-    return null;
-  }
+  // RG totalmente livre: sem validação em nenhum dos 4 campos.
+  String? get rgNumberError => null;
+  String? get rgUfError => null;
+  String? get rgAgencyError => null;
+  String? get rgDateError => null;
 
   String? get birthDateError {
     final digits = birthDate.text.replaceAll(RegExp(r'\D'), '');
@@ -104,14 +70,12 @@ class DocumentsFormState {
     return null;
   }
 
-  // 5. Validação do Step
+  // 5. Validação do Step (RG fora — campos livres)
   bool get isValidForNextStep {
     if (birthDateError != null) return false;
     if (cpfError != null) return false;
     if (nisError != null) return false;
     if (cnsError != null) return false;
-    if (_hasAnyRgField && !_allRgFieldsFilled) return false;
-    if (rgDateError != null) return false;
     return true;
   }
 
@@ -119,10 +83,6 @@ class DocumentsFormState {
     ?cpfError,
     ?nisError,
     ?cnsError,
-    ?rgNumberError,
-    ?rgUfError,
-    ?rgAgencyError,
-    ?rgDateError,
     ?birthDateError,
   ];
 

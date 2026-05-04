@@ -1,4 +1,3 @@
-import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:social_care/src/constants/reference_person_ln10.dart';
 
@@ -23,7 +22,6 @@ final class RgNumberInput extends StatelessWidget {
           controller: rgNumberController,
           validator: validator,
           keyboardType: TextInputType.text,
-          inputFormatters: AppMasks.rg,
           decoration: InputDecoration(
             label: const Text(
               ReferencePersonLn10.rgNumberLabel,
