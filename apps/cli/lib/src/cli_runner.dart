@@ -34,7 +34,9 @@ import 'commands/auth_login_command.dart';
 import 'commands/auth_logout_command.dart';
 import 'commands/auth_refresh_command.dart';
 import 'commands/auth_status_command.dart';
+import 'commands/care_appointment_command.dart';
 import 'commands/care_command.dart';
+import 'commands/care_intake_command.dart';
 import 'commands/family_add_command.dart';
 import 'commands/family_assign_caregiver_command.dart';
 import 'commands/family_command.dart';
@@ -138,7 +140,13 @@ final class CliRunner {
           stderr: _stderr,
         ),
       )
-      ..addCommand(CareCommand(stdout: stdout))
+      ..addCommand(
+        _buildCareCommand(
+          bffClient: bffClient,
+          stdout: stdout,
+          stderr: _stderr,
+        ),
+      )
       ..addCommand(ProtectionCommand(stdout: stdout))
       ..addCommand(LookupCommand(stdout: stdout))
       ..addCommand(TeamCommand(stdout: stdout))
@@ -413,6 +421,31 @@ AssessmentCommand _buildAssessmentCommand({
       bffClient: bffClient,
       formatter: formatter,
       fileReader: readFile,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+  );
+}
+
+/// Builds the production [CareCommand] with both subcommands wired against
+/// the shared [bffClient]. The default formatter is JSON; per-invocation
+/// `--output` will be respected once the resolver lands in C10.
+CareCommand _buildCareCommand({
+  required BffClient bffClient,
+  required StringSink stdout,
+  required StringSink stderr,
+}) {
+  const OutputFormatter formatter = JsonFormatter();
+  return CareCommand(
+    appointment: CareAppointmentCommand(
+      bffClient: bffClient,
+      formatter: formatter,
+      stdout: stdout,
+      stderr: stderr,
+    ),
+    intake: CareIntakeCommand(
+      bffClient: bffClient,
+      formatter: formatter,
       stdout: stdout,
       stderr: stderr,
     ),

@@ -1,7 +1,7 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (C05 closed; **C06 next** — Onda 4 começa)
+phase: in-progress (C06 closed; **C07 next** — cli-protection)
 agent: —
 status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushed em `6cf1b80` + smoke-tested contra Zitadel real. C03 closed via pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 com 1 MUST_FIX (`event_type`→`eventType` casing bug) + 4 SHOULD_FIX → fixes aplicados (M1+S1+S2) → W3 PASSED). 8 comandos `acdg patient ...` operacionais. **219 GREEN no apps/cli** (era 145, +74). dart analyze zero issues. AOT compila. `BffClient.post<T>` adicionado com retry-once invariant compartilhado com `get<T>`. Workspace reachable: **1891 GREEN** (cli + bff/web + bff/contracts; desktop env-blocked não-regressão). Próximo: **C04 — cli-family** (add, remove, assign-caregiver, update-identity).
 
@@ -69,7 +69,7 @@ status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushe
 - [x] **C05 — cli-assessment** — CLOSED 2026-05-04 via pipeline 4-wave (W0 91 RED → W1 378 GREEN → W2 APPROVED Round 1 com 0 MUST_FIX → W3 PASSED). 7 fichas operacionais (todas PUT idempotentes): `housing` (15 fields), `socioeconomic` (5 + nested `socialBenefits[]`), `work-income` (1 + nested via yaml), `education` (4-flag all-or-nothing OR yaml), `health` (1 + multi `--constant-care-need`), `community-support` (7 fields incluindo `familyConflicts` String), `social-health-summary` (3 + multi `--functional-dependency`). 378 GREEN no apps/cli (era 277, +101); 2050 GREEN reachable workspace (Δ +101 vs C04 baseline 1949). Test factory `_assessment_test_helpers.dart::runAssessmentCommandContract` extraído pra reduzir 11 cross-cutting tests × 7 fichas = 77 boilerplate. **`_yaml_helpers.dart` extraído** (`yamlToJsonNode`/`yamlToJsonMap`/`readYamlBody`) com migração de `patient_register_command.dart` inclusa — byte-equivalent. Wire format DTO-as-canon: ZERO surpresas de casing (lição C03 M1 + C04 aplicada com sucesso). `BffClient` reuse: `put<T>` C04 cobre 7 fichas sem mudança HTTP infra.
 
 ### Onda 4 — Write commands (4 tickets)
-- [ ] **C06 — cli-care** (appointment, intake)
+- [x] **C06 — cli-care** — CLOSED 2026-05-04 via pipeline 4-wave (W0 31 RED → W1 405 GREEN → W2 APPROVED Round 1 com 0 MUST_FIX + 0 SHOULD_FIX → W3 PASSED). 2 commands operacionais: `appointment` (POST `/patients/<id>/appointments` + decode `StandardIdResponse` + print `Created appointment <id>`) e `intake` (PUT `/patients/<id>/intake`, void). 405 GREEN no apps/cli (era 378, +27); 2077 GREEN reachable workspace (Δ +27). **Novo pattern: StandardIdResponse decode + print** — primeiro endpoint write que retorna ID generated. CLI usa `bffClient.post<String?>(...)` com decode callback walking `data['data']['id']` 3-guard defensive null. Wire format DTO-as-canon (3ª aplicação consecutiva da lição C03 M1): ticket pedia `--reason --intake-at [--notes]` mas DTO é `{ingressTypeId, serviceReason, originName?, originContact?, linkedSocialPrograms?[]}`. CLI segue DTO. ZERO surpresas de casing.
 - [ ] **C07 — cli-protection** (violation, referral, placement-history)
 - [ ] **C08 — cli-lookup** (8 endpoints + batch + requests)
 - [ ] **C09 — cli-team** (9 endpoints, sem `/people/by-cpf` etc)
@@ -154,7 +154,7 @@ Débitos abertos pra C04+:
 - **`--output` global flag resolver (C10)**: hoje `JsonFormatter` é hardcoded; resolver lê flag.
 - **`formatter` field unused** nas 4 lifecycle commands (admit/discharge/readmit/withdraw retornam 204 No Content): drop quando C10 introduzir resolver runner-level.
 
-Next action: kickoff **C06 — cli-care** (appointment, intake). Pré-req: `BffClient` cobre todos os 4 verbs; `_yaml_helpers.dart` disponível pra payloads complexos. Care sub-contract em `apps/social_care_bff/contracts/lib/src/contract/sub_contracts/care_contract.dart`. Pipeline 4-wave igual. **Onda 4 (write commands) começa em C06.**
+Next action: kickoff **C07 — cli-protection** (violation, referral, placement-history). Pré-req: `BffClient` cobre todos os 4 verbs; `_command_helpers.dart` + `_yaml_helpers.dart` disponíveis. `StandardIdResponse` decode pattern estabelecido no C06 (eventualmente extrair pra helper se C07/C08 tiverem outros endpoints com generated ID). Protection sub-contract em `apps/social_care_bff/contracts/lib/src/contract/sub_contracts/protection_contract.dart`. Pipeline 4-wave igual.
 
 Requirements não-negociáveis para o W0 (extraídos da spike §3-§5):
 - LoopbackListener defensivo: filtra `_rsc=`, valida `state==expected`, drena 204 silencioso, hard timeout 5min, bind em porta efêmera (`InternetAddress.loopbackIPv4, 0`), NUNCA loga query string completa.
