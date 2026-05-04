@@ -1,0 +1,5 @@
+eventId                               eventType          occurredAt            actorId                               summary                    
+------------------------------------  -----------------  --------------------  ------------------------------------  ---------------------------
+aaaaaaaa-1111-4111-8111-111111111111  PatientRegistered  2026-04-01T10:00:00Z  bbbbbbbb-1111-4111-8111-111111111111  Patient created            
+aaaaaaaa-2222-4222-8222-222222222222  PatientAdmitted    2026-04-02T14:30:00Z  bbbbbbbb-1111-4111-8111-111111111111  Patient admitted to program
+aaaaaaaa-3333-4333-8333-333333333333  FamilyMemberAdded  2026-04-03T09:15:00Z  bbbbbbbb-2222-4222-8222-222222222222  Family member added        

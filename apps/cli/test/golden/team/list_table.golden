@@ -1,0 +1,5 @@
+personId                              fullName      email                      role           active
+------------------------------------  ------------  -------------------------  -------------  ------
+88888888-1111-4111-8111-111111111111  Ana Pereira   ana@acdgbrasil.com.br      social_worker  true  
+88888888-2222-4222-8222-222222222222  Carlos Souza  carlos@acdgbrasil.com.br   admin          true  
+88888888-3333-4333-8333-333333333333  Beatriz Lima  beatriz@acdgbrasil.com.br  owner          false 

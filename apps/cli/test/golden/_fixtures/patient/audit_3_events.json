@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "eventId": "aaaaaaaa-1111-4111-8111-111111111111",
+      "eventType": "PatientRegistered",
+      "occurredAt": "2026-04-01T10:00:00Z",
+      "actorId": "bbbbbbbb-1111-4111-8111-111111111111",
+      "summary": "Patient created"
+    },
+    {
+      "eventId": "aaaaaaaa-2222-4222-8222-222222222222",
+      "eventType": "PatientAdmitted",
+      "occurredAt": "2026-04-02T14:30:00Z",
+      "actorId": "bbbbbbbb-1111-4111-8111-111111111111",
+      "summary": "Patient admitted to program"
+    },
+    {
+      "eventId": "aaaaaaaa-3333-4333-8333-333333333333",
+      "eventType": "FamilyMemberAdded",
+      "occurredAt": "2026-04-03T09:15:00Z",
+      "actorId": "bbbbbbbb-2222-4222-8222-222222222222",
+      "summary": "Family member added"
+    }
+  ],
+  "meta": {
+    "totalCount": 3,
+    "hasMore": false,
+    "timestamp": "2026-05-04T12:00:00Z"
+  }
+}

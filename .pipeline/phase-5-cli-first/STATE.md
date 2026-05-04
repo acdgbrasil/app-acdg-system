@@ -1,7 +1,7 @@
 # Pipeline State: phase-5-cli-first
 
 ## Current Phase
-phase: in-progress (**Onda 4 closed**; C09 + 8 commits pushed; **Onda 5 next** — C10 golden tests + C11 docs)
+phase: in-progress (C10 closed; **C11 next** — last Phase 5 ticket, docs only)
 agent: —
 status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushed em `6cf1b80` + smoke-tested contra Zitadel real. C03 closed via pipeline 4-wave (W0 78 RED → W1 219 GREEN → W2 REJECTED Round 1 com 1 MUST_FIX (`event_type`→`eventType` casing bug) + 4 SHOULD_FIX → fixes aplicados (M1+S1+S2) → W3 PASSED). 8 comandos `acdg patient ...` operacionais. **219 GREEN no apps/cli** (era 145, +74). dart analyze zero issues. AOT compila. `BffClient.post<T>` adicionado com retry-once invariant compartilhado com `get<T>`. Workspace reachable: **1891 GREEN** (cli + bff/web + bff/contracts; desktop env-blocked não-regressão). Próximo: **C04 — cli-family** (add, remove, assign-caregiver, update-identity).
 
@@ -75,7 +75,7 @@ status: **C00 + D01 + D02 + D03 + C01 + C02 + C03 closed 2026-05-04**. C02 pushe
 - [x] **C09 — cli-team** — CLOSED 2026-05-04 via pipeline 4-wave (W0 97 RED → W1 658 GREEN → W2 APPROVED Round 1 com 0 MUST_FIX → W3 PASSED). **Último ticket da Onda 4 — fecha Onda 4.** 9 endpoints organizados como sub-parent: `team list|register|get|deactivate|reactivate|reset-password` + `team role assign|deactivate|reactivate`. **Zero infra HTTP nova** — todos os 5 verbs (GET/POST/PUT/DELETE/PATCH) cobertos desde C08. 658 GREEN no apps/cli (era 565, +93); 2330 GREEN reachable workspace (Δ +93). DTO-as-canon 8ª aplicação consecutiva: `--full-name → fullName`, `--birth-date → birthDate`, `--role-id → role` (NOT `roleId`!), `--initial-password → initialPassword`. ISO8601 client-side validation no `--birth-date`. **`team reset-password` é POST (não PUT)** — Zitadel side effect semantics. Saga 5xx UX hint no `team register` (mirror C04 family-add). `decodeStandardIdResponse` agora com **7 call-sites** (extraído C07; reusado em care/appointment + protection/violation+referral + lookup/create+request-create + team/register+role-assign).
 
 ### Onda 5 — Polish (2 tickets)
-- [ ] **C10 — cli-golden-tests** — snapshot tests dos ~35 comandos contra fixtures BFF
+- [x] **C10 — cli-golden-tests** — CLOSED 2026-05-04 via pipeline 4-wave (W0 46 RED → W1 R1 686 GREEN/18 RED por contract drift → W1 R2 704 GREEN com 11 cluster fixes A-K → W2 APPROVED Round 1 com 0 MUST_FIX → W3 PASSED). 46 golden tests + MockBffServer + 17 fixtures + 44 .golden files (30 com text + 14 intentionally empty pra 204). 704 GREEN no apps/cli (era 658, +46); **2376 GREEN reachable workspace** (Δ +46). **3 Onda 4 debts resolvidos**: `--output` resolver runner-level (tabela/JSON/YAML/auto), `--bff` global flag wiring, `CliRunner` testing injection (adapter/credentialStore/clock additive named-optional params). W1 R2 alinhou 11 W0 contract drifts com C02-C09 impls (impls são source of truth — REGRA #2 honored, sem test cheating).
 - [ ] **C11 — cli-docs** — README + man pages + autocomplete bash/zsh
 
 ## Layout target

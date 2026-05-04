@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Required field 'cpf' is missing",
+    "details": {
+      "field": "cpf",
+      "rule": "required"
+    }
+  },
+  "meta": {
+    "timestamp": "2026-05-04T12:00:00Z"
+  }
+}

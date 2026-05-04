@@ -12,13 +12,31 @@
 /// the injected sinks instead of the host process's `Stdout`. Foreign
 /// callers see only the public [runner] getter typed as `CommandRunner<int>`
 /// — the subclass hop is an implementation detail.
+///
+/// C10 additions:
+///   * Optional `adapter` (`HttpClientAdapter`) — when supplied, every BFF
+///     call goes through this adapter instead of the production Dio
+///     transport. Lets golden tests replay canned responses without spinning
+///     up a real HTTP server.
+///   * Optional `credentialStore` (`CredentialStore`) — when supplied,
+///     replaces the default `FileCredentialStore` (XDG path), so golden
+///     tests can inject a synthetic "signed-in"/"signed-out" session
+///     without touching disk.
+///   * `--output` is finally honored at the runner level: each `run()`
+///     parses the global flag, calls `resolveFormatter`, and rebuilds the
+///     leaf commands with the chosen formatter.
+///   * `--bff` is wired into the [BffClient] base URL on a per-`run()`
+///     basis so callers can target staging/production without restarting
+///     the CLI.
 library;
 
 import 'dart:io';
 import 'dart:math';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:core_contracts/core_contracts.dart';
+import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
 import 'commands/assessment_command.dart';
@@ -80,7 +98,7 @@ import 'commands/team_role_deactivate_command.dart';
 import 'commands/team_role_reactivate_command.dart';
 import 'config/oidc_config.dart';
 import 'errors/cli_error.dart';
-import 'formatters/json_formatter.dart';
+import 'formatters/auto_formatter.dart';
 import 'formatters/output_formatter.dart';
 import 'oidc/loopback_listener.dart';
 import 'oidc/oidc_discovery.dart';
@@ -100,15 +118,115 @@ const List<String> _outputFormats = ['json', 'table', 'yaml', 'auto'];
 ///
 /// Composition over inheritance: callers receive `cli.runner` typed as
 /// `CommandRunner<int>` and never need to know the concrete subclass.
+///
+/// **Per-run rebuild policy.** Leaf commands (`PatientListCommand`, …) take
+/// `OutputFormatter` and `BffClient` as constructor params, so resolving
+/// `--output` (and `--bff`) at the runner level requires re-instantiating
+/// them. Each [run] call therefore:
+///   1. Parses `--output` and `--bff` from [args] using a side `ArgParser`
+///      that mirrors the global flag set.
+///   2. Picks an [OutputFormatter] via [resolveFormatter] (auto detection
+///      uses the actual stdout sink — `StringBuffer` ⇒ pipe ⇒ JSON).
+///   3. Builds a fresh [_CapturingCommandRunner] with all 9 sub-commands
+///      wired against the chosen formatter and BFF base URL.
+///   4. Dispatches to that fresh runner.
+///
+/// The eager `_runner` built in the constructor stays around so [runner]
+/// (used by `--help` test discovery and `cli_runner_test.dart`) remains
+/// non-null with the auto-defaulted formatter and the default BFF base URL.
+/// Production callers go through [run] directly, so the eager build is
+/// effectively only paid once and only matters for test surfaces.
 final class CliRunner {
-  CliRunner({required StringSink stdout, required StringSink stderr})
-    : _stderr = stderr {
-    _runner = _CapturingCommandRunner(
+  CliRunner({
+    required StringSink stdout,
+    required StringSink stderr,
+    HttpClientAdapter? adapter,
+    CredentialStore? credentialStore,
+    DateTime Function()? clock,
+  }) : _stdout = stdout,
+       _stderr = stderr,
+       _adapter = adapter,
+       _clock = clock,
+       _httpClient = http.Client() {
+    _credentialStore =
+        credentialStore ??
+        FileCredentialStore(
+          path: FileCredentialStore.defaultPath(env: Platform.environment),
+        );
+    _runner = _assemble(
+      formatter: resolveFormatter(
+        explicitFormat: null,
+        isTerminal: _stdoutHasTerminal(stdout),
+      ),
+      baseUrl: _defaultBffUrl,
+    );
+  }
+
+  final StringSink _stdout;
+  final StringSink _stderr;
+  final HttpClientAdapter? _adapter;
+  final DateTime Function()? _clock;
+  final http.Client _httpClient;
+  late final CredentialStore _credentialStore;
+  late _CapturingCommandRunner _runner;
+
+  /// The `args` runner — exposed typed as the parent class so foreign code
+  /// cannot see the capture subclass.
+  ///
+  /// Reflects the constructor-time wiring (auto-resolved formatter, default
+  /// BFF URL). Foreign callers (the binary entrypoint, golden tests) drive
+  /// the CLI through [run], which always rebuilds with the per-invocation
+  /// `--output` / `--bff` values.
+  CommandRunner<int> get runner => _runner;
+
+  /// Runs the CLI with [args], converting [UsageException] (unknown
+  /// command, missing argument) into a non-zero exit code + stderr message.
+  ///
+  /// Other [Object]s thrown by command [Command.run] propagate unchanged
+  /// (programmer faults should crash with a stack trace, per ADR-019).
+  ///
+  /// Re-instantiates the assembled runner per invocation so `--output` and
+  /// `--bff` propagate to every leaf command.
+  Future<int> run(List<String> args) async {
+    final globals = _parseGlobals(args);
+    final OutputFormatter formatter;
+    try {
+      formatter = resolveFormatter(
+        explicitFormat: globals.output,
+        isTerminal: _stdoutHasTerminal(_stdout),
+      );
+    } on InvalidArgError catch (e) {
+      _stderr.writeln(e.message);
+      return 64;
+    }
+    final assembled = _assemble(formatter: formatter, baseUrl: globals.bffUrl);
+    _runner = assembled;
+    try {
+      final exitCode = await assembled.run(args);
+      return exitCode ?? 0;
+    } on UsageException catch (e) {
+      _stderr
+        ..writeln(e.message)
+        ..writeln()
+        ..writeln(e.usage);
+      return 64; // EX_USAGE per sysexits(3).
+    }
+  }
+
+  /// Builds a fresh [_CapturingCommandRunner] with all nine sub-commands
+  /// wired against the supplied [formatter] and [baseUrl]. Used both by
+  /// the constructor (default formatter / URL) and by [run] (per-invocation
+  /// resolved values).
+  _CapturingCommandRunner _assemble({
+    required OutputFormatter formatter,
+    required String baseUrl,
+  }) {
+    final assembled = _CapturingCommandRunner(
       executableName: _executableName,
       description: _description,
-      stdout: stdout,
+      stdout: _stdout,
     );
-    _runner.argParser
+    assembled.argParser
       ..addOption('bff', defaultsTo: _defaultBffUrl, help: 'BFF base URL')
       ..addOption(
         'output',
@@ -123,101 +241,126 @@ final class CliRunner {
         help: 'suppress info logs',
       );
 
-    final httpClient = http.Client();
-    final credentialStore = FileCredentialStore(
-      path: FileCredentialStore.defaultPath(env: Platform.environment),
-    );
     Future<Result<OidcDiscovery>> loadDiscovery() =>
-        OidcDiscovery.load(httpClient: httpClient, issuer: OidcConfig.issuer);
+        OidcDiscovery.load(httpClient: _httpClient, issuer: OidcConfig.issuer);
 
-    final bffClient = _buildBffClient(credentialStore: credentialStore);
+    final bffClient = _buildBffClient(
+      baseUrl: baseUrl,
+      credentialStore: _credentialStore,
+      adapter: _adapter,
+    );
 
-    _runner
+    assembled
       ..addCommand(
         _buildAuthCommand(
-          httpClient: httpClient,
-          credentialStore: credentialStore,
+          httpClient: _httpClient,
+          credentialStore: _credentialStore,
           loadDiscovery: loadDiscovery,
-          stdout: stdout,
+          stdout: _stdout,
           stderr: _stderr,
+          clock: _clock,
         ),
       )
       ..addCommand(
         _buildPatientCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
       ..addCommand(
         _buildFamilyCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
       ..addCommand(
         _buildAssessmentCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
       ..addCommand(
         _buildCareCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
       ..addCommand(
         _buildProtectionCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
       ..addCommand(
         _buildLookupCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
       ..addCommand(
         _buildTeamCommand(
           bffClient: bffClient,
-          stdout: stdout,
+          formatter: formatter,
+          stdout: _stdout,
           stderr: _stderr,
         ),
       )
-      ..addCommand(HealthCommand(stdout: stdout));
+      ..addCommand(HealthCommand(stdout: _stdout));
+    return assembled;
   }
+}
 
-  final StringSink _stderr;
-  late final _CapturingCommandRunner _runner;
+/// Parsed view of the global flags read out of `argv` BEFORE the assembled
+/// runner sees them. The runner re-parses for the leaf command; this side
+/// parse is purely about deciding which formatter / BFF URL to wire into
+/// the leaf command constructors.
+final class _GlobalFlags {
+  const _GlobalFlags({required this.output, required this.bffUrl});
+  final String? output;
+  final String bffUrl;
+}
 
-  /// The `args` runner — exposed typed as the parent class so foreign code
-  /// cannot see the capture subclass.
-  CommandRunner<int> get runner => _runner;
-
-  /// Runs the CLI with [args], converting [UsageException] (unknown
-  /// command, missing argument) into a non-zero exit code + stderr message.
-  ///
-  /// Other [Object]s thrown by command [Command.run] propagate unchanged
-  /// (programmer faults should crash with a stack trace, per ADR-019).
-  Future<int> run(List<String> args) async {
-    try {
-      final exitCode = await _runner.run(args);
-      return exitCode ?? 0;
-    } on UsageException catch (e) {
-      _stderr
-        ..writeln(e.message)
-        ..writeln()
-        ..writeln(e.usage);
-      return 64; // EX_USAGE per sysexits(3).
-    }
+/// Best-effort global-flag side parse. Matches the global flag set wired
+/// inside [_assemble]; failures (unknown sub-command, missing argument)
+/// fall through to defaults — the assembled runner will surface the real
+/// usage error.
+_GlobalFlags _parseGlobals(List<String> args) {
+  final parser = ArgParser(allowTrailingOptions: true)
+    ..addOption('bff', defaultsTo: _defaultBffUrl)
+    ..addOption('output', allowed: _outputFormats, defaultsTo: 'auto')
+    ..addFlag('quiet', defaultsTo: false, negatable: false);
+  try {
+    final results = parser.parse(args);
+    final outputRaw = results['output'] as String?;
+    return _GlobalFlags(
+      output: outputRaw == 'auto' ? null : outputRaw,
+      bffUrl: results['bff'] as String? ?? _defaultBffUrl,
+    );
+  } on FormatException {
+    // `ArgParserException` is a `FormatException` subclass — both invalid
+    // `--output` values and unknown sub-commands surface here. Fall back
+    // to defaults; the assembled runner will surface the real usage error.
+    return const _GlobalFlags(output: null, bffUrl: _defaultBffUrl);
   }
+}
+
+/// True when [sink] is a real `Stdout` attached to a TTY. Test harnesses
+/// pass a `StringBuffer`, which is treated as a pipe (false) so `--output`
+/// auto-mode picks JSON.
+bool _stdoutHasTerminal(StringSink sink) {
+  return sink is Stdout && sink.hasTerminal;
 }
 
 /// `CommandRunner<int>` subclass that redirects `printUsage` to a caller-
@@ -249,6 +392,7 @@ AuthCommand _buildAuthCommand({
   required Future<Result<OidcDiscovery>> Function() loadDiscovery,
   required StringSink stdout,
   required StringSink stderr,
+  DateTime Function()? clock,
 }) {
   return AuthCommand(
     login: AuthLoginCommand(
@@ -266,6 +410,7 @@ AuthCommand _buildAuthCommand({
     ),
     status: AuthStatusCommand(
       credentialStore: credentialStore,
+      now: clock,
       stdout: stdout,
       stderr: stderr,
     ),
@@ -299,20 +444,35 @@ AuthCommand _buildAuthCommand({
 /// so the shared `loadDiscovery` is invoked on demand inside the closure.
 /// In the C03 wave, the simpler shape (no refresh-on-401 wiring) is fine —
 /// the auth subcommands handle refresh explicitly.
-BffClient _buildBffClient({required CredentialStore credentialStore}) {
-  return BffClient(baseUrl: _defaultBffUrl, credentialStore: credentialStore);
+///
+/// When [adapter] is supplied (golden tests), a fresh [Dio] is wired with
+/// that adapter and passed to [BffClient]. Production callers leave
+/// [adapter] null and get the default Dio transport.
+BffClient _buildBffClient({
+  required String baseUrl,
+  required CredentialStore credentialStore,
+  HttpClientAdapter? adapter,
+}) {
+  Dio? dio;
+  if (adapter != null) {
+    dio = Dio()..httpClientAdapter = adapter;
+  }
+  return BffClient(
+    baseUrl: baseUrl,
+    credentialStore: credentialStore,
+    dio: dio,
+  );
 }
 
 /// Builds the production [PatientCommand] with all eight subcommands wired
-/// against the shared [bffClient]. The default formatter is JSON (the
-/// pipe-friendly default); per-invocation `--output` will be respected
-/// once the resolver lands in C10.
+/// against the shared [bffClient]. [formatter] is resolved per-invocation
+/// from `--output` by [CliRunner.run].
 PatientCommand _buildPatientCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   return PatientCommand(
     list: PatientListCommand(
       bffClient: bffClient,
@@ -367,14 +527,14 @@ PatientCommand _buildPatientCommand({
 }
 
 /// Builds the production [FamilyCommand] with all four subcommands wired
-/// against the shared [bffClient]. The default formatter is JSON; per-
-/// invocation `--output` will be respected once the resolver lands in C10.
+/// against the shared [bffClient]. [formatter] is resolved per-invocation
+/// from `--output` by [CliRunner.run].
 FamilyCommand _buildFamilyCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   return FamilyCommand(
     add: FamilyAddCommand(
       bffClient: bffClient,
@@ -404,16 +564,16 @@ FamilyCommand _buildFamilyCommand({
 }
 
 /// Builds the production [AssessmentCommand] with all seven ficha
-/// subcommands wired against the shared [bffClient]. The default formatter
-/// is JSON; per-invocation `--output` will be respected once the resolver
-/// lands in C10. Each ficha shares the same `fileReader` closure so
-/// `--from-yaml` paths are read uniformly.
+/// subcommands wired against the shared [bffClient]. [formatter] is
+/// resolved per-invocation from `--output` by [CliRunner.run]. Each ficha
+/// shares the same `fileReader` closure so `--from-yaml` paths are read
+/// uniformly.
 AssessmentCommand _buildAssessmentCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   Future<String> readFile(String path) => File(path).readAsString();
   return AssessmentCommand(
     housing: AssessmentHousingCommand(
@@ -469,14 +629,14 @@ AssessmentCommand _buildAssessmentCommand({
 }
 
 /// Builds the production [CareCommand] with both subcommands wired against
-/// the shared [bffClient]. The default formatter is JSON; per-invocation
-/// `--output` will be respected once the resolver lands in C10.
+/// the shared [bffClient]. [formatter] is resolved per-invocation from
+/// `--output` by [CliRunner.run].
 CareCommand _buildCareCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   return CareCommand(
     appointment: CareAppointmentCommand(
       bffClient: bffClient,
@@ -494,16 +654,16 @@ CareCommand _buildCareCommand({
 }
 
 /// Builds the production [ProtectionCommand] with all three subcommands
-/// wired against the shared [bffClient]. The default formatter is JSON;
-/// per-invocation `--output` will be respected once the resolver lands in
-/// C10. The `placement-history` verb is YAML-only and shares the same
-/// `fileReader` closure used by C03 patient register + C05 assessments.
+/// wired against the shared [bffClient]. [formatter] is resolved per-
+/// invocation from `--output` by [CliRunner.run]. The `placement-history`
+/// verb is YAML-only and shares the same `fileReader` closure used by C03
+/// patient register + C05 assessments.
 ProtectionCommand _buildProtectionCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   return ProtectionCommand(
     violation: ProtectionViolationCommand(
       bffClient: bffClient,
@@ -529,14 +689,14 @@ ProtectionCommand _buildProtectionCommand({
 
 /// Builds the production [LookupCommand] with all five admin/read leaves and
 /// the four governance leaves (under the `request` sub-parent) wired against
-/// the shared [bffClient]. The default formatter is JSON; per-invocation
-/// `--output` will be respected once the resolver lands in C10.
+/// the shared [bffClient]. [formatter] is resolved per-invocation from
+/// `--output` by [CliRunner.run].
 LookupCommand _buildLookupCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   return LookupCommand(
     get: LookupGetCommand(
       bffClient: bffClient,
@@ -599,14 +759,14 @@ LookupCommand _buildLookupCommand({
 
 /// Builds the production [TeamCommand] with all six top-level leaves and the
 /// three role-assignment leaves (under the `role` sub-parent) wired against
-/// the shared [bffClient]. The default formatter is JSON; per-invocation
-/// `--output` will be respected once the resolver lands in C10.
+/// the shared [bffClient]. [formatter] is resolved per-invocation from
+/// `--output` by [CliRunner.run].
 TeamCommand _buildTeamCommand({
   required BffClient bffClient,
+  required OutputFormatter formatter,
   required StringSink stdout,
   required StringSink stderr,
 }) {
-  const OutputFormatter formatter = JsonFormatter();
   return TeamCommand(
     list: TeamListCommand(
       bffClient: bffClient,

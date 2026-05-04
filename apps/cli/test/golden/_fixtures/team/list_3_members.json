@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "personId": "88888888-1111-4111-8111-111111111111",
+      "fullName": "Ana Pereira",
+      "email": "ana@acdgbrasil.com.br",
+      "role": "social_worker",
+      "active": true
+    },
+    {
+      "personId": "88888888-2222-4222-8222-222222222222",
+      "fullName": "Carlos Souza",
+      "email": "carlos@acdgbrasil.com.br",
+      "role": "admin",
+      "active": true
+    },
+    {
+      "personId": "88888888-3333-4333-8333-333333333333",
+      "fullName": "Beatriz Lima",
+      "email": "beatriz@acdgbrasil.com.br",
+      "role": "owner",
+      "active": false
+    }
+  ],
+  "meta": {
+    "totalCount": 3,
+    "timestamp": "2026-05-04T12:00:00Z"
+  }
+}

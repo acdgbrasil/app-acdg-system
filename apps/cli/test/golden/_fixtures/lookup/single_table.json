@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "id": "55555555-1111-4111-8111-111111111111",
+      "codigo": "MAS",
+      "descricao": "Masculino",
+      "active": true
+    },
+    {
+      "id": "55555555-2222-4222-8222-222222222222",
+      "codigo": "FEM",
+      "descricao": "Feminino",
+      "active": true
+    },
+    {
+      "id": "55555555-3333-4333-8333-333333333333",
+      "codigo": "OUT",
+      "descricao": "Outro",
+      "active": false
+    }
+  ],
+  "meta": {
+    "tableName": "dominio_genero",
+    "timestamp": "2026-05-04T12:00:00Z"
+  }
+}

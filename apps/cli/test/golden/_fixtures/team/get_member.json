@@ -1,0 +1,14 @@
+{
+  "data": {
+    "personId": "88888888-1111-4111-8111-111111111111",
+    "fullName": "Ana Pereira",
+    "email": "ana@acdgbrasil.com.br",
+    "cpf": "12345678900",
+    "birthDate": "1985-04-12",
+    "role": "social_worker",
+    "active": true
+  },
+  "meta": {
+    "timestamp": "2026-05-04T12:00:00Z"
+  }
+}
