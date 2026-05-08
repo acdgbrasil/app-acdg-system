@@ -15,8 +15,8 @@ import 'package:args/command_runner.dart';
 import 'package:core_contracts/core_contracts.dart';
 
 import '../formatters/output_formatter.dart';
+import '../errors/cli_error.dart';
 import '../session/bff_client.dart';
-import '_command_helpers.dart';
 
 /// `acdg team role deactivate`.
 final class TeamRoleDeactivateCommand extends Command<int> {
@@ -59,8 +59,9 @@ final class TeamRoleDeactivateCommand extends Command<int> {
       case Success():
         return 0;
       case Failure(:final error):
-        _writeErr(stderrMessageFor(error));
-        return exitCodeFor(error);
+        final e = error as CliError;
+        _writeErr(e.stderrMessage);
+        return e.exitCode;
     }
   }
 

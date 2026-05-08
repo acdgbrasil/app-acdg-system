@@ -43,7 +43,8 @@ final class OidcSession with Equatable {
     final DateTime accessExpiresAt;
     try {
       accessExpiresAt = DateTime.parse(accessExpiresAtRaw);
-    } on FormatException catch (e) {
+      // ignore: unused_catch_stack
+    } on FormatException catch (e, st) {
       throw FormatException(
         'OidcSession: invalid access_expires_at — ${e.message}',
       );

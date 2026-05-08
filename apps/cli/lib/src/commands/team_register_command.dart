@@ -124,7 +124,8 @@ final class TeamRegisterCommand extends Command<int> {
         }
         return 0;
       case Failure(:final error):
-        _writeErr(stderrMessageFor(error));
+        final e = error as CliError;
+        _writeErr(e.stderrMessage);
         if (error is ServerError && error.statusCode >= 500) {
           _writeErr(
             "Worker registration failed (saga). The person record may have "
@@ -132,7 +133,7 @@ final class TeamRegisterCommand extends Command<int> {
             'contact admin.',
           );
         }
-        return exitCodeFor(error);
+        return e.exitCode;
     }
   }
 

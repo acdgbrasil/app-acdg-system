@@ -1,77 +1,16 @@
 /// ACDG CLI public API — exported by the `cli` package.
 ///
-/// The barrel re-exports the surface that external callers (including the
-/// `bin/acdg.dart` entrypoint and any future embedding) need:
+/// Intentionally minimal surface for external callers:
 ///   * [CliRunner] — top-level wiring of CommandRunner + global flags.
 ///   * [CliError] family — sealed error hierarchy used across the CLI.
-///   * Formatters — interface + concrete impls + the auto-detect resolver.
-///   * Session — credential persistence + BFF HTTP client scaffold.
-///   * OIDC subsystem — PKCE, discovery, loopback listener, token client
-///     (the auth surface a future embedding may want to drive directly).
+///   * Formatters — interface + auto-detect resolver.
+///   * Session — credential persistence scaffold.
 library;
 
-export 'src/cli_runner.dart';
-export 'src/commands/assessment_command.dart';
-export 'src/commands/assessment_community_support_command.dart';
-export 'src/commands/assessment_education_command.dart';
-export 'src/commands/assessment_health_command.dart';
-export 'src/commands/assessment_housing_command.dart';
-export 'src/commands/assessment_social_health_summary_command.dart';
-export 'src/commands/assessment_socioeconomic_command.dart';
-export 'src/commands/assessment_work_income_command.dart';
-export 'src/commands/care_appointment_command.dart';
-export 'src/commands/care_command.dart';
-export 'src/commands/care_intake_command.dart';
-export 'src/commands/family_add_command.dart';
-export 'src/commands/family_assign_caregiver_command.dart';
-export 'src/commands/family_command.dart';
-export 'src/commands/family_remove_command.dart';
-export 'src/commands/family_update_identity_command.dart';
-export 'src/commands/lookup_batch_command.dart';
-export 'src/commands/lookup_command.dart';
-export 'src/commands/lookup_create_command.dart';
-export 'src/commands/lookup_get_command.dart';
-export 'src/commands/lookup_request_approve_command.dart';
-export 'src/commands/lookup_request_command.dart';
-export 'src/commands/lookup_request_create_command.dart';
-export 'src/commands/lookup_request_list_command.dart';
-export 'src/commands/lookup_request_reject_command.dart';
-export 'src/commands/lookup_toggle_command.dart';
-export 'src/commands/lookup_update_command.dart';
-export 'src/commands/patient_admit_command.dart';
-export 'src/commands/patient_audit_command.dart';
-export 'src/commands/patient_command.dart';
-export 'src/commands/patient_discharge_command.dart';
-export 'src/commands/patient_get_command.dart';
-export 'src/commands/patient_list_command.dart';
-export 'src/commands/patient_readmit_command.dart';
-export 'src/commands/patient_register_command.dart';
-export 'src/commands/patient_withdraw_command.dart';
-export 'src/commands/protection_command.dart';
-export 'src/commands/protection_placement_history_command.dart';
-export 'src/commands/protection_referral_command.dart';
-export 'src/commands/protection_violation_command.dart';
-export 'src/commands/team_command.dart';
-export 'src/commands/team_deactivate_command.dart';
-export 'src/commands/team_get_command.dart';
-export 'src/commands/team_list_command.dart';
-export 'src/commands/team_reactivate_command.dart';
-export 'src/commands/team_register_command.dart';
-export 'src/commands/team_reset_password_command.dart';
-export 'src/commands/team_role_assign_command.dart';
-export 'src/commands/team_role_command.dart';
-export 'src/commands/team_role_deactivate_command.dart';
-export 'src/commands/team_role_reactivate_command.dart';
+export 'src/cli_runner.dart' show CliRunner;
 export 'src/errors/cli_error.dart';
-export 'src/formatters/auto_formatter.dart';
-export 'src/formatters/json_formatter.dart';
+export 'src/errors/exit_code.dart';
 export 'src/formatters/output_formatter.dart';
-export 'src/formatters/table_formatter.dart';
-export 'src/formatters/yaml_formatter.dart';
-export 'src/oidc/loopback_listener.dart';
-export 'src/oidc/oidc_discovery.dart';
-export 'src/oidc/pkce_pair.dart';
-export 'src/oidc/token_client.dart';
-export 'src/session/bff_client.dart';
-export 'src/session/credential_store.dart';
-export 'src/session/oidc_session.dart';
+export 'src/formatters/auto_formatter.dart' show resolveFormatter;
+export 'src/session/credential_store.dart' show CredentialStore;
+export 'src/session/oidc_session.dart' show OidcSession;

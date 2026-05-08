@@ -15,6 +15,9 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core_contracts/core_contracts.dart';
+
+import 'keychain_adapter.dart';
 import 'oidc_session.dart';
 
 /// Sub-contract for credential persistence.
@@ -97,5 +100,64 @@ final class FileCredentialStore implements CredentialStore {
     if (await file.exists()) {
       await file.delete();
     }
+  }
+}
+
+/// [CredentialStore] backed by a [KeychainAdapter] — B4 production path.
+///
+/// Bridges the existing `Future<void>` contract that `BffClient` and the
+/// auth subcommands rely on into the Result-typed [KeychainAdapter]
+/// surface.
+///
+/// Failure semantics (per B4 002-tests REPORT.md §"KeychainCredentialStore
+/// wrapper"):
+///   * [read] — `Failure(...)` → `null`. Treats keychain failure as "no
+///     session" so the CLI surfaces `AuthRequiredError` (exit code 7) at
+///     the next BFF call. Stderr gets a hint so the operator knows.
+///   * [write] — `Failure(...)` → `throw StateError(...)`. Fail-loud:
+///     silently swallowing a write failure would lose the user's session
+///     without warning, which is strictly worse than crashing.
+///   * [clear] — idempotent regardless of adapter result. Subsequent
+///     [read] returns `null` and the user can re-auth.
+final class KeychainCredentialStore implements CredentialStore {
+  KeychainCredentialStore({required KeychainAdapter adapter})
+    : _adapter = adapter;
+
+  final KeychainAdapter _adapter;
+
+  @override
+  Future<OidcSession?> read() async {
+    final result = await _adapter.read();
+    return switch (result) {
+      Success<OidcSession?>(:final value) => value,
+      Failure<OidcSession?>(:final error) => () {
+        // SEC: no silent fallback to plaintext. Surface a hint so the
+        // operator knows why re-auth is needed; never log the session
+        // itself (the adapter never returns it on failure anyway).
+        stderr.writeln('acdg: keychain read failed — $error');
+        return null;
+      }(),
+    };
+  }
+
+  @override
+  Future<void> write(OidcSession session) async {
+    final result = await _adapter.write(session);
+    switch (result) {
+      case Success<void>():
+        return;
+      case Failure<void>(:final error):
+        // SEC: fail-loud. Losing tokens silently is the bug we are
+        // fixing in B4 — surfacing the StateError makes the failure
+        // visible to the auth-login command, which exits non-zero.
+        throw StateError('keychain write failed: $error');
+    }
+  }
+
+  @override
+  Future<void> clear() async {
+    // Idempotent — even on Failure, the next read returns `null` and
+    // the user re-authenticates. Swallow the result.
+    await _adapter.delete();
   }
 }

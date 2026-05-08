@@ -1,60 +1,11 @@
 /// Shared helpers for every `acdg ...` subcommand that hits the BFF.
 ///
-/// Originally `_patient_helpers.dart` (C03); renamed to `_command_helpers.dart`
-/// in C04 because the same three helpers serve the family verbs verbatim and
-/// will keep growing across `assessment`, `care`, `protection`, `team`, etc.
-///
 /// Two responsibilities:
-///   1. Map error → exit code + stderr message in one place so every verb
-///      agrees on the contract (`AuthRequiredError` ≠ `NetworkError` ≠
-///      `ServerError`). [Result.error] is statically typed as `Object`, so
-///      these helpers accept `Object` and narrow internally.
-///   2. Drop `null` keys from a request body so optional fields are NOT
+///   1. Drop `null` keys from a request body so optional fields are NOT
 ///      serialized when absent (DTO conventions: `{notes?}` means "omit the
 ///      key", not "send `notes: null`").
+///   2. Decode the canonical `StandardResponse<IdData>` envelope.
 library;
-
-import '../errors/cli_error.dart';
-
-/// Exit-code matrix per W0 REPORT §2.4.
-///
-/// | Bucket                            | Code |
-/// |-----------------------------------|-----:|
-/// | AuthRequiredError                 | 2    |
-/// | NetworkError                      | 3    |
-/// | ServerError / generic 5xx + 4xx   | 1    |
-/// | InvalidArgError (caller)          | 64   |
-/// | Anything else (unexpected)        | 1    |
-int exitCodeFor(Object error) {
-  if (error is AuthRequiredError) return 2;
-  if (error is RefreshTokenInvalidError) return 2;
-  if (error is NetworkError) return 3;
-  if (error is ServerError) return 1;
-  if (error is InvalidArgError) return 64;
-  return 1;
-}
-
-/// Renders a stderr-friendly message for [error]. Surfaces the HTTP status
-/// for [ServerError] so the caller sees `409`, `422`, `500`, etc.
-String stderrMessageFor(Object error) {
-  if (error is AuthRequiredError) {
-    return 'Authentication required. Run: acdg auth login';
-  }
-  if (error is RefreshTokenInvalidError) {
-    return 'Authentication required (refresh token rotated). '
-        'Run: acdg auth login';
-  }
-  if (error is NetworkError) {
-    return 'Network error: ${error.message}';
-  }
-  if (error is ServerError) {
-    return 'Server error (${error.statusCode}): ${error.message}';
-  }
-  if (error is InvalidArgError) {
-    return 'Invalid argument: ${error.message}';
-  }
-  return 'Unexpected error: $error';
-}
 
 /// Returns a copy of [body] with all entries whose value is `null` dropped.
 ///
@@ -72,9 +23,7 @@ Map<String, Object?> dropNulls(Map<String, Object?> body) => {
 /// Returns `null` (defensively, NOT a throw) when the envelope shape is
 /// unexpected — the caller's success path is then expected to degrade to
 /// a generic `<resource> created` line so non-empty stdout is still
-/// produced. This 3-guard walk first showed up in `care_appointment_command`
-/// (C06) and was extracted here in C07 once `protection violation` and
-/// `protection referral` started using the same envelope shape.
+/// produced.
 String? decodeStandardIdResponse(Object? data) {
   if (data is! Map<String, Object?>) return null;
   final inner = data['data'];

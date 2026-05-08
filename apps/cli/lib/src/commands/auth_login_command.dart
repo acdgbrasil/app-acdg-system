@@ -124,9 +124,15 @@ final class AuthLoginCommand extends Command<int> {
     };
     if (tokens == null) return 3;
 
-    final claims = _decodeIdTokenClaims(tokens.idToken);
+    final claims = _decodeIdTokenClaims(
+      tokens.idToken,
+      expectedNonce: sn.nonce,
+    );
     if (claims == null) {
-      _writeErr('Token exchange succeeded but id_token is malformed.');
+      _writeErr(
+        'Token exchange succeeded but id_token is malformed or nonce '
+        'mismatch — possible replay attack.',
+      );
       return 4;
     }
 
@@ -189,7 +195,7 @@ final class AuthLoginCommand extends Command<int> {
 
 /// Decoded claims from the id_token. The CLI only reads them locally; the
 /// BFF Bearer middleware (C00) is the source of truth for security.
-class _IdTokenClaims {
+final class _IdTokenClaims {
   const _IdTokenClaims({
     required this.sub,
     required this.email,
@@ -200,7 +206,10 @@ class _IdTokenClaims {
   final List<String> roles;
 }
 
-_IdTokenClaims? _decodeIdTokenClaims(String idToken) {
+_IdTokenClaims? _decodeIdTokenClaims(
+  String idToken, {
+  required String expectedNonce,
+}) {
   final segments = idToken.split('.');
   if (segments.length < 2) return null;
   final payloadB64 = _padBase64Url(segments[1]);
@@ -217,7 +226,9 @@ _IdTokenClaims? _decodeIdTokenClaims(String idToken) {
 
   final sub = (payload['sub'] ?? '').toString();
   final email = (payload['email'] ?? '').toString();
+  final nonce = payload['nonce'];
   if (sub.isEmpty || email.isEmpty) return null;
+  if (nonce != expectedNonce) return null;
 
   final rolesNode =
       payload[OidcConfig.rolesClaim] ??

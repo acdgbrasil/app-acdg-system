@@ -114,7 +114,8 @@ class TokenClient {
     final Object? decoded;
     try {
       decoded = jsonDecode(body);
-    } on FormatException catch (e) {
+      // ignore: unused_catch_stack
+    } on FormatException catch (e, st) {
       return Failure(NetworkError('token JSON malformed: ${e.message}'));
     }
     if (decoded is! Map<String, Object?>) {

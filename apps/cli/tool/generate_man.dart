@@ -35,7 +35,9 @@ Future<void> main() async {
   final out = StringBuffer();
   out.writeln('.TH ACDG 1 "${_dateLabel()}" "ACDG CLI" "User Commands"');
   out.writeln('.SH NAME');
-  out.writeln('acdg \\- Operate the ACDG social care system from the command line.');
+  out.writeln(
+    'acdg \\- Operate the ACDG social care system from the command line.',
+  );
   out.writeln('.SH SYNOPSIS');
   out.writeln('.B acdg');
   out.writeln('[\\fIglobal options\\fR] \\fIcommand\\fR [\\fIargs\\fR...]');

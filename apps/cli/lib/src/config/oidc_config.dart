@@ -106,4 +106,9 @@ abstract final class OidcConfig {
     'ACDG_BFF_URL',
     defaultValue: 'http://localhost:8081',
   );
+
+  /// Apex domain for the production BFF allowlist (consumed by
+  /// `bff_allowlist.dart`). Single source of truth — host suffix match
+  /// anchors against this.
+  static const String bffApexDomain = 'acdgbrasil.com.br';
 }

@@ -69,7 +69,8 @@ class OidcDiscovery with Equatable {
       final Object? decoded;
       try {
         decoded = jsonDecode(response.body);
-      } on FormatException catch (e) {
+        // ignore: unused_catch_stack
+      } on FormatException catch (e, st) {
         return Failure(NetworkError('discovery JSON malformed: ${e.message}'));
       }
 

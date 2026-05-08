@@ -83,6 +83,7 @@ void main() {
       expect(_tagOf(server), equals('server'));
     });
   });
+
 }
 
 /// Helper that forces an exhaustive switch — analyzer fails this file if a
@@ -90,10 +91,16 @@ void main() {
 ///
 /// C02 added [RefreshTokenInvalidError] to the sealed family; this switch
 /// caught it (compiler-enforced), and the new arm is the W1 migration.
+/// B4 added [KeychainUnavailable], [KeychainOperationFailed],
+/// [KeychainCorruptEntry] — each gets its own tag here.
 String _tagOf(CliError error) => switch (error) {
   InvalidArgError() => 'invalid',
   AuthRequiredError() => 'auth',
   NetworkError() => 'network',
   ServerError() => 'server',
   RefreshTokenInvalidError() => 'refresh_invalid',
+  KeychainUnavailable() => 'keychain_unavailable',
+  KeychainOperationFailed() => 'keychain_op_failed',
+  KeychainCorruptEntry() => 'keychain_corrupt',
 };
+

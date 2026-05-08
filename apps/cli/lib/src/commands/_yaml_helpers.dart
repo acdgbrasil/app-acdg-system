@@ -76,7 +76,8 @@ Future<Result<Map<String, Object?>>> readYamlBody({
   String contents;
   try {
     contents = await fileReader(path);
-  } on Object catch (e) {
+    // ignore: unused_catch_stack
+  } on Object catch (e, st) {
     return Failure<Map<String, Object?>>(
       InvalidArgError('Cannot read --from-yaml file at "$path": $e'),
     );
@@ -84,7 +85,8 @@ Future<Result<Map<String, Object?>>> readYamlBody({
   final Object? parsed;
   try {
     parsed = loadYaml(contents);
-  } on YamlException catch (e) {
+    // ignore: unused_catch_stack
+  } on YamlException catch (e, st) {
     return Failure<Map<String, Object?>>(
       InvalidArgError('Invalid YAML in "$path": $e'),
     );

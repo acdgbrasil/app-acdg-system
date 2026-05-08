@@ -96,6 +96,7 @@ import 'commands/team_role_assign_command.dart';
 import 'commands/team_role_command.dart';
 import 'commands/team_role_deactivate_command.dart';
 import 'commands/team_role_reactivate_command.dart';
+import 'config/bff_allowlist.dart';
 import 'config/oidc_config.dart';
 import 'errors/cli_error.dart';
 import 'formatters/auto_formatter.dart';
@@ -106,6 +107,8 @@ import 'oidc/pkce_pair.dart';
 import 'oidc/token_client.dart';
 import 'session/bff_client.dart';
 import 'session/credential_store.dart';
+import 'session/credential_store_factory.dart';
+import 'session/oidc_session.dart';
 
 const String _executableName = 'acdg';
 const String _description =
@@ -148,11 +151,29 @@ final class CliRunner {
        _adapter = adapter,
        _clock = clock,
        _httpClient = http.Client() {
-    _credentialStore =
-        credentialStore ??
-        FileCredentialStore(
-          path: FileCredentialStore.defaultPath(env: Platform.environment),
-        );
+    if (credentialStore != null) {
+      _credentialStore = credentialStore;
+    } else {
+      // B4 — production credential storage routes through the system
+      // keychain (Keychain.app on macOS, libsecret on Linux, DPAPI via
+      // PowerShell on Windows). The legacy plaintext file at
+      // `$XDG_CONFIG_HOME/acdg/credentials` is consulted only by the
+      // migration shim (read-once-then-delete after read-after-write
+      // verification). See B4 DESIGN.md §6-§7.
+      final result = CredentialStoreFactory.createSync(
+        env: Platform.environment,
+      );
+      switch (result) {
+        case Success<CredentialStore>(:final value):
+          _credentialStore = value;
+        case Failure<CredentialStore>(:final error):
+          // SEC: no silent fallback to plaintext. Surface the install
+          // hint and use a stub store that returns null on every read so
+          // the next BFF call cleanly surfaces `AuthRequiredError`.
+          stderr.writeln('acdg: credential storage unavailable — $error');
+          _credentialStore = const _UnavailableCredentialStore();
+      }
+    }
     _runner = _assemble(
       formatter: resolveFormatter(
         explicitFormat: null,
@@ -188,14 +209,36 @@ final class CliRunner {
   /// Re-instantiates the assembled runner per invocation so `--output` and
   /// `--bff` propagate to every leaf command.
   Future<int> run(List<String> args) async {
-    final globals = _parseGlobals(args);
+    // B4 — run the legacy-file → keychain migration shim once per CLI
+    // invocation, before any subcommand can reach the credential store.
+    // Idempotent and best-effort: failures leave the legacy file in
+    // place and surface a stderr warning at next operation.
+    await _migrateOnce();
+
+    // SEC: every `run` invocation flows through `_parseGlobals`, which gates
+    // every BFF URL (explicit `--bff` AND the bake-in default) through
+    // `validateBffUrl`. Defense-in-depth: a malicious `--dart-define=ACDG_BFF_URL`
+    // build OR a hostile `--bff` flag both fail-fast at exit 64.
+    final parsed = _parseGlobals(args);
+    final _GlobalFlags globals;
+    switch (parsed) {
+      case _GlobalsOk(:final value):
+        globals = value;
+      case _GlobalsUsage(:final message):
+        _stderr.writeln('error: $message');
+        return 64; // EX_USAGE
+      case _GlobalsBff(:final error):
+        _stderr.writeln(renderBffAllowlistError(error));
+        return 64; // SEC: F1 mitigation — EX_USAGE per sysexits(3).
+    }
     final OutputFormatter formatter;
     try {
       formatter = resolveFormatter(
         explicitFormat: globals.output,
         isTerminal: _stdoutHasTerminal(_stdout),
       );
-    } on InvalidArgError catch (e) {
+      // ignore: unused_catch_stack
+    } on InvalidArgError catch (e, st) {
       _stderr.writeln(e.message);
       return 64;
     }
@@ -204,13 +247,31 @@ final class CliRunner {
     try {
       final exitCode = await assembled.run(args);
       return exitCode ?? 0;
-    } on UsageException catch (e) {
+      // ignore: unused_catch_stack
+    } on UsageException catch (e, st) {
       _stderr
         ..writeln(e.message)
         ..writeln()
         ..writeln(e.usage);
       return 64; // EX_USAGE per sysexits(3).
     }
+  }
+
+  /// Tracks whether the migration shim has already run for this
+  /// instance. Migration is one-shot per CLI invocation.
+  bool _migrated = false;
+
+  /// Runs the B4 migration shim at most once. No-op when an explicit
+  /// [CredentialStore] was injected (test fixtures bypass migration).
+  Future<void> _migrateOnce() async {
+    if (_migrated) return;
+    _migrated = true;
+    if (_credentialStore is! KeychainCredentialStore) {
+      // Either an injected fake (tests) or the [_UnavailableCredentialStore]
+      // fallback — neither path benefits from migration.
+      return;
+    }
+    await CredentialStoreFactory.migrateLegacyOnce(env: Platform.environment);
   }
 
   /// Builds a fresh [_CapturingCommandRunner] with all nine sub-commands
@@ -236,6 +297,7 @@ final class CliRunner {
       )
       ..addFlag(
         'quiet',
+        abbr: 'q',
         defaultsTo: false,
         negatable: false,
         help: 'suppress info logs',
@@ -332,28 +394,143 @@ final class _GlobalFlags {
   final String bffUrl;
 }
 
-/// Best-effort global-flag side parse. Matches the global flag set wired
-/// inside [_assemble]; failures (unknown sub-command, missing argument)
-/// fall through to defaults — the assembled runner will surface the real
-/// usage error.
-_GlobalFlags _parseGlobals(List<String> args) {
-  final parser = ArgParser(allowTrailingOptions: true)
-    ..addOption('bff', defaultsTo: _defaultBffUrl)
-    ..addOption('output', allowed: _outputFormats, defaultsTo: 'auto')
-    ..addFlag('quiet', defaultsTo: false, negatable: false);
+/// Recognised long-form global flag names — single source of truth, must
+/// match the keys registered on the assembled `CommandRunner`'s argParser.
+const Set<String> _globalLongFlags = {'bff', 'output', 'quiet'};
+
+/// Recognised short-form global flag letters (`-q` aliases `--quiet`).
+const Set<String> _globalShortFlags = {'q'};
+
+/// Long-form global names that take a VALUE (option-style). Distinguishes
+/// `--bff URL` (consume next argv slot) from `--quiet` (boolean, no value).
+const Set<String> _globalLongOptions = {'bff', 'output'};
+
+/// Discriminated union returned by [_parseGlobals]: ok / usage error /
+/// allowlist rejection. Keeps [CliRunner.run] linear (no exceptions).
+sealed class _GlobalsOrError {
+  const _GlobalsOrError();
+  factory _GlobalsOrError.ok(_GlobalFlags g) = _GlobalsOk;
+  factory _GlobalsOrError.usage(String msg) = _GlobalsUsage;
+  factory _GlobalsOrError.bff(BffAllowlistError e) = _GlobalsBff;
+}
+
+final class _GlobalsOk extends _GlobalsOrError {
+  const _GlobalsOk(this.value);
+  final _GlobalFlags value;
+}
+
+final class _GlobalsUsage extends _GlobalsOrError {
+  const _GlobalsUsage(this.message);
+  final String message;
+}
+
+final class _GlobalsBff extends _GlobalsOrError {
+  const _GlobalsBff(this.error);
+  final BffAllowlistError error;
+}
+
+/// 2-pass global-flag parser.
+///
+/// Pass A — [_sliceGlobals] walks argv, plucks global tokens (and their
+///          values for option-style flags) into `globalArgs`; everything
+///          else goes to `rest` preserving relative order.
+/// Pass B — A small dedicated [ArgParser] parses `globalArgs`. Unknown
+///          flags inside `globalArgs` are now impossible by construction,
+///          so this `parser.parse` call NEVER throws on unknown-flag.
+///          It DOES throw on bad `--output` value (e.g. `--output=foo`)
+///          or missing `--bff` value — both intentional, propagate as
+///          [_GlobalsUsage] → exit 64.
+///
+/// SEC: replaces the previous `try { ... } on FormatException { return defaults }`
+/// — a CATASTROPHIC silent-fallback path (audit B1, 2026-05-04) where any
+/// subcommand-specific flag (e.g. `--search=foo`) made `_parseGlobals`
+/// throw and discard the user-supplied `--bff` / `--output`. The 2-pass
+/// design makes that fallback unreachable: an `ArgParserException` here
+/// can only originate from a malformed VALUE for one of the three
+/// recognised globals, never from an unknown-flag clash.
+///
+/// SEC (defense-in-depth): every BFF URL — explicit flag OR build-time
+/// default — passes through [validateBffUrl]. Even a malicious
+/// `--dart-define=ACDG_BFF_URL=http://evil.tld` build cannot escape.
+_GlobalsOrError _parseGlobals(List<String> args) {
+  final (globalArgs, _) = _sliceGlobals(args);
+  final parser = ArgParser()
+    ..addOption('bff') // no defaultsTo — null means "user did not pass it"
+    ..addOption('output', allowed: _outputFormats)
+    ..addFlag('quiet', abbr: 'q', negatable: false);
+  final ArgResults results;
   try {
-    final results = parser.parse(args);
-    final outputRaw = results['output'] as String?;
-    return _GlobalFlags(
-      output: outputRaw == 'auto' ? null : outputRaw,
-      bffUrl: results['bff'] as String? ?? _defaultBffUrl,
-    );
-  } on FormatException {
-    // `ArgParserException` is a `FormatException` subclass — both invalid
-    // `--output` values and unknown sub-commands surface here. Fall back
-    // to defaults; the assembled runner will surface the real usage error.
-    return const _GlobalFlags(output: null, bffUrl: _defaultBffUrl);
+    results = parser.parse(globalArgs);
+    // ignore: unused_catch_stack
+  } on FormatException catch (e, st) {
+    return _GlobalsOrError.usage(e.message);
   }
+  final outputRaw = results['output'] as String?;
+  final bffRaw = results['bff'] as String?;
+  // SEC: validate the effective BFF URL (explicit flag or default).
+  final bffCandidate = bffRaw ?? _defaultBffUrl;
+  final allowResult = validateBffUrl(bffCandidate);
+  return switch (allowResult) {
+    Success(:final value) => _GlobalsOrError.ok(
+      _GlobalFlags(
+        output: outputRaw == 'auto' ? null : outputRaw,
+        bffUrl: value.toString(),
+      ),
+    ),
+    Failure(:final error) => _GlobalsOrError.bff(error as BffAllowlistError),
+  };
+}
+
+/// argv slicer — plucks global tokens out of [args] without invoking any
+/// parser. Recognises three POSIX/GNU flag forms:
+///   * long with `=` value:    `--bff=URL` / `--output=json`
+///   * long with space value:  `--bff URL` / `--output json`
+///   * boolean (no value):     `--quiet` / `-q`
+/// `--` terminates flag scanning (everything after is positional / pass-through
+/// per POSIX), so `--bff=...` after a `--` is NOT plucked.
+(List<String> globals, List<String> rest) _sliceGlobals(List<String> args) {
+  final globals = <String>[];
+  final rest = <String>[];
+  var passthrough = false;
+  for (var i = 0; i < args.length; i++) {
+    final a = args[i];
+    if (passthrough) {
+      rest.add(a);
+      continue;
+    }
+    if (a == '--') {
+      passthrough = true;
+      rest.add(a);
+      continue;
+    }
+    final isLong = a.startsWith('--');
+    final isShort = !isLong && a.startsWith('-') && a.length > 1;
+    String? name;
+    var hasInlineValue = false;
+    if (isLong) {
+      final eq = a.indexOf('=');
+      name = eq < 0 ? a.substring(2) : a.substring(2, eq);
+      hasInlineValue = eq >= 0;
+    } else if (isShort) {
+      // Single-letter only — no bundling for globals (`-qv` is rejected
+      // upstream by the assembled CommandRunner, never by the slicer).
+      name = a.substring(1);
+    }
+    final isGlobalLong = isLong && _globalLongFlags.contains(name);
+    final isGlobalShort = isShort && _globalShortFlags.contains(name);
+    if (isGlobalLong || isGlobalShort) {
+      globals.add(a);
+      // For option-style globals (`--bff`, `--output`), consume the next
+      // argv slot when the value isn't inlined with `=`.
+      final isOption = isLong && _globalLongOptions.contains(name);
+      if (isOption && !hasInlineValue && i + 1 < args.length) {
+        globals.add(args[++i]);
+      }
+    } else {
+      rest.add(a);
+    }
+  }
+  return (globals, rest);
 }
 
 /// True when [sink] is a real `Stdout` attached to a TTY. Test harnesses
@@ -361,6 +538,33 @@ _GlobalFlags _parseGlobals(List<String> args) {
 /// auto-mode picks JSON.
 bool _stdoutHasTerminal(StringSink sink) {
   return sink is Stdout && sink.hasTerminal;
+}
+
+/// Inert [CredentialStore] used when [CredentialStoreFactory.createSync]
+/// returns `Failure` (unsupported platform, missing env var). Read returns
+/// `null` so the next BFF call surfaces `AuthRequiredError`; write throws
+/// `StateError` so `acdg auth login` fails fast rather than silently
+/// dropping the freshly minted session into the void.
+final class _UnavailableCredentialStore implements CredentialStore {
+  const _UnavailableCredentialStore();
+
+  @override
+  Future<OidcSession?> read() async => null;
+
+  @override
+  Future<void> write(OidcSession session) async {
+    // SEC: fail-loud. Silently swallowing a write would lose the user's
+    // session without warning.
+    throw StateError(
+      'Credential storage unavailable on this platform. '
+      'Re-install on macOS, Linux (with libsecret-tools), or Windows.',
+    );
+  }
+
+  @override
+  Future<void> clear() async {
+    // No-op — there is nothing to clear on a missing store.
+  }
 }
 
 /// `CommandRunner<int>` subclass that redirects `printUsage` to a caller-

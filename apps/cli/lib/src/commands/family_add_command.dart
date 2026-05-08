@@ -147,7 +147,8 @@ final class FamilyAddCommand extends Command<int> {
       case Success():
         return 0;
       case Failure(:final error):
-        _writeErr(stderrMessageFor(error));
+        final e = error as CliError;
+        _writeErr(e.stderrMessage);
         if (error is ServerError && error.statusCode >= 500) {
           _writeErr(
             'Family member registration failed (HTTP ${error.statusCode}). '
@@ -155,7 +156,7 @@ final class FamilyAddCommand extends Command<int> {
             "check via 'acdg patient get $patientId' or retry.",
           );
         }
-        return exitCodeFor(error);
+        return e.exitCode;
     }
   }
 

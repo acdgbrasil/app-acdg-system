@@ -250,6 +250,7 @@ TokenResponse _validTokenResponse() {
       'iss': 'https://auth.acdgbrasil.com.br',
       'sub': '363088829932634233',
       'email': 'user@example.com',
+      'nonce': 'fixed-nonce',
       'urn:zitadel:iam:org:project:roles': {
         'superadmin': {'363109592139300987': 'acdg.auth.acdgbrasil.com.br'},
         'social_worker': {'363109592139300987': 'acdg.auth.acdgbrasil.com.br'},

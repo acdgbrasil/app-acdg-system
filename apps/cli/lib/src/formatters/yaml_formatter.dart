@@ -77,7 +77,20 @@ final class YamlFormatter implements OutputFormatter {
     null => 'null',
     bool() => value ? 'true' : 'false',
     num() => value.toString(),
-    String() => value,
+    String() => _escapeYamlString(value),
     _ => value.toString(),
   };
+
+  /// Escapes a string for YAML 1.2 output.
+  ///
+  /// Quotes strings that contain YAML-special characters (`: `, `#`,
+  /// newlines, quotes) to prevent corrupt output.
+  String _escapeYamlString(String value) {
+    if (value.isEmpty) return '""';
+    final needsQuote = value.contains(RegExp(r'[:#\n\r\t"\x27]|^- |^\['));
+    if (!needsQuote) return value;
+    if (!value.contains('"')) return '"$value"';
+    if (!value.contains("'")) return "'$value'";
+    return '"${value.replaceAll('"', '\\"')}"';
+  }
 }
