@@ -1,0 +1,719 @@
+diff --git a/apps/cli/lib/cli.dart b/apps/cli/lib/cli.dart
+index 96a629d..e579080 100644
+--- a/apps/cli/lib/cli.dart
++++ b/apps/cli/lib/cli.dart
+@@ -1,77 +1,17 @@
+ /// ACDG CLI public API — exported by the `cli` package.
+ ///
+-/// The barrel re-exports the surface that external callers (including the
+-/// `bin/acdg.dart` entrypoint and any future embedding) need:
++/// Intentionally minimal surface for external callers:
+ ///   * [CliRunner] — top-level wiring of CommandRunner + global flags.
+ ///   * [CliError] family — sealed error hierarchy used across the CLI.
+-///   * Formatters — interface + concrete impls + the auto-detect resolver.
+-///   * Session — credential persistence + BFF HTTP client scaffold.
+-///   * OIDC subsystem — PKCE, discovery, loopback listener, token client
+-///     (the auth surface a future embedding may want to drive directly).
++///   * Formatters — interface + auto-detect resolver.
++///   * Session — credential persistence scaffold.
+ library;
+ 
+-export 'src/cli_runner.dart';
+-export 'src/commands/assessment_command.dart';
+-export 'src/commands/assessment_community_support_command.dart';
+-export 'src/commands/assessment_education_command.dart';
+-export 'src/commands/assessment_health_command.dart';
+-export 'src/commands/assessment_housing_command.dart';
+-export 'src/commands/assessment_social_health_summary_command.dart';
+-export 'src/commands/assessment_socioeconomic_command.dart';
+-export 'src/commands/assessment_work_income_command.dart';
+-export 'src/commands/care_appointment_command.dart';
+-export 'src/commands/care_command.dart';
+-export 'src/commands/care_intake_command.dart';
+-export 'src/commands/family_add_command.dart';
+-export 'src/commands/family_assign_caregiver_command.dart';
+-export 'src/commands/family_command.dart';
+-export 'src/commands/family_remove_command.dart';
+-export 'src/commands/family_update_identity_command.dart';
+-export 'src/commands/lookup_batch_command.dart';
+-export 'src/commands/lookup_command.dart';
+-export 'src/commands/lookup_create_command.dart';
+-export 'src/commands/lookup_get_command.dart';
+-export 'src/commands/lookup_request_approve_command.dart';
+-export 'src/commands/lookup_request_command.dart';
+-export 'src/commands/lookup_request_create_command.dart';
+-export 'src/commands/lookup_request_list_command.dart';
+-export 'src/commands/lookup_request_reject_command.dart';
+-export 'src/commands/lookup_toggle_command.dart';
+-export 'src/commands/lookup_update_command.dart';
+-export 'src/commands/patient_admit_command.dart';
+-export 'src/commands/patient_audit_command.dart';
+-export 'src/commands/patient_command.dart';
+-export 'src/commands/patient_discharge_command.dart';
+-export 'src/commands/patient_get_command.dart';
+-export 'src/commands/patient_list_command.dart';
+-export 'src/commands/patient_readmit_command.dart';
+-export 'src/commands/patient_register_command.dart';
+-export 'src/commands/patient_withdraw_command.dart';
+-export 'src/commands/protection_command.dart';
+-export 'src/commands/protection_placement_history_command.dart';
+-export 'src/commands/protection_referral_command.dart';
+-export 'src/commands/protection_violation_command.dart';
+-export 'src/commands/team_command.dart';
+-export 'src/commands/team_deactivate_command.dart';
+-export 'src/commands/team_get_command.dart';
+-export 'src/commands/team_list_command.dart';
+-export 'src/commands/team_reactivate_command.dart';
+-export 'src/commands/team_register_command.dart';
+-export 'src/commands/team_reset_password_command.dart';
+-export 'src/commands/team_role_assign_command.dart';
+-export 'src/commands/team_role_command.dart';
+-export 'src/commands/team_role_deactivate_command.dart';
+-export 'src/commands/team_role_reactivate_command.dart';
++export 'src/cli_runner.dart' show CliRunner;
++export 'src/commands/mcp_command.dart' show McpCommand;
+ export 'src/errors/cli_error.dart';
+-export 'src/formatters/auto_formatter.dart';
+-export 'src/formatters/json_formatter.dart';
++export 'src/errors/exit_code.dart';
+ export 'src/formatters/output_formatter.dart';
+-export 'src/formatters/table_formatter.dart';
+-export 'src/formatters/yaml_formatter.dart';
+-export 'src/oidc/loopback_listener.dart';
+-export 'src/oidc/oidc_discovery.dart';
+-export 'src/oidc/pkce_pair.dart';
+-export 'src/oidc/token_client.dart';
+-export 'src/session/bff_client.dart';
+-export 'src/session/credential_store.dart';
+-export 'src/session/oidc_session.dart';
++export 'src/formatters/auto_formatter.dart' show resolveFormatter;
++export 'src/session/credential_store.dart' show CredentialStore;
++export 'src/session/oidc_session.dart' show OidcSession;
+diff --git a/apps/cli/lib/src/cli_runner.dart b/apps/cli/lib/src/cli_runner.dart
+index aa95088..089b0fe 100644
+--- a/apps/cli/lib/src/cli_runner.dart
++++ b/apps/cli/lib/src/cli_runner.dart
+@@ -62,6 +62,7 @@ import 'commands/family_remove_command.dart';
+ import 'commands/family_update_identity_command.dart';
+ import 'commands/health_command.dart';
+ import 'commands/lookup_batch_command.dart';
++import 'commands/mcp_command.dart';
+ import 'commands/lookup_command.dart';
+ import 'commands/lookup_create_command.dart';
+ import 'commands/lookup_get_command.dart';
+@@ -96,6 +97,7 @@ import 'commands/team_role_assign_command.dart';
+ import 'commands/team_role_command.dart';
+ import 'commands/team_role_deactivate_command.dart';
+ import 'commands/team_role_reactivate_command.dart';
++import 'config/bff_allowlist.dart';
+ import 'config/oidc_config.dart';
+ import 'errors/cli_error.dart';
+ import 'formatters/auto_formatter.dart';
+@@ -106,6 +108,8 @@ import 'oidc/pkce_pair.dart';
+ import 'oidc/token_client.dart';
+ import 'session/bff_client.dart';
+ import 'session/credential_store.dart';
++import 'session/credential_store_factory.dart';
++import 'session/oidc_session.dart';
+ 
+ const String _executableName = 'acdg';
+ const String _description =
+@@ -148,11 +152,29 @@ final class CliRunner {
+        _adapter = adapter,
+        _clock = clock,
+        _httpClient = http.Client() {
+-    _credentialStore =
+-        credentialStore ??
+-        FileCredentialStore(
+-          path: FileCredentialStore.defaultPath(env: Platform.environment),
+-        );
++    if (credentialStore != null) {
++      _credentialStore = credentialStore;
++    } else {
++      // B4 — production credential storage routes through the system
++      // keychain (Keychain.app on macOS, libsecret on Linux, DPAPI via
++      // PowerShell on Windows). The legacy plaintext file at
++      // `$XDG_CONFIG_HOME/acdg/credentials` is consulted only by the
++      // migration shim (read-once-then-delete after read-after-write
++      // verification). See B4 DESIGN.md §6-§7.
++      final result = CredentialStoreFactory.createSync(
++        env: Platform.environment,
++      );
++      switch (result) {
++        case Success<CredentialStore>(:final value):
++          _credentialStore = value;
++        case Failure<CredentialStore>(:final error):
++          // SEC: no silent fallback to plaintext. Surface the install
++          // hint and use a stub store that returns null on every read so
++          // the next BFF call cleanly surfaces `AuthRequiredError`.
++          stderr.writeln('acdg: credential storage unavailable — $error');
++          _credentialStore = const _UnavailableCredentialStore();
++      }
++    }
+     _runner = _assemble(
+       formatter: resolveFormatter(
+         explicitFormat: null,
+@@ -188,14 +210,36 @@ final class CliRunner {
+   /// Re-instantiates the assembled runner per invocation so `--output` and
+   /// `--bff` propagate to every leaf command.
+   Future<int> run(List<String> args) async {
+-    final globals = _parseGlobals(args);
++    // B4 — run the legacy-file → keychain migration shim once per CLI
++    // invocation, before any subcommand can reach the credential store.
++    // Idempotent and best-effort: failures leave the legacy file in
++    // place and surface a stderr warning at next operation.
++    await _migrateOnce();
++
++    // SEC: every `run` invocation flows through `_parseGlobals`, which gates
++    // every BFF URL (explicit `--bff` AND the bake-in default) through
++    // `validateBffUrl`. Defense-in-depth: a malicious `--dart-define=ACDG_BFF_URL`
++    // build OR a hostile `--bff` flag both fail-fast at exit 64.
++    final parsed = _parseGlobals(args);
++    final _GlobalFlags globals;
++    switch (parsed) {
++      case _GlobalsOk(:final value):
++        globals = value;
++      case _GlobalsUsage(:final message):
++        _stderr.writeln('error: $message');
++        return 64; // EX_USAGE
++      case _GlobalsBff(:final error):
++        _stderr.writeln(renderBffAllowlistError(error));
++        return 64; // SEC: F1 mitigation — EX_USAGE per sysexits(3).
++    }
+     final OutputFormatter formatter;
+     try {
+       formatter = resolveFormatter(
+         explicitFormat: globals.output,
+         isTerminal: _stdoutHasTerminal(_stdout),
+       );
+-    } on InvalidArgError catch (e) {
++      // ignore: unused_catch_stack
++    } on InvalidArgError catch (e, st) {
+       _stderr.writeln(e.message);
+       return 64;
+     }
+@@ -204,7 +248,8 @@ final class CliRunner {
+     try {
+       final exitCode = await assembled.run(args);
+       return exitCode ?? 0;
+-    } on UsageException catch (e) {
++      // ignore: unused_catch_stack
++    } on UsageException catch (e, st) {
+       _stderr
+         ..writeln(e.message)
+         ..writeln()
+@@ -213,6 +258,23 @@ final class CliRunner {
+     }
+   }
+ 
++  /// Tracks whether the migration shim has already run for this
++  /// instance. Migration is one-shot per CLI invocation.
++  bool _migrated = false;
++
++  /// Runs the B4 migration shim at most once. No-op when an explicit
++  /// [CredentialStore] was injected (test fixtures bypass migration).
++  Future<void> _migrateOnce() async {
++    if (_migrated) return;
++    _migrated = true;
++    if (_credentialStore is! KeychainCredentialStore) {
++      // Either an injected fake (tests) or the [_UnavailableCredentialStore]
++      // fallback — neither path benefits from migration.
++      return;
++    }
++    await CredentialStoreFactory.migrateLegacyOnce(env: Platform.environment);
++  }
++
+   /// Builds a fresh [_CapturingCommandRunner] with all nine sub-commands
+   /// wired against the supplied [formatter] and [baseUrl]. Used both by
+   /// the constructor (default formatter / URL) and by [run] (per-invocation
+@@ -236,6 +298,7 @@ final class CliRunner {
+       )
+       ..addFlag(
+         'quiet',
++        abbr: 'q',
+         defaultsTo: false,
+         negatable: false,
+         help: 'suppress info logs',
+@@ -317,6 +380,14 @@ final class CliRunner {
+           stderr: _stderr,
+         ),
+       )
++      ..addCommand(
++        McpCommand(
++          bffClient: bffClient,
++          credentialStore: _credentialStore,
++          stdout: _stdout,
++          stderr: _stderr,
++        ),
++      )
+       ..addCommand(HealthCommand(stdout: _stdout));
+     return assembled;
+   }
+@@ -332,28 +403,143 @@ final class _GlobalFlags {
+   final String bffUrl;
+ }
+ 
+-/// Best-effort global-flag side parse. Matches the global flag set wired
+-/// inside [_assemble]; failures (unknown sub-command, missing argument)
+-/// fall through to defaults — the assembled runner will surface the real
+-/// usage error.
+-_GlobalFlags _parseGlobals(List<String> args) {
+-  final parser = ArgParser(allowTrailingOptions: true)
+-    ..addOption('bff', defaultsTo: _defaultBffUrl)
+-    ..addOption('output', allowed: _outputFormats, defaultsTo: 'auto')
+-    ..addFlag('quiet', defaultsTo: false, negatable: false);
++/// Recognised long-form global flag names — single source of truth, must
++/// match the keys registered on the assembled `CommandRunner`'s argParser.
++const Set<String> _globalLongFlags = {'bff', 'output', 'quiet'};
++
++/// Recognised short-form global flag letters (`-q` aliases `--quiet`).
++const Set<String> _globalShortFlags = {'q'};
++
++/// Long-form global names that take a VALUE (option-style). Distinguishes
++/// `--bff URL` (consume next argv slot) from `--quiet` (boolean, no value).
++const Set<String> _globalLongOptions = {'bff', 'output'};
++
++/// Discriminated union returned by [_parseGlobals]: ok / usage error /
++/// allowlist rejection. Keeps [CliRunner.run] linear (no exceptions).
++sealed class _GlobalsOrError {
++  const _GlobalsOrError();
++  factory _GlobalsOrError.ok(_GlobalFlags g) = _GlobalsOk;
++  factory _GlobalsOrError.usage(String msg) = _GlobalsUsage;
++  factory _GlobalsOrError.bff(BffAllowlistError e) = _GlobalsBff;
++}
++
++final class _GlobalsOk extends _GlobalsOrError {
++  const _GlobalsOk(this.value);
++  final _GlobalFlags value;
++}
++
++final class _GlobalsUsage extends _GlobalsOrError {
++  const _GlobalsUsage(this.message);
++  final String message;
++}
++
++final class _GlobalsBff extends _GlobalsOrError {
++  const _GlobalsBff(this.error);
++  final BffAllowlistError error;
++}
++
++/// 2-pass global-flag parser.
++///
++/// Pass A — [_sliceGlobals] walks argv, plucks global tokens (and their
++///          values for option-style flags) into `globalArgs`; everything
++///          else goes to `rest` preserving relative order.
++/// Pass B — A small dedicated [ArgParser] parses `globalArgs`. Unknown
++///          flags inside `globalArgs` are now impossible by construction,
++///          so this `parser.parse` call NEVER throws on unknown-flag.
++///          It DOES throw on bad `--output` value (e.g. `--output=foo`)
++///          or missing `--bff` value — both intentional, propagate as
++///          [_GlobalsUsage] → exit 64.
++///
++/// SEC: replaces the previous `try { ... } on FormatException { return defaults }`
++/// — a CATASTROPHIC silent-fallback path (audit B1, 2026-05-04) where any
++/// subcommand-specific flag (e.g. `--search=foo`) made `_parseGlobals`
++/// throw and discard the user-supplied `--bff` / `--output`. The 2-pass
++/// design makes that fallback unreachable: an `ArgParserException` here
++/// can only originate from a malformed VALUE for one of the three
++/// recognised globals, never from an unknown-flag clash.
++///
++/// SEC (defense-in-depth): every BFF URL — explicit flag OR build-time
++/// default — passes through [validateBffUrl]. Even a malicious
++/// `--dart-define=ACDG_BFF_URL=http://evil.tld` build cannot escape.
++_GlobalsOrError _parseGlobals(List<String> args) {
++  final (globalArgs, _) = _sliceGlobals(args);
++  final parser = ArgParser()
++    ..addOption('bff') // no defaultsTo — null means "user did not pass it"
++    ..addOption('output', allowed: _outputFormats)
++    ..addFlag('quiet', abbr: 'q', negatable: false);
++  final ArgResults results;
+   try {
+-    final results = parser.parse(args);
+-    final outputRaw = results['output'] as String?;
+-    return _GlobalFlags(
+-      output: outputRaw == 'auto' ? null : outputRaw,
+-      bffUrl: results['bff'] as String? ?? _defaultBffUrl,
+-    );
+-  } on FormatException {
+-    // `ArgParserException` is a `FormatException` subclass — both invalid
+-    // `--output` values and unknown sub-commands surface here. Fall back
+-    // to defaults; the assembled runner will surface the real usage error.
+-    return const _GlobalFlags(output: null, bffUrl: _defaultBffUrl);
++    results = parser.parse(globalArgs);
++    // ignore: unused_catch_stack
++  } on FormatException catch (e, st) {
++    return _GlobalsOrError.usage(e.message);
+   }
++  final outputRaw = results['output'] as String?;
++  final bffRaw = results['bff'] as String?;
++  // SEC: validate the effective BFF URL (explicit flag or default).
++  final bffCandidate = bffRaw ?? _defaultBffUrl;
++  final allowResult = validateBffUrl(bffCandidate);
++  return switch (allowResult) {
++    Success(:final value) => _GlobalsOrError.ok(
++      _GlobalFlags(
++        output: outputRaw == 'auto' ? null : outputRaw,
++        bffUrl: value.toString(),
++      ),
++    ),
++    Failure(:final error) => _GlobalsOrError.bff(error as BffAllowlistError),
++  };
++}
++
++/// argv slicer — plucks global tokens out of [args] without invoking any
++/// parser. Recognises three POSIX/GNU flag forms:
++///   * long with `=` value:    `--bff=URL` / `--output=json`
++///   * long with space value:  `--bff URL` / `--output json`
++///   * boolean (no value):     `--quiet` / `-q`
++/// `--` terminates flag scanning (everything after is positional / pass-through
++/// per POSIX), so `--bff=...` after a `--` is NOT plucked.
++(List<String> globals, List<String> rest) _sliceGlobals(List<String> args) {
++  final globals = <String>[];
++  final rest = <String>[];
++  var passthrough = false;
++  for (var i = 0; i < args.length; i++) {
++    final a = args[i];
++    if (passthrough) {
++      rest.add(a);
++      continue;
++    }
++    if (a == '--') {
++      passthrough = true;
++      rest.add(a);
++      continue;
++    }
++    final isLong = a.startsWith('--');
++    final isShort = !isLong && a.startsWith('-') && a.length > 1;
++    String? name;
++    var hasInlineValue = false;
++    if (isLong) {
++      final eq = a.indexOf('=');
++      name = eq < 0 ? a.substring(2) : a.substring(2, eq);
++      hasInlineValue = eq >= 0;
++    } else if (isShort) {
++      // Single-letter only — no bundling for globals (`-qv` is rejected
++      // upstream by the assembled CommandRunner, never by the slicer).
++      name = a.substring(1);
++    }
++    final isGlobalLong = isLong && _globalLongFlags.contains(name);
++    final isGlobalShort = isShort && _globalShortFlags.contains(name);
++    if (isGlobalLong || isGlobalShort) {
++      globals.add(a);
++      // For option-style globals (`--bff`, `--output`), consume the next
++      // argv slot when the value isn't inlined with `=`.
++      final isOption = isLong && _globalLongOptions.contains(name);
++      if (isOption && !hasInlineValue && i + 1 < args.length) {
++        globals.add(args[++i]);
++      }
++    } else {
++      rest.add(a);
++    }
++  }
++  return (globals, rest);
+ }
+ 
+ /// True when [sink] is a real `Stdout` attached to a TTY. Test harnesses
+@@ -363,6 +549,33 @@ bool _stdoutHasTerminal(StringSink sink) {
+   return sink is Stdout && sink.hasTerminal;
+ }
+ 
++/// Inert [CredentialStore] used when [CredentialStoreFactory.createSync]
++/// returns `Failure` (unsupported platform, missing env var). Read returns
++/// `null` so the next BFF call surfaces `AuthRequiredError`; write throws
++/// `StateError` so `acdg auth login` fails fast rather than silently
++/// dropping the freshly minted session into the void.
++final class _UnavailableCredentialStore implements CredentialStore {
++  const _UnavailableCredentialStore();
++
++  @override
++  Future<OidcSession?> read() async => null;
++
++  @override
++  Future<void> write(OidcSession session) async {
++    // SEC: fail-loud. Silently swallowing a write would lose the user's
++    // session without warning.
++    throw StateError(
++      'Credential storage unavailable on this platform. '
++      'Re-install on macOS, Linux (with libsecret-tools), or Windows.',
++    );
++  }
++
++  @override
++  Future<void> clear() async {
++    // No-op — there is nothing to clear on a missing store.
++  }
++}
++
+ /// `CommandRunner<int>` subclass that redirects `printUsage` to a caller-
+ /// supplied [StringSink] so `--help` output lands in our captured buffer
+ /// rather than the host process's stdout.
+diff --git a/apps/cli/lib/src/errors/cli_error.dart b/apps/cli/lib/src/errors/cli_error.dart
+index 7cbc8a5..8443994 100644
+--- a/apps/cli/lib/src/errors/cli_error.dart
++++ b/apps/cli/lib/src/errors/cli_error.dart
+@@ -4,8 +4,8 @@
+ /// (or the [Result.map]/[Result.flatMap] combinators) — never downcast with
+ /// `as`. The `acdg_lints/no_sealed_class_downcast` rule enforces this.
+ ///
+-/// C01 ships with four variants. C02+ may extend the family; every new
+-/// variant must surface in every existing exhaustive switch (compiler-enforced).
++/// Each variant carries its own [exitCode] and [stderrMessage] so there is
++/// no external helper to update when a new variant is added.
+ library;
+ 
+ /// Root of the sealed CLI error family.
+@@ -19,6 +19,12 @@ sealed class CliError implements Exception {
+   /// Human-readable message — safe to surface on stderr / `--help`.
+   final String message;
+ 
++  /// Exit code for this error category.
++  int get exitCode;
++
++  /// Human-readable message intended for stderr.
++  String get stderrMessage;
++
+   /// Convenience builder — `--output=xml` → [InvalidArgError].
+   const factory CliError.invalidArg(String message) = InvalidArgError;
+ 
+@@ -32,23 +38,41 @@ sealed class CliError implements Exception {
+   const factory CliError.server(int statusCode, String message) = ServerError;
+ 
+   @override
+-  String toString() => message;
++  String toString() => '$runtimeType: $message';
+ }
+ 
+ /// User passed an argument the CLI rejects (e.g. `--output=xml`).
+ final class InvalidArgError extends CliError {
+   const InvalidArgError(super.message);
++
++  @override
++  int get exitCode => 64;
++
++  @override
++  String get stderrMessage => 'Invalid argument: $message';
+ }
+ 
+ /// Credentials missing or expired — caller must `acdg auth login` first.
+ final class AuthRequiredError extends CliError {
+   const AuthRequiredError()
+     : super('Authentication required. Run: acdg auth login');
++
++  @override
++  int get exitCode => 2;
++
++  @override
++  String get stderrMessage => 'Authentication required. Run: acdg auth login';
+ }
+ 
+ /// Transport-level failure (connection, DNS, TLS, timeout).
+ final class NetworkError extends CliError {
+   const NetworkError(super.message);
++
++  @override
++  int get exitCode => 3;
++
++  @override
++  String get stderrMessage => 'Network error: $message';
+ }
+ 
+ /// BFF returned a non-success status the CLI cannot handle locally.
+@@ -57,6 +81,12 @@ final class ServerError extends CliError {
+ 
+   /// HTTP status code returned by the BFF.
+   final int statusCode;
++
++  @override
++  int get exitCode => 1;
++
++  @override
++  String get stderrMessage => 'Server error ($statusCode): $message';
+ }
+ 
+ /// Refresh token rotated or revoked at the IdP — the local session is
+@@ -64,9 +94,167 @@ final class ServerError extends CliError {
+ ///
+ /// Distinct from [AuthRequiredError] so commands can tell apart "no
+ /// session yet" (run login) from "session was invalidated" (run login
+-/// again — the previous one is stale on the IdP). The CLI maps this
+-/// to exit code 7 in `acdg auth refresh`.
++/// again — the previous one is stale on the IdP).
+ final class RefreshTokenInvalidError extends CliError {
+   const RefreshTokenInvalidError([String? detail])
+     : super(detail ?? 'Refresh token rotated or revoked. Run: acdg auth login');
++
++  @override
++  int get exitCode => 2;
++
++  @override
++  String get stderrMessage =>
++      'Authentication required (refresh token rotated). '
++      'Run: acdg auth login';
++}
++
++// ---------------------------------------------------------------------------
++// B4 — Keychain adapter errors
++// ---------------------------------------------------------------------------
++
++/// The platform's keychain backend is not available (binary missing,
++/// `LOCALAPPDATA` unset, unsupported OS).
++///
++/// Surfaced fail-loud — the CLI never falls back to plaintext on missing
++/// backend. Operator gets [installHint] in the error message.
++final class KeychainUnavailable extends CliError {
++  const KeychainUnavailable(this.binary, this.installHint)
++    : super('Keychain unavailable.');
++
++  /// Name of the missing executable / capability (e.g. `secret-tool`,
++  /// `powershell.exe`, `none`).
++  final String binary;
++
++  /// Human-readable remediation copy — install instructions or env-var
++  /// hint surfaced in `toString()` so the operator sees actionable copy.
++  final String installHint;
++
++  @override
++  int get exitCode => 5;
++
++  @override
++  String get stderrMessage =>
++      'Keychain unavailable: $binary not found. $installHint';
++}
++
++/// The keychain backend was reachable but the operation failed (non-zero
++/// exit code, denied, dbus error, etc.).
++///
++/// [stderrSummary] is sanitized + truncated to a fixed length so a runaway
++/// stderr cannot dominate the user's terminal. The secret content NEVER
++/// flows into [stderrSummary] in either success or failure paths — the
++/// keychain binary either never read the secret (write-time failure) or
++/// never echoes it back (read-time stderr is metadata only).
++final class KeychainOperationFailed extends CliError {
++  const KeychainOperationFailed(this.keychainExitCode, this.stderrSummary)
++    : super('Keychain operation failed.');
++
++  /// Exit code returned by the keychain binary.
++  final int keychainExitCode;
++
++  /// Sanitized stderr from the binary. Never contains the secret blob.
++  final String stderrSummary;
++
++  @override
++  int get exitCode => 5;
++
++  @override
++  String get stderrMessage =>
++      'Keychain operation failed (exit $keychainExitCode): $stderrSummary';
++}
++
++/// The keychain entry exists but does not parse as a valid `OidcSession`
++/// JSON blob. The user must `acdg auth login` again to recover.
++final class KeychainCorruptEntry extends CliError {
++  const KeychainCorruptEntry()
++    : super(
++        'Keychain entry exists but is unreadable. '
++        'Run "acdg auth login" to recover.',
++      );
++
++  @override
++  int get exitCode => 5;
++
++  @override
++  String get stderrMessage => message;
++}
++
++// ---------------------------------------------------------------------------
++// CLI-MCP-INTEGRATION (W3) — `McpAdapterError` sealed sub-family
++// ---------------------------------------------------------------------------
++//
++// DESIGN §2.8 — `acdg mcp serve` boundary failures live in their own sealed
++// sub-tree of [CliError]. Each variant carries a BSD `sysexits.h` exit code
++// so the binary returns a meaningful `$?` when the MCP server crashes.
++//
++// Variants (4):
++//   * McpProtocolError  → 70 (EX_SOFTWARE) — JSON-RPC malformed / unexpected.
++//   * McpTransportError → 74 (EX_IOERR)    — stdio peer closed, transport.
++//   * McpToolError      → 1                — handler could not produce a result.
++//   * McpAuthError      → 2                — RBAC denial / no session.
++//
++// Adding a fifth variant trips the exhaustive switch in
++// `test/errors/cli_error_test.dart::_tagOf` (compile-time guard).
++
++/// Root for `acdg mcp serve` boundary failures.
++///
++/// Sealed so every place handling MCP errors must enumerate every variant
++/// (`McpErrorMapper`, the `_tagOf` switch in the cli_error tests).
++sealed class McpAdapterError extends CliError {
++  const McpAdapterError(super.message);
++}
++
++/// JSON-RPC framing or schema error.
++///
++/// Surfaces when a frame fails to parse, when a request lacks required
++/// fields, or when the mapper falls back for an unrecognised exception
++/// type (DESIGN §2.7 — last switch arm).
++final class McpProtocolError extends McpAdapterError {
++  const McpProtocolError(super.message);
++
++  @override
++  int get exitCode => 70; // EX_SOFTWARE
++
++  @override
++  String get stderrMessage => 'MCP protocol error: $message';
++}
++
++/// Stdio peer closed unexpectedly or the transport layer reported a
++/// connection-level failure.
++final class McpTransportError extends McpAdapterError {
++  const McpTransportError(super.message);
++
++  @override
++  int get exitCode => 74; // EX_IOERR
++
++  @override
++  String get stderrMessage => 'MCP transport error: $message';
++}
++
++/// A registered tool handler could not produce a valid result. The registry
++/// catches handler exceptions and wraps them as `CallToolResult(isError: true)`,
++/// so this variant is rare; it surfaces only when the boundary itself is
++/// the source of the failure.
++final class McpToolError extends McpAdapterError {
++  const McpToolError(super.message);
++
++  @override
++  int get exitCode => 1;
++
++  @override
++  String get stderrMessage => 'MCP tool error: $message';
++}
++
++/// The caller has no active session OR the session lacks every required
++/// role for the tool being invoked. `McpToolRegistry.dispatch` returns this
++/// as a `CallToolResult(isError: true)` — this typed variant exists so the
++/// adapter / process surface can also report the same condition.
++final class McpAuthError extends McpAdapterError {
++  const McpAuthError(super.message);
++
++  @override
++  int get exitCode => 2;
++
++  @override
++  String get stderrMessage => 'MCP auth error: $message';
+ }
+diff --git a/apps/cli/pubspec.yaml b/apps/cli/pubspec.yaml
+index 9f5c76f..4ed1e8a 100644
+--- a/apps/cli/pubspec.yaml
++++ b/apps/cli/pubspec.yaml
+@@ -11,8 +11,11 @@ environment:
+ dependencies:
+   args: ^2.6.0
+   crypto: ^3.0.6
++  dart_mcp: 0.5.1   # PIN sem caret — boundary adapter absorve mudanças (ADR-MCP-001-v2)
+   dio: ^5.7.0
+   http: ^1.4.0
++  logging: ^1.3.0
++  meta: ^1.16.0
+   yaml: ^3.1.2
+ 
+   # Contract A DTOs (BFF request/response shapes)

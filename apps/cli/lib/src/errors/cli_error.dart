@@ -178,3 +178,83 @@ final class KeychainCorruptEntry extends CliError {
   @override
   String get stderrMessage => message;
 }
+
+// ---------------------------------------------------------------------------
+// CLI-MCP-INTEGRATION (W3) — `McpAdapterError` sealed sub-family
+// ---------------------------------------------------------------------------
+//
+// DESIGN §2.8 — `acdg mcp serve` boundary failures live in their own sealed
+// sub-tree of [CliError]. Each variant carries a BSD `sysexits.h` exit code
+// so the binary returns a meaningful `$?` when the MCP server crashes.
+//
+// Variants (4):
+//   * McpProtocolError  → 70 (EX_SOFTWARE) — JSON-RPC malformed / unexpected.
+//   * McpTransportError → 74 (EX_IOERR)    — stdio peer closed, transport.
+//   * McpToolError      → 1                — handler could not produce a result.
+//   * McpAuthError      → 2                — RBAC denial / no session.
+//
+// Adding a fifth variant trips the exhaustive switch in
+// `test/errors/cli_error_test.dart::_tagOf` (compile-time guard).
+
+/// Root for `acdg mcp serve` boundary failures.
+///
+/// Sealed so every place handling MCP errors must enumerate every variant
+/// (`McpErrorMapper`, the `_tagOf` switch in the cli_error tests).
+sealed class McpAdapterError extends CliError {
+  const McpAdapterError(super.message);
+}
+
+/// JSON-RPC framing or schema error.
+///
+/// Surfaces when a frame fails to parse, when a request lacks required
+/// fields, or when the mapper falls back for an unrecognised exception
+/// type (DESIGN §2.7 — last switch arm).
+final class McpProtocolError extends McpAdapterError {
+  const McpProtocolError(super.message);
+
+  @override
+  int get exitCode => 70; // EX_SOFTWARE
+
+  @override
+  String get stderrMessage => 'MCP protocol error: $message';
+}
+
+/// Stdio peer closed unexpectedly or the transport layer reported a
+/// connection-level failure.
+final class McpTransportError extends McpAdapterError {
+  const McpTransportError(super.message);
+
+  @override
+  int get exitCode => 74; // EX_IOERR
+
+  @override
+  String get stderrMessage => 'MCP transport error: $message';
+}
+
+/// A registered tool handler could not produce a valid result. The registry
+/// catches handler exceptions and wraps them as `CallToolResult(isError: true)`,
+/// so this variant is rare; it surfaces only when the boundary itself is
+/// the source of the failure.
+final class McpToolError extends McpAdapterError {
+  const McpToolError(super.message);
+
+  @override
+  int get exitCode => 1;
+
+  @override
+  String get stderrMessage => 'MCP tool error: $message';
+}
+
+/// The caller has no active session OR the session lacks every required
+/// role for the tool being invoked. `McpToolRegistry.dispatch` returns this
+/// as a `CallToolResult(isError: true)` — this typed variant exists so the
+/// adapter / process surface can also report the same condition.
+final class McpAuthError extends McpAdapterError {
+  const McpAuthError(super.message);
+
+  @override
+  int get exitCode => 2;
+
+  @override
+  String get stderrMessage => 'MCP auth error: $message';
+}

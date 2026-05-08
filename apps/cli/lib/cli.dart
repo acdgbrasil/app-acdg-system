@@ -8,6 +8,7 @@
 library;
 
 export 'src/cli_runner.dart' show CliRunner;
+export 'src/commands/mcp_command.dart' show McpCommand;
 export 'src/errors/cli_error.dart';
 export 'src/errors/exit_code.dart';
 export 'src/formatters/output_formatter.dart';

@@ -62,6 +62,7 @@ import 'commands/family_remove_command.dart';
 import 'commands/family_update_identity_command.dart';
 import 'commands/health_command.dart';
 import 'commands/lookup_batch_command.dart';
+import 'commands/mcp_command.dart';
 import 'commands/lookup_command.dart';
 import 'commands/lookup_create_command.dart';
 import 'commands/lookup_get_command.dart';
@@ -375,6 +376,14 @@ final class CliRunner {
         _buildTeamCommand(
           bffClient: bffClient,
           formatter: formatter,
+          stdout: _stdout,
+          stderr: _stderr,
+        ),
+      )
+      ..addCommand(
+        McpCommand(
+          bffClient: bffClient,
+          credentialStore: _credentialStore,
           stdout: _stdout,
           stderr: _stderr,
         ),

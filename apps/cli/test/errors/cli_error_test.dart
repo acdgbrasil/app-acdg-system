@@ -84,6 +84,7 @@ void main() {
     });
   });
 
+  _mcpTests();
 }
 
 /// Helper that forces an exhaustive switch — analyzer fails this file if a
@@ -93,6 +94,9 @@ void main() {
 /// caught it (compiler-enforced), and the new arm is the W1 migration.
 /// B4 added [KeychainUnavailable], [KeychainOperationFailed],
 /// [KeychainCorruptEntry] — each gets its own tag here.
+/// CLI-MCP-INTEGRATION (W2) adds the sealed `McpAdapterError` family with
+/// 4 subtypes — each gets its own tag here so adding a 5th will fail the
+/// compiler at this file (intentional).
 String _tagOf(CliError error) => switch (error) {
   InvalidArgError() => 'invalid',
   AuthRequiredError() => 'auth',
@@ -102,5 +106,48 @@ String _tagOf(CliError error) => switch (error) {
   KeychainUnavailable() => 'keychain_unavailable',
   KeychainOperationFailed() => 'keychain_op_failed',
   KeychainCorruptEntry() => 'keychain_corrupt',
+  McpProtocolError() => 'mcp_protocol',
+  McpTransportError() => 'mcp_transport',
+  McpToolError() => 'mcp_tool',
+  McpAuthError() => 'mcp_auth',
 };
 
+// ---------------------------------------------------------------------------
+// CLI-MCP-INTEGRATION (W2 RED) — McpAdapterError sealed family.
+// ---------------------------------------------------------------------------
+//
+// DESIGN §2.8 declares 4 variants under a sealed `McpAdapterError extends
+// CliError` parent. Each carries its own exitCode following the BSD sysexits
+// taxonomy:
+//   * McpProtocolError  → 70 (EX_SOFTWARE) — JSON-RPC malformed
+//   * McpTransportError → 74 (EX_IOERR)    — stdio peer closed
+//   * McpToolError      → 1                — handler could not produce a result
+//   * McpAuthError      → 2                — RBAC denial / no session
+
+void _mcpTests() {
+  group('McpAdapterError sealed family (W2 RED — DESIGN §2.8)', () {
+    test('is exhaustively switchable through CliError root', () {
+      const McpAdapterError protocol = McpProtocolError('bad frame');
+      const McpAdapterError transport = McpTransportError('peer closed');
+      const McpAdapterError tool = McpToolError('handler crashed');
+      const McpAdapterError auth = McpAuthError('forbidden');
+
+      // Tagging each variant via the same exhaustive switch as the rest
+      // of CliError proves every arm is reachable from the root.
+      expect(_tagOf(protocol), equals('mcp_protocol'));
+      expect(_tagOf(transport), equals('mcp_transport'));
+      expect(_tagOf(tool), equals('mcp_tool'));
+      expect(_tagOf(auth), equals('mcp_auth'));
+    });
+
+    test(
+      'each variant exposes the BSD sysexits exit code from DESIGN §2.8',
+      () {
+        expect(const McpProtocolError('x').exitCode, equals(70));
+        expect(const McpTransportError('x').exitCode, equals(74));
+        expect(const McpToolError('x').exitCode, equals(1));
+        expect(const McpAuthError('x').exitCode, equals(2));
+      },
+    );
+  });
+}

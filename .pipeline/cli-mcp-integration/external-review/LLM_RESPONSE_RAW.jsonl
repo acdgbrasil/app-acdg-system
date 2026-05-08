@@ -1,0 +1,2 @@
+{"ticket":"cli-mcp-integration","attempt":1,"phase":"gemini","event":"invoked","summary":"calling Gemini gemini-2.5-flash","data":{"model":"gemini-2.5-flash","diff_chars":17486},"ts":"2026-05-08T01:38:30.082Z"}
+{"ticket":"cli-mcp-integration","attempt":1,"phase":"gemini","event":"completed","summary":"in=10600 out=913 cost=$0.0011","data":{"tokens_in":10600,"tokens_out":913,"cost_usd":0.0010689,"cumulative_cost_usd":0.0010689,"soft_alert":false},"ts":"2026-05-08T01:39:07.218Z"}
