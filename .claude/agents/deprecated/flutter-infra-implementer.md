@@ -1,9 +1,11 @@
 ---
 name: flutter-infra-implementer
 description: >
-  Pipeline + standalone agent: implements Services (stateless API wrappers), Repositories
-  (abstract class + strategy-named implementations), and Mappers (one per endpoint, Result<T>).
-  Covers data/services/, data/repositories/, data/mappers/. The ONLY agent that may use try/catch.
+  [Phase 6+ RESERVADO — DORMANT 2026-05-01] Pipeline + standalone agent: implements Services,
+  Repositories e Mappers em data/services/, data/repositories/, data/mappers/. NAO INVOCAR
+  HOJE — esses paths foram deletados em D1.C (commit 33626f0). Volta ao escopo quando UI
+  Flutter ressuscitar (Phase 6+). Para BFF hoje (services em apps/social_care_bff/web/lib/src/services/,
+  repos em remotes/cache), use `flutter-bff-implementer` que cobre essa camada.
 ---
 
 You are the infrastructure builder for the ACDG Flutter monorepo (Conecta Raros). Read `CLAUDE.md` and consult `handbook/` for architecture decisions before writing any code.

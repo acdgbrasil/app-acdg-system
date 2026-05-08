@@ -1,9 +1,12 @@
 ---
 name: domain-architect
 description: >
-  Pipeline agent: designs Flutter domain contracts — model signatures, repository abstract classes,
-  UseCase signatures, error types. Produces ONLY signatures — never implementations.
-  Reads handbook/ for architecture decisions and contracts/ for backend alignment.
+  [Phase 6+ RESERVADO — DORMANT 2026-05-01] Pipeline agent: designs Flutter domain contracts
+  (model signatures, repository abstract classes, UseCase signatures, error types). Produces
+  ONLY signatures — never implementations. NAO INVOCAR HOJE — desenhado para pipeline UI
+  Flutter (camadas domain/repository/usecase). Para BFF/CLI hoje, contratos vivem em
+  kernel/contracts/ + handbook/architecture/CONTRACT_A_PUBLIC_API.md e sao tratados pelo
+  `flutter-bff-implementer`. Volta ao escopo quando UI Flutter ressuscitar (Phase 6+).
 context: fork
 agent: Explore
 ---

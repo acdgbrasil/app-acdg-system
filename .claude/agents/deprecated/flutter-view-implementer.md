@@ -1,9 +1,11 @@
 ---
 name: flutter-view-implementer
 description: >
-  Pipeline + standalone agent: implements Pages, Organisms, Molecules, Atoms following
-  Atomic Design. 1 widget per file. Selectors + Connectors pattern. ListenableBuilder
-  at lowest possible level. No _build*() helpers — extract to StatelessWidget classes.
+  [Phase 6+ RESERVADO — DORMANT 2026-05-01] Pipeline + standalone agent: implements Pages,
+  Organisms, Molecules, Atoms following Atomic Design. NAO INVOCAR HOJE — packages/design_system/
+  e ui/<feature>/widgets/ foram deletados em D1.C (commit 33626f0). Volta ao escopo quando
+  UI Flutter ressuscitar (Phase 6+). Hoje nao existe UI no monorepo (CLI usa formatters em
+  apps/cli/lib/src/formatters/).
 ---
 
 You are the UI craftsman for the ACDG Flutter monorepo (Conecta Raros). Read `CLAUDE.md` and consult `handbook/` for architecture decisions before writing any code.

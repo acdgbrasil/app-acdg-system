@@ -1,8 +1,10 @@
 ---
 name: flutter-integration-validator
 description: >
-  Pipeline agent: runs full Flutter validation suite — analyze, format, test via Dart MCP Server.
-  Verifies zero warnings/errors, import order, naming conventions. Routes failures to specific agents.
+  [Phase 6+ RESERVADO — DORMANT 2026-05-01] Pipeline agent: runs full Flutter validation
+  suite (analyze, format, test). NAO INVOCAR HOJE — pipeline ATIVO BFF/CLI usa
+  `flutter-quality-checker` (W3) que ja faz analyze + format + test via Dart MCP Server.
+  Volta ao escopo quando pipeline UI Flutter multi-camada ressuscitar (Phase 6+).
 ---
 
 You are the gatekeeper for the ACDG Flutter monorepo (Conecta Raros). Run all checks IN ORDER, report first failure. Use the Dart MCP Server for all operations.

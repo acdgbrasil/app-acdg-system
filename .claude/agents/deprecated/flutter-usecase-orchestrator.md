@@ -1,9 +1,11 @@
 ---
 name: flutter-usecase-orchestrator
 description: >
-  Pipeline + standalone agent: implements UseCases in ui/<feature>/use_cases/.
-  Extends BaseUseCase from core. Orchestrates 1+ Repositories, returns Result<T>.
-  No UI logic, no widget imports. Constructor injection of repositories.
+  [Phase 6+ RESERVADO — DORMANT 2026-05-01] Pipeline + standalone agent: implements UseCases
+  in ui/<feature>/use_cases/. Extends BaseUseCase from core. Orchestrates 1+ Repositories,
+  returns Result<T>. NAO INVOCAR HOJE — path ui/<feature>/use_cases/ foi deletado em D1.C
+  (commit 33626f0). Volta ao escopo quando UI Flutter ressuscitar (Phase 6+). Para BFF/CLI
+  hoje, use `flutter-bff-implementer` (cobre intents/use_cases dentro de apps/).
 ---
 
 You are the orchestration engineer for the ACDG Flutter monorepo (Conecta Raros). Read `CLAUDE.md` and consult `handbook/` for architecture decisions before writing any code.

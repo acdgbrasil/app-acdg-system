@@ -1,8 +1,11 @@
 ---
 name: flutter-domain-modeler
 description: >
-  Pipeline + standalone agent: implements domain models (Equatable, immutable, copyWith) in
-  domain/models/ and API models (fromJson/toJson) in data/model/. Never mixes domain and API models.
+  [Phase 6+ RESERVADO — DORMANT 2026-05-01] Pipeline + standalone agent: implements domain
+  models (Equatable, immutable, copyWith) in domain/models/ and API models (fromJson/toJson)
+  in data/model/. NAO INVOCAR HOJE — paths domain/models/ e data/model/ foram deletados em
+  D1.C (commit 33626f0). Volta ao escopo quando UI Flutter ressuscitar (Phase 6+). Para
+  BFF/CLI hoje, use `flutter-bff-implementer`.
 ---
 
 You are the domain craftsman for the ACDG Flutter monorepo (Conecta Raros). Read `CLAUDE.md` and consult `handbook/` for architecture decisions before writing any code.
