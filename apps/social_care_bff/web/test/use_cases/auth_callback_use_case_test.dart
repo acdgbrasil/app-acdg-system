@@ -2,6 +2,7 @@ import 'package:core_contracts/core_contracts.dart';
 import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
+import 'package:social_care_web/src/auth/session_store.dart';
 import 'package:social_care_web/src/intents/auth_callback_intent.dart';
 import 'package:social_care_web/src/observability/observability_context.dart';
 import 'package:social_care_web/src/use_cases/auth_callback_use_case.dart';
@@ -23,13 +24,18 @@ class _FailingAuthBff extends FakeAuthBff {
 void main() {
   group('AuthCallbackUseCase (Wave 0 — contract-based)', () {
     late FakeAuthBff fakeAuth;
+    late SessionStore sessionStore;
     late ObservabilityContext obs;
     late AuthCallbackUseCase useCase;
 
     setUp(() {
       fakeAuth = FakeAuthBff();
+      sessionStore = SessionStore(
+        ttl: const Duration(hours: 1),
+        clock: () => DateTime.utc(2026, 5, 4, 12, 0),
+      );
       obs = ObservabilityContext.noop();
-      useCase = AuthCallbackUseCase(auth: fakeAuth);
+      useCase = AuthCallbackUseCase(auth: fakeAuth, sessionStore: sessionStore);
     });
 
     test('returns Success when AuthContract.callback succeeds', () async {
@@ -112,7 +118,10 @@ void main() {
         http: 502,
       );
       final failing = _FailingAuthBff(error);
-      final failingUseCase = AuthCallbackUseCase(auth: failing);
+      final failingUseCase = AuthCallbackUseCase(
+        auth: failing,
+        sessionStore: sessionStore,
+      );
 
       final result = await failingUseCase.execute(
         const AuthCallbackIntent(code: 'abc', state: 'xyz'),
@@ -130,7 +139,10 @@ void main() {
         http: 502,
       );
       final failing = _FailingAuthBff(error);
-      final failingUseCase = AuthCallbackUseCase(auth: failing);
+      final failingUseCase = AuthCallbackUseCase(
+        auth: failing,
+        sessionStore: sessionStore,
+      );
 
       await failingUseCase.execute(
         const AuthCallbackIntent(code: 'abc', state: 'xyz'),

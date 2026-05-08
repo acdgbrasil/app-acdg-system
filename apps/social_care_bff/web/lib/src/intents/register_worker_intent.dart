@@ -33,9 +33,7 @@ final class RegisterWorkerIntent with Equatable {
   /// passed through verbatim. Missing required fields produce a [Failure]
   /// whose message enumerates the field names WITHOUT echoing any raw
   /// value.
-  static Result<RegisterWorkerIntent> parseFromBody(
-    Map<String, dynamic> body,
-  ) {
+  static Result<RegisterWorkerIntent> parseFromBody(Map<String, dynamic> body) {
     final fullNameRaw = body['fullName'];
     final birthDateRaw = body['birthDate'];
     final emailRaw = body['email'];

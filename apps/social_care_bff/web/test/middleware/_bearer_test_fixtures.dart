@@ -31,8 +31,7 @@ const String kJwtRolesClaim = 'urn:zitadel:iam:org:project:roles';
 ///
 /// Fixed test secret so that HMAC-derived session ids are deterministic
 /// across runs.
-const String kSessionSecret =
-    'test-session-secret-32-bytes-long-aaa';
+const String kSessionSecret = 'test-session-secret-32-bytes-long-aaa';
 
 /// `kid` (JWKS key id) for the primary signing key. Tests reference it by
 /// name to keep fixtures stable.

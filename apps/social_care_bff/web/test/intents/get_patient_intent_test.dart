@@ -62,7 +62,10 @@ void main() {
             fail('Expected Failure for non-UUID');
           case Failure(:final error):
             expect(error, isA<UuidPathParamError>());
-            expect((error as UuidPathParamError).fieldName, equals('patientId'));
+            expect(
+              (error as UuidPathParamError).fieldName,
+              equals('patientId'),
+            );
         }
       });
 

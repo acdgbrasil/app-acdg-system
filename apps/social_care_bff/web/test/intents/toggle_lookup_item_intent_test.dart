@@ -3,7 +3,6 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/toggle_lookup_item_intent.dart';
-import 'package:social_care_web/src/intents/uuid_validation.dart';
 
 import '../_test_uuids.dart';
 

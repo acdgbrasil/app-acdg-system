@@ -52,9 +52,8 @@ class _FailingTeam extends FakeTeamBff {
   ) async => Failure(error);
 
   @override
-  Future<Result<StandardResponse<void>>> resetPassword(
-    String memberId,
-  ) async => Failure(error);
+  Future<Result<StandardResponse<void>>> resetPassword(String memberId) async =>
+      Failure(error);
 
   @override
   Future<Result<StandardIdResponse>> assignRole(
@@ -316,32 +315,26 @@ void main() {
         expect(data['id'], equals(kMemberUuid));
       });
 
-      test(
-        'returns upstream 404 when member is missing (valid UUID, '
-        'absent from store)',
-        () async {
-          final failing = _FailingTeam(
-            const BackendError(
-              id: 'err-1',
-              code: 'NOT_FOUND',
-              message: 'unknown',
-              http: 404,
-            ),
-          );
-          final handler = _buildHandler(team: failing);
-          // REGRA #2 (CLAUDE.md): use a *valid* UUID that is absent from
-          // the store. After the A23 retrofit, a non-UUID literal here
-          // would be intercepted by the UUID gate and return 400, not 404.
-          final response = await handler.router.call(
-            Request(
-              'GET',
-              Uri.parse('http://localhost/team/$kMemberUuidAlt'),
-            ),
-          );
+      test('returns upstream 404 when member is missing (valid UUID, '
+          'absent from store)', () async {
+        final failing = _FailingTeam(
+          const BackendError(
+            id: 'err-1',
+            code: 'NOT_FOUND',
+            message: 'unknown',
+            http: 404,
+          ),
+        );
+        final handler = _buildHandler(team: failing);
+        // REGRA #2 (CLAUDE.md): use a *valid* UUID that is absent from
+        // the store. After the A23 retrofit, a non-UUID literal here
+        // would be intercepted by the UUID gate and return 400, not 404.
+        final response = await handler.router.call(
+          Request('GET', Uri.parse('http://localhost/team/$kMemberUuidAlt')),
+        );
 
-          expect(response.statusCode, equals(404));
-        },
-      );
+        expect(response.statusCode, equals(404));
+      });
     });
 
     // ── PUT /team/<id>/deactivate ─────────────────────────────────────────
@@ -426,9 +419,7 @@ void main() {
         final response = await handler.router.call(
           Request(
             'POST',
-            Uri.parse(
-              'http://localhost/team/$kMemberUuid/reset-password',
-            ),
+            Uri.parse('http://localhost/team/$kMemberUuid/reset-password'),
           ),
         );
 
@@ -581,39 +572,36 @@ void main() {
         // `/team/people/<id>/roles`) only — because the 2-segment case
         // `/team/people` returned 500 instead of 404. That sidestepped
         // the actual route-bleed invariant. Now reinstated as 400.
-        test(
-          'GET /team/people → 400 INVALID_GET_TEAM_MEMBER_PARAMS '
-          '(UUID gate rejects "people" as path id)',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request('GET', Uri.parse('http://localhost/team/people')),
-            );
+        test('GET /team/people → 400 INVALID_GET_TEAM_MEMBER_PARAMS '
+            '(UUID gate rejects "people" as path id)', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request('GET', Uri.parse('http://localhost/team/people')),
+          );
 
-            expect(
-              response.statusCode,
-              equals(400),
-              reason:
-                  'A23 UUID gate must reject the non-UUID literal "people" '
-                  'with 400, not 404 (router-not-matched) and not 500 '
-                  '(route bleed to upstream).',
-            );
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_GET_TEAM_MEMBER_PARAMS'),
-            );
-            // PII safety — the response body must NOT contain the raw
-            // path segment. UuidPathParamError surfaces only the
-            // fieldName, never the input.
-            expect(
-              bodyStr,
-              isNot(contains('"people"')),
-              reason: 'PII safety — must not echo raw path input.',
-            );
-          },
-        );
+          expect(
+            response.statusCode,
+            equals(400),
+            reason:
+                'A23 UUID gate must reject the non-UUID literal "people" '
+                'with 400, not 404 (router-not-matched) and not 500 '
+                '(route bleed to upstream).',
+          );
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_GET_TEAM_MEMBER_PARAMS'),
+          );
+          // PII safety — the response body must NOT contain the raw
+          // path segment. UuidPathParamError surfaces only the
+          // fieldName, never the input.
+          expect(
+            bodyStr,
+            isNot(contains('"people"')),
+            reason: 'PII safety — must not echo raw path input.',
+          );
+        });
 
         // ── Per-route UUID-rejection tests (one per path-UUID route) ────
 
@@ -622,10 +610,7 @@ void main() {
           () async {
             final handler = _buildHandler();
             final response = await handler.router.call(
-              Request(
-                'GET',
-                Uri.parse('http://localhost/team/$kNonUuid'),
-              ),
+              Request('GET', Uri.parse('http://localhost/team/$kNonUuid')),
             );
 
             expect(response.statusCode, equals(400));
@@ -639,80 +624,65 @@ void main() {
           },
         );
 
-        test(
-          'PUT /api/team/<non-uuid>/deactivate → 400 '
-          'INVALID_DEACTIVATE_WORKER_PARAMS',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'PUT',
-                Uri.parse(
-                  'http://localhost/team/$kNonUuid/deactivate',
-                ),
-              ),
-            );
+        test('PUT /api/team/<non-uuid>/deactivate → 400 '
+            'INVALID_DEACTIVATE_WORKER_PARAMS', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'PUT',
+              Uri.parse('http://localhost/team/$kNonUuid/deactivate'),
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_DEACTIVATE_WORKER_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_DEACTIVATE_WORKER_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
 
-        test(
-          'PUT /api/team/<non-uuid>/reactivate → 400 '
-          'INVALID_REACTIVATE_WORKER_PARAMS',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'PUT',
-                Uri.parse(
-                  'http://localhost/team/$kNonUuid/reactivate',
-                ),
-              ),
-            );
+        test('PUT /api/team/<non-uuid>/reactivate → 400 '
+            'INVALID_REACTIVATE_WORKER_PARAMS', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'PUT',
+              Uri.parse('http://localhost/team/$kNonUuid/reactivate'),
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_REACTIVATE_WORKER_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_REACTIVATE_WORKER_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
 
-        test(
-          'POST /api/team/<non-uuid>/reset-password → 400 '
-          'INVALID_RESET_PASSWORD_PARAMS',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'POST',
-                Uri.parse(
-                  'http://localhost/team/$kNonUuid/reset-password',
-                ),
-              ),
-            );
+        test('POST /api/team/<non-uuid>/reset-password → 400 '
+            'INVALID_RESET_PASSWORD_PARAMS', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'POST',
+              Uri.parse('http://localhost/team/$kNonUuid/reset-password'),
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_RESET_PASSWORD_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_RESET_PASSWORD_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
 
         test(
           'POST /api/team/<non-uuid>/roles → 400 INVALID_ASSIGN_ROLE_BODY '
@@ -743,105 +713,93 @@ void main() {
           },
         );
 
-        test(
-          'PUT /api/team/<non-uuid>/roles/<role-uuid>/deactivate → 400 '
-          'INVALID_DEACTIVATE_ROLE_PARAMS (memberId rejected)',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'PUT',
-                Uri.parse(
-                  'http://localhost/team/$kNonUuid/roles/$kRoleUuid/deactivate',
-                ),
+        test('PUT /api/team/<non-uuid>/roles/<role-uuid>/deactivate → 400 '
+            'INVALID_DEACTIVATE_ROLE_PARAMS (memberId rejected)', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'PUT',
+              Uri.parse(
+                'http://localhost/team/$kNonUuid/roles/$kRoleUuid/deactivate',
               ),
-            );
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_DEACTIVATE_ROLE_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_DEACTIVATE_ROLE_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
 
-        test(
-          'PUT /api/team/<member-uuid>/roles/<non-uuid>/deactivate → 400 '
-          'INVALID_DEACTIVATE_ROLE_PARAMS (roleId rejected)',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'PUT',
-                Uri.parse(
-                  'http://localhost/team/$kMemberUuid/roles/$kNonUuid/deactivate',
-                ),
+        test('PUT /api/team/<member-uuid>/roles/<non-uuid>/deactivate → 400 '
+            'INVALID_DEACTIVATE_ROLE_PARAMS (roleId rejected)', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'PUT',
+              Uri.parse(
+                'http://localhost/team/$kMemberUuid/roles/$kNonUuid/deactivate',
               ),
-            );
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_DEACTIVATE_ROLE_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_DEACTIVATE_ROLE_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
 
-        test(
-          'PUT /api/team/<non-uuid>/roles/<role-uuid>/reactivate → 400 '
-          'INVALID_REACTIVATE_ROLE_PARAMS (memberId rejected)',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'PUT',
-                Uri.parse(
-                  'http://localhost/team/$kNonUuid/roles/$kRoleUuid/reactivate',
-                ),
+        test('PUT /api/team/<non-uuid>/roles/<role-uuid>/reactivate → 400 '
+            'INVALID_REACTIVATE_ROLE_PARAMS (memberId rejected)', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'PUT',
+              Uri.parse(
+                'http://localhost/team/$kNonUuid/roles/$kRoleUuid/reactivate',
               ),
-            );
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_REACTIVATE_ROLE_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_REACTIVATE_ROLE_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
 
-        test(
-          'PUT /api/team/<member-uuid>/roles/<non-uuid>/reactivate → 400 '
-          'INVALID_REACTIVATE_ROLE_PARAMS (roleId rejected)',
-          () async {
-            final handler = _buildHandler();
-            final response = await handler.router.call(
-              Request(
-                'PUT',
-                Uri.parse(
-                  'http://localhost/team/$kMemberUuid/roles/$kNonUuid/reactivate',
-                ),
+        test('PUT /api/team/<member-uuid>/roles/<non-uuid>/reactivate → 400 '
+            'INVALID_REACTIVATE_ROLE_PARAMS (roleId rejected)', () async {
+          final handler = _buildHandler();
+          final response = await handler.router.call(
+            Request(
+              'PUT',
+              Uri.parse(
+                'http://localhost/team/$kMemberUuid/roles/$kNonUuid/reactivate',
               ),
-            );
+            ),
+          );
 
-            expect(response.statusCode, equals(400));
-            final bodyStr = await response.readAsString();
-            final body = _decode(bodyStr);
-            expect(
-              (body['error'] as Map<String, dynamic>)['code'],
-              equals('INVALID_REACTIVATE_ROLE_PARAMS'),
-            );
-            expect(bodyStr, isNot(contains('"$kNonUuid"')));
-          },
-        );
+          expect(response.statusCode, equals(400));
+          final bodyStr = await response.readAsString();
+          final body = _decode(bodyStr);
+          expect(
+            (body['error'] as Map<String, dynamic>)['code'],
+            equals('INVALID_REACTIVATE_ROLE_PARAMS'),
+          );
+          expect(bodyStr, isNot(contains('"$kNonUuid"')));
+        });
       },
     );
   });

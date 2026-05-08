@@ -38,8 +38,14 @@ void main() {
     test('instances with equal payload are equal (Equatable)', () {
       const request = RegisterAppointmentRequest(professionalId: 'prof-1');
 
-      const a = RegisterAppointmentIntent(patientId: kPatientUuid, request: request);
-      const b = RegisterAppointmentIntent(patientId: kPatientUuid, request: request);
+      const a = RegisterAppointmentIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = RegisterAppointmentIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -48,8 +54,14 @@ void main() {
     test('instances with different patientId are not equal', () {
       const request = RegisterAppointmentRequest(professionalId: 'prof-1');
 
-      const a = RegisterAppointmentIntent(patientId: kPatientUuid, request: request);
-      const b = RegisterAppointmentIntent(patientId: kPatientUuidAlt, request: request);
+      const a = RegisterAppointmentIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = RegisterAppointmentIntent(
+        patientId: kPatientUuidAlt,
+        request: request,
+      );
 
       expect(a, isNot(equals(b)));
     });
@@ -106,9 +118,10 @@ void main() {
       );
 
       test('returns Success with null optionals when omitted', () {
-        final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, const {
-          'professionalId': 'prof-42',
-        });
+        final result = RegisterAppointmentIntent.parseFromBody(
+          kPatientUuid,
+          const {'professionalId': 'prof-42'},
+        );
 
         switch (result) {
           case Success(:final value):
@@ -125,7 +138,10 @@ void main() {
       test('returns Failure when professionalId is missing', () {
         final body = _validBody()..remove('professionalId');
 
-        final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, body);
+        final result = RegisterAppointmentIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<RegisterAppointmentIntent>>());
       });
@@ -133,7 +149,10 @@ void main() {
       test('returns Failure when professionalId is empty string', () {
         final body = _validBody()..['professionalId'] = '';
 
-        final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, body);
+        final result = RegisterAppointmentIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<RegisterAppointmentIntent>>());
       });
@@ -171,7 +190,10 @@ void main() {
             'actionPlan': 'Acionar conselho tutelar',
           };
 
-          final result = RegisterAppointmentIntent.parseFromBody(kPatientUuid, body);
+          final result = RegisterAppointmentIntent.parseFromBody(
+            kPatientUuid,
+            body,
+          );
 
           switch (result) {
             case Success():

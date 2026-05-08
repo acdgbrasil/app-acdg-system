@@ -71,10 +71,7 @@ void main() {
             fail('Expected Failure for non-UUID');
           case Failure(:final error):
             expect(error, isA<UuidPathParamError>());
-            expect(
-              (error as UuidPathParamError).fieldName,
-              equals('memberId'),
-            );
+            expect((error as UuidPathParamError).fieldName, equals('memberId'));
             // PII safety — must not echo raw input.
             expect(error.toString(), isNot(contains(kNonUuid)));
         }

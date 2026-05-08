@@ -9,15 +9,7 @@ import 'package:shelf/shelf.dart';
 import '../auth/jwks_cache.dart';
 import '../auth/session_store.dart';
 import '../config/server_config.dart';
-
-/// Context key under which the [Session] derived from a valid Bearer JWT
-/// is exposed to downstream handlers.
-///
-/// Distinct from `sessionContextKey` (cookie-derived) by design: the D5
-/// 4-state matrix mandates that Bearer and cookie sessions never live in
-/// the same slot, so a downstream consumer that mistakenly reads the
-/// wrong key cannot cross-attribute roles or identity (W0.5 S1).
-const String bearerSessionContextKey = 'bearer_session';
+import 'session_middleware.dart' show sessionContextKey;
 
 /// Allowlist for the JOSE `alg` header — Zitadel signs with RS256.
 /// Anything else (including `none`, `None`, `""`, HS256, HS512) is
@@ -51,7 +43,7 @@ final Logger _log = Logger('bearer_auth_middleware');
 /// Builds a shelf [Middleware] that authenticates `Authorization: Bearer <jwt>`
 /// requests against Zitadel-issued RS256 JWTs.
 ///
-/// On success: populates `request.context[bearerSessionContextKey]` with a
+/// On success: populates `request.context[sessionContextKey]` with a
 /// fresh [Session] and forwards to the inner handler — but with the `Cookie`
 /// header stripped so the downstream `sessionMiddleware` does NOT also
 /// populate the cookie session (D5 matrix row 2; W0.5 S1).
@@ -180,7 +172,14 @@ Middleware bearerAuthMiddleware({
         headers: cookieRemovals,
         context: <String, Object?>{
           ...request.context,
-          bearerSessionContextKey: session,
+          // SEC: write to canonical sessionContextKey (was
+          // bearerSessionContextKey pre-B1). Single context slot for both
+          // auth paths — auth_guard + getSession only need to read one
+          // place. Cookie header was already stripped above (lines
+          // 173-178), so the downstream sessionMiddleware cannot also
+          // populate this slot — Bearer wins by construction (D5 row 2;
+          // W0.5 S1).
+          sessionContextKey: session,
         },
       );
       return innerHandler(forwarded);

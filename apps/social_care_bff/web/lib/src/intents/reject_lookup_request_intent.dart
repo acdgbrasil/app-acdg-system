@@ -22,9 +22,9 @@ final class RejectLookupRequestIntent with Equatable {
   /// Validates [rawRequestId] as a UUID v4 path parameter and wraps it in
   /// a [RejectLookupRequestIntent]. Returns [Failure] with a
   /// [UuidPathParamError] when the input is not a canonical UUID v4.
-  static Result<RejectLookupRequestIntent> parseFromPath(
-    String rawRequestId,
-  ) =>
-      validateUuidPathParam(rawRequestId, fieldName: 'requestId')
-          .map((requestId) => RejectLookupRequestIntent(requestId: requestId));
+  static Result<RejectLookupRequestIntent> parseFromPath(String rawRequestId) =>
+      validateUuidPathParam(
+        rawRequestId,
+        fieldName: 'requestId',
+      ).map((requestId) => RejectLookupRequestIntent(requestId: requestId));
 }

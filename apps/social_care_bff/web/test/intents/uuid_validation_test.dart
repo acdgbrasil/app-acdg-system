@@ -79,8 +79,7 @@ void main() {
 
       test('accepts variant nibble values 8, 9, a, b', () {
         for (final variant in ['8', '9', 'a', 'b']) {
-          final candidate =
-              'a1b2c3d4-e5f6-4789-${variant}012-3456789abcde';
+          final candidate = 'a1b2c3d4-e5f6-4789-${variant}012-3456789abcde';
           final result = validateUuidPathParam(
             candidate,
             fieldName: 'patientId',
@@ -146,8 +145,7 @@ void main() {
 
       test('rejects invalid variant nibble (c, d, e, f)', () {
         for (final invalid in ['c', 'd', 'e', 'f']) {
-          final candidate =
-              'a1b2c3d4-e5f6-4789-${invalid}012-3456789abcde';
+          final candidate = 'a1b2c3d4-e5f6-4789-${invalid}012-3456789abcde';
           final result = validateUuidPathParam(
             candidate,
             fieldName: 'patientId',
@@ -204,10 +202,7 @@ void main() {
 
       test('rejects path traversal attempts', () {
         for (final attack in ['../patient', '/etc/passwd', '..\\..\\']) {
-          final result = validateUuidPathParam(
-            attack,
-            fieldName: 'patientId',
-          );
+          final result = validateUuidPathParam(attack, fieldName: 'patientId');
           expect(
             result,
             isA<Failure<String>>(),

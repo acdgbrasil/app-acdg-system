@@ -5,6 +5,7 @@ import 'package:shared/shared.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
+import 'package:social_care_web/src/auth/session_store.dart';
 import 'package:social_care_web/src/handlers/auth_handler.dart';
 import 'package:social_care_web/src/use_cases/auth_callback_use_case.dart';
 import 'package:social_care_web/src/use_cases/login_use_case.dart';
@@ -33,9 +34,13 @@ class _FailingMeAuth extends FakeAuthBff {
 
 /// Builds a thin-handler fixture with all UseCases wired on a shared contract.
 AuthHandler _buildHandler(AuthContract contract) {
+  final sessionStore = SessionStore(
+    ttl: const Duration(hours: 1),
+    clock: () => DateTime.utc(2026, 5, 4, 12, 0),
+  );
   return AuthHandler(
     login: LoginUseCase(auth: contract),
-    callback: AuthCallbackUseCase(auth: contract),
+    callback: AuthCallbackUseCase(auth: contract, sessionStore: sessionStore),
     logout: LogoutUseCase(auth: contract),
     me: MeUseCase(auth: contract),
     refresh: RefreshUseCase(auth: contract),

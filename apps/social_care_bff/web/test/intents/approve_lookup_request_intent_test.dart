@@ -35,42 +35,53 @@ void main() {
       expect(a, isNot(equals(b)));
     });
 
-    group('parseFromPath — Result<ApproveLookupRequestIntent> (Template A V2)',
-        () {
-      test('returns Success carrying the validated requestId for valid UUID v4',
+    group(
+      'parseFromPath — Result<ApproveLookupRequestIntent> (Template A V2)',
+      () {
+        test(
+          'returns Success carrying the validated requestId for valid UUID v4',
           () {
-        final result =
-            ApproveLookupRequestIntent.parseFromPath(kLookupRequestUuid);
-
-        // Cast in test is fail-fast (§P5 exception).
-        final success = result as Success<ApproveLookupRequestIntent>;
-        expect(success.value.requestId, equals(kLookupRequestUuid));
-      });
-
-      test('normalizes uppercase / whitespace to canonical lowercase form', () {
-        final result =
-            ApproveLookupRequestIntent.parseFromPath(' ${kLookupRequestUuid.toUpperCase()} ');
-
-        final success = result as Success<ApproveLookupRequestIntent>;
-        expect(success.value.requestId, equals(kLookupRequestUuid));
-      });
-
-      test('returns Failure with UuidPathParamError when input is not UUID v4',
-          () {
-        final result = ApproveLookupRequestIntent.parseFromPath(kNonUuid);
-
-        switch (result) {
-          case Success():
-            fail('Expected Failure for non-UUID input');
-          case Failure(:final error):
-            expect(error, isA<UuidPathParamError>());
-            expect(
-              error.toString(),
-              isNot(contains(kNonUuid)),
-              reason: 'PII safety: error must not echo raw input',
+            final result = ApproveLookupRequestIntent.parseFromPath(
+              kLookupRequestUuid,
             );
-        }
-      });
-    });
+
+            // Cast in test is fail-fast (§P5 exception).
+            final success = result as Success<ApproveLookupRequestIntent>;
+            expect(success.value.requestId, equals(kLookupRequestUuid));
+          },
+        );
+
+        test(
+          'normalizes uppercase / whitespace to canonical lowercase form',
+          () {
+            final result = ApproveLookupRequestIntent.parseFromPath(
+              ' ${kLookupRequestUuid.toUpperCase()} ',
+            );
+
+            final success = result as Success<ApproveLookupRequestIntent>;
+            expect(success.value.requestId, equals(kLookupRequestUuid));
+          },
+        );
+
+        test(
+          'returns Failure with UuidPathParamError when input is not UUID v4',
+          () {
+            final result = ApproveLookupRequestIntent.parseFromPath(kNonUuid);
+
+            switch (result) {
+              case Success():
+                fail('Expected Failure for non-UUID input');
+              case Failure(:final error):
+                expect(error, isA<UuidPathParamError>());
+                expect(
+                  error.toString(),
+                  isNot(contains(kNonUuid)),
+                  reason: 'PII safety: error must not echo raw input',
+                );
+            }
+          },
+        );
+      },
+    );
   });
 }

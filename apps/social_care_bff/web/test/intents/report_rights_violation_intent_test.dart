@@ -3,7 +3,6 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/report_rights_violation_intent.dart';
-import 'package:social_care_web/src/intents/uuid_validation.dart';
 
 import '../_test_uuids.dart';
 
@@ -160,7 +159,10 @@ void main() {
       test('returns Failure when victimId is missing', () {
         final body = _validBody()..remove('victimId');
 
-        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
+        final result = ReportRightsViolationIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -168,7 +170,10 @@ void main() {
       test('returns Failure when violationType is missing', () {
         final body = _validBody()..remove('violationType');
 
-        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
+        final result = ReportRightsViolationIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -176,7 +181,10 @@ void main() {
       test('returns Failure when descriptionOfFact is missing', () {
         final body = _validBody()..remove('descriptionOfFact');
 
-        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
+        final result = ReportRightsViolationIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -184,7 +192,10 @@ void main() {
       test('returns Failure when victimId is empty string', () {
         final body = _validBody()..['victimId'] = '';
 
-        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
+        final result = ReportRightsViolationIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });
@@ -192,7 +203,10 @@ void main() {
       test('returns Failure when descriptionOfFact is empty string', () {
         final body = _validBody()..['descriptionOfFact'] = '';
 
-        final result = ReportRightsViolationIntent.parseFromBody(kPatientUuid, body);
+        final result = ReportRightsViolationIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<ReportRightsViolationIntent>>());
       });

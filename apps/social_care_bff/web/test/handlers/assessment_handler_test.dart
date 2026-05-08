@@ -472,7 +472,10 @@ void main() {
       final handler = _buildHandler();
 
       final response = await handler.router.call(
-        _put('/patients/$kPatientUuid/assessment/health', _validHealthStatusBody()),
+        _put(
+          '/patients/$kPatientUuid/assessment/health',
+          _validHealthStatusBody(),
+        ),
       );
 
       expect(response.statusCode, lessThan(300));
@@ -523,7 +526,10 @@ void main() {
       final handler = _buildHandler(assessment: failing);
 
       final response = await handler.router.call(
-        _put('/patients/$kPatientUuid/assessment/health', _validHealthStatusBody()),
+        _put(
+          '/patients/$kPatientUuid/assessment/health',
+          _validHealthStatusBody(),
+        ),
       );
 
       expect(response.statusCode, equals(409));
@@ -550,7 +556,10 @@ void main() {
         final handler = _buildHandler();
 
         final response = await handler.router.call(
-          _put('/patients/$kPatientUuid/assessment/community-support', 'not json'),
+          _put(
+            '/patients/$kPatientUuid/assessment/community-support',
+            'not json',
+          ),
         );
 
         expect(response.statusCode, equals(400));
@@ -620,7 +629,10 @@ void main() {
         final handler = _buildHandler();
 
         final response = await handler.router.call(
-          _put('/patients/$kPatientUuid/assessment/social-health-summary', 'not json'),
+          _put(
+            '/patients/$kPatientUuid/assessment/social-health-summary',
+            'not json',
+          ),
         );
 
         expect(response.statusCode, equals(400));
@@ -636,7 +648,10 @@ void main() {
           ..remove('requiresConstantCare');
 
         final response = await handler.router.call(
-          _put('/patients/$kPatientUuid/assessment/social-health-summary', body),
+          _put(
+            '/patients/$kPatientUuid/assessment/social-health-summary',
+            body,
+          ),
         );
 
         expect(response.statusCode, equals(400));
@@ -678,7 +693,10 @@ void main() {
         final handler = _buildHandler(assessment: _ExplodingAssessment());
 
         final response = await handler.router.call(
-          _put('/patients/$kPatientUuid/assessment/housing', _validHousingBody()),
+          _put(
+            '/patients/$kPatientUuid/assessment/housing',
+            _validHousingBody(),
+          ),
         );
 
         expect(response.statusCode, equals(500));

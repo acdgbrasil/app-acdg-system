@@ -24,14 +24,8 @@ void main() {
     test('instances with equal fields are equal (Equatable)', () {
       const request = ReadmitPatientRequest();
 
-      const a = ReadmitPatientIntent(
-        patientId: kPatientUuid,
-        request: request,
-      );
-      const b = ReadmitPatientIntent(
-        patientId: kPatientUuid,
-        request: request,
-      );
+      const a = ReadmitPatientIntent(patientId: kPatientUuid, request: request);
+      const b = ReadmitPatientIntent(patientId: kPatientUuid, request: request);
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -68,16 +62,19 @@ void main() {
         }
       });
 
-      test('returns Failure when patientId is empty (UUID gate rejects it)', () {
-        final result = ReadmitPatientIntent.parseFromBody('', const {});
+      test(
+        'returns Failure when patientId is empty (UUID gate rejects it)',
+        () {
+          final result = ReadmitPatientIntent.parseFromBody('', const {});
 
-        switch (result) {
-          case Success():
-            fail('Expected Failure for empty path id');
-          case Failure(:final error):
-            expect(error, isA<UuidPathParamError>());
-        }
-      });
+          switch (result) {
+            case Success():
+              fail('Expected Failure for empty path id');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+          }
+        },
+      );
 
       test(
         'returns Failure with UuidPathParamError when path id is not UUID v4',

@@ -371,7 +371,9 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
+            Uri.parse(
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid',
+            ),
             body: jsonEncode(const {
               'codigo': 'NEW_CODE',
               'descricao': 'New description',
@@ -396,7 +398,9 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
+            Uri.parse(
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid',
+            ),
             body: jsonEncode(const <String, dynamic>{}),
             headers: {'content-type': 'application/json'},
           );
@@ -413,7 +417,9 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
+            Uri.parse(
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid',
+            ),
             body: jsonEncode(const {'codigo': 'NEW_CODE'}),
             headers: {'content-type': 'application/json'},
           );
@@ -428,7 +434,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
+          Uri.parse(
+            'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid',
+          ),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -452,7 +460,9 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
+            Uri.parse(
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid',
+            ),
             body: jsonEncode(const <String, dynamic>{
               'codigo': 42,
               'descricao': true,
@@ -481,7 +491,9 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/lookups/dominio_parentesco/$kLookupItemUuid'),
+            Uri.parse(
+              'http://localhost/lookups/dominio_parentesco/$kLookupItemUuid',
+            ),
             body: jsonEncode(const {'codigo': 'X'}),
             headers: {'content-type': 'application/json'},
           );
@@ -988,12 +1000,16 @@ void main() {
         expect(response.statusCode, equals(200));
         final body =
             jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-        final tables = (body['data'] as Map<String, dynamic>)['tables']
-            as Map<String, dynamic>;
-        expect(tables.keys, containsAll(<String>[
-          'dominio_parentesco',
-          'dominio_tipo_identidade',
-        ]));
+        final tables =
+            (body['data'] as Map<String, dynamic>)['tables']
+                as Map<String, dynamic>;
+        expect(
+          tables.keys,
+          containsAll(<String>[
+            'dominio_parentesco',
+            'dominio_tipo_identidade',
+          ]),
+        );
         expect(tables['dominio_parentesco'] as List, isEmpty);
         expect(tables['dominio_tipo_identidade'] as List, isEmpty);
       });
@@ -1028,8 +1044,9 @@ void main() {
         expect(response.statusCode, equals(200));
         final body =
             jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-        final tables = (body['data'] as Map<String, dynamic>)['tables']
-            as Map<String, dynamic>;
+        final tables =
+            (body['data'] as Map<String, dynamic>)['tables']
+                as Map<String, dynamic>;
         expect(tables['dominio_parentesco'] as List, hasLength(1));
         expect(tables['dominio_tipo_identidade'] as List, hasLength(1));
       });
@@ -1039,17 +1056,16 @@ void main() {
 
         final request = Request(
           'GET',
-          Uri.parse(
-            'http://localhost/lookups?tables=%20a%20,,b%20,',
-          ),
+          Uri.parse('http://localhost/lookups?tables=%20a%20,,b%20,'),
         );
         final response = await handler.router.call(request);
 
         expect(response.statusCode, equals(200));
         final body =
             jsonDecode(await response.readAsString()) as Map<String, dynamic>;
-        final tables = (body['data'] as Map<String, dynamic>)['tables']
-            as Map<String, dynamic>;
+        final tables =
+            (body['data'] as Map<String, dynamic>)['tables']
+                as Map<String, dynamic>;
         expect(tables.keys, equals(<String>{'a', 'b'}));
       });
 
@@ -1058,10 +1074,7 @@ void main() {
         () async {
           final handler = _buildHandler();
 
-          final request = Request(
-            'GET',
-            Uri.parse('http://localhost/lookups'),
-          );
+          final request = Request('GET', Uri.parse('http://localhost/lookups'));
           final response = await handler.router.call(request);
 
           expect(response.statusCode, equals(400));
@@ -1139,9 +1152,7 @@ void main() {
 
         final request = Request(
           'GET',
-          Uri.parse(
-            'http://localhost/lookups?tables=dominio_parentesco',
-          ),
+          Uri.parse('http://localhost/lookups?tables=dominio_parentesco'),
         );
         final response = await handler.router.call(request);
 

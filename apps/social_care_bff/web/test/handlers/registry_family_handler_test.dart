@@ -111,14 +111,16 @@ class _CapturingAudit extends FakeAuditBff {
   }
 }
 
-AuditTrailEntryResponse _entry(String id, {String aggregateId = kPatientUuid}) =>
-    AuditTrailEntryResponse(
-      id: id,
-      aggregateId: aggregateId,
-      eventType: 'PATIENT_REGISTERED',
-      occurredAt: '2026-04-17T10:00:00Z',
-      recordedAt: '2026-04-17T10:00:01Z',
-    );
+AuditTrailEntryResponse _entry(
+  String id, {
+  String aggregateId = kPatientUuid,
+}) => AuditTrailEntryResponse(
+  id: id,
+  aggregateId: aggregateId,
+  eventType: 'PATIENT_REGISTERED',
+  occurredAt: '2026-04-17T10:00:00Z',
+  recordedAt: '2026-04-17T10:00:01Z',
+);
 
 RegistryFamilyHandler _buildHandler({
   RegistryContract? registry,
@@ -315,7 +317,9 @@ void main() {
 
         final request = Request(
           'DELETE',
-          Uri.parse('http://localhost/patients/$kPatientUuid/family-members/$kFamilyMemberUuid'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/family-members/$kFamilyMemberUuid',
+          ),
         );
         final response = await handler.router.call(request);
 
@@ -335,7 +339,9 @@ void main() {
 
         final request = Request(
           'DELETE',
-          Uri.parse('http://localhost/patients/$kPatientUuid/family-members/$kFamilyMemberUuidAlt'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/family-members/$kFamilyMemberUuidAlt',
+          ),
         );
         final response = await handler.router.call(request);
 
@@ -400,7 +406,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/primary-caregiver'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/primary-caregiver',
+          ),
           body: jsonEncode(const {'memberPersonId': 'per-42'}),
           headers: {'content-type': 'application/json'},
         );
@@ -414,7 +422,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/primary-caregiver'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/primary-caregiver',
+          ),
           body: jsonEncode(const {}),
           headers: {'content-type': 'application/json'},
         );
@@ -438,7 +448,9 @@ void main() {
 
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/$kPatientUuid/primary-caregiver'),
+            Uri.parse(
+              'http://localhost/patients/$kPatientUuid/primary-caregiver',
+            ),
             body: jsonEncode(const {'memberPersonId': 'per-42'}),
             headers: {'content-type': 'application/json'},
           );

@@ -22,6 +22,19 @@ void main() {
       expect(session.accessToken, equals('test-access-token'));
       expect(session.userId, equals('test-user-id'));
     });
+
+    test(
+      'throws StateError when slot is empty (defined panic, not TypeError)',
+      () {
+        final request = Request('GET', Uri.parse('http://localhost/'));
+
+        expect(
+          () => getSession(request),
+          throwsA(isA<StateError>()),
+          reason: 'N1 — defined panic with breadcrumb, NOT TypeError leakage',
+        );
+      },
+    );
   });
 
   group('readJsonBody', () {

@@ -37,8 +37,14 @@ void main() {
     test('instances with equal payload are equal (Equatable)', () {
       const request = UpdateWorkAndIncomeRequest(hasRetiredMembers: false);
 
-      const a = UpdateWorkAndIncomeIntent(patientId: kPatientUuid, request: request);
-      const b = UpdateWorkAndIncomeIntent(patientId: kPatientUuid, request: request);
+      const a = UpdateWorkAndIncomeIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = UpdateWorkAndIncomeIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -47,8 +53,14 @@ void main() {
     test('instances with different patientId are not equal', () {
       const request = UpdateWorkAndIncomeRequest(hasRetiredMembers: false);
 
-      const a = UpdateWorkAndIncomeIntent(patientId: kPatientUuid, request: request);
-      const b = UpdateWorkAndIncomeIntent(patientId: kPatientUuidAlt, request: request);
+      const a = UpdateWorkAndIncomeIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = UpdateWorkAndIncomeIntent(
+        patientId: kPatientUuidAlt,
+        request: request,
+      );
 
       expect(a, isNot(equals(b)));
     });
@@ -74,7 +86,10 @@ void main() {
             },
           ];
 
-        final result = UpdateWorkAndIncomeIntent.parseFromBody(kPatientUuid, body);
+        final result = UpdateWorkAndIncomeIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         switch (result) {
           case Success(:final value):
@@ -93,7 +108,10 @@ void main() {
       test('returns Failure when hasRetiredMembers is missing', () {
         final body = _validBody()..remove('hasRetiredMembers');
 
-        final result = UpdateWorkAndIncomeIntent.parseFromBody(kPatientUuid, body);
+        final result = UpdateWorkAndIncomeIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<UpdateWorkAndIncomeIntent>>());
       });
@@ -114,7 +132,10 @@ void main() {
           'hasRetiredMembers': 'NOT_A_BOOL_MARKER',
         };
 
-        final result = UpdateWorkAndIncomeIntent.parseFromBody(kPatientUuid, body);
+        final result = UpdateWorkAndIncomeIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         switch (result) {
           case Success():

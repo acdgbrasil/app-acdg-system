@@ -52,32 +52,34 @@ void main() {
     });
 
     test('emits team.register.received with empty data', () async {
-      await useCase.execute(
-        const RegisterWorkerIntent(request: _request),
-        obs,
-      );
+      await useCase.execute(const RegisterWorkerIntent(request: _request), obs);
 
       expect(obs.breadcrumbs, contains(hasEvent('team.register.received')));
     });
 
-    test('emits team.register.completed with generated id on success', () async {
-      final result = await useCase.execute(
-        const RegisterWorkerIntent(request: _request),
-        obs,
-      );
+    test(
+      'emits team.register.completed with generated id on success',
+      () async {
+        final result = await useCase.execute(
+          const RegisterWorkerIntent(request: _request),
+          obs,
+        );
 
-      switch (result) {
-        case Success(:final value):
-          expect(
-            obs.breadcrumbs,
-            contains(
-              hasEventWithData('team.register.completed', {'id': value.data.id}),
-            ),
-          );
-        case Failure():
-          fail('Expected Success');
-      }
-    });
+        switch (result) {
+          case Success(:final value):
+            expect(
+              obs.breadcrumbs,
+              contains(
+                hasEventWithData('team.register.completed', {
+                  'id': value.data.id,
+                }),
+              ),
+            );
+          case Failure():
+            fail('Expected Success');
+        }
+      },
+    );
 
     test(
       'breadcrumb data NEVER includes fullName / email / cpf / initialPassword',
@@ -124,26 +126,31 @@ void main() {
       expect(result, isA<Failure<StandardIdResponse>>());
     });
 
-    test('emits team.register.failed with errorCode on backend failure', () async {
-      const error = BackendError(
-        id: 'err-1',
-        code: 'EMAIL_TAKEN',
-        message: 'curated upstream message',
-        http: 409,
-      );
-      final useCaseFail = RegisterWorkerUseCase(team: _FailingTeam(error));
+    test(
+      'emits team.register.failed with errorCode on backend failure',
+      () async {
+        const error = BackendError(
+          id: 'err-1',
+          code: 'EMAIL_TAKEN',
+          message: 'curated upstream message',
+          http: 409,
+        );
+        final useCaseFail = RegisterWorkerUseCase(team: _FailingTeam(error));
 
-      await useCaseFail.execute(
-        const RegisterWorkerIntent(request: _request),
-        obs,
-      );
+        await useCaseFail.execute(
+          const RegisterWorkerIntent(request: _request),
+          obs,
+        );
 
-      expect(
-        obs.breadcrumbs,
-        contains(
-          hasEventWithData('team.register.failed', {'errorCode': 'EMAIL_TAKEN'}),
-        ),
-      );
-    });
+        expect(
+          obs.breadcrumbs,
+          contains(
+            hasEventWithData('team.register.failed', {
+              'errorCode': 'EMAIL_TAKEN',
+            }),
+          ),
+        );
+      },
+    );
   });
 }

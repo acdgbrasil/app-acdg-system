@@ -59,9 +59,10 @@ final class AddFamilyMemberIntent with Equatable {
   static Result<AddFamilyMemberIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) =>
-      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
-          .flatMap((patientId) => _parseBody(patientId, body));
+  ) => validateUuidPathParam(
+    rawPatientId,
+    fieldName: 'patientId',
+  ).flatMap((patientId) => _parseBody(patientId, body));
 
   static Result<AddFamilyMemberIntent> _parseBody(
     String patientId,

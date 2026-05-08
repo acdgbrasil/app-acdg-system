@@ -46,9 +46,10 @@ final class RegisterAppointmentIntent with Equatable {
   static Result<RegisterAppointmentIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) =>
-      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
-          .flatMap((patientId) => _parseBody(patientId, body));
+  ) => validateUuidPathParam(
+    rawPatientId,
+    fieldName: 'patientId',
+  ).flatMap((patientId) => _parseBody(patientId, body));
 
   static Result<RegisterAppointmentIntent> _parseBody(
     String patientId,

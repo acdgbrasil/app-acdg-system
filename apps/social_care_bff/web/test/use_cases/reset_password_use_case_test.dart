@@ -13,9 +13,8 @@ class _FailingTeam extends FakeTeamBff {
   final BackendError error;
 
   @override
-  Future<Result<StandardResponse<void>>> resetPassword(
-    String memberId,
-  ) async => Failure(error);
+  Future<Result<StandardResponse<void>>> resetPassword(String memberId) async =>
+      Failure(error);
 }
 
 const _intent = ResetPasswordIntent(memberId: 'm-1');

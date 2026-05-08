@@ -24,7 +24,8 @@ final class ApproveLookupRequestIntent with Equatable {
   /// [UuidPathParamError] when the input is not a canonical UUID v4.
   static Result<ApproveLookupRequestIntent> parseFromPath(
     String rawRequestId,
-  ) =>
-      validateUuidPathParam(rawRequestId, fieldName: 'requestId')
-          .map((requestId) => ApproveLookupRequestIntent(requestId: requestId));
+  ) => validateUuidPathParam(
+    rawRequestId,
+    fieldName: 'requestId',
+  ).map((requestId) => ApproveLookupRequestIntent(requestId: requestId));
 }

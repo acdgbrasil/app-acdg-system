@@ -42,7 +42,7 @@ void main() {
           });
 
       final response = await handler(
-        makeRequest(headers: {'Cookie': '__session=$validSessionId'}),
+        makeRequest(headers: {'Cookie': '__Host-session=$validSessionId'}),
       );
 
       expect(response.statusCode, equals(200));
@@ -75,8 +75,8 @@ void main() {
       final body =
           jsonDecode(await response.readAsString()) as Map<String, dynamic>;
 
-      expect(body, containsPair('error', 'Unauthorized'));
-      expect(body, containsPair('message', 'Valid session required'));
+      expect(body, containsPair('code', 'AUTH-001'));
+      expect(body, containsPair('message', 'Invalid credentials'));
     });
 
     test('request with invalid session cookie returns 401', () async {
@@ -88,7 +88,7 @@ void main() {
           });
 
       final response = await handler(
-        makeRequest(headers: {'Cookie': '__session=bad-id'}),
+        makeRequest(headers: {'Cookie': '__Host-session=bad-id'}),
       );
 
       expect(response.statusCode, equals(401));
@@ -109,7 +109,7 @@ void main() {
             });
 
         final response = await handler(
-          makeRequest(headers: {'Cookie': '__session=$validSessionId'}),
+          makeRequest(headers: {'Cookie': '__Host-session=$validSessionId'}),
         );
 
         expect(response.statusCode, equals(201));

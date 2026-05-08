@@ -30,10 +30,7 @@ final class RegisterWorkerUseCase {
 
     return switch (result) {
       Success(:final value) => () {
-        obs.breadcrumb(
-          'team.register.completed',
-          data: {'id': value.data.id},
-        );
+        obs.breadcrumb('team.register.completed', data: {'id': value.data.id});
         return result;
       }(),
       Failure(:final error) => () {

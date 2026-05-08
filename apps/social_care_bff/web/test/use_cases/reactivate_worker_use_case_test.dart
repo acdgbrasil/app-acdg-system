@@ -44,23 +44,28 @@ void main() {
       expect(obs.breadcrumbs, contains(hasEvent('team.reactivate.completed')));
     });
 
-    test('emits team.reactivate.failed with errorCode on backend failure', () async {
-      const error = BackendError(
-        id: 'err-1',
-        code: 'NOT_FOUND',
-        message: 'unknown',
-        http: 404,
-      );
-      final useCaseFail = ReactivateWorkerUseCase(team: _FailingTeam(error));
+    test(
+      'emits team.reactivate.failed with errorCode on backend failure',
+      () async {
+        const error = BackendError(
+          id: 'err-1',
+          code: 'NOT_FOUND',
+          message: 'unknown',
+          http: 404,
+        );
+        final useCaseFail = ReactivateWorkerUseCase(team: _FailingTeam(error));
 
-      await useCaseFail.execute(_intent, obs);
+        await useCaseFail.execute(_intent, obs);
 
-      expect(
-        obs.breadcrumbs,
-        contains(
-          hasEventWithData('team.reactivate.failed', {'errorCode': 'NOT_FOUND'}),
-        ),
-      );
-    });
+        expect(
+          obs.breadcrumbs,
+          contains(
+            hasEventWithData('team.reactivate.failed', {
+              'errorCode': 'NOT_FOUND',
+            }),
+          ),
+        );
+      },
+    );
   });
 }

@@ -69,7 +69,10 @@ void main() {
 
     group('parseFromQuery — total factory', () {
       test('returns intent with all-null filters for empty query', () {
-        final intent = GetAuditTrailIntent.parseFromQuery(kPatientUuid, const {});
+        final intent = GetAuditTrailIntent.parseFromQuery(
+          kPatientUuid,
+          const {},
+        );
 
         expect(intent.patientId, equals(kPatientUuid));
         expect(intent.eventType, isNull);
@@ -130,16 +133,19 @@ void main() {
     });
 
     group('parseFromPath — Result<String>', () {
-      test('returns Success with normalized id when input is valid UUID v4', () {
-        final result = GetAuditTrailIntent.parseFromPath(kPatientUuid);
+      test(
+        'returns Success with normalized id when input is valid UUID v4',
+        () {
+          final result = GetAuditTrailIntent.parseFromPath(kPatientUuid);
 
-        switch (result) {
-          case Success(:final value):
-            expect(value, equals(kPatientUuid));
-          case Failure():
-            fail('Expected Success');
-        }
-      });
+          switch (result) {
+            case Success(:final value):
+              expect(value, equals(kPatientUuid));
+            case Failure():
+              fail('Expected Success');
+          }
+        },
+      );
 
       test('normalizes uppercase to lowercase', () {
         final result = GetAuditTrailIntent.parseFromPath(

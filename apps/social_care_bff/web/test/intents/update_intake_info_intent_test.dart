@@ -3,7 +3,6 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/update_intake_info_intent.dart';
-import 'package:social_care_web/src/intents/uuid_validation.dart';
 
 import '../_test_uuids.dart';
 
@@ -46,8 +45,14 @@ void main() {
         serviceReason: 'support',
       );
 
-      const a = UpdateIntakeInfoIntent(patientId: kPatientUuid, request: request);
-      const b = UpdateIntakeInfoIntent(patientId: kPatientUuid, request: request);
+      const a = UpdateIntakeInfoIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = UpdateIntakeInfoIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -59,8 +64,14 @@ void main() {
         serviceReason: 'support',
       );
 
-      const a = UpdateIntakeInfoIntent(patientId: kPatientUuid, request: request);
-      const b = UpdateIntakeInfoIntent(patientId: kPatientUuidAlt, request: request);
+      const a = UpdateIntakeInfoIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = UpdateIntakeInfoIntent(
+        patientId: kPatientUuidAlt,
+        request: request,
+      );
 
       expect(a, isNot(equals(b)));
     });
@@ -114,10 +125,10 @@ void main() {
       test(
         'Success with required only — optionals null + empty programs list',
         () {
-          final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, const {
-            'ingressTypeId': 'ing-1',
-            'serviceReason': 'support',
-          });
+          final result = UpdateIntakeInfoIntent.parseFromBody(
+            kPatientUuid,
+            const {'ingressTypeId': 'ing-1', 'serviceReason': 'support'},
+          );
 
           switch (result) {
             case Success(:final value):
@@ -178,7 +189,10 @@ void main() {
       });
 
       test('returns Failure when body is empty', () {
-        final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, const {});
+        final result = UpdateIntakeInfoIntent.parseFromBody(
+          kPatientUuid,
+          const {},
+        );
 
         expect(result, isA<Failure<UpdateIntakeInfoIntent>>());
       });
@@ -211,7 +225,10 @@ void main() {
             'originContact': '(11) 98765-4321',
           };
 
-          final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
+          final result = UpdateIntakeInfoIntent.parseFromBody(
+            kPatientUuid,
+            body,
+          );
 
           switch (result) {
             case Success():
@@ -240,7 +257,10 @@ void main() {
             'serviceReason': 'Internacao apos violencia domestica relatada',
           };
 
-          final result = UpdateIntakeInfoIntent.parseFromBody(kPatientUuid, body);
+          final result = UpdateIntakeInfoIntent.parseFromBody(
+            kPatientUuid,
+            body,
+          );
 
           switch (result) {
             case Success():

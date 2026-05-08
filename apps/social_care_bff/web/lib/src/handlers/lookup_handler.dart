@@ -306,8 +306,9 @@ final class LookupHandler {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
     final parsed = ApproveLookupRequestIntent.parseFromPath(id);
     return switch (parsed) {
-      Success(:final value) =>
-        _wrapVoidResult(await _approveLookupRequest.execute(value, obs)),
+      Success(:final value) => _wrapVoidResult(
+        await _approveLookupRequest.execute(value, obs),
+      ),
       Failure(:final error) => _badRequest(
         code: 'INVALID_APPROVE_LOOKUP_REQUEST_PARAMS',
         message: error.toString(),
@@ -321,8 +322,9 @@ final class LookupHandler {
     final obs = ObservabilityContext.fromRequestOrNoop(request);
     final parsed = RejectLookupRequestIntent.parseFromPath(id);
     return switch (parsed) {
-      Success(:final value) =>
-        _wrapVoidResult(await _rejectLookupRequest.execute(value, obs)),
+      Success(:final value) => _wrapVoidResult(
+        await _rejectLookupRequest.execute(value, obs),
+      ),
       Failure(:final error) => _badRequest(
         code: 'INVALID_REJECT_LOOKUP_REQUEST_PARAMS',
         message: error.toString(),

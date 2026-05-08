@@ -21,7 +21,10 @@ class _FailingTeam extends FakeTeamBff {
 
 AssignRoleIntent _intent() => AssignRoleIntent(
   memberId: 'm-1',
-  request: const AssignRoleRequest(system: 'social-care', role: 'social_worker'),
+  request: const AssignRoleRequest(
+    system: 'social-care',
+    role: 'social_worker',
+  ),
 );
 
 void main() {
@@ -47,30 +50,24 @@ void main() {
       }
     });
 
-    test(
-      'emits team.role.assign.received and completed with roleId',
-      () async {
-        final result = await useCase.execute(_intent(), obs);
+    test('emits team.role.assign.received and completed with roleId', () async {
+      final result = await useCase.execute(_intent(), obs);
 
-        expect(
-          obs.breadcrumbs,
-          contains(hasEvent('team.role.assign.received')),
-        );
-        switch (result) {
-          case Success(:final value):
-            expect(
-              obs.breadcrumbs,
-              contains(
-                hasEventWithData('team.role.assign.completed', {
-                  'roleId': value.data.id,
-                }),
-              ),
-            );
-          case Failure():
-            fail('Expected Success');
-        }
-      },
-    );
+      expect(obs.breadcrumbs, contains(hasEvent('team.role.assign.received')));
+      switch (result) {
+        case Success(:final value):
+          expect(
+            obs.breadcrumbs,
+            contains(
+              hasEventWithData('team.role.assign.completed', {
+                'roleId': value.data.id,
+              }),
+            ),
+          );
+        case Failure():
+          fail('Expected Success');
+      }
+    });
 
     test(
       'emits team.role.assign.failed with errorCode on backend failure',

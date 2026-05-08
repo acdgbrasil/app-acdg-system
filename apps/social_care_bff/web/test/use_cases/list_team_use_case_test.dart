@@ -143,7 +143,10 @@ void main() {
 
       final result = await useCaseFail.execute(const ListTeamIntent(), obs);
 
-      expect(result, isA<Failure<StandardResponse<List<TeamMemberResponse>>>>());
+      expect(
+        result,
+        isA<Failure<StandardResponse<List<TeamMemberResponse>>>>(),
+      );
     });
 
     test('emits team.list.failed with errorCode on backend failure', () async {

@@ -126,25 +126,19 @@ void main() {
         }
       });
 
-      test(
-        'returns Failure when search exceeds the 100-char cap',
-        () {
-          final long = 'a' * 101;
-          final result = ListTeamIntent.parseFromQuery({'search': long});
+      test('returns Failure when search exceeds the 100-char cap', () {
+        final long = 'a' * 101;
+        final result = ListTeamIntent.parseFromQuery({'search': long});
 
-          expect(result, isA<Failure<ListTeamIntent>>());
-        },
-      );
+        expect(result, isA<Failure<ListTeamIntent>>());
+      });
 
-      test(
-        'returns Failure when role exceeds the 100-char cap',
-        () {
-          final long = 'a' * 101;
-          final result = ListTeamIntent.parseFromQuery({'role': long});
+      test('returns Failure when role exceeds the 100-char cap', () {
+        final long = 'a' * 101;
+        final result = ListTeamIntent.parseFromQuery({'role': long});
 
-          expect(result, isA<Failure<ListTeamIntent>>());
-        },
-      );
+        expect(result, isA<Failure<ListTeamIntent>>());
+      });
 
       test('Failure NEVER echoes raw role / search content', () {
         final result = ListTeamIntent.parseFromQuery({'active': 'maybe'});

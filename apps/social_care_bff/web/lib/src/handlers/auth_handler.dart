@@ -10,15 +10,13 @@ import '../intents/login_intent.dart';
 import '../intents/logout_intent.dart';
 import '../intents/me_intent.dart';
 import '../intents/refresh_intent.dart';
+import '../middleware/cookie_constants.dart'; // SEC: single-source cookie attrs
 import '../observability/observability_context.dart';
 import '../use_cases/auth_callback_use_case.dart';
 import '../use_cases/login_use_case.dart';
 import '../use_cases/logout_use_case.dart';
 import '../use_cases/me_use_case.dart';
 import '../use_cases/refresh_use_case.dart';
-
-/// Name of the hardened session cookie (Host-prefix, HttpOnly, SameSite=Strict).
-const String _sessionCookieName = '__Host-session';
 
 /// Thin OIDC auth HTTP handler.
 ///
@@ -111,14 +109,16 @@ final class AuthHandler {
     final result = await _callback.execute(intent, obs);
 
     return switch (result) {
-      // Session ID is delivered by the upstream cookie layer in production.
-      // For now, the BFF issues a fresh opaque cookie value so the browser
-      // carries a session marker back on subsequent requests.
-      Success() => Response(
+      // SEC: sessionId comes from SessionStore.create() inside the use case.
+      // The handler does NOT synthesize a UUID — that was the B3 phantom-
+      // session bug. The cookie value here MUST map to a live store entry.
+      Success(:final value) => Response(
         302,
         headers: {
           'location': '/',
-          'set-cookie': _buildSessionCookie(UuidUtil.generateV4()),
+          // SEC: canonical attrs (Path=/, HttpOnly, Secure, SameSite=Strict,
+          // Max-Age=3600) — see cookie_constants.dart.
+          'set-cookie': buildSessionSetCookie(value),
         },
       ),
       Failure(:final error) => _errorResponse(error),
@@ -142,7 +142,8 @@ final class AuthHandler {
         jsonEncode({'message': 'Logged out'}),
         headers: {
           'content-type': 'application/json',
-          'set-cookie': _buildClearSessionCookie(),
+          // SEC: canonical clear-cookie attrs (same scope + Max-Age=0).
+          'set-cookie': buildClearSessionSetCookie(),
         },
       ),
       Failure(:final error) => _errorResponse(error),
@@ -200,33 +201,23 @@ final class AuthHandler {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  /// Extracts the `__Host-session` cookie value from the Cookie header.
+  /// Extracts the [sessionCookieName] value from the Cookie header.
   ///
   /// Returns `null` when the cookie is absent or empty.
   String? _readSessionCookie(Request request) {
     final cookieHeader = request.headers['cookie'];
     if (cookieHeader == null || cookieHeader.isEmpty) return null;
+    // SEC: name comes from cookie_constants.dart — writer (Set-Cookie above)
+    // and this reader MUST agree. Name drift is a compile-time error now.
+    final prefix = '$sessionCookieName=';
     for (final raw in cookieHeader.split(';')) {
       final trimmed = raw.trim();
-      if (trimmed.startsWith('$_sessionCookieName=')) {
-        final value = trimmed.substring(_sessionCookieName.length + 1);
+      if (trimmed.startsWith(prefix)) {
+        final value = trimmed.substring(prefix.length);
         return value.isEmpty ? null : value;
       }
     }
     return null;
-  }
-
-  /// Builds a `Set-Cookie` value for a newly established session.
-  String _buildSessionCookie(String sessionId) {
-    // `__Host-` prefix mandates Path=/, Secure, no Domain.
-    return '$_sessionCookieName=$sessionId; '
-        'Path=/; HttpOnly; Secure; SameSite=Strict';
-  }
-
-  /// Builds a `Set-Cookie` value that clears the session cookie client-side.
-  String _buildClearSessionCookie() {
-    return '$_sessionCookieName=; '
-        'Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0';
   }
 
   /// Maps a [BackendError] / any failure into a sanitized JSON response.

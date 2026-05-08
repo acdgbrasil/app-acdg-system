@@ -16,6 +16,7 @@ import '../handlers/protection_handler.dart';
 import '../handlers/registry_family_handler.dart';
 import '../handlers/registry_patient_handler.dart';
 import '../handlers/team_handler.dart';
+import '../middleware/auth_guard_middleware.dart';
 import '../middleware/bearer_auth_middleware.dart';
 import '../middleware/observability.dart';
 import '../middleware/session_middleware.dart';
@@ -131,7 +132,10 @@ class AppRouter {
     healthRouter.get('/health/ready', _readyHandler);
 
     // --- Auth routes (observability + session middleware, no auth guard) ---
-    final authHandler = buildAuthHandler(_authContract);
+    final authHandler = buildAuthHandler(
+      auth: _authContract,
+      sessionStore: _sessionStore,
+    );
 
     final authPipeline = const Pipeline()
         .addMiddleware(observabilityMiddleware())
@@ -177,12 +181,19 @@ class AppRouter {
         .add(teamHandler.router.call)
         .handler;
 
+    // SEC-ANCHOR-B5: BFF HTTP adapters MUST forward Bearer (ADR-023; ref impl: PeopleContextClient).
+    // SEC: pipeline order is load-bearing. observability → bearerAuth →
+    // sessionMiddleware writes to sessionContextKey if either path
+    // produced a Session. authGuard is the LAST middleware so both
+    // writers had a chance. Closes P0-1 (CVSS 9.8) — was anonymous-200,
+    // now fail-closed 401 with canonical AUTH-001 body.
     final protectedPipeline = const Pipeline()
         .addMiddleware(observabilityMiddleware())
         .addMiddleware(
           bearerAuthMiddleware(config: _config, jwksCache: _jwksCache),
         )
         .addMiddleware(sessionMiddleware(_sessionStore))
+        .addMiddleware(authGuardMiddleware())
         .addHandler(protectedRouter);
 
     // Use Cascade to try handlers in order.
@@ -215,10 +226,17 @@ class AppRouter {
 /// fully-assembled [AuthHandler].
 ///
 /// Canonical factory referenced by production wiring and integration tests.
-AuthHandler buildAuthHandler(AuthContract auth) {
+///
+/// SEC: [sessionStore] is required so [AuthCallbackUseCase] can persist a
+/// real session entry on token-exchange success. Without it the cookie
+/// path is dead-on-arrival (Pentest §B3 / B2 ticket).
+AuthHandler buildAuthHandler({
+  required AuthContract auth,
+  required SessionStore sessionStore,
+}) {
   return AuthHandler(
     login: LoginUseCase(auth: auth),
-    callback: AuthCallbackUseCase(auth: auth),
+    callback: AuthCallbackUseCase(auth: auth, sessionStore: sessionStore),
     logout: LogoutUseCase(auth: auth),
     me: MeUseCase(auth: auth),
     refresh: RefreshUseCase(auth: auth),

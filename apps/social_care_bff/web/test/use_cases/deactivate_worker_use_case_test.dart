@@ -58,26 +58,29 @@ void main() {
       expect(obs.breadcrumbs, contains(hasEvent('team.deactivate.completed')));
     });
 
-    test('emits team.deactivate.failed with errorCode on backend failure', () async {
-      const error = BackendError(
-        id: 'err-1',
-        code: 'WORKER_LOCKED',
-        message: 'cannot deactivate',
-        http: 409,
-      );
-      final useCaseFail = DeactivateWorkerUseCase(team: _FailingTeam(error));
+    test(
+      'emits team.deactivate.failed with errorCode on backend failure',
+      () async {
+        const error = BackendError(
+          id: 'err-1',
+          code: 'WORKER_LOCKED',
+          message: 'cannot deactivate',
+          http: 409,
+        );
+        final useCaseFail = DeactivateWorkerUseCase(team: _FailingTeam(error));
 
-      final result = await useCaseFail.execute(_intent, obs);
+        final result = await useCaseFail.execute(_intent, obs);
 
-      expect(result, isA<Failure<StandardResponse<void>>>());
-      expect(
-        obs.breadcrumbs,
-        contains(
-          hasEventWithData('team.deactivate.failed', {
-            'errorCode': 'WORKER_LOCKED',
-          }),
-        ),
-      );
-    });
+        expect(result, isA<Failure<StandardResponse<void>>>());
+        expect(
+          obs.breadcrumbs,
+          contains(
+            hasEventWithData('team.deactivate.failed', {
+              'errorCode': 'WORKER_LOCKED',
+            }),
+          ),
+        );
+      },
+    );
   });
 }

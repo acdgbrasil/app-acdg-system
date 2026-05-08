@@ -41,9 +41,10 @@ final class ToggleLookupItemIntent with Equatable {
     String tableName,
     String rawItemId,
     Map<String, dynamic> body,
-  ) =>
-      validateUuidPathParam(rawItemId, fieldName: 'itemId')
-          .flatMap((itemId) => _parseBody(tableName, itemId, body));
+  ) => validateUuidPathParam(
+    rawItemId,
+    fieldName: 'itemId',
+  ).flatMap((itemId) => _parseBody(tableName, itemId, body));
 
   static Result<ToggleLookupItemIntent> _parseBody(
     String tableName,

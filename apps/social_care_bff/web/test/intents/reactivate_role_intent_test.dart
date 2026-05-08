@@ -26,14 +26,8 @@ void main() {
     });
 
     test('Equatable across both fields', () {
-      const a = ReactivateRoleIntent(
-        memberId: kMemberUuid,
-        roleId: kRoleUuid,
-      );
-      const b = ReactivateRoleIntent(
-        memberId: kMemberUuid,
-        roleId: kRoleUuid,
-      );
+      const a = ReactivateRoleIntent(memberId: kMemberUuid, roleId: kRoleUuid);
+      const b = ReactivateRoleIntent(memberId: kMemberUuid, roleId: kRoleUuid);
       const c = ReactivateRoleIntent(
         memberId: kMemberUuid,
         roleId: kRoleUuidAlt,
@@ -141,28 +135,25 @@ void main() {
         },
       );
 
-      test(
-        'returns Failure when roleId is not UUID v4 (memberId valid)',
-        () {
-          final result = ReactivateRoleIntent.parseFromParams(
-            rawMemberId: kMemberUuid,
-            rawRoleId: kNonUuid,
-          );
+      test('returns Failure when roleId is not UUID v4 (memberId valid)', () {
+        final result = ReactivateRoleIntent.parseFromParams(
+          rawMemberId: kMemberUuid,
+          rawRoleId: kNonUuid,
+        );
 
-          switch (result) {
-            case Success():
-              fail('Expected Failure');
-            case Failure(:final error):
-              expect(error, isA<UuidPathParamError>());
-              expect(error.toString(), contains('roleId'));
-              expect(
-                error.toString(),
-                isNot(contains(kNonUuid)),
-                reason: 'PII safety — must not echo raw input',
-              );
-          }
-        },
-      );
+        switch (result) {
+          case Success():
+            fail('Expected Failure');
+          case Failure(:final error):
+            expect(error, isA<UuidPathParamError>());
+            expect(error.toString(), contains('roleId'));
+            expect(
+              error.toString(),
+              isNot(contains(kNonUuid)),
+              reason: 'PII safety — must not echo raw input',
+            );
+        }
+      });
 
       test('rejects v1 UUID in either slot (only v4 allowed)', () {
         final r1 = ReactivateRoleIntent.parseFromParams(

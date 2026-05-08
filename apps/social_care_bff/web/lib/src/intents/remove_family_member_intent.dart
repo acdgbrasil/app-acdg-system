@@ -38,10 +38,8 @@ final class RemoveFamilyMemberIntent with Equatable {
     final p = validateUuidPathParam(rawPatientId, fieldName: 'patientId');
     final m = validateUuidPathParam(rawMemberId, fieldName: 'memberId');
     return (p, m).combineWith(
-      (patientId, memberId) => RemoveFamilyMemberIntent(
-        patientId: patientId,
-        memberId: memberId,
-      ),
+      (patientId, memberId) =>
+          RemoveFamilyMemberIntent(patientId: patientId, memberId: memberId),
     );
   }
 }

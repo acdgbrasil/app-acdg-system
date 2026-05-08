@@ -1,21 +1,8 @@
-/// Shared test helpers for BearerAuthMiddleware (W0 RED phase).
+/// Shared test helpers for BearerAuthMiddleware.
 ///
-/// IMPORTANT — RED expectations:
-/// This file imports types that DO NOT exist yet:
-///   - `JwksClient` (auth/jwks_client.dart)
-///   - `JwksCache` (auth/jwks_cache.dart)
-///   - `bearerAuthMiddleware` factory (middleware/bearer_auth_middleware.dart)
-///   - `bearerSessionContextKey` (middleware/bearer_auth_middleware.dart)
-///   - new ServerConfig fields (oidcCliClientId, bearerLeewaySeconds, …)
-///
-/// W1 (`flutter-bff-implementer`) creates them. Tests intentionally fail to
-/// compile until then — that is the contract.
-///
-/// IMPLEMENTER NOTE — extra dev_dependency required:
-///   `pointycastle: ^4.0.0` — currently transitive via `dart_jsonwebtoken`
-///   but used directly here for in-memory RSA keypair generation. Add it to
-///   `dev_dependencies` in `apps/social_care_bff/web/pubspec.yaml` (the
-///   `depend_on_referenced_packages` lint will flag it otherwise).
+/// Provides RSA keypair generation, JWT builders, JWKS fixtures, and a
+/// `FakeJwksClient` so middleware tests stay deterministic (no network,
+/// no clock drift, no real Zitadel).
 library;
 
 import 'dart:async';
@@ -29,11 +16,10 @@ import 'package:pointycastle/export.dart' as pc;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:social_care_web/src/auth/jwks_cache.dart';
 import 'package:social_care_web/src/auth/jwks_client.dart';
 import 'package:social_care_web/src/auth/session_store.dart';
 import 'package:social_care_web/src/config/server_config.dart';
-import 'package:social_care_web/src/middleware/bearer_auth_middleware.dart';
+import 'package:social_care_web/src/middleware/session_middleware.dart';
 
 import '_bearer_test_fixtures.dart';
 
@@ -76,13 +62,12 @@ TestRsaKeyPair secondaryKeyPair() =>
 TestRsaKeyPair _generateRsaKeyPair() {
   final secureRandom = pc.SecureRandom('Fortuna')
     ..seed(pc.KeyParameter(_seedBytes()));
-  final params =
-      pc.RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64);
+  final params = pc.RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64);
   final keyGen = pc.RSAKeyGenerator()
     ..init(pc.ParametersWithRandom(params, secureRandom));
   final pair = keyGen.generateKeyPair();
-  final priv = pair.privateKey as pc.RSAPrivateKey;
-  final pub = pair.publicKey as pc.RSAPublicKey;
+  final priv = pair.privateKey;
+  final pub = pair.publicKey;
   return TestRsaKeyPair(
     privateKey: priv,
     publicKey: pub,
@@ -206,16 +191,18 @@ String _b64UrlJson(Object data) {
 
 /// Builds a JWKS JSON document containing one or more RSA public keys.
 String buildJwksJson(List<({String kid, TestRsaKeyPair pair})> keys) {
-  final entries = keys.map(
-    (k) => {
-      'kty': 'RSA',
-      'use': 'sig',
-      'alg': 'RS256',
-      'kid': k.kid,
-      'n': k.pair.modulusBase64Url,
-      'e': k.pair.exponentBase64Url,
-    },
-  ).toList();
+  final entries = keys
+      .map(
+        (k) => {
+          'kty': 'RSA',
+          'use': 'sig',
+          'alg': 'RS256',
+          'kid': k.kid,
+          'n': k.pair.modulusBase64Url,
+          'e': k.pair.exponentBase64Url,
+        },
+      )
+      .toList();
   return jsonEncode({'keys': entries});
 }
 
@@ -335,19 +322,22 @@ Future<MiddlewareCallResult> callBearer(
 
   Future<Response> inner(Request request) async {
     invoked = true;
-    captured = request.context[bearerSessionContextKey] as Session?;
+    captured = request.context[sessionContextKey] as Session?;
     return Response.ok('inner-ok');
   }
 
   final pipeline = const Pipeline().addMiddleware(middleware).addHandler(inner);
 
   final headers = <String, String>{
-    if (authHeader != null) 'Authorization': authHeader,
-    if (cookieHeader != null) 'Cookie': cookieHeader,
+    'Authorization': ?authHeader,
+    'Cookie': ?cookieHeader,
   };
 
-  final request =
-      Request('GET', Uri.parse('http://localhost$path'), headers: headers);
+  final request = Request(
+    'GET',
+    Uri.parse('http://localhost$path'),
+    headers: headers,
+  );
   final response = await pipeline(request);
 
   return MiddlewareCallResult(
@@ -367,22 +357,37 @@ Future<void> expectGenericAuthError(
   Response r, {
   List<String> mustNotContain = const <String>[],
 }) async {
-  expect(r.statusCode, equals(401),
-      reason: 'every Bearer rejection must be 401 (no 403/400/500 leak)');
-  expect(r.headers['content-type'], contains('application/json'),
-      reason: 'error body must be JSON');
+  expect(
+    r.statusCode,
+    equals(401),
+    reason: 'every Bearer rejection must be 401 (no 403/400/500 leak)',
+  );
+  expect(
+    r.headers['content-type'],
+    contains('application/json'),
+    reason: 'error body must be JSON',
+  );
 
   final raw = await r.readAsString();
   final body = jsonDecode(raw) as Map<String, dynamic>;
 
-  expect(body, containsPair('code', 'AUTH-001'),
-      reason: 'constraint #10 — generic error code');
-  expect(body, containsPair('message', 'Invalid credentials'),
-      reason: 'constraint #10 — generic message, no validation reason');
+  expect(
+    body,
+    containsPair('code', 'AUTH-001'),
+    reason: 'constraint #10 — generic error code',
+  );
+  expect(
+    body,
+    containsPair('message', 'Invalid credentials'),
+    reason: 'constraint #10 — generic message, no validation reason',
+  );
 
   for (final forbidden in mustNotContain) {
-    expect(raw, isNot(contains(forbidden)),
-        reason: 'must not leak: $forbidden');
+    expect(
+      raw,
+      isNot(contains(forbidden)),
+      reason: 'must not leak: $forbidden',
+    );
   }
   for (final phrase in const [
     'expired',
@@ -392,8 +397,11 @@ Future<void> expectGenericAuthError(
     'audience',
     'issuer',
   ]) {
-    expect(raw.toLowerCase(), isNot(contains(phrase)),
-        reason: 'constraint #10 — body must not name claim "$phrase"');
+    expect(
+      raw.toLowerCase(),
+      isNot(contains(phrase)),
+      reason: 'constraint #10 — body must not name claim "$phrase"',
+    );
   }
 }
 

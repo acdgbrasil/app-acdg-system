@@ -62,7 +62,8 @@ void main() {
 
       test('returns Success for a multi-table CSV', () {
         final result = GetLookupsBatchIntent.parseFromQuery({
-          'tables': 'dominio_parentesco,dominio_tipo_identidade,dominio_tipo_ingresso',
+          'tables':
+              'dominio_parentesco,dominio_tipo_identidade,dominio_tipo_ingresso',
         });
 
         switch (result) {
@@ -130,22 +131,19 @@ void main() {
         expect(result, isA<Failure<GetLookupsBatchIntent>>());
       });
 
-      test(
-        'returns Success when count is exactly at the 20-table cap',
-        () {
-          final tables = List.generate(20, (i) => 't$i');
-          final result = GetLookupsBatchIntent.parseFromQuery({
-            'tables': tables.join(','),
-          });
+      test('returns Success when count is exactly at the 20-table cap', () {
+        final tables = List.generate(20, (i) => 't$i');
+        final result = GetLookupsBatchIntent.parseFromQuery({
+          'tables': tables.join(','),
+        });
 
-          switch (result) {
-            case Success(:final value):
-              expect(value.tables, hasLength(20));
-            case Failure():
-              fail('Expected Success at boundary (20 tables)');
-          }
-        },
-      );
+        switch (result) {
+          case Success(:final value):
+            expect(value.tables, hasLength(20));
+          case Failure():
+            fail('Expected Success at boundary (20 tables)');
+        }
+      });
 
       test('returns Failure when count exceeds the 20-table cap', () {
         final tables = List.generate(21, (i) => 't$i');

@@ -85,37 +85,43 @@ void main() {
         }
       });
 
-      test('returns Failure with UuidPathParamError when patientId is empty', () {
-        final result = RemoveFamilyMemberIntent.parseFromParams(
-          rawPatientId: '',
-          rawMemberId: kFamilyMemberUuid,
-        );
+      test(
+        'returns Failure with UuidPathParamError when patientId is empty',
+        () {
+          final result = RemoveFamilyMemberIntent.parseFromParams(
+            rawPatientId: '',
+            rawMemberId: kFamilyMemberUuid,
+          );
 
-        expect(result, isA<Failure<RemoveFamilyMemberIntent>>());
-        switch (result) {
-          case Success():
-            fail('Expected Failure');
-          case Failure(:final error):
-            expect(error, isA<UuidPathParamError>());
-            expect(error.toString(), contains('patientId'));
-        }
-      });
+          expect(result, isA<Failure<RemoveFamilyMemberIntent>>());
+          switch (result) {
+            case Success():
+              fail('Expected Failure');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(error.toString(), contains('patientId'));
+          }
+        },
+      );
 
-      test('returns Failure with UuidPathParamError when memberId is empty', () {
-        final result = RemoveFamilyMemberIntent.parseFromParams(
-          rawPatientId: kPatientUuid,
-          rawMemberId: '',
-        );
+      test(
+        'returns Failure with UuidPathParamError when memberId is empty',
+        () {
+          final result = RemoveFamilyMemberIntent.parseFromParams(
+            rawPatientId: kPatientUuid,
+            rawMemberId: '',
+          );
 
-        expect(result, isA<Failure<RemoveFamilyMemberIntent>>());
-        switch (result) {
-          case Success():
-            fail('Expected Failure');
-          case Failure(:final error):
-            expect(error, isA<UuidPathParamError>());
-            expect(error.toString(), contains('memberId'));
-        }
-      });
+          expect(result, isA<Failure<RemoveFamilyMemberIntent>>());
+          switch (result) {
+            case Success():
+              fail('Expected Failure');
+            case Failure(:final error):
+              expect(error, isA<UuidPathParamError>());
+              expect(error.toString(), contains('memberId'));
+          }
+        },
+      );
 
       test('returns Failure when patientId is not UUID v4', () {
         final result = RemoveFamilyMemberIntent.parseFromParams(

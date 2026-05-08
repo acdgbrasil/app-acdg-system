@@ -57,7 +57,7 @@ void main() {
     );
 
     test(
-      'request with valid __session cookie attaches session to context',
+      'request with valid __Host-session cookie attaches session to context',
       () async {
         Session? capturedSession;
         final handler = const Pipeline()
@@ -68,7 +68,7 @@ void main() {
             });
 
         final response = await handler(
-          makeRequest(headers: {'Cookie': '__session=$validSessionId'}),
+          makeRequest(headers: {'Cookie': '__Host-session=$validSessionId'}),
         );
 
         expect(response.statusCode, equals(200));
@@ -80,7 +80,7 @@ void main() {
     );
 
     test(
-      'request with unknown __session cookie passes through with no session',
+      'request with unknown __Host-session cookie passes through with no session',
       () async {
         Session? capturedSession;
         final handler = const Pipeline()
@@ -91,7 +91,7 @@ void main() {
             });
 
         final response = await handler(
-          makeRequest(headers: {'Cookie': '__session=nonexistent-id'}),
+          makeRequest(headers: {'Cookie': '__Host-session=nonexistent-id'}),
         );
 
         expect(response.statusCode, equals(200));
@@ -100,7 +100,7 @@ void main() {
     );
 
     test(
-      'request with expired __session cookie passes through with no session',
+      'request with expired __Host-session cookie passes through with no session',
       () async {
         // Advance clock past TTL so the session expires
         currentTime = DateTime.utc(2026, 1, 1, 13, 1);
@@ -114,7 +114,7 @@ void main() {
             });
 
         final response = await handler(
-          makeRequest(headers: {'Cookie': '__session=$expiredSessionId'}),
+          makeRequest(headers: {'Cookie': '__Host-session=$expiredSessionId'}),
         );
 
         expect(response.statusCode, equals(200));
@@ -122,7 +122,7 @@ void main() {
       },
     );
 
-    test('correctly parses __session from multiple cookies', () async {
+    test('correctly parses __Host-session from multiple cookies', () async {
       Session? capturedSession;
       final handler = const Pipeline()
           .addMiddleware(sessionMiddleware(store))
@@ -134,7 +134,7 @@ void main() {
       final response = await handler(
         makeRequest(
           headers: {
-            'Cookie': 'theme=dark; __session=$validSessionId; lang=pt-BR',
+            'Cookie': 'theme=dark; __Host-session=$validSessionId; lang=pt-BR',
           },
         ),
       );
@@ -156,7 +156,7 @@ void main() {
       final response = await handler(
         makeRequest(
           headers: {
-            'Cookie': '__session=$validSessionId',
+            'Cookie': '__Host-session=$validSessionId',
             'X-Custom': 'my-value',
           },
         ),

@@ -41,8 +41,14 @@ void main() {
     test('instances with equal payload are equal (Equatable)', () {
       const request = UpdateHealthStatusRequest(foodInsecurity: false);
 
-      const a = UpdateHealthStatusIntent(patientId: kPatientUuid, request: request);
-      const b = UpdateHealthStatusIntent(patientId: kPatientUuid, request: request);
+      const a = UpdateHealthStatusIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = UpdateHealthStatusIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -51,8 +57,14 @@ void main() {
     test('instances with different patientId are not equal', () {
       const request = UpdateHealthStatusRequest(foodInsecurity: false);
 
-      const a = UpdateHealthStatusIntent(patientId: kPatientUuid, request: request);
-      const b = UpdateHealthStatusIntent(patientId: kPatientUuidAlt, request: request);
+      const a = UpdateHealthStatusIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = UpdateHealthStatusIntent(
+        patientId: kPatientUuidAlt,
+        request: request,
+      );
 
       expect(a, isNot(equals(b)));
     });
@@ -80,7 +92,10 @@ void main() {
               },
             ];
 
-          final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
+          final result = UpdateHealthStatusIntent.parseFromBody(
+            kPatientUuid,
+            body,
+          );
 
           switch (result) {
             case Success(:final value):
@@ -100,7 +115,10 @@ void main() {
       test('returns Failure when foodInsecurity is missing', () {
         final body = _validBody()..remove('foodInsecurity');
 
-        final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
+        final result = UpdateHealthStatusIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         expect(result, isA<Failure<UpdateHealthStatusIntent>>());
       });
@@ -122,7 +140,10 @@ void main() {
           'constantCareNeeds': <String>[],
         };
 
-        final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
+        final result = UpdateHealthStatusIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         switch (result) {
           case Success():
@@ -158,7 +179,10 @@ void main() {
           // foodInsecurity missing to force a parse failure
         };
 
-        final result = UpdateHealthStatusIntent.parseFromBody(kPatientUuid, body);
+        final result = UpdateHealthStatusIntent.parseFromBody(
+          kPatientUuid,
+          body,
+        );
 
         switch (result) {
           case Success():

@@ -30,9 +30,10 @@ final class UpdateSocioEconomicSituationIntent with Equatable {
     String rawPatientId,
     Map<String, dynamic> body, {
     ObservabilityContext? obs,
-  }) =>
-      validateUuidPathParam(rawPatientId, fieldName: 'patientId')
-          .flatMap((patientId) => _parseBody(patientId, body, obs));
+  }) => validateUuidPathParam(
+    rawPatientId,
+    fieldName: 'patientId',
+  ).flatMap((patientId) => _parseBody(patientId, body, obs));
 
   static Result<UpdateSocioEconomicSituationIntent> _parseBody(
     String patientId,

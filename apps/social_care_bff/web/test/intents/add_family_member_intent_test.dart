@@ -90,8 +90,14 @@ void main() {
         prRelationshipId: 'rel-child',
       );
 
-      const a = AddFamilyMemberIntent(patientId: kPatientUuid, request: request);
-      const b = AddFamilyMemberIntent(patientId: kPatientUuid, request: request);
+      const a = AddFamilyMemberIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = AddFamilyMemberIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
 
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -108,8 +114,14 @@ void main() {
         prRelationshipId: 'rel-child',
       );
 
-      const a = AddFamilyMemberIntent(patientId: kPatientUuid, request: request);
-      const b = AddFamilyMemberIntent(patientId: kPatientUuidAlt, request: request);
+      const a = AddFamilyMemberIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
+      const b = AddFamilyMemberIntent(
+        patientId: kPatientUuidAlt,
+        request: request,
+      );
 
       expect(a, isNot(equals(b)));
     });
@@ -190,7 +202,10 @@ void main() {
       });
 
       test('returns Failure when body is empty', () {
-        final result = AddFamilyMemberIntent.parseFromBody(kPatientUuid, const {});
+        final result = AddFamilyMemberIntent.parseFromBody(
+          kPatientUuid,
+          const {},
+        );
 
         expect(result, isA<Failure<AddFamilyMemberIntent>>());
       });

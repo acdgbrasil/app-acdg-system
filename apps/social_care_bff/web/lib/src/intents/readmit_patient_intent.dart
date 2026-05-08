@@ -29,15 +29,12 @@ final class ReadmitPatientIntent with Equatable {
   static Result<ReadmitPatientIntent> parseFromBody(
     String rawPatientId,
     Map<String, dynamic> body,
-  ) =>
-      validateUuidPathParam(rawPatientId, fieldName: 'patientId').map(
-        (patientId) => ReadmitPatientIntent(
-          patientId: patientId,
-          request: ReadmitPatientRequest(
-            notes: _asNullableString(body['notes']),
-          ),
-        ),
-      );
+  ) => validateUuidPathParam(rawPatientId, fieldName: 'patientId').map(
+    (patientId) => ReadmitPatientIntent(
+      patientId: patientId,
+      request: ReadmitPatientRequest(notes: _asNullableString(body['notes'])),
+    ),
+  );
 
   static String? _asNullableString(Object? raw) =>
       raw is String && raw.isNotEmpty ? raw : null;

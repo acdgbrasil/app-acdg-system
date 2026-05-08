@@ -15,9 +15,33 @@ import '../middleware/session_middleware.dart';
 typedef ContractFactory = dynamic Function(Session session);
 
 /// Extracts the [Session] from the request context.
-/// Auth guard middleware ensures this is never null for protected routes.
-Session getSession(Request request) =>
-    request.context[sessionContextKey] as Session;
+///
+/// Contract: callers MUST be on a route protected by `authGuardMiddleware`,
+/// which guarantees a [Session] under [sessionContextKey] before the inner
+/// handler runs.
+///
+/// Throws [StateError] (NOT TypeError) when the contract is violated —
+/// public route calling `getSession`, or `authGuardMiddleware` not wired.
+/// The defined panic carries a useful breadcrumb for ops; see Phase 3 N1.
+Session getSession(Request request) {
+  // SEC: type-safe `is Session` guard. The cast `as Session` was the
+  // load-bearing bug pre-B1 — it crashed with TypeError on Bearer-only
+  // requests because the bearer middleware wrote a different context
+  // key. B1 unified the slots and replaced the cast with a guard that
+  // catches both null AND wrong-type without TypeError leakage.
+  final session = request.context[sessionContextKey];
+  if (session is Session) return session;
+  // SEC: defined panic — adapter-boundary throw is allowed by CLAUDE.md
+  // global rules. The breadcrumb names the misconfiguration instead of
+  // a Dart-internal stack mentioning runtime types of context keys.
+  // Production should never reach this throw because authGuardMiddleware
+  // short-circuits unauthenticated requests with a 401 before the inner
+  // handler runs.
+  throw StateError(
+    'getSession() called on a request that did not pass through '
+    'authGuardMiddleware — protected pipeline misconfigured',
+  );
+}
 
 /// Parses the JSON body from a request.
 Future<Map<String, dynamic>> readJsonBody(Request request) async {

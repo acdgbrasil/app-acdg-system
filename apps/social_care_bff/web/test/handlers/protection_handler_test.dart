@@ -428,7 +428,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/placement-history',
+          ),
           body: jsonEncode(_validPlacementBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -447,7 +449,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/placement-history',
+          ),
           body: jsonEncode(const <String, dynamic>{}),
           headers: {'content-type': 'application/json'},
         );
@@ -461,7 +465,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/placement-history',
+          ),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -487,7 +493,9 @@ void main() {
           };
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+            Uri.parse(
+              'http://localhost/patients/$kPatientUuid/placement-history',
+            ),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );
@@ -517,7 +525,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/placement-history',
+          ),
           body: jsonEncode(_validPlacementBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -531,7 +541,9 @@ void main() {
 
         final request = Request(
           'PUT',
-          Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+          Uri.parse(
+            'http://localhost/patients/$kPatientUuid/placement-history',
+          ),
           body: jsonEncode(_validPlacementBody()),
           headers: {'content-type': 'application/json'},
         );
@@ -569,7 +581,9 @@ void main() {
           };
           final request = Request(
             'PUT',
-            Uri.parse('http://localhost/patients/$kPatientUuid/placement-history'),
+            Uri.parse(
+              'http://localhost/patients/$kPatientUuid/placement-history',
+            ),
             body: jsonEncode(body),
             headers: {'content-type': 'application/json'},
           );

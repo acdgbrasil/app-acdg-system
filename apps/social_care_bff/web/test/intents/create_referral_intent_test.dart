@@ -3,7 +3,6 @@ import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 import 'package:social_care_web/src/intents/create_referral_intent.dart';
-import 'package:social_care_web/src/intents/uuid_validation.dart';
 
 import '../_test_uuids.dart';
 
@@ -40,7 +39,10 @@ void main() {
         reason: 'support',
       );
 
-      const intent = CreateReferralIntent(patientId: kPatientUuid, request: request);
+      const intent = CreateReferralIntent(
+        patientId: kPatientUuid,
+        request: request,
+      );
 
       expect(intent.patientId, equals(kPatientUuid));
       expect(intent.request, equals(request));
@@ -68,7 +70,10 @@ void main() {
       );
 
       const a = CreateReferralIntent(patientId: kPatientUuid, request: request);
-      const b = CreateReferralIntent(patientId: kPatientUuidAlt, request: request);
+      const b = CreateReferralIntent(
+        patientId: kPatientUuidAlt,
+        request: request,
+      );
 
       expect(a, isNot(equals(b)));
     });
@@ -176,7 +181,10 @@ void main() {
       });
 
       test('returns Failure when body is empty', () {
-        final result = CreateReferralIntent.parseFromBody(kPatientUuid, const {});
+        final result = CreateReferralIntent.parseFromBody(
+          kPatientUuid,
+          const {},
+        );
 
         expect(result, isA<Failure<CreateReferralIntent>>());
       });
@@ -184,7 +192,10 @@ void main() {
       test(
         'Failure message enumerates ALL missing fields when body is empty',
         () {
-          final result = CreateReferralIntent.parseFromBody(kPatientUuid, const {});
+          final result = CreateReferralIntent.parseFromBody(
+            kPatientUuid,
+            const {},
+          );
 
           switch (result) {
             case Success():

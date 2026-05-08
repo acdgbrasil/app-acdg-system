@@ -33,10 +33,7 @@ final RegExp _uuidV4Re = RegExp(
 /// validation across the BFF Web canon (A07-A15+). Handlers MUST call
 /// this before dispatching to the upstream contract; the contract MUST
 /// only ever see a normalized UUID v4.
-Result<String> validateUuidPathParam(
-  String raw, {
-  required String fieldName,
-}) {
+Result<String> validateUuidPathParam(String raw, {required String fieldName}) {
   final normalized = raw.trim().toLowerCase();
   if (_uuidV4Re.hasMatch(normalized)) return Success(normalized);
   return Failure(UuidPathParamError(fieldName: fieldName));
@@ -57,6 +54,5 @@ final class UuidPathParamError with Equatable implements Exception {
   List<Object?> get props => [fieldName];
 
   @override
-  String toString() =>
-      'Invalid path parameter [$fieldName]: must be a UUID v4';
+  String toString() => 'Invalid path parameter [$fieldName]: must be a UUID v4';
 }

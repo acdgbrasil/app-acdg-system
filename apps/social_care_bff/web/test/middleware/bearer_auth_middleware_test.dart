@@ -528,7 +528,7 @@ void main() {
           req,
         ) async {
           invoked = true;
-          captured = req.context[bearerSessionContextKey] as Session?;
+          captured = req.context[sessionContextKey] as Session?;
           return Response.ok('inner');
         });
         final response = await pipeline(
@@ -576,14 +576,16 @@ void main() {
 
       final token = buildValidJwt();
 
-      Session? bearerSession;
-      Session? cookieSession;
+      Session? resolvedSession;
       final pipeline = const Pipeline()
           .addMiddleware(middleware)
           .addMiddleware(sessionMiddleware(store))
           .addHandler((req) {
-            bearerSession = req.context[bearerSessionContextKey] as Session?;
-            cookieSession = req.context[sessionContextKey] as Session?;
+            // Post-B1: both auth paths populate the canonical
+            // sessionContextKey slot. Bearer wins because the bearer
+            // middleware strips the Cookie header before forwarding, so
+            // sessionMiddleware never resolves the cookie session here.
+            resolvedSession = req.context[sessionContextKey] as Session?;
             return Response.ok('ok');
           });
 
@@ -593,53 +595,37 @@ void main() {
           Uri.parse('http://localhost/whoami'),
           headers: {
             'Authorization': bearer(token),
-            'Cookie': '__session=$cookieSessionId',
+            'Cookie': '__Host-session=$cookieSessionId',
           },
         ),
       );
 
       expect(response.statusCode, equals(200));
       expect(
-        bearerSession,
+        resolvedSession,
         isNotNull,
-        reason: 'Bearer must populate its own context key',
+        reason: 'Bearer must populate the canonical session slot',
       );
       expect(
-        bearerSession!.userId,
+        resolvedSession!.userId,
         equals(kValidSubject),
         reason: 'session.userId comes from JWT sub, not cookie',
       );
       expect(
-        bearerSession!.roles,
+        resolvedSession!.roles,
         contains('social_worker'),
         reason: 'roles come from JWT, not cookie',
       );
+      // SEC: W0.5 S1 invariant — cookie role MUST NOT bleed into the
+      // bearer-derived session. Post-B1 unification, this check is the
+      // primary guarantor that the bearer middleware stripped the Cookie
+      // header before sessionMiddleware ran (otherwise sessionMiddleware
+      // would have overwritten the bearer Session under sessionContextKey
+      // with the cookie one carrying the "admin" role).
       expect(
-        bearerSession!.roles,
+        resolvedSession!.roles,
         isNot(contains('admin')),
         reason: 'cookie role must NOT bleed into bearer-derived session',
-      );
-      // S1 hardening (W0-bis): when Bearer is present and valid, the cookie
-      // session must NOT be visible to downstream consumers under the
-      // `sessionContextKey` slot. If `sessionMiddleware` runs anyway, the
-      // bearer middleware must have prevented it from resolving the cookie
-      // (e.g., by swallowing the Cookie header, or by being placed before
-      // sessionMiddleware AND surfacing the bearer session under
-      // `bearerSessionContextKey` exclusively).
-      //
-      // We pick the strictest assertion that still leaves W1 the choice
-      // between "short-circuit before sessionMiddleware" vs "swallow the
-      // Cookie header before forwarding": `sessionContextKey` must resolve
-      // to `null`. A downstream consumer that reads `sessionContextKey`
-      // by mistake therefore cannot see the (validly-stored) cookie
-      // session — closing the role-mix-up bypass described in S1.
-      expect(
-        cookieSession,
-        isNull,
-        reason:
-            'when Bearer wins, no cookie session may surface under '
-            'sessionContextKey — otherwise a downstream consumer that '
-            'reads the wrong key sees the cookie role set ("admin" here).',
       );
     });
 
@@ -670,14 +656,12 @@ void main() {
 
       final token = buildValidJwt();
 
-      Session? bearerSession;
-      Session? cookieSession;
+      Session? resolvedSession;
       final pipeline = const Pipeline()
           .addMiddleware(middleware)
           .addMiddleware(sessionMiddleware(store))
           .addHandler((req) {
-            bearerSession = req.context[bearerSessionContextKey] as Session?;
-            cookieSession = req.context[sessionContextKey] as Session?;
+            resolvedSession = req.context[sessionContextKey] as Session?;
             return Response.ok('ok');
           });
 
@@ -691,35 +675,31 @@ void main() {
             // so it does not exercise this path. shelf accepts the
             // adversarial casing and case-insensitive lookups still find
             // it — exactly the attacker's smuggling vector.
-            'COOKIE': '__session=$cookieSessionId',
+            'COOKIE': '__Host-session=$cookieSessionId',
           },
         ),
       );
 
       expect(response.statusCode, equals(200));
       expect(
-        bearerSession,
+        resolvedSession,
         isNotNull,
         reason:
-            'Bearer must populate bearer context regardless of '
-            'cookie header casing',
+            'Bearer must populate the canonical session slot regardless '
+            'of cookie header casing',
       );
-      expect(bearerSession!.userId, equals(kValidSubject));
-      expect(bearerSession!.roles, contains('social_worker'));
+      expect(resolvedSession!.userId, equals(kValidSubject));
+      expect(resolvedSession!.roles, contains('social_worker'));
+      // SEC: cookie strip must be case-INSENSITIVE — `COOKIE`, `Cookie`,
+      // `cookie`, `cookIE`, `CooKie` must all be removed before
+      // sessionMiddleware runs. Otherwise a stolen cookie smuggled under
+      // non-canonical casing would let sessionMiddleware overwrite the
+      // bearer Session under sessionContextKey with the cookie one
+      // carrying the "admin" role — defeating the W0.5 S1 contract.
       expect(
-        bearerSession!.roles,
+        resolvedSession!.roles,
         isNot(contains('admin')),
         reason: 'cookie role must NOT bleed in — even with COOKIE casing',
-      );
-      expect(
-        cookieSession,
-        isNull,
-        reason:
-            'cookie strip must be case-INSENSITIVE — `COOKIE`, '
-            '`Cookie`, `cookie`, `cookIE`, `CooKie` must all be removed '
-            'before sessionMiddleware runs. Otherwise a stolen cookie '
-            'smuggled under non-canonical casing surfaces under '
-            'sessionContextKey, defeating the W0.5 S1 contract.',
       );
     });
 
@@ -755,7 +735,7 @@ void main() {
           Uri.parse('http://localhost/whoami'),
           headers: {
             'Authorization': bearer(tampered),
-            'Cookie': '__session=$cookieSessionId',
+            'Cookie': '__Host-session=$cookieSessionId',
           },
         ),
       );
@@ -784,14 +764,13 @@ void main() {
           roles: {'social_worker'},
         );
 
-        Session? bearerSession;
-        Session? cookieSession;
+        Session? resolvedSession;
         final pipeline = const Pipeline()
             .addMiddleware(middleware)
             .addMiddleware(sessionMiddleware(store))
             .addHandler((req) {
-              bearerSession = req.context[bearerSessionContextKey] as Session?;
-              cookieSession = req.context[sessionContextKey] as Session?;
+              // Post-B1: cookie path writes to the canonical slot too.
+              resolvedSession = req.context[sessionContextKey] as Session?;
               return Response.ok('ok');
             });
 
@@ -799,22 +778,17 @@ void main() {
           Request(
             'GET',
             Uri.parse('http://localhost/whoami'),
-            headers: {'Cookie': '__session=$cookieSessionId'},
+            headers: {'Cookie': '__Host-session=$cookieSessionId'},
           ),
         );
 
         expect(response.statusCode, equals(200));
         expect(
-          bearerSession,
-          isNull,
-          reason: 'no Bearer header → no bearer ctx',
-        );
-        expect(
-          cookieSession,
+          resolvedSession,
           isNotNull,
           reason: 'cookie session must reach the handler unobstructed',
         );
-        expect(cookieSession!.userId, equals('cookie-user'));
+        expect(resolvedSession!.userId, equals('cookie-user'));
       },
     );
   });

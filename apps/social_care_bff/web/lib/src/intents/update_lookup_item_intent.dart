@@ -38,17 +38,16 @@ final class UpdateLookupItemIntent with Equatable {
     String tableName,
     String rawItemId,
     Map<String, dynamic> body,
-  ) =>
-      validateUuidPathParam(rawItemId, fieldName: 'itemId').map(
-        (itemId) => UpdateLookupItemIntent(
-          tableName: tableName,
-          itemId: itemId,
-          request: UpdateLookupItemRequest(
-            codigo: _asString(body['codigo']),
-            descricao: _asString(body['descricao']),
-          ),
-        ),
-      );
+  ) => validateUuidPathParam(rawItemId, fieldName: 'itemId').map(
+    (itemId) => UpdateLookupItemIntent(
+      tableName: tableName,
+      itemId: itemId,
+      request: UpdateLookupItemRequest(
+        codigo: _asString(body['codigo']),
+        descricao: _asString(body['descricao']),
+      ),
+    ),
+  );
 
   static String? _asString(Object? raw) => raw is String ? raw : null;
 }

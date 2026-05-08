@@ -39,10 +39,10 @@ void main() {
 
     group('parseFromBody — Result<WithdrawPatientIntent> (P2 if-case)', () {
       test('returns Success when reason is present', () {
-        final result = WithdrawPatientIntent.parseFromBody(
-          kPatientUuid,
-          const {'reason': 'Family relocated', 'notes': 'Moved to RJ'},
-        );
+        final result = WithdrawPatientIntent.parseFromBody(kPatientUuid, const {
+          'reason': 'Family relocated',
+          'notes': 'Moved to RJ',
+        });
 
         expect(result, isA<Success<WithdrawPatientIntent>>());
         switch (result) {
@@ -65,10 +65,9 @@ void main() {
       });
 
       test('returns Failure when reason is empty', () {
-        final result = WithdrawPatientIntent.parseFromBody(
-          kPatientUuid,
-          const {'reason': ''},
-        );
+        final result = WithdrawPatientIntent.parseFromBody(kPatientUuid, const {
+          'reason': '',
+        });
 
         expect(result, isA<Failure<WithdrawPatientIntent>>());
       });

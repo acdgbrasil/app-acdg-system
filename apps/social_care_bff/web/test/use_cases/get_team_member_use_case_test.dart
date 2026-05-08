@@ -89,10 +89,15 @@ void main() {
 
       final result = await useCaseFail.execute(_intent, obs);
 
-      expect(result, isA<Failure<StandardResponse<TeamMemberDetailResponse>>>());
+      expect(
+        result,
+        isA<Failure<StandardResponse<TeamMemberDetailResponse>>>(),
+      );
       expect(
         obs.breadcrumbs,
-        contains(hasEventWithData('team.get.failed', {'errorCode': 'NOT_FOUND'})),
+        contains(
+          hasEventWithData('team.get.failed', {'errorCode': 'NOT_FOUND'}),
+        ),
       );
     });
   });

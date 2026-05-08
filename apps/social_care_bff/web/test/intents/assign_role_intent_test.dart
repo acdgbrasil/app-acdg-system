@@ -25,10 +25,7 @@ void main() {
 
     group('parseFromBody — Result<AssignRoleIntent> (Template C-P2)', () {
       test('returns Success on happy path with valid memberId UUID', () {
-        final result = AssignRoleIntent.parseFromBody(
-          kMemberUuid,
-          validBody(),
-        );
+        final result = AssignRoleIntent.parseFromBody(kMemberUuid, validBody());
 
         switch (result) {
           case Success(:final value):

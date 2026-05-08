@@ -320,8 +320,7 @@ void main() {
 
           expect(response.statusCode, equals(400));
           final body =
-              jsonDecode(await response.readAsString())
-                  as Map<String, dynamic>;
+              jsonDecode(await response.readAsString()) as Map<String, dynamic>;
           final error = body['error'] as Map<String, dynamic>;
           expect(error['code'], equals('INVALID_ADMIT_BODY'));
           // PII safety: error message must not echo the raw path input.
@@ -399,8 +398,7 @@ void main() {
 
           expect(response.statusCode, equals(400));
           final body =
-              jsonDecode(await response.readAsString())
-                  as Map<String, dynamic>;
+              jsonDecode(await response.readAsString()) as Map<String, dynamic>;
           final error = body['error'] as Map<String, dynamic>;
           expect(error['code'], equals('INVALID_DISCHARGE_BODY'));
           expect(error['message'], isNot(contains(kNonUuid)));
@@ -460,8 +458,7 @@ void main() {
 
           expect(response.statusCode, equals(400));
           final body =
-              jsonDecode(await response.readAsString())
-                  as Map<String, dynamic>;
+              jsonDecode(await response.readAsString()) as Map<String, dynamic>;
           final error = body['error'] as Map<String, dynamic>;
           expect(error['code'], equals('INVALID_READMIT_BODY'));
           expect(error['message'], isNot(contains(kNonUuid)));
@@ -535,8 +532,7 @@ void main() {
 
           expect(response.statusCode, equals(400));
           final body =
-              jsonDecode(await response.readAsString())
-                  as Map<String, dynamic>;
+              jsonDecode(await response.readAsString()) as Map<String, dynamic>;
           final error = body['error'] as Map<String, dynamic>;
           expect(error['code'], equals('INVALID_WITHDRAW_BODY'));
           expect(error['message'], isNot(contains(kNonUuid)));

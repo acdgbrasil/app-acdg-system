@@ -24,8 +24,8 @@ void main() {
       'fullName': fullName,
       'birthDate': birthDate,
       'email': email,
-      if (cpf != null) 'cpf': cpf,
-      if (initialPassword != null) 'initialPassword': initialPassword,
+      'cpf': ?cpf,
+      'initialPassword': ?initialPassword,
     };
 
     test('parseFromBody returns Success on full happy path', () {
@@ -68,19 +68,22 @@ void main() {
       expect(a, equals(b));
     });
 
-    test('parseFromBody fails on empty body — message lists every required field', () {
-      final result = RegisterWorkerIntent.parseFromBody(<String, dynamic>{});
+    test(
+      'parseFromBody fails on empty body — message lists every required field',
+      () {
+        final result = RegisterWorkerIntent.parseFromBody(<String, dynamic>{});
 
-      switch (result) {
-        case Success():
-          fail('Expected Failure');
-        case Failure(:final error):
-          final msg = error.toString();
-          expect(msg, contains('fullName'));
-          expect(msg, contains('birthDate'));
-          expect(msg, contains('email'));
-      }
-    });
+        switch (result) {
+          case Success():
+            fail('Expected Failure');
+          case Failure(:final error):
+            final msg = error.toString();
+            expect(msg, contains('fullName'));
+            expect(msg, contains('birthDate'));
+            expect(msg, contains('email'));
+        }
+      },
+    );
 
     test('parseFromBody fails when fullName is missing', () {
       final body = validBody()..remove('fullName');
@@ -144,9 +147,7 @@ void main() {
       () {
         // Even when only initialPassword is provided, the error must not
         // include its value.
-        final body = <String, dynamic>{
-          'initialPassword': 'TempPass!2026',
-        };
+        final body = <String, dynamic>{'initialPassword': 'TempPass!2026'};
         final result = RegisterWorkerIntent.parseFromBody(body);
 
         switch (result) {
