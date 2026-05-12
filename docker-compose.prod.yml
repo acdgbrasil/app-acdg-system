@@ -1,4 +1,22 @@
 ## docker-compose.prod.yml — Production simulation
+##
+## ⚠️ ORPHAN (2026-05-12) — depende de Dockerfile.bff e Dockerfile.web que
+## referenciam paths deletados em D1.C (commit 33626f0). Topologia "Caddy serve
+## Flutter WASM" descrita abaixo será SUBSTITUÍDA em Phase 6+ por:
+##
+##   Topologia β (ADR-024, aceita 2026-05-12):
+##   Browser → Edge Caddy (TLS, headers) → BFF Shelf (porta 8081)
+##                                          ├── /static/* (Vite dist embarcado)
+##                                          ├── /api/*    (handlers Dart)
+##                                          └── /         (SPA fallback)
+##
+##   1 container (BFF + Web), 1 imagem, 1 tag SemVer, 1 deploy.
+##   Caddy continua como edge reverse proxy externo, NÃO serve mais arquivos.
+##
+## Referência: handbook/architecture/DECISIONS/ADR-024-web-app-stack-and-topology.md
+##
+## ─────────────────────────────────────────────────────────────────────────────
+## ESTADO ATUAL (mantido para histórico, NÃO usar):
 ## Usage: docker compose -f docker-compose.prod.yml up --build
 ##
 ## Simulates the production topology:

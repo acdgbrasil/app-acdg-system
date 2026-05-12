@@ -1,10 +1,21 @@
 # syntax=docker/dockerfile:1.7
 
-# ── Conecta Raros Gateway ──
-# Serves the static landing site and acts as reverse proxy:
-#   /*       → static HTML/CSS/JS (this container)
-#   /app/*   → Flutter Web WASM (app container)
-#   /api/*   → BFF shelf server (bff container)
+# ── Conecta Raros — Landing Institucional ──
+#
+# Serve `site/` como container independente (contexto Institucional, separado
+# do contexto Aplicação — ver ADR-024 §Topologia).
+#
+# Domínio público: https://conectararos.org.br
+# Versionamento: independente do app interno.
+#
+# Em Phase 6+ (ADR-024), o "contexto Aplicação" passa a ser servido por um
+# container ÚNICO (BFF Shelf + Vite/React dist embarcado). Este Dockerfile.site
+# segue independente — landing institucional NÃO se acopla ao app.
+#
+# Limpeza pendente em `site/index.html`:
+#   - Remover prefetch de /app/main.dart.wasm e /app/main.dart.mjs (Flutter
+#     Web foi removido; em Phase 6+ pode prefetch /static/app.[hash].js do
+#     novo SPA, ou simplesmente deixar de prefetch).
 
 FROM caddy:2-alpine
 

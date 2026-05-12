@@ -1,5 +1,23 @@
 # syntax=docker/dockerfile:1.7
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠️ ORPHAN — paths referenciados aqui foram DELETADOS em D1.C (commit 33626f0,
+# 2026-05-01). Phase 5 é CLI-first e NÃO usa este Dockerfile.
+#
+# Este arquivo será REESCRITO em Phase 6+ conforme ADR-024 §β topology:
+#   - Stage A: Bun build → apps/conecta_web/dist/
+#   - Stage B: Dart AOT compile → /app/server
+#   - Stage C: distroless + COPY assets + ENTRYPOINT
+#
+# Paths atuais corretos:
+#   apps/social_care_bff/web/       (era bff/social_care_web/)
+#   apps/social_care_bff/contracts/ (era bff/shared/)
+#   kernel/contracts/               (era packages/...)
+#
+# NÃO usar este arquivo em produção até a reescrita Phase 6.
+# Referência: handbook/architecture/DECISIONS/ADR-024-web-app-stack-and-topology.md
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Stage 1: Resolve + Compile AOT ──
 FROM ghcr.io/cirruslabs/flutter:3.41.6 AS build
 ENV CI=true

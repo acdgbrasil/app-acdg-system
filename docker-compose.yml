@@ -1,3 +1,18 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠️ ORPHAN — composes os Dockerfiles órfãos `Dockerfile.bff.dev` e
+# `Dockerfile.web` que referenciam código deletado em D1.C (commit 33626f0).
+# Mounts `./bff/`, `./packages/`, `./apps/` em paths que mudaram para
+# `apps/social_care_bff/`, `kernel/`, `infra/`.
+#
+# Phase 5 é CLI-first; dev rodando BFF/Web pelo Docker está dormente.
+# Será reescrito em Phase 6+ conforme ADR-024.
+#
+# Para dev local da BFF hoje, rodar direto:
+#   cd apps/social_care_bff/web && dart run bin/server.dart
+#
+# Referência: handbook/architecture/DECISIONS/ADR-024-web-app-stack-and-topology.md
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
   bff:
     build:

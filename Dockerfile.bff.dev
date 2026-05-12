@@ -1,5 +1,19 @@
 # syntax=docker/dockerfile:1.7
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠️ ORPHAN — paths referenciados aqui foram DELETADOS em D1.C (commit 33626f0,
+# 2026-05-01). Phase 5 é CLI-first.
+#
+# Dev moderno: rodar BFF diretamente via `dart run bin/server.dart` em
+# `apps/social_care_bff/web/` (sem container) ou aguardar reescrita Phase 6.
+#
+# Paths atuais corretos (para futura reescrita):
+#   apps/social_care_bff/web/       (era bff/social_care_web/)
+#   apps/social_care_bff/contracts/ (era bff/shared/)
+#
+# Referência: handbook/architecture/DECISIONS/ADR-024-web-app-stack-and-topology.md
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Dev image: JIT mode for fast restarts ──
 FROM ghcr.io/cirruslabs/flutter:3.41.6
 ENV CI=true

@@ -32,9 +32,10 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Prefetch Flutter WASM while user reads the landing page -->
-    <link rel="prefetch" href="/app/main.dart.wasm" as="fetch" crossorigin>
-    <link rel="prefetch" href="/app/main.dart.mjs" as="fetch" crossorigin>
+    <!-- Prefetch do app removido em 2026-05-12: Flutter Web foi deletado em
+         D1.C (commit 33626f0). Em Phase 6+ conforme ADR-024 o app interno será
+         SPA Vite + React; quando o bundle estabilizar, considerar prefetch de
+         /static/app.[hash].js a partir desta landing. -->
 
     <!-- Structured Data: Organization -->
     <script type="application/ld+json">

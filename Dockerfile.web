@@ -1,6 +1,23 @@
 # syntax=docker/dockerfile:1.7
 # rebuild: sentry-dsn-fix
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠️ ORPHAN — este Dockerfile builda Flutter Web WASM a partir de
+# `apps/acdg_system/` (Shell), que foi DELETADO em D1.C (commit 33626f0).
+#
+# Em Phase 6+ conforme ADR-024, este arquivo será SUBSTITUÍDO por:
+#   - Web servido pelo próprio BFF Shelf (β topology — 1 container),
+#     OU
+#   - Caddy edge que faz reverse_proxy para o BFF Shelf (já no Dockerfile.bff
+#     reescrito).
+#
+# SPA Web em Phase 6 será Vite + React 19 + TS 6 (não mais Flutter Web).
+# Bundle gerado em `apps/conecta_web/dist/` será copiado para o container
+# do BFF (multi-stage Bun + Dart) em vez de servido por Caddy próprio.
+#
+# Referência: handbook/architecture/DECISIONS/ADR-024-web-app-stack-and-topology.md
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Stage 1: Build Flutter Web WASM ──
 FROM ghcr.io/cirruslabs/flutter:3.41.6 AS build
 ENV CI=true
