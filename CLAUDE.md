@@ -12,7 +12,7 @@
 > - `handbook/architecture/DECISIONS.md` — ADRs (decisoes imutaveis)
 > - `handbook/architecture/DIAGRAMS.md` — diagramas visuais
 > - `handbook/references/flutter_archteture/` — referencia oficial Flutter usada como base
-> - `handbook/research/` — pesquisas que embasam as decisoes
+> - `handbook/archive/research/` — pesquisas que embasaram decisoes antigas (historico imutavel)
 >
 > Em caso de conflito entre este CLAUDE.md e o handbook, **o handbook prevalece**.
 >
@@ -53,10 +53,10 @@ cp apps/acdg_system/.env.example apps/acdg_system/.env  # Primeira vez: copiar e
 cd apps/acdg_system && flutter run -d macos --dart-define-from-file=.env
 cd apps/acdg_system && flutter build web --wasm --release --dart-define-from-file=.env
 
-# BFF
-cd bff/social_care_bff && dart run bin/server.dart  # Rodar BFF server (Darto)
-cd bff/social_care_bff && flutter test              # Testes do BFF (usa flutter test por dep transitiva)
-cd bff/social_care_bff && dart compile exe bin/server.dart -o social-care-bff  # Build AOT
+# BFF (Shelf HTTP server, Dart AOT)
+cd apps/social_care_bff/web && dart run bin/server.dart  # Rodar BFF server (Shelf)
+cd apps/social_care_bff/web && dart test                 # Testes do BFF
+cd apps/social_care_bff/web && dart compile exe bin/server.dart -o social-care-bff  # Build AOT
 
 # Testes
 flutter test                       # Testes do package atual
@@ -70,9 +70,10 @@ flutter test --coverage            # Testes com cobertura
 - **Dart 3.x** (AOT para BFF, JIT para dev)
 - **Provider** para DI (ADR-009)
 - **GoRouter** para roteamento (deferred loading)
-- **Dio** para HTTP client / **Darto** para HTTP server (BFF)
-- **Isar** para offline storage (ADR-005)
+- **Dio** para HTTP client / **Shelf + shelf_router** para HTTP server (BFF — ADR-002)
+- **Drift** para offline storage (ADR-021, supersede ADR-005 Isar)
 - **package:oidc** (Bdaya-Dev) para auth OIDC (ADR-012)
+- **Vite + React 19 + TS 6** para Web App quando Phase 6 ressuscitar (ADR-024)
 
 ### Padrao Arquitetural: MVVM + Logic Layer (ADR-003, ADR-013)
 
