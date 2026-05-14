@@ -61,6 +61,11 @@ ADR-023 já estava em arquivo individual desde a sua criação.
 | [024](DECISIONS/ADR-024-web-app-stack-and-topology.md) | Web App Stack & Topology (Vite + React + TS6, servido pelo BFF Shelf) | 2026-05-12 | Aceito (parcialmente supersede [ADR-006](DECISIONS/ADR-006-adaptive-design-3-pages.md) no escopo Web) |
 | [025](DECISIONS/ADR-025-api-contract-codegen.md) | API Contract & Codegen (OpenAPI 3, Dart-authoritative, TS via openapi-typescript) | 2026-05-12 | Aceito |
 | [026](DECISIONS/ADR-026-web-app-security-hardening.md) | Web App Security Hardening (CSP, COEP, supply chain, LGPD) | 2026-05-12 | Aceito |
+| [027](DECISIONS/ADR-027-authentik-replaces-zitadel.md) | Authentik substitui Zitadel como IdP único | 2026-05-13 | Proposed (parcialmente supersede [ADR-011](DECISIONS/ADR-011-split-token-pattern.md) e [ADR-012](DECISIONS/ADR-012-oidc-pkce.md) onde citam Zitadel) |
+| [028](DECISIONS/ADR-028-oidc-discovery-source-of-truth.md) | OIDC discovery document como fonte de verdade | 2026-05-13 | Proposed |
+| [029](DECISIONS/ADR-029-authentik-blueprints-versioned.md) | Property mappings e configuração Authentik versionadas em Blueprint YAML | 2026-05-13 | Proposed |
+| [030](DECISIONS/ADR-030-idp-events-via-people-context.md) | Eventos de identidade publicados pelo `people-context`, não por webhook do IdP | 2026-05-13 | Proposed |
+| [031](DECISIONS/ADR-031-identity-migration-legacy-sub.md) | Migração de identidade preserva ADR-023 via `legacy_sub` attribute | 2026-05-13 | Proposed |
 
 ---
 
