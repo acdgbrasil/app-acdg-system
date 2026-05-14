@@ -22,7 +22,10 @@ void main() {
         expect(config.port, equals(8081));
         expect(config.host, equals('0.0.0.0'));
         expect(config.apiBaseUrl, equals('https://api.example.com'));
-        expect(config.oidcIssuer, equals('https://auth.example.com'));
+        // ADR-028: issuer e normalizado com trailing slash para que
+        // `Uri.parse(issuer).resolve('.well-known/openid-configuration')`
+        // gere URL valida tanto para Zitadel quanto Authentik.
+        expect(config.oidcIssuer, equals('https://auth.example.com/'));
         expect(config.oidcClientId, equals('web-client'));
         expect(config.oidcClientSecret, equals('super-secret'));
         expect(
@@ -147,14 +150,56 @@ void main() {
       );
     });
 
-    test('derives tokenEndpoint correctly from issuer', () {
-      final config = ServerConfig.fromEnvironment(requiredEnv());
+    test('normaliza issuer com trailing slash (ADR-028) — input sem slash', () {
+      final env = requiredEnv()..['OIDC_ISSUER'] = 'https://auth.example.com';
+      final config = ServerConfig.fromEnvironment(env);
+      expect(config.oidcIssuer, endsWith('/'));
+      expect(config.oidcIssuer, equals('https://auth.example.com/'));
+    });
 
+    test('preserva issuer com trailing slash (Authentik usa path por app)', () {
+      final env = requiredEnv()
+        ..['OIDC_ISSUER'] = 'http://authentik:9000/application/o/social-care/';
+      final config = ServerConfig.fromEnvironment(env);
       expect(
-        config.tokenEndpoint,
-        equals(Uri.parse('https://auth.example.com/oauth/v2/token')),
+        config.oidcIssuer,
+        equals('http://authentik:9000/application/o/social-care/'),
+      );
+      expect(
+        config.discoveryDocumentUri,
+        equals(
+          Uri.parse(
+            'http://authentik:9000/application/o/social-care/.well-known/openid-configuration',
+          ),
+        ),
       );
     });
+
+    test(
+      'oidcScopes default cobre OIDC standard + offline_access (ADR-028)',
+      () {
+        final config = ServerConfig.fromEnvironment(requiredEnv());
+        expect(
+          config.oidcScopes,
+          equals('openid profile email offline_access'),
+        );
+      },
+    );
+
+    test('OIDC_SCOPES env override permite scopes IdP-specific', () {
+      final env = requiredEnv()
+        ..['OIDC_SCOPES'] = 'openid profile email offline_access acdg-roles';
+      final config = ServerConfig.fromEnvironment(env);
+      expect(config.oidcScopes, contains('acdg-roles'));
+    });
+
+    // REGRA #2 (no test cheating): teste original validava o getter
+    // `config.tokenEndpoint` que computava `${issuer}/oauth/v2/token`
+    // hardcoded. ADR-028 (2026-05-13) mudou o contrato: ServerConfig
+    // nao deriva mais endpoints especificos — quem deriva e
+    // `OidcEndpoints.fromDiscovery` carregando o `.well-known/...`
+    // do issuer. Responsabilidade migrou para o novo modulo.
+    // Cobertura equivalente em test/auth/oidc_endpoints_test.dart.
 
     test('falls back to default port when PORT is non-numeric', () {
       final env = requiredEnv()..['PORT'] = 'not-a-number';

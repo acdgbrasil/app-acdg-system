@@ -15,6 +15,7 @@ class ServerConfig {
     required this.oidcClientSecret,
     required this.oidcRedirectUri,
     required this.sessionSecret,
+    this.oidcScopes = 'openid profile email offline_access',
     this.sessionTtl = const Duration(hours: 1),
     this.frontendOrigin,
     this.postLoginRedirectUrl,
@@ -76,16 +77,27 @@ class ServerConfig {
       );
     }
 
+    // ADR-028: normalizar issuer com trailing slash para que a resolucao
+    // de paths relativos (`./.well-known/openid-configuration`) funcione
+    // tanto para issuer Zitadel (`https://auth.acdgbrasil.com.br`) quanto
+    // Authentik (`http://authentik:9000/application/o/<slug>/`).
+    String issuer = required('OIDC_ISSUER');
+    if (!issuer.endsWith('/')) issuer = '$issuer/';
+
     return ServerConfig(
       port: int.tryParse(e['PORT'] ?? '') ?? 8081,
       host: e['HOST'] ?? '0.0.0.0',
       apiBaseUrl: required('API_BASE_URL'),
       peopleContextBaseUrl: required('PEOPLE_CONTEXT_BASE_URL'),
-      oidcIssuer: required('OIDC_ISSUER'),
+      oidcIssuer: issuer,
       oidcClientId: required('OIDC_CLIENT_ID'),
       oidcClientSecret: required('OIDC_CLIENT_SECRET'),
       oidcRedirectUri: required('OIDC_REDIRECT_URI'),
       sessionSecret: required('SESSION_SECRET'),
+      // ADR-028: scopes externalizados — sem hardcode de Zitadel-specifics
+      // (`urn:zitadel:iam:org:project:roles`). Authentik requer `offline_access`
+      // explicito desde 2024.2 para receber refresh_token.
+      oidcScopes: e['OIDC_SCOPES'] ?? 'openid profile email offline_access',
       sessionTtl: parsedTtl != null
           ? Duration(minutes: parsedTtl)
           : const Duration(hours: 1),
@@ -123,6 +135,13 @@ class ServerConfig {
 
   /// OIDC redirect URI for the BFF callback.
   final String oidcRedirectUri;
+
+  /// Scopes requested in the OIDC authorize URL (ADR-028: externalized).
+  /// Default cobre OIDC standard + `offline_access` (required by Authentik
+  /// since 2024.2 to emit refresh_token). Override via `OIDC_SCOPES` env.
+  /// Scopes IdP-specific (ex: `acdg-roles` property mapping no Authentik)
+  /// devem ser adicionados via env, NUNCA hardcoded aqui.
+  final String oidcScopes;
 
   /// Secret key used for session cookie encryption AND HMAC-derived
   /// session ids in the Bearer flow (constraint #3).
@@ -165,12 +184,9 @@ class ServerConfig {
   final int bearerMaxTokenBytes;
 
   /// OpenID Connect discovery document URI derived from [oidcIssuer].
+  /// ADR-028: o issuer e normalizado com trailing slash em `fromEnvironment`,
+  /// permitindo `Uri.parse(issuer).resolve('.well-known/openid-configuration')`
+  /// gerar URL valida tanto para Zitadel quanto Authentik.
   Uri get discoveryDocumentUri =>
-      Uri.parse('$oidcIssuer/.well-known/openid-configuration');
-
-  /// Token endpoint derived from [oidcIssuer].
-  Uri get tokenEndpoint => Uri.parse('$oidcIssuer/oauth/v2/token');
-
-  /// JWKS endpoint derived from [oidcIssuer] (Zitadel default path).
-  Uri get jwksUri => Uri.parse('$oidcIssuer/oauth/v2/keys');
+      Uri.parse(oidcIssuer).resolve('.well-known/openid-configuration');
 }

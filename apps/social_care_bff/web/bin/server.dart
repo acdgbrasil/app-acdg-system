@@ -32,13 +32,17 @@ Future<void> main() async {
   }
 
   final sessionStore = SessionStore(ttl: config.sessionTtl);
-  final oidcClient = OidcServerClient(config: config);
 
-  // C00 — Bearer Auth Middleware. The JWKS cache is shared across the
-  // pipeline (single-flight, 10min TTL) and backed by an HTTP client
-  // pointed at Zitadel's /oauth/v2/keys endpoint with a 5s timeout.
+  // ADR-028: bootstrap discovery-driven. Endpoints (token, authorize,
+  // revoke, jwks_uri) sao carregados do `.well-known/openid-configuration`
+  // do issuer. Fail-fast se discovery indisponivel — IdP mal configurado
+  // deve quebrar o boot, nao virar 401 storm depois.
+  final oidcClient = await OidcServerClient.bootstrap(config: config);
+
+  // C00 — Bearer Auth Middleware. JWKS cache compartilhada (single-flight,
+  // 10min TTL). Pega `jwks_uri` do discovery (vendor-agnostic).
   final jwksCache = JwksCache(
-    client: HttpJwksClient(jwksUri: config.jwksUri),
+    client: HttpJwksClient(jwksUri: oidcClient.endpoints.jwksUri),
     ttl: config.jwksCacheTtl,
   );
 

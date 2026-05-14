@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
+import 'package:social_care_web/src/auth/oidc_endpoints.dart';
 import 'package:social_care_web/src/auth/oidc_server_client.dart';
 import 'package:social_care_web/src/config/server_config.dart';
 
@@ -37,6 +38,23 @@ ServerConfig _testConfig() {
   );
 }
 
+// ADR-028: testes passam endpoints stub explicitamente — em producao,
+// `OidcServerClient.bootstrap` resolve via discovery document. Os paths
+// (`/oauth/v2/authorize` etc) sao mantidos no stub para preservar a
+// intencao dos asserts originais (REGRA #2 do CLAUDE.md frontend).
+OidcEndpoints _testEndpoints() {
+  return OidcEndpoints(
+    issuer: 'https://auth.example.com',
+    authorizationEndpoint: Uri.parse(
+      'https://auth.example.com/oauth/v2/authorize',
+    ),
+    tokenEndpoint: Uri.parse('https://auth.example.com/oauth/v2/token'),
+    userinfoEndpoint: Uri.parse('https://auth.example.com/oidc/v1/userinfo'),
+    jwksUri: Uri.parse('https://auth.example.com/oauth/v2/keys'),
+    revocationEndpoint: Uri.parse('https://auth.example.com/oauth/v2/revoke'),
+  );
+}
+
 void main() {
   group('OidcServerClient', () {
     late MockHttpClient mockClient;
@@ -46,7 +64,11 @@ void main() {
     setUp(() {
       mockClient = MockHttpClient();
       config = _testConfig();
-      oidcClient = OidcServerClient(config: config, httpClient: mockClient);
+      oidcClient = OidcServerClient(
+        config: config,
+        endpoints: _testEndpoints(),
+        httpClient: mockClient,
+      );
     });
 
     group('buildAuthorizationUrl', () {

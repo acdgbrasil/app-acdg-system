@@ -11,6 +11,7 @@ export 'src/config/server_config.dart';
 // Auth
 export 'src/auth/jwks_cache.dart';
 export 'src/auth/jwks_client.dart';
+export 'src/auth/oidc_endpoints.dart';
 export 'src/auth/oidc_server_client.dart';
 export 'src/auth/session_store.dart';
 
